@@ -1,5 +1,5 @@
 import { Button } from "@fluentui/react-components";
-import { Navigation24Regular, AppsListDetail24Regular } from "@fluentui/react-icons";
+import { PanelLeftContract24Regular, Grid24Regular } from "@fluentui/react-icons";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -18,7 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       <div className="flex items-center h-[53px] border-b border-gray-200 px-2">
         <Button 
           appearance="transparent" 
-          icon={<Navigation24Regular />} 
+          icon={<PanelLeftContract24Regular />} 
           onClick={onToggle}
           aria-label="Toggle sidebar"
         />
@@ -29,21 +29,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         <div className="p-2">
           {!isCollapsed ? (
             <div className="flex items-center p-2 my-1 hover:bg-gray-200 rounded cursor-pointer">
-              <AppsListDetail24Regular className="mr-2" />
+              <Grid24Regular className="mr-2" />
               <span>Manage Companies</span>
             </div>
           ) : (
             <div className="flex justify-center p-2 my-1 hover:bg-gray-200 rounded cursor-pointer">
-              <AppsListDetail24Regular />
-            </div>
-          )}
-        </div>
-        
-        {/* Footer section at bottom of sidebar */}
-        <div className="mt-auto border-t border-gray-200 p-2">
-          {!isCollapsed && (
-            <div className="px-2 py-1 text-sm">
-              <span>Manage Companies</span>
+              <Grid24Regular />
             </div>
           )}
         </div>

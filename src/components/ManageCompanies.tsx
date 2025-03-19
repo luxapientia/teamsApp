@@ -1,5 +1,3 @@
-import { useContext } from "react";
-import { TeamsFxContext } from "./Context";
 import {
   Button,
   Table,
@@ -8,13 +6,9 @@ import {
   TableHeader,
   TableHeaderCell,
   TableRow,
-  Title1,
-  TabList,
-  Tab as FluentTab,
-  TabValue,
   Input,
 } from "@fluentui/react-components";
-import { Search24Regular, Add24Regular, Edit24Regular } from "@fluentui/react-icons";
+import { Search24Regular, Edit24Regular, Grid28Regular, ChevronDown16Filled, ChevronUp16Filled } from "@fluentui/react-icons";
 import { useState } from "react";
 
 // Sample data for companies
@@ -26,87 +20,160 @@ const sampleCompanies = [
   { id: 5, name: "ABC Demo", createdOn: "Apr 9th 2023", status: "Active" },
 ];
 
+type SortDirection = "asc" | "desc" | null;
+type SortColumn = "id" | "name" | "createdOn" | "status" | null;
+
 export function ManageCompanies() {
-  const { teamsUserCredential } = useContext(TeamsFxContext);
-  const [selectedTab, setSelectedTab] = useState<TabValue>("companies");
   const [companies] = useState(sampleCompanies);
   const [searchText, setSearchText] = useState("");
+  const [sortColumn, setSortColumn] = useState<SortColumn>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Toggle direction if same column is clicked again
+      setSortDirection(sortDirection === "asc" ? "desc" : sortDirection === "desc" ? null : "asc");
+      if (sortDirection === "desc") {
+        setSortColumn(null);
+      }
+    } else {
+      // Set new column and direction to ascending
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortedData = () => {
+    if (!sortColumn || !sortDirection) {
+      return companies.filter((company) => 
+        company.name.toLowerCase().includes(searchText.toLowerCase())
+      );
+    }
+
+    return [...companies]
+      .filter((company) => 
+        company.name.toLowerCase().includes(searchText.toLowerCase())
+      )
+      .sort((a, b) => {
+        if (sortDirection === "asc") {
+          return a[sortColumn] > b[sortColumn] ? 1 : -1;
+        } else {
+          return a[sortColumn] < b[sortColumn] ? 1 : -1;
+        }
+      });
+  };
+
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) return null;
+    return sortDirection === "asc" ? <ChevronUp16Filled /> : <ChevronDown16Filled />;
+  };
 
   return (
     <div className="flex flex-col h-screen">
       {/* Header section */}
-      <div className="border-b border-gray-200 p-2 bg-[#f3f2f1]">
-        <Title1 className="px-4">Manage Companies</Title1>
+      <div className="gradual-border p-2 bg-[#f3f2f1] flex items-center justify-start shadow-md">
+          <Grid28Regular className="mr-2" />
+          <span className="text-xl font-bold">Manage Companies</span>
       </div>
 
       {/* Main content */}
       <div className="flex-1 p-6 bg-white">
-        {/* Tabs */}
-        <div className="mb-6">
-          <TabList selectedValue={selectedTab} onTabSelect={(_, data) => setSelectedTab(data.value)}>
-            <FluentTab id="licenses" value="licenses">
+        {/* Search Input */}
+        <div className="flex items-center mb-4">
+          <Search24Regular className="mr-2" />
+          <div className="border-l h-6 mx-2" style={{ borderColor: '#ccc' }}></div> {/* Vertical line */}
+          
+          {/* Tabs */}
+          <div className="flex space-x-2 min-w-[600px]">
+            <button className="border rounded-full px-4 py-2 hover:bg-gray-200">
               Companies Licenses
-            </FluentTab>
-            <FluentTab id="superUsers" value="superUsers">
+            </button>
+            <button className="border rounded-full px-4 py-2 hover:bg-gray-200">
               Companies Super Users
-            </FluentTab>
-            <FluentTab id="companies" value="companies">
+            </button>
+            <button className="border rounded-full px-4 py-2 hover:bg-gray-200">
               Companies
-            </FluentTab>
-          </TabList>
-        </div>
-
-        {/* Search and Add button row */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="relative w-1/3">
-            <Input 
-              contentBefore={<Search24Regular />}
-              placeholder="Search this table"
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              className="w-full"
-            />
+            </button>
           </div>
-          <Button appearance="primary" icon={<Add24Regular />}>
-            Add Company
-          </Button>
         </div>
-
-        {/* Table */}
-        <Table className="w-full">
-          <TableHeader>
-            <TableRow>
-              <TableHeaderCell>#</TableHeaderCell>
-              <TableHeaderCell>Company Name</TableHeaderCell>
-              <TableHeaderCell>Created On</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
-              <TableHeaderCell></TableHeaderCell>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {companies
-              .filter((company) => 
-                company.name.toLowerCase().includes(searchText.toLowerCase())
-              )
-              .map((company) => (
-                <TableRow key={company.id}>
-                  <TableCell>{company.id}</TableCell>
-                  <TableCell>{company.name}</TableCell>
-                  <TableCell>{company.createdOn}</TableCell>
-                  <TableCell>{company.status}</TableCell>
-                  <TableCell>
+        <div className="container mx-auto max-w-screen-lg min-w-[600px]">
+          {/* Table search and add button */}
+          <div className="flex justify-between items-center mb-4">
+            <div className="relative">
+              <Search24Regular className="mr-2" />
+              <Input 
+                placeholder="Search companies..." 
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="w-64"
+              />
+            </div>
+            <Button 
+              appearance="primary" 
+              style={{
+                backgroundColor: "#158F8F", // Custom teal color
+                color: "white",
+                borderRadius: "9999px", // Fully rounded
+                padding: "8px 16px",
+                fontWeight: 500, // Medium font
+              }}
+            >
+              Add Company
+            </Button>
+          </div>
+          {/* Table */}
+          <Table className="w-full border border-gray-200">
+            <TableHeader>
+              <TableRow className="bg-gray-50">
+                <TableHeaderCell 
+                  className=" cursor-pointer w-1/12"
+                  onClick={() => handleSort("id")}
+                >
+                  # {getSortIcon("id")}
+                </TableHeaderCell>
+                <TableHeaderCell 
+                  className=" cursor-pointer w-6/12"
+                  onClick={() => handleSort("name")}
+                >
+                  Company Name {getSortIcon("name")}
+                </TableHeaderCell>
+                <TableHeaderCell 
+                  className=" cursor-pointer w-3/12"
+                  onClick={() => handleSort("createdOn")}
+                >
+                  Created On {getSortIcon("createdOn")}
+                </TableHeaderCell>
+                <TableHeaderCell 
+                  className=" cursor-pointer w-1/12"
+                  onClick={() => handleSort("status")}
+                >
+                  Status {getSortIcon("status")}
+                </TableHeaderCell>
+                <TableHeaderCell className=""></TableHeaderCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {getSortedData().map((company) => (
+                <TableRow key={company.id} className="hover:bg-gray-50">
+                  <TableCell className="w-1/12">{company.id}</TableCell>
+                  <TableCell className="w-6/12">{company.name}</TableCell>
+                  <TableCell className="w-3/12">{company.createdOn}</TableCell>
+                  <TableCell className="w-1/12">{company.status}</TableCell>
+                  <TableCell className="text-right w-1/12">
                     <Button icon={<Edit24Regular />} appearance="transparent" />
                   </TableCell>
                 </TableRow>
-              ))
-            }
-          </TableBody>
-        </Table>
-      </div>
-      
-      {/* Footer with second sidebar if needed */}
-      <div className="border-t border-gray-200 p-2 bg-[#f3f2f1] flex">
-        <div className="font-bold px-4">Manage Companies</div>
+              ))}
+              {getSortedData().length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-4 ">
+                    No companies found matching your search.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
