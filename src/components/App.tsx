@@ -55,10 +55,9 @@ export default function App() {
         style={{ background: tokens.colorNeutralBackground3 }}
       >
         <div className="flex h-screen w-full overflow-hidden">
-          <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
-          
-          <div className={`flex-1 transition-all duration-300 overflow-auto`}>
-            <Router>
+          <Router>
+            <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
+            <div className={`flex-1 transition-all duration-300 overflow-auto`}>
               {loading ? (
                 <div className="flex items-center justify-center min-h-screen">
                   <Spinner className="text-brand-primary" size="large" label="Authenticating..." />
@@ -70,8 +69,8 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/manage-companies" />} />
                 </Routes>
               )}
-            </Router>
-          </div>
+            </div>
+          </Router>
         </div>
       </FluentProvider>
     </TeamsFxContext.Provider>
