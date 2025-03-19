@@ -2,6 +2,7 @@ import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, Tabl
 import { Edit24Regular } from "@fluentui/react-icons";
 import { useState } from "react";
 import TableHelper from "./TableHelper";
+import AddSuperUserModal from "./AddSuperUserModal";
 
 
 
@@ -20,12 +21,23 @@ interface CompaniesSuperUsersTableProps {
 
 const CompaniesSuperUsersTable: React.FC<CompaniesSuperUsersTableProps> = ({ super_users }) => {
   const [searchText, setSearchText] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null);
 
-  const handleAddUser = () => {
-    // Logic to add a user
-    console.log("Add user clicked");
+  const handleAddSuperUser = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleSaveSuperUser = (userData: {
+    name: string;
+    surname: string;
+    email: string;
+    company: string;
+    status: string;
+  }) => {
+    // Handle saving the new super user
+    console.log("New Super User:", userData);
   };
 
   // Filter super users based on search text across all fields
@@ -68,45 +80,57 @@ const CompaniesSuperUsersTable: React.FC<CompaniesSuperUsersTableProps> = ({ sup
 
   return (
     <div>
-        <TableHelper searchText={searchText} setSearchText={setSearchText} onAddUser={handleAddUser} />
-        <Table className="w-full border border-gray-200">
+      <TableHelper 
+        searchText={searchText} 
+        setSearchText={setSearchText} 
+        onAddUser={handleAddSuperUser}
+        buttonText="Add Super User"
+      />
+      
+      <Table className="w-full border border-gray-200">
         <TableHeader>
-            <TableRow className="bg-gray-50">
+          <TableRow className="bg-gray-50">
             <TableHeaderCell>#</TableHeaderCell>
             <TableHeaderCell onClick={() => handleSort("name")} className="cursor-pointer">
-                Name {getSortIcon("name")}
+              Name {getSortIcon("name")}
             </TableHeaderCell>
             <TableHeaderCell onClick={() => handleSort("surname")} className="cursor-pointer">
-                Surname {getSortIcon("surname")}
+              Surname {getSortIcon("surname")}
             </TableHeaderCell>
             <TableHeaderCell onClick={() => handleSort("email")} className="cursor-pointer">
-                Email {getSortIcon("email")}
+              Email {getSortIcon("email")}
             </TableHeaderCell>
             <TableHeaderCell onClick={() => handleSort("company")} className="cursor-pointer">
-                Company {getSortIcon("company")}
+              Company {getSortIcon("company")}
             </TableHeaderCell>
             <TableHeaderCell onClick={() => handleSort("status")} className="cursor-pointer">
-                Status {getSortIcon("status")}
+              Status {getSortIcon("status")}
             </TableHeaderCell>
             <TableHeaderCell></TableHeaderCell>
-            </TableRow>
+          </TableRow>
         </TableHeader>
         <TableBody>
-            {sortedSuperUsers.map((superuser) => (
+          {sortedSuperUsers.map((superuser) => (
             <TableRow key={superuser.id} className="hover:bg-gray-50">
-                <TableCell>{superuser.id}</TableCell>
-                <TableCell>{superuser.name}</TableCell>
-                <TableCell>{superuser.surname}</TableCell>
-                <TableCell>{superuser.email}</TableCell>
-                <TableCell>{superuser.company}</TableCell>
-                <TableCell>{superuser.status}</TableCell>
-                <TableCell className="text-right">
+              <TableCell>{superuser.id}</TableCell>
+              <TableCell>{superuser.name}</TableCell>
+              <TableCell>{superuser.surname}</TableCell>
+              <TableCell>{superuser.email}</TableCell>
+              <TableCell>{superuser.company}</TableCell>
+              <TableCell>{superuser.status}</TableCell>
+              <TableCell className="text-right">
                 <Button icon={<Edit24Regular />} appearance="transparent" />
-                </TableCell>
+              </TableCell>
             </TableRow>
-            ))}
+          ))}
         </TableBody>
-        </Table>
+      </Table>
+
+      <AddSuperUserModal
+        isOpen={isModalOpen}
+        onDismiss={() => setIsModalOpen(false)}
+        onSave={handleSaveSuperUser}
+      />
     </div>
   );
 };

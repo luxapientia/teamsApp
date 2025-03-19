@@ -5,16 +5,17 @@ interface TableHelperProps {
   searchText: string;
   setSearchText: (text: string) => void;
   onAddCompany?: () => void;
-  onAddUser?:() => void;
+  onAddUser?: () => void;
+  buttonText?: string;
 }
 
-const TableHelper: React.FC<TableHelperProps> = ({ searchText, setSearchText, onAddCompany, onAddUser }) => {
+const TableHelper: React.FC<TableHelperProps> = ({ searchText, setSearchText, onAddCompany, onAddUser, buttonText }) => {
   return (
     <div className="flex justify-between items-center mb-4">
       <div className="relative">
         <Search24Regular className="mr-2" />
         <Input
-          placeholder={onAddCompany !== undefined?"Search companies...":"Search super users..."}
+          placeholder={onAddCompany !== undefined ? "Search companies..." : "Search super users..."}
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           className="w-64"
@@ -29,9 +30,9 @@ const TableHelper: React.FC<TableHelperProps> = ({ searchText, setSearchText, on
           padding: "8px 16px",
           fontWeight: 500, // Medium font
         }}
-        onClick={onAddCompany !== undefined?onAddCompany:onAddUser}
+        onClick={onAddCompany !== undefined ? onAddCompany : onAddUser}
       >
-        {onAddCompany !== undefined?"Add Company":"Add Super User"}
+        {buttonText || (onAddCompany !== undefined ? "Add Company" : "Add Super User")}
       </Button>
     </div>
   );

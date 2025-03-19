@@ -10,7 +10,7 @@ import {
 import { Edit24Regular } from "@fluentui/react-icons";
 import { useState } from "react";
 import TableHelper from "./TableHelper";
-
+import AddCompanyModal from "./AddCompanyModal";
 
 interface Company {
   id: number;
@@ -27,10 +27,15 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({ companies }) => {
     const [searchText, setSearchText] = useState("");
     const [sortColumn, setSortColumn] = useState<string | null>(null);
     const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleAddCompany = () => {
-      // Logic to add a company
-      console.log("Add Company clicked");
+      setIsModalOpen(true);
+    };
+
+    const handleSaveCompany = (companyName: string, status: string) => {
+      // Logic to save the new company
+      console.log("New Company:", { name: companyName, status });
     };
 
     // Filter companies based on search text across all fields
@@ -72,6 +77,11 @@ const CompaniesTable: React.FC<CompaniesTableProps> = ({ companies }) => {
   return (
     <div>
         <TableHelper searchText={searchText} setSearchText={setSearchText} onAddCompany={handleAddCompany} />
+        <AddCompanyModal
+          isOpen={isModalOpen}
+          onDismiss={() => setIsModalOpen(false)}
+          onSave={handleSaveCompany}
+        />
         <Table className="w-full border border-gray-200">
         <TableHeader>
             <TableRow className="bg-gray-50">
