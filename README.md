@@ -8,7 +8,7 @@ The app is configured with the following authentication details:
 - **Client ID**: 38681428-5b78-4e82-97ff-e168419e7611
 - **Client Secret**: Fxv8Q~xvOukzU2l5BX4kTH8OtvZH0FUznlUo1di3
 - **Tenant ID**: 987eaa8d-6b2d-4a86-9b2e-8af581ec8056
-- **Teams App ID**: af138b87-5e67-40bd-ad03-575faf285d97
+- **Teams App ID**: Generated during provisioning
 
 ## Features
 

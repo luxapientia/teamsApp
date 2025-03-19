@@ -87,12 +87,6 @@
             "permissionIds": [
                 "${{AAD_APP_ACCESS_AS_USER_PERMISSION_ID}}"
             ]
-        },
-        {
-            "appId": "af138b87-5e67-40bd-ad03-575faf285d97",
-            "permissionIds": [
-                "${{AAD_APP_ACCESS_AS_USER_PERMISSION_ID}}"
-            ]
         }
     ],
     "identifierUris": [
