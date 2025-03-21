@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-white text-gray-900;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+  }
+
+  h1 {
+    @apply text-2xl;
+  }
+
+  h2 {
+    @apply text-xl;
+  }
+
+  h3 {
+    @apply text-lg;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded font-medium transition-colors;
+  }
+  
+  .btn-primary {
+    @apply bg-ms-blue text-white hover:bg-ms-blue-dark;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+  }
+
+  .chip {
+    @apply px-2 py-1 rounded-full text-xs font-medium inline-flex items-center;
+  }
+
+  .chip-success {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .chip-error {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .chip-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-ms-blue focus:border-transparent;
+  }
+
+  .card {
+    @apply bg-white rounded-md shadow-ms p-4;
+  }
+} 
