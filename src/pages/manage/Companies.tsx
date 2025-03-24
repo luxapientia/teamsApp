@@ -3,12 +3,13 @@ import { SearchRegular, AddRegular } from '@fluentui/react-icons';
 import { Table, type Column } from '../../components/Table';
 import { StatusBadge } from '../../components/StatusBadge';
 import { createSearchFilter } from '../../utils/search';
+import { formatDate } from '../../utils/date';
 import { Company } from '../../types';
 import { mockCompanies } from '../../mock/data';
 import { CompanyModal } from '../../components/Modal/AddCompanyModal';
 import { DeleteModal } from '../../components/Modal/DeleteModal';
 
-const SEARCH_FIELDS: (keyof Company)[] = ['name', 'description', 'status', 'id'];
+const SEARCH_FIELDS: (keyof Company)[] = ['name', 'status', 'id'];
 
 const Companies: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -19,13 +20,20 @@ const Companies: React.FC = () => {
   const [selectedCompany, setSelectedCompany] = useState<Company | undefined>();
 
   const columns: Column<Company>[] = [
-    { key: 'name', header: 'Company Name', sortable: true },
-    { key: 'description', header: 'Description', sortable: true },
+    { key: 'name', header: 'Name', sortable: true, width: 'w-[60%]' },
+    { 
+      key: 'createdOn', 
+      header: 'Created On', 
+      sortable: true, 
+      width: 'w-[20%]',
+      render: (company) => company.createdOn.split('T')[0],
+    },
     {
       key: 'status',
       header: 'Status',
       sortable: true,
-      render: (company) => <StatusBadge status={company.status} />,
+      width: 'w-[20%]',
+      render: (company: Company) => <StatusBadge status={company.status} />,
     },
   ];
 
@@ -43,6 +51,8 @@ const Companies: React.FC = () => {
   const handleConfirmDelete = () => {
     if (selectedCompany) {
       setCompanies(companies.filter(c => c.id !== selectedCompany.id));
+      setIsDeleteModalOpen(false);
+      setSelectedCompany(undefined);
     }
   };
 
@@ -51,15 +61,16 @@ const Companies: React.FC = () => {
       const newCompany: Company = {
         ...companyData,
         id: (companies.length + 1).toString(),
+        createdOn: formatDate(new Date()),
       };
       setCompanies([...companies, newCompany]);
     } else if (selectedCompany) {
       setCompanies(companies.map(company => 
-        company.id === selectedCompany.id 
-          ? { ...companyData, id: company.id }
-          : company
+        company.id === selectedCompany.id ? { ...companyData, id: company.id } : company
       ));
     }
+    setIsModalOpen(false);
+    setSelectedCompany(undefined);
   };
 
   const handleAdd = () => {

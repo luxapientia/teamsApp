@@ -1,110 +1,178 @@
-import React, { useState } from 'react';
-import { SearchRegular, AddRegular } from '@fluentui/react-icons';
+import React, { useState, useEffect } from 'react';
 import { Table, type Column } from '../../components/Table';
 import { StatusBadge } from '../../components/StatusBadge';
-import { License } from '../../types';
-import { mockLicenses } from '../../mock/data';
-import { LicenseModal } from '../../components/Modal/AddLicenseModal';
-import { createSearchFilter } from '../../utils/search';
+import { startDailyLicenseCheck } from '../../utils/licenseManager';
+import { License, Company } from '../../types';
+import { mockCompanies, mockLicenses } from '../../mock/data';
+import { EditLicenseModal } from '../../components/Modal/EditLicenseModal';
+import { DeleteModal } from '../../components/Modal/DeleteModal';
+import { useTableData } from '../../hooks/useTableData';
+import { useModal } from '../../hooks/useModal';
+import { TableHeader } from '../../components/TableHeader';
 
-const SEARCH_FIELDS: (keyof License)[] = ['company', 'type', 'status'];
+const SEARCH_FIELDS: (keyof License)[] = ['companyId', 'licenseKey', 'status'];
 
 const CompanyLicenses: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [licenses, setLicenses] = useState<License[]>(mockLicenses);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [selectedLicense, setSelectedLicense] = useState<License | undefined>();
+  const { 
+    data: licenses, 
+    filteredData: filteredLicenses,
+    searchQuery,
+    setSearchQuery,
+    handleUpdate: updateLicense,
+    handleBulkUpdate: updateLicenses
+  } = useTableData<License>({ 
+    initialData: mockLicenses,
+    searchFields: SEARCH_FIELDS
+  });
 
-  const columns: Column<License>[] = [
-    { key: 'company', header: 'Company', sortable: true },
-    { key: 'type', header: 'Type', sortable: true },
-    { key: 'startDate', header: 'Start Date', sortable: true },
-    { key: 'endDate', header: 'End Date', sortable: true },
-    {
-      key: 'status',
-      header: 'Status',
-      sortable: true,
-      render: (license) => <StatusBadge status={license.status} />,
-    },
-  ];
+  const { data: companies } = useTableData<Company>({ 
+    initialData: mockCompanies,
+    searchFields: ['name', 'status']
+  });
 
-  const handleEdit = (license: License) => {
-    setSelectedLicense(license);
-    setModalMode('edit');
-    setIsModalOpen(true);
+  const { isOpen, selectedItem, openEditModal, closeModal } = useModal<License>();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<Company | undefined>();
+
+  useEffect(() => {
+    const cleanup = startDailyLicenseCheck(licenses, updateLicenses);
+    return cleanup;
+  }, [licenses, updateLicenses]);
+
+  const generateLicenseKey = (company: Company) => {
+    const prefix = company.name.substring(0, 3).toUpperCase();
+    const year = new Date().getFullYear();
+    const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return `${prefix}-${year}-${randomNum}`;
   };
 
-  const handleDelete = (license: License) => {
-    if (window.confirm('Are you sure you want to delete this license?')) {
-      setLicenses(licenses.filter((l) => l.id !== license.id));
+  const handleEditLicense = (license: License) => {
+    const company = companies.find(c => c.id === license.companyId);
+    if (company) {
+      setSelectedCompany(company);
+      openEditModal(license);
     }
   };
 
   const handleSubmit = (licenseData: Omit<License, 'id'>) => {
-    if (modalMode === 'add') {
-      const newLicense: License = {
-        ...licenseData,
-        id: `license-${licenses.length + 1}`,
-      };
-      setLicenses([...licenses, newLicense]);
-    } else if (selectedLicense) {
-      setLicenses(
-        licenses.map((license) =>
-          license.id === selectedLicense.id
-            ? { ...licenseData, id: license.id }
-            : license
-        )
-      );
+    if (selectedItem) {
+      updateLicense({ ...licenseData, id: selectedItem.id }, 'id');
+    }
+    closeModal();
+    setSelectedCompany(undefined);
+  };
+
+  const columns: Column<License>[] = [
+    {
+      key: 'companyName',
+      header: 'Company',
+      sortable: true,
+      width: 'w-[30%]',
+      sortValue: (license: License) => {
+        const company = companies.find(c => c.id === license.companyId);
+        return company?.name.toLowerCase() || 'Unknown Company';
+      },
+      render: (license: License) => {
+        const company = companies.find(c => c.id === license.companyId);
+        return company?.name || 'Unknown Company';
+      }
+    },
+    {
+      key: 'licenseKey',
+      header: 'License Key',
+      sortable: true,
+      width: 'w-[30%]',
+      render: (license: License) => license.licenseKey || '-'
+    },
+    {
+      key: 'startDate',
+      header: 'Start Date',
+      sortable: true,
+      width: 'w-[15%]',
+      render: (license: License) => new Date(license.startDate).toLocaleDateString(),
+      sortValue: (license: License) => new Date(license.startDate).getTime()
+    },
+    {
+      key: 'endDate',
+      header: 'End Date',
+      sortable: true,
+      width: 'w-[15%]',
+      render: (license: License) => new Date(license.endDate).toLocaleDateString(),
+      sortValue: (license: License) => new Date(license.endDate).getTime()
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      width: 'w-[10%]',
+      render: (license: License) => <StatusBadge status={license.status} />,
+      sortValue: (license: License) => {
+        switch (license.status) {
+          case 'active': return 'a';
+          case 'pending': return 'b';
+          case 'expired': return 'c';
+          default: return 'd';
+        }
+      }
+    }
+  ];
+
+  const handleDelete = (license: License) => {
+    const company = companies.find(c => c.id === license.companyId);
+    if (company) {
+      setSelectedCompany(company);
+      setIsDeleteModalOpen(true);
     }
   };
 
-  const handleAdd = () => {
-    setSelectedLicense(undefined);
-    setModalMode('add');
-    setIsModalOpen(true);
+  const handleConfirmDelete = () => {
+    if (selectedCompany) {
+      const updatedLicenses = licenses.filter(l => l.companyId !== selectedCompany.id);
+      updateLicenses(updatedLicenses);
+      setIsDeleteModalOpen(false);
+      setSelectedCompany(undefined);
+    }
   };
-
-  const filteredLicenses = licenses.filter(createSearchFilter(searchQuery, SEARCH_FIELDS));
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow">
-        <div className="relative w-64">
-          <SearchRegular className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search licenses..."
-            className="pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <button
-          onClick={handleAdd}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          <AddRegular className="mr-2" />
-          Add License
-        </button>
-      </div>
+      <TableHeader
+        title="Licenses"
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
 
       <Table 
         columns={columns} 
         data={filteredLicenses} 
-        onEdit={handleEdit}
+        onEdit={handleEditLicense}
         onDelete={handleDelete}
       />
 
-      <LicenseModal
-        isOpen={isModalOpen}
+      {isOpen && selectedItem && selectedCompany && (
+        <EditLicenseModal
+          isOpen={isOpen}
+          onClose={() => {
+            closeModal();
+            setSelectedCompany(undefined);
+          }}
+          onSubmit={handleSubmit}
+          license={selectedItem}
+          companies={companies}
+          selectedCompany={selectedCompany}
+          generateLicenseKey={generateLicenseKey}
+        />
+      )}
+
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
         onClose={() => {
-          setIsModalOpen(false);
-          setSelectedLicense(undefined);
+          setIsDeleteModalOpen(false);
+          setSelectedCompany(undefined);
         }}
-        onSubmit={handleSubmit}
-        license={selectedLicense}
-        mode={modalMode}
+        onConfirm={handleConfirmDelete}
+        title="Delete Company License"
+        itemName={selectedCompany?.name || ''}
       />
     </div>
   );

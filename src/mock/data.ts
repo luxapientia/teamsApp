@@ -1,40 +1,76 @@
-import { Company, SuperUser, License } from '../types';
+import { Company, SuperUser, License, Status, LicenseStatus, LicenseType } from '../types';
 
 export const mockCompanies: Company[] = [
-  { id: '1', name: 'Microsoft', description: 'Technology company', status: 'active' },
-  { id: '2', name: 'Contoso Ltd', description: 'Sample company', status: 'active' },
-  { id: '3', name: 'Fabrikam Inc', description: 'Manufacturing company', status: 'inactive' },
+  {
+    id: '1',
+    name: 'Acme Corporation',
+    status: 'active',
+    createdOn: '2024-01-01',
+  },
+  {
+    id: '2',
+    name: 'TechStart Inc',
+    status: 'active',
+    createdOn: '2024-02-15',
+  },
+  {
+    id: '3',
+    name: 'Global Solutions Ltd',
+    status: 'inactive',
+    createdOn: '2024-03-01',
+  },
 ];
 
 export const mockSuperUsers: SuperUser[] = [
-  { id: '1', name: 'John Doe', email: 'john@microsoft.com', company: 'Microsoft', status: 'active' },
-  { id: '2', name: 'Jane Smith', email: 'jane@contoso.com', company: 'Contoso Ltd', status: 'active' },
-  { id: '3', name: 'Bob Wilson', email: 'bob@fabrikam.com', company: 'Fabrikam Inc', status: 'inactive' },
+  {
+    id: '1',
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@acme.com',
+    companyId: '1',
+    status: 'active',
+  },
+  {
+    id: '2',
+    firstName: 'Jane',
+    lastName: 'Smith',
+    email: 'jane.smith@techstart.com',
+    companyId: '2',
+    status: 'active',
+  },
+  {
+    id: '3',
+    firstName: 'Mike',
+    lastName: 'Johnson',
+    email: 'mike.johnson@globalsolutions.com',
+    companyId: '3',
+    status: 'inactive',
+  },
 ];
 
 export const mockLicenses: License[] = [
-  { 
-    id: '1', 
-    company: 'Microsoft', 
-    type: 'Enterprise', 
-    startDate: '2024-01-01', 
-    endDate: '2024-12-31', 
-    status: 'active' 
+  {
+    id: '1',
+    companyId: '1',
+    licenseKey: 'ACME-2024-001',
+    startDate: '2024-01-01',
+    endDate: '2025-01-01',
+    status: 'active',
   },
-  { 
-    id: '2', 
-    company: 'Contoso Ltd', 
-    type: 'Professional', 
-    startDate: '2024-03-01', 
-    endDate: '2025-02-28', 
-    status: 'pending' 
+  {
+    id: '2',
+    companyId: '2',
+    licenseKey: 'TECH-2024-002',
+    startDate: '2024-02-15',
+    endDate: '2025-02-15',
+    status: 'active',
   },
-  { 
-    id: '3', 
-    company: 'Fabrikam Inc', 
-    type: 'Basic', 
-    startDate: '2023-01-01', 
-    endDate: '2023-12-31', 
-    status: 'expired' 
+  {
+    id: '3',
+    companyId: '3',
+    licenseKey: 'GLOBAL-2024-003',
+    startDate: '2024-03-01',
+    endDate: '2025-03-01',
+    status: 'expired',
   },
 ]; 

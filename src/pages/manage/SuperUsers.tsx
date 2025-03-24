@@ -3,73 +3,100 @@ import { SearchRegular, AddRegular } from '@fluentui/react-icons';
 import { Table, type Column } from '../../components/Table';
 import { StatusBadge } from '../../components/StatusBadge';
 import { createSearchFilter } from '../../utils/search';
-import { SuperUser } from '../../types';
-import { mockSuperUsers } from '../../mock/data';
+import { SuperUser, Company } from '../../types';
+import { mockSuperUsers, mockCompanies } from '../../mock/data';
 import { SuperUserModal } from '../../components/Modal/AddSuperUserModal';
 import { DeleteModal } from '../../components/Modal/DeleteModal';
 
-const SEARCH_FIELDS: (keyof SuperUser)[] = ['name', 'email', 'company', 'status', 'id'];
+const SEARCH_FIELDS: (keyof SuperUser)[] = ['firstName', 'lastName', 'email', 'status', 'id'];
 
 const SuperUsers: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [users, setUsers] = useState<SuperUser[]>(mockSuperUsers);
+  const [superUsers, setSuperUsers] = useState<SuperUser[]>(mockSuperUsers);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [selectedUser, setSelectedUser] = useState<SuperUser | undefined>();
+  const [selectedSuperUser, setSelectedSuperUser] = useState<SuperUser | undefined>();
 
   const columns: Column<SuperUser>[] = [
-    { key: 'name', header: 'Name', sortable: true },
-    { key: 'email', header: 'Email', sortable: true },
-    { key: 'company', header: 'Company', sortable: true },
+    {
+      key: 'firstName',
+      header: 'Name',
+      sortable: true,
+      width: 'w-[25%]',
+      render: (superUser) => `${superUser.firstName} ${superUser.lastName}`,
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      sortable: true,
+      width: 'w-[25%]',
+    },
+    {
+      key: 'companyId',
+      header: 'Company',
+      sortable: true,
+      width: 'w-[25%]',
+      render: (superUser) => {
+        const company = mockCompanies.find(c => c.id === superUser.companyId);
+        return company?.name || '-';
+      },
+    },
     {
       key: 'status',
       header: 'Status',
       sortable: true,
-      render: (user) => <StatusBadge status={user.status} />,
+      width: 'w-[15%]',
+      render: (superUser) => <StatusBadge status={superUser.status} />,
     },
   ];
 
-  const handleEdit = (user: SuperUser) => {
-    setSelectedUser(user);
+  const handleAdd = () => {
+    setModalMode('add');
+    setSelectedSuperUser(undefined);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (superUser: SuperUser) => {
+    setSelectedSuperUser(superUser);
     setModalMode('edit');
     setIsModalOpen(true);
   };
 
-  const handleDelete = (user: SuperUser) => {
-    setSelectedUser(user);
+  const handleDelete = (superUser: SuperUser) => {
+    setSelectedSuperUser(superUser);
     setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = () => {
-    if (selectedUser) {
-      setUsers(users.filter(u => u.id !== selectedUser.id));
+    if (selectedSuperUser) {
+      setSuperUsers(superUsers.filter(user => user.id !== selectedSuperUser.id));
+      setIsDeleteModalOpen(false);
+      setSelectedSuperUser(undefined);
     }
   };
 
-  const handleSubmit = (userData: Omit<SuperUser, 'id'>) => {
-    if (modalMode === 'add') {
-      const newUser: SuperUser = {
-        ...userData,
-        id: (users.length + 1).toString(),
-      };
-      setUsers([...users, newUser]);
-    } else if (selectedUser) {
-      setUsers(users.map(user => 
-        user.id === selectedUser.id 
-          ? { ...userData, id: user.id }
+  const handleSubmit = (superUserData: Omit<SuperUser, 'id'>) => {
+    if (selectedSuperUser) {
+      // Update existing super user
+      setSuperUsers(superUsers.map(user => 
+        user.id === selectedSuperUser.id 
+          ? { ...superUserData, id: user.id } 
           : user
       ));
+    } else {
+      // Add new super user
+      const newSuperUser: SuperUser = {
+        ...superUserData,
+        id: (superUsers.length + 1).toString(),
+      };
+      setSuperUsers([...superUsers, newSuperUser]);
     }
+    setIsModalOpen(false);
+    setSelectedSuperUser(undefined);
   };
 
-  const handleAdd = () => {
-    setSelectedUser(undefined);
-    setModalMode('add');
-    setIsModalOpen(true);
-  };
-
-  const filteredUsers = users.filter(createSearchFilter(searchQuery, SEARCH_FIELDS));
+  const filteredSuperUsers = superUsers.filter(createSearchFilter(searchQuery, SEARCH_FIELDS));
 
   return (
     <div className="space-y-4">
@@ -95,7 +122,7 @@ const SuperUsers: React.FC = () => {
 
       <Table 
         columns={columns} 
-        data={filteredUsers} 
+        data={filteredSuperUsers} 
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
@@ -104,22 +131,23 @@ const SuperUsers: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          setSelectedUser(undefined);
+          setSelectedSuperUser(undefined);
         }}
         onSubmit={handleSubmit}
-        user={selectedUser}
+        user={selectedSuperUser}
         mode={modalMode}
+        companies={mockCompanies}
       />
 
       <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
           setIsDeleteModalOpen(false);
-          setSelectedUser(undefined);
+          setSelectedSuperUser(undefined);
         }}
         onConfirm={handleConfirmDelete}
         title="Delete Super User"
-        itemName={selectedUser?.name || ''}
+        itemName={selectedSuperUser ? `${selectedSuperUser.firstName} ${selectedSuperUser.lastName}` : ''}
       />
     </div>
   );

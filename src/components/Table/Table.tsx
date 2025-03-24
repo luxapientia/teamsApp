@@ -8,11 +8,13 @@ import {
 } from '@fluentui/react-icons';
 
 export interface Column<T> {
-  key: keyof T;
+  key: string;
   header: string;
   render?: (item: T) => React.ReactNode;
   sortable?: boolean;
   width?: string;
+  className?: string;
+  sortValue?: (item: T) => string | number | Date | null;
 }
 
 interface TableProps<T> {
@@ -25,14 +27,14 @@ interface TableProps<T> {
 
 export function Table<T extends Record<string, any>>({ columns, data, onEdit, onDelete, actions = true }: TableProps<T>) {
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof T | null;
+    key: string | null;
     direction: 'asc' | 'desc' | null;
   }>({
     key: null,
     direction: null,
   });
 
-  const handleSort = (key: keyof T) => {
+  const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' | null = 'asc';
     
     if (sortConfig.key === key) {
@@ -46,22 +48,45 @@ export function Table<T extends Record<string, any>>({ columns, data, onEdit, on
     setSortConfig({ key, direction });
   };
 
+  const compareValues = (a: any, b: any): number => {
+    // Handle null/undefined values - always sort them to the end
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+
+    // Handle dates
+    if (a instanceof Date && b instanceof Date) {
+      return a.getTime() - b.getTime();
+    }
+
+    // Handle numbers
+    if (typeof a === 'number' && typeof b === 'number') {
+      return a - b;
+    }
+
+    // Handle strings (case-insensitive)
+    if (typeof a === 'string' && typeof b === 'string') {
+      return a.toLowerCase().localeCompare(b.toLowerCase());
+    }
+
+    // Convert to strings for any other type
+    return String(a).toLowerCase().localeCompare(String(b).toLowerCase());
+  };
+
   const getSortedData = () => {
     if (!sortConfig.key || !sortConfig.direction) {
       return data;
     }
 
+    const column = columns.find(col => col.key === sortConfig.key);
+    if (!column) return data;
+
     return [...data].sort((a, b) => {
-      const aValue = a[sortConfig.key!];
-      const bValue = b[sortConfig.key!];
-
-      if (aValue === bValue) return 0;
-
-      if (sortConfig.direction === 'asc') {
-        return aValue < bValue ? -1 : 1;
-      } else {
-        return aValue > bValue ? -1 : 1;
-      }
+      let aValue = column.sortValue ? column.sortValue(a) : a[sortConfig.key as keyof T];
+      let bValue = column.sortValue ? column.sortValue(b) : b[sortConfig.key as keyof T];
+      
+      const result = compareValues(aValue, bValue);
+      return sortConfig.direction === 'asc' ? result : -result;
     });
   };
 

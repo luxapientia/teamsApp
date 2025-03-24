@@ -3,24 +3,29 @@ export type BaseEntity = {
 };
 
 export type Status = 'active' | 'inactive';
-export type LicenseStatus = 'active' | 'expired' | 'pending';
+export type LicenseStatus = 'active' | 'pending' | 'expired';
+export type LicenseType = 'Basic' | 'Professional' | 'Enterprise';
 
-export interface Company extends BaseEntity {
+export interface Company {
+  id: string;
   name: string;
-  description: string;
   status: Status;
+  createdOn: string;
 }
 
-export interface SuperUser extends BaseEntity {
-  name: string;
+export interface SuperUser {
+  id: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  company: string;
+  companyId: string;
   status: Status;
 }
 
-export interface License extends BaseEntity {
-  company: string;
-  type: string;
+export interface License {
+  id: string;
+  companyId: string;
+  licenseKey: string;
   startDate: string;
   endDate: string;
   status: LicenseStatus;
