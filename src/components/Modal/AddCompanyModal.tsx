@@ -9,13 +9,13 @@ import { STATUS_OPTIONS } from '../../constants/formOptions';
 interface CompanyModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (company: Omit<Company, 'id'>) => void;
+  onSubmit: (company: Omit<Company, '_id' | '__v'>) => void;
   company?: Company;
   mode: 'add' | 'edit';
 }
 
 export const CompanyModal: React.FC<CompanyModalProps> = ({ isOpen, onClose, onSubmit, company, mode }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Omit<Company, '_id' | '__v'>>({
     name: '',
     status: 'active' as Status,
     createdOn: new Date().toISOString(),
@@ -40,7 +40,6 @@ export const CompanyModal: React.FC<CompanyModalProps> = ({ isOpen, onClose, onS
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
-    onClose();
   };
 
   const handleChange = (field: keyof typeof formData) => (value: string) => {
@@ -48,25 +47,36 @@ export const CompanyModal: React.FC<CompanyModalProps> = ({ isOpen, onClose, onS
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={mode === 'add' ? 'Add New Company' : 'Edit Company'}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={mode === 'add' ? 'Add New Company' : 'Edit Company'}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormInput
-          id="name"
+          id="company-name"
           label="Company Name"
           value={formData.name}
           onChange={handleChange('name')}
           required
         />
-
         <FormSelect
-          id="status"
+          id="company-status"
           label="Status"
           value={formData.status}
           onChange={handleChange('status')}
           options={STATUS_OPTIONS}
+          required
         />
-
-        <FormButtons
+        <FormInput
+          id="company-created-on"
+          label="Created On"
+          type="date"
+          value={new Date(formData.createdOn).toISOString().split('T')[0]}
+          onChange={(value) => handleChange('createdOn')(new Date(value).toISOString())}
+          required
+        />
+        <FormButtons 
           onCancel={onClose}
           mode={mode}
           submitLabel="Company"

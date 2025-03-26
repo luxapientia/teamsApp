@@ -6,17 +6,24 @@ import { FormSelect } from '../Form/FormSelect';
 import { FormButtons } from '../Form/FormButtons';
 import { STATUS_OPTIONS } from '../../constants/formOptions';
 
-interface SuperUserModalProps {
+interface AddSuperUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (user: Omit<SuperUser, 'id'>) => void;
+  onSubmit: (superUser: Omit<SuperUser, '_id' | '__v'>) => Promise<void>;
   user?: SuperUser;
   mode: 'add' | 'edit';
-  companies: { id: string; name: string }[];
+  companies: { _id: string; name: string; }[];
 }
 
-export const SuperUserModal: React.FC<SuperUserModalProps> = ({ isOpen, onClose, onSubmit, user, mode, companies }) => {
-  const [formData, setFormData] = useState({
+export const SuperUserModal: React.FC<AddSuperUserModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  user,
+  mode,
+  companies,
+}) => {
+  const [formData, setFormData] = useState<Omit<SuperUser, '_id' | '__v'>>({
     firstName: '',
     lastName: '',
     email: '',
@@ -24,8 +31,11 @@ export const SuperUserModal: React.FC<SuperUserModalProps> = ({ isOpen, onClose,
     status: 'active' as Status,
   });
 
+  const [error, setError] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
-    if (user && mode === 'edit') {
+    if (user) {
       setFormData({
         firstName: user.firstName,
         lastName: user.lastName,
@@ -42,42 +52,60 @@ export const SuperUserModal: React.FC<SuperUserModalProps> = ({ isOpen, onClose,
         status: 'active',
       });
     }
-  }, [user, mode]);
+    setError('');
+  }, [user]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-    onClose();
+    setError('');
+    setIsSubmitting(true);
+    
+    try {
+      await onSubmit(formData);
+      onClose();
+    } catch (err: any) {
+      console.error('Error submitting form:', err);
+      if (err.response?.data?.error?.errmsg?.includes('duplicate key error')) {
+        setError('A super user with this email already exists.');
+      } else {
+        setError(err.response?.data?.message || 'Failed to save super user. Please try again.');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (field: keyof typeof formData) => (value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    setError(''); // Clear error when user makes changes
   };
 
-  const companyOptions = companies.map(company => ({
-    value: company.id,
-    label: company.name,
-  }));
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={mode === 'add' ? 'Add New Super User' : 'Edit Super User'}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={mode === 'add' ? 'Add New Super User' : 'Edit Super User'}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+            {error}
+          </div>
+        )}
         <FormInput
-          id="firstName"
+          id="first-name"
           label="First Name"
           value={formData.firstName}
           onChange={handleChange('firstName')}
           required
         />
-
         <FormInput
-          id="lastName"
+          id="last-name"
           label="Last Name"
           value={formData.lastName}
           onChange={handleChange('lastName')}
           required
         />
-
         <FormInput
           id="email"
           label="Email"
@@ -86,28 +114,30 @@ export const SuperUserModal: React.FC<SuperUserModalProps> = ({ isOpen, onClose,
           onChange={handleChange('email')}
           required
         />
-
         <FormSelect
           id="company"
           label="Company"
           value={formData.companyId}
           onChange={handleChange('companyId')}
-          options={companyOptions}
+          options={companies.map(company => ({
+            value: company._id,
+            label: company.name,
+          }))}
           required
         />
-
         <FormSelect
           id="status"
           label="Status"
           value={formData.status}
           onChange={handleChange('status')}
           options={STATUS_OPTIONS}
+          required
         />
-
-        <FormButtons
+        <FormButtons 
           onCancel={onClose}
           mode={mode}
           submitLabel="Super User"
+          isSubmitting={isSubmitting}
         />
       </form>
     </Modal>

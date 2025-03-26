@@ -1,30 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SearchRegular, AddRegular } from '@fluentui/react-icons';
 import { Table, type Column } from '../../components/Table';
 import { StatusBadge } from '../../components/StatusBadge';
 import { createSearchFilter } from '../../utils/search';
+// Company type is used for typing the companies prop in SuperUserModal
 import { SuperUser, Company } from '../../types';
-import { mockSuperUsers, mockCompanies } from '../../mock/data';
 import { SuperUserModal } from '../../components/Modal/AddSuperUserModal';
 import { DeleteModal } from '../../components/Modal/DeleteModal';
+import { superUserAPI, companyAPI } from '../../services/api';
 
-const SEARCH_FIELDS: (keyof SuperUser)[] = ['firstName', 'lastName', 'email', 'status', 'id'];
+// Extended SuperUser type to handle the populated companyId from API
+interface SuperUserWithPopulatedCompany extends Omit<SuperUser, 'companyId'> {
+  companyId: string | { _id: string; name: string } | null;
+}
+
+const SEARCH_FIELDS: (keyof SuperUser)[] = ['firstName', 'lastName', 'email', 'status', '_id'];
 
 const SuperUsers: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [superUsers, setSuperUsers] = useState<SuperUser[]>(mockSuperUsers);
+  const [superUsers, setSuperUsers] = useState<SuperUserWithPopulatedCompany[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [selectedSuperUser, setSelectedSuperUser] = useState<SuperUser | undefined>();
+  const [selectedSuperUser, setSelectedSuperUser] = useState<SuperUserWithPopulatedCompany | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const columns: Column<SuperUser>[] = [
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setError(null);
+        const [superUsersResponse, companiesResponse] = await Promise.all([
+          superUserAPI.getAll(),
+          companyAPI.getAll()
+        ]);
+        console.log('Super Users Response:', superUsersResponse.data.data);
+        setSuperUsers(superUsersResponse.data.data);
+        setCompanies(companiesResponse.data.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const columns: Column<SuperUserWithPopulatedCompany>[] = [
     {
       key: 'firstName',
-      header: 'Name',
+      header: 'First Name',
       sortable: true,
-      width: 'w-[25%]',
-      render: (superUser) => `${superUser.firstName} ${superUser.lastName}`,
+      width: 'w-[20%]',
+    },
+    {
+      key: 'lastName',
+      header: 'Last Name',
+      sortable: true,
+      width: 'w-[20%]',
     },
     {
       key: 'email',
@@ -38,15 +74,23 @@ const SuperUsers: React.FC = () => {
       sortable: true,
       width: 'w-[25%]',
       render: (superUser) => {
-        const company = mockCompanies.find(c => c.id === superUser.companyId);
-        return company?.name || '-';
+        if (!superUser.companyId) {
+          return '-';
+        }
+
+        if (typeof superUser.companyId === 'string') {
+          const company = companies.find(c => c._id === superUser.companyId);
+          return company?.name || '-';
+        } else {
+          return superUser.companyId?.name || '-';
+        }
       },
     },
     {
       key: 'status',
       header: 'Status',
       sortable: true,
-      width: 'w-[15%]',
+      width: 'w-[10%]',
       render: (superUser) => <StatusBadge status={superUser.status} />,
     },
   ];
@@ -57,46 +101,75 @@ const SuperUsers: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (superUser: SuperUser) => {
+  const handleEdit = (superUser: SuperUserWithPopulatedCompany) => {
     setSelectedSuperUser(superUser);
     setModalMode('edit');
     setIsModalOpen(true);
   };
 
-  const handleDelete = (superUser: SuperUser) => {
+  const handleDelete = (superUser: SuperUserWithPopulatedCompany) => {
     setSelectedSuperUser(superUser);
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedSuperUser) {
-      setSuperUsers(superUsers.filter(user => user.id !== selectedSuperUser.id));
-      setIsDeleteModalOpen(false);
+      try {
+        setError(null);
+        await superUserAPI.delete(selectedSuperUser._id);
+        setSuperUsers(superUsers.filter(user => user._id !== selectedSuperUser._id));
+        setIsDeleteModalOpen(false);
+        setSelectedSuperUser(undefined);
+      } catch (error) {
+        console.error('Error deleting super user:', error);
+        setError('Failed to delete super user. Please try again later.');
+      }
+    }
+  };
+
+  const handleSubmit = async (superUserData: Omit<SuperUser, '_id' | '__v'>) => {
+    try {
+      setError(null);
+      if (selectedSuperUser) {
+        // Update existing super user
+        const response = await superUserAPI.update(selectedSuperUser._id, superUserData);
+        setSuperUsers(superUsers.map(user => 
+          user._id === selectedSuperUser._id ? response.data.data : user
+        ));
+      } else {
+        // Add new super user
+        const response = await superUserAPI.create(superUserData);
+        setSuperUsers([...superUsers, response.data.data]);
+      }
+      setIsModalOpen(false);
       setSelectedSuperUser(undefined);
+    } catch (error) {
+      console.error('Error saving super user:', error);
+      throw error; // Re-throw the error to be handled by the modal
     }
   };
 
-  const handleSubmit = (superUserData: Omit<SuperUser, 'id'>) => {
-    if (selectedSuperUser) {
-      // Update existing super user
-      setSuperUsers(superUsers.map(user => 
-        user.id === selectedSuperUser.id 
-          ? { ...superUserData, id: user.id } 
-          : user
-      ));
-    } else {
-      // Add new super user
-      const newSuperUser: SuperUser = {
-        ...superUserData,
-        id: (superUsers.length + 1).toString(),
-      };
-      setSuperUsers([...superUsers, newSuperUser]);
-    }
-    setIsModalOpen(false);
-    setSelectedSuperUser(undefined);
-  };
+  const filteredSuperUsers = superUsers.filter(createSearchFilter(searchQuery, SEARCH_FIELDS) as any);
 
-  const filteredSuperUsers = superUsers.filter(createSearchFilter(searchQuery, SEARCH_FIELDS));
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 p-4">{error}</div>;
+  }
+
+  // Convert populated companyId to string for the modal
+  const prepareSuperUserForEdit = (superUser: SuperUserWithPopulatedCompany | undefined): SuperUser | undefined => {
+    if (!superUser) return undefined;
+
+    return {
+      ...superUser,
+      companyId: typeof superUser.companyId === 'string'
+        ? superUser.companyId
+        : superUser.companyId?._id || ''
+    } as SuperUser;
+  };
 
   return (
     <div className="space-y-4">
@@ -134,9 +207,9 @@ const SuperUsers: React.FC = () => {
           setSelectedSuperUser(undefined);
         }}
         onSubmit={handleSubmit}
-        user={selectedSuperUser}
+        user={prepareSuperUserForEdit(selectedSuperUser)}
         mode={modalMode}
-        companies={mockCompanies}
+        companies={companies.map(company => ({ _id: company._id, name: company.name }))}
       />
 
       <DeleteModal
@@ -147,7 +220,7 @@ const SuperUsers: React.FC = () => {
         }}
         onConfirm={handleConfirmDelete}
         title="Delete Super User"
-        itemName={selectedSuperUser ? `${selectedSuperUser.firstName} ${selectedSuperUser.lastName}` : ''}
+        itemName={`${selectedSuperUser?.firstName} ${selectedSuperUser?.lastName}`}
       />
     </div>
   );

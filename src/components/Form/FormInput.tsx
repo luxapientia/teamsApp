@@ -5,7 +5,7 @@ interface FormInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  type?: 'text' | 'email' | 'date' | 'number';
+  type?: 'text' | 'email' | 'date' | 'number' | 'datetime-local';
   required?: boolean;
   disabled?: boolean;
 }

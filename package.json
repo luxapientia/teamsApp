@@ -54,5 +54,10 @@
       "last 1 safari version"
     ]
   },
-  "homepage": "."
+  "homepage": "http://.",
+  "description": "This app demonstrates how to create a Microsoft Teams tab application with SSO (Single Sign-On) to Azure AD using React, TypeScript, and Tailwind CSS. After successful authentication, users are redirected to a \"Hello, World\" page styled with the Microsoft design language.",
+  "main": "postcss.config.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

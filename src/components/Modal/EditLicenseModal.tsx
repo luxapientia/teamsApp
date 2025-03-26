@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
+import { License, Company, LicenseStatus } from '../../types';
 import { FormInput } from '../Form/FormInput';
+import { FormSelect } from '../Form/FormSelect';
 import { FormButtons } from '../Form/FormButtons';
-import { License, LicenseStatus, Company } from '../../types';
+import { LICENSE_STATUS_OPTIONS } from '../../constants/formOptions';
 
 interface EditLicenseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (licenseData: Omit<License, 'id'>) => void;
+  onSubmit: (license: Omit<License, '_id' | '__v'>) => void;
   license?: License;
-  companies: Company[];
   selectedCompany: Company;
-  generateLicenseKey: (company: Company) => string;
+  companies: Company[];
+  generateLicenseKey: () => string;
 }
 
 export const EditLicenseModal: React.FC<EditLicenseModalProps> = ({
@@ -19,16 +21,16 @@ export const EditLicenseModal: React.FC<EditLicenseModalProps> = ({
   onClose,
   onSubmit,
   license,
-  companies,
   selectedCompany,
+  companies,
   generateLicenseKey,
 }) => {
-  const [formData, setFormData] = useState<Omit<License, 'id'>>({
-    companyId: selectedCompany.id,
+  const [formData, setFormData] = useState<Omit<License, '_id' | '__v'>>({
+    companyId: selectedCompany._id,
     licenseKey: '',
-    startDate: '',
-    endDate: '',
-    status: 'active',
+    startDate: new Date().toISOString(),
+    endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+    status: 'active' as LicenseStatus,
   });
   const [dateError, setDateError] = useState<string>('');
 
@@ -42,105 +44,92 @@ export const EditLicenseModal: React.FC<EditLicenseModalProps> = ({
         status: license.status,
       });
     } else {
-      // For new licenses, set the company ID from selectedCompany
+      // For new licenses, set default dates and company ID
       setFormData(prev => ({
         ...prev,
-        companyId: selectedCompany.id
+        companyId: selectedCompany._id,
+        licenseKey: generateLicenseKey(),
+        startDate: new Date().toISOString(),
+        endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
       }));
     }
     setDateError('');
-  }, [license, selectedCompany]);
-
-  const handleChange = (field: keyof Omit<License, 'id'>) => (value: string) => {
-    setFormData(prev => {
-      const newData = {
-        ...prev,
-        [field]: value,
-      };
-
-      // Validate dates when either date field changes
-      if (field === 'startDate' || field === 'endDate') {
-        if (newData.startDate && newData.endDate) {
-          const start = new Date(newData.startDate);
-          const end = new Date(newData.endDate);
-          if (end < start) {
-            setDateError('End date cannot be before start date');
-          } else {
-            setDateError('');
-          }
-        }
-      }
-
-      return newData;
-    });
-  };
+  }, [license, selectedCompany, generateLicenseKey]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (formData.startDate && formData.endDate) {
-      const start = new Date(formData.startDate);
-      const end = new Date(formData.endDate);
-      const today = new Date();
-      
-      if (end < start) {
-        setDateError('End date cannot be before start date');
-        return;
-      }
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
 
-      // Determine status based on end date
-      const status: LicenseStatus = end < today ? 'expired' : 'active';
+    if (endDate <= startDate) {
+      setDateError('End date must be after start date');
+      return;
+    }
 
-      // If editing an expired license or creating a new one, generate new key
-      const shouldGenerateNewKey = !license || (license && license.status === 'expired');
-      const licenseKey = shouldGenerateNewKey ? generateLicenseKey(selectedCompany) : formData.licenseKey;
+    onSubmit(formData);
+  };
 
-      onSubmit({ 
-        ...formData, 
-        status,
-        licenseKey,
-      });
+  const handleChange = (field: keyof typeof formData) => (value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'startDate' || field === 'endDate') {
+      setDateError('');
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit License">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={license ? 'Edit License' : 'Add New License'}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormInput
-          id="company"
-          label="Company"
-          value={selectedCompany.name}
-          onChange={() => {}}
-          disabled={true}
-        />
-
-        <FormInput
-          id="startDate"
-          label="Start Date"
-          type="date"
-          value={formData.startDate}
-          onChange={handleChange('startDate')}
+          id="license-key"
+          label="License Key"
+          value={formData.licenseKey}
+          onChange={handleChange('licenseKey')}
           required
         />
-
-        <div className="space-y-1">
-          <FormInput
-            id="endDate"
-            label="End Date"
-            type="date"
-            value={formData.endDate}
-            onChange={handleChange('endDate')}
-            required
-          />
-          {dateError && (
-            <p className="text-sm text-red-600">{dateError}</p>
-          )}
-        </div>
-
-        <FormButtons
+        <FormSelect
+          id="company"
+          label="Company"
+          value={formData.companyId}
+          onChange={handleChange('companyId')}
+          options={companies.map(company => ({
+            value: company._id,
+            label: company.name,
+          }))}
+          required
+        />
+        <FormInput
+          id="start-date"
+          label="Start Date"
+          type="date"
+          value={formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : ''}
+          onChange={(value) => handleChange('startDate')(new Date(value).toISOString())}
+          required
+        />
+        <FormInput
+          id="end-date"
+          label="End Date"
+          type="date"
+          value={formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : ''}
+          onChange={(value) => handleChange('endDate')(new Date(value).toISOString())}
+          required
+        />
+        {dateError && <div className="text-red-500 text-sm">{dateError}</div>}
+        <FormSelect
+          id="status"
+          label="Status"
+          value={formData.status}
+          onChange={handleChange('status')}
+          options={LICENSE_STATUS_OPTIONS}
+          required
+        />
+        <FormButtons 
           onCancel={onClose}
-          mode="edit"
-          submitLabel="Update License"
+          mode={license ? 'edit' : 'add'}
+          submitLabel="License"
         />
       </form>
     </Modal>

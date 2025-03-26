@@ -1,41 +1,71 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SearchRegular, AddRegular } from '@fluentui/react-icons';
 import { Table, type Column } from '../../components/Table';
 import { StatusBadge } from '../../components/StatusBadge';
 import { createSearchFilter } from '../../utils/search';
-import { formatDate } from '../../utils/date';
 import { Company } from '../../types';
-import { mockCompanies } from '../../mock/data';
 import { CompanyModal } from '../../components/Modal/AddCompanyModal';
 import { DeleteModal } from '../../components/Modal/DeleteModal';
+import { companyAPI } from '../../services/api';
 
-const SEARCH_FIELDS: (keyof Company)[] = ['name', 'status', 'id'];
+const SEARCH_FIELDS: (keyof Company)[] = ['name', 'status', '_id'];
 
 const Companies: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [companies, setCompanies] = useState<Company[]>(mockCompanies);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [selectedCompany, setSelectedCompany] = useState<Company | undefined>();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setError(null);
+        const response = await companyAPI.getAll();
+        setCompanies(response.data.data);
+      } catch (error) {
+        console.error('Error fetching companies:', error);
+        setError('Failed to load companies. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const columns: Column<Company>[] = [
-    { key: 'name', header: 'Name', sortable: true, width: 'w-[60%]' },
-    { 
-      key: 'createdOn', 
-      header: 'Created On', 
-      sortable: true, 
-      width: 'w-[20%]',
-      render: (company) => company.createdOn.split('T')[0],
+    {
+      key: 'name',
+      header: 'Name',
+      sortable: true,
+      width: 'w-[60%]',
+    },
+
+    {
+      key: 'createdOn',
+      header: 'Created On',
+      sortable: true,
+      width: 'w-[15%]',
+      render: (company) => new Date(company.createdOn).toLocaleDateString(),
     },
     {
       key: 'status',
       header: 'Status',
       sortable: true,
-      width: 'w-[20%]',
-      render: (company: Company) => <StatusBadge status={company.status} />,
+      width: 'w-[15%]',
+      render: (company) => <StatusBadge status={company.status} />,
     },
   ];
+
+  const handleAdd = () => {
+    setModalMode('add');
+    setSelectedCompany(undefined);
+    setIsModalOpen(true);
+  };
 
   const handleEdit = (company: Company) => {
     setSelectedCompany(company);
@@ -48,38 +78,52 @@ const Companies: React.FC = () => {
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (selectedCompany) {
-      setCompanies(companies.filter(c => c.id !== selectedCompany.id));
-      setIsDeleteModalOpen(false);
+      try {
+        setError(null);
+        await companyAPI.delete(selectedCompany._id);
+        setCompanies(companies.filter(company => company._id !== selectedCompany._id));
+        setIsDeleteModalOpen(false);
+        setSelectedCompany(undefined);
+      } catch (error) {
+        console.error('Error deleting company:', error);
+        setError('Failed to delete company. Please try again later.');
+      }
+    }
+  };
+
+  const handleSubmit = async (companyData: Omit<Company, '_id' | '__v'>) => {
+    try {
+      setError(null);
+      if (selectedCompany) {
+        // Update existing company
+        const response = await companyAPI.update(selectedCompany._id, companyData);
+        setCompanies(companies.map(company => 
+          company._id === selectedCompany._id ? response.data.data : company
+        ));
+      } else {
+        // Add new company
+        const response = await companyAPI.create(companyData);
+        setCompanies([...companies, response.data.data]);
+      }
+      setIsModalOpen(false);
       setSelectedCompany(undefined);
+    } catch (error) {
+      console.error('Error saving company:', error);
+      setError('Failed to save company. Please try again later.');
     }
-  };
-
-  const handleSubmit = (companyData: Omit<Company, 'id'>) => {
-    if (modalMode === 'add') {
-      const newCompany: Company = {
-        ...companyData,
-        id: (companies.length + 1).toString(),
-        createdOn: formatDate(new Date()),
-      };
-      setCompanies([...companies, newCompany]);
-    } else if (selectedCompany) {
-      setCompanies(companies.map(company => 
-        company.id === selectedCompany.id ? { ...companyData, id: company.id } : company
-      ));
-    }
-    setIsModalOpen(false);
-    setSelectedCompany(undefined);
-  };
-
-  const handleAdd = () => {
-    setSelectedCompany(undefined);
-    setModalMode('add');
-    setIsModalOpen(true);
   };
 
   const filteredCompanies = companies.filter(createSearchFilter(searchQuery, SEARCH_FIELDS));
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 p-4">{error}</div>;
+  }
 
   return (
     <div className="space-y-4">
