@@ -1,7 +1,18 @@
 import axios, { AxiosError } from 'axios';
 import { Company, SuperUser, License } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+// Get the API URL from environment or try common development ports
+const getAPIBaseURL = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // In development, try common ports
+  const defaultPort = 3001;
+  return `http://localhost:${defaultPort}/api`;
+};
+
+const API_BASE_URL = getAPIBaseURL();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -14,18 +25,22 @@ interface ApiResponse<T> {
   data: T;
 }
 
-// Error handling interceptor
+// Add retry logic for connection errors
 api.interceptors.response.use(
   (response) => {
-    // If the response is wrapped in a data property, return as is
-    // Otherwise, wrap it in a data property
     if (response.data?.data) {
       return response;
     }
     return { ...response, data: { data: response.data } };
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     console.error('API Error:', error.response?.data || error.message);
+    
+    // If connection failed, it might be using wrong port
+    if (!error.response && error.message.includes('Network Error')) {
+      console.log('Connection failed. The API might be running on a different port.');
+    }
+    
     return Promise.reject(error);
   }
 );

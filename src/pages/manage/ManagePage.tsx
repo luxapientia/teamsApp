@@ -1,4 +1,3 @@
-export {};
 import React, { useState } from 'react';
 import { GridRegular } from '@fluentui/react-icons';
 import Companies from './Companies';

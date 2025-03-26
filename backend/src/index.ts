@@ -51,7 +51,29 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 // Start server
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-}); 
+const PORT = parseInt(process.env.PORT || '3001', 10);
+
+const startServer = (port: number) => {
+  const server = app.listen(port)
+    .on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`Port ${port} is busy, trying ${port + 1}...`);
+        server.close();
+        startServer(port + 1);
+      } else {
+        console.error('Server error:', err);
+      }
+    })
+    .on('listening', () => {
+      const actualPort = (server.address() as any).port;
+      console.log(`Server is running on port ${actualPort}`);
+      
+      // Write the port to a file that can be read by the frontend
+      const fs = require('fs');
+      const path = require('path');
+      const envContent = `REACT_APP_API_URL=http://localhost:${actualPort}/api\n`;
+      fs.writeFileSync(path.join(__dirname, '../../.env'), envContent);
+    });
+};
+
+startServer(PORT); 

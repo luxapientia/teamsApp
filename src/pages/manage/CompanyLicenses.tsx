@@ -1,23 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { SearchRegular, AddRegular } from '@fluentui/react-icons';
+import { SearchRegular } from '@fluentui/react-icons';
 import { Table, type Column } from '../../components/Table';
 import { StatusBadge } from '../../components/StatusBadge';
-import { createSearchFilter } from '../../utils/search';
-import { License, Company } from '../../types';
+import { Company, License } from '../../types';
 import { EditLicenseModal } from '../../components/Modal/EditLicenseModal';
 import { DeleteModal } from '../../components/Modal/DeleteModal';
-import { licenseAPI, companyAPI } from '../../services/api';
+import { companyAPI, licenseAPI } from '../../services/api';
 
-const SEARCH_FIELDS: (keyof License)[] = ['licenseKey', 'status', '_id'];
+interface CompanyWithLicense extends Company {
+  license?: License;
+}
+
+const SEARCH_FIELDS = ['name', 'status', '_id', 'license.licenseKey', 'license.status'] as const;
 
 const CompanyLicenses: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [licenses, setLicenses] = useState<License[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [licenses, setLicenses] = useState<License[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedLicense, setSelectedLicense] = useState<License | undefined>();
-  const [selectedCompany, setSelectedCompany] = useState<Company | undefined>();
+  const [selectedCompany, setSelectedCompany] = useState<CompanyWithLicense | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,12 +27,39 @@ const CompanyLicenses: React.FC = () => {
     const fetchData = async () => {
       try {
         setError(null);
-        const [licensesResponse, companiesResponse] = await Promise.all([
+        const [companiesResponse, licensesResponse] = await Promise.all([
+          companyAPI.getAll(),
           licenseAPI.getAll(),
-          companyAPI.getAll()
         ]);
-        setLicenses(licensesResponse.data.data);
-        setCompanies(companiesResponse.data.data);
+        
+        console.log(companiesResponse, licensesResponse)
+        const companiesData = companiesResponse.data.data || [];
+        const licensesData = licensesResponse.data.data || [];
+        
+        // Filter out licenses for non-existent companies
+        const validLicenses = licensesData.filter(license => 
+          companiesData.some(company => company._id === license.companyId)
+        );
+        
+        // If there are orphaned licenses, clean them up
+        if (validLicenses.length !== licensesData.length) {
+          const orphanedLicenses = licensesData.filter(license => 
+            !companiesData.some(company => company._id === license.companyId)
+          );
+          
+          // Delete orphaned licenses
+          for (const license of orphanedLicenses) {
+            try {
+              await licenseAPI.delete(license._id);
+              console.log(`Deleted orphaned license for company ${license.companyId}`);
+            } catch (error) {
+              console.error(`Failed to delete orphaned license ${license._id}:`, error);
+            }
+          }
+        }
+        
+        setCompanies(companiesData);
+        setLicenses(validLicenses);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError('Failed to load data. Please try again later.');
@@ -42,73 +71,87 @@ const CompanyLicenses: React.FC = () => {
     fetchData();
   }, []);
 
-  const columns: Column<License>[] = [
+  // Combine companies with their licenses
+  const companiesWithLicenses: CompanyWithLicense[] = companies.map(company => {
+    const license = licenses.find(license => license.companyId === company._id);
+    return {
+      ...company,
+      license,
+    };
+  });
+
+  const columns: Column<CompanyWithLicense>[] = [
     {
-      key: 'licenseKey',
-      header: 'License Key',
-      sortable: true,
-      width: 'w-[25%]',
-    },
-    {
-      key: 'companyId',
+      key: 'name',
       header: 'Company',
       sortable: true,
       width: 'w-[25%]',
-      render: (license) => {
-        const company = companies.find(c => c._id === license.companyId);
-        return company?.name || '-';
-      },
     },
     {
-      key: 'startDate',
+      key: 'license.licenseKey',
+      header: 'License Key',
+      sortable: true,
+      width: 'w-[25%]',
+      render: (item) => (
+        <div className="text-sm text-gray-900">
+          {item.license?.licenseKey || 'No License'}
+        </div>
+      ),
+    },
+    {
+      key: 'license.startDate',
       header: 'Start Date',
       sortable: true,
       width: 'w-[15%]',
-      render: (license) => new Date(license.startDate).toLocaleDateString(),
+      render: (item) => (
+        <div className="text-sm text-gray-900">
+          {item.license?.startDate ? new Date(item.license.startDate).toLocaleDateString() : '-'}
+        </div>
+      ),
     },
     {
-      key: 'endDate',
+      key: 'license.endDate',
       header: 'End Date',
       sortable: true,
       width: 'w-[15%]',
-      render: (license) => new Date(license.endDate).toLocaleDateString(),
+      render: (item) => (
+        <div className="text-sm text-gray-900">
+          {item.license?.endDate ? new Date(item.license.endDate).toLocaleDateString() : '-'}
+        </div>
+      ),
     },
     {
-      key: 'status',
-      header: 'Status',
+      key: 'license.status',
+      header: 'License Status',
       sortable: true,
-      width: 'w-[10%]',
-      render: (license) => <StatusBadge status={license.status} />,
+      width: 'w-[20%]',
+      render: (item) => item.license ? <StatusBadge status={item.license.status} /> : <StatusBadge status="inactive" />,
     },
   ];
 
-  const handleAdd = () => {
-    setSelectedLicense(undefined);
+  const handleAdd = (company: Company) => {
+    setSelectedCompany(company);
     setIsModalOpen(true);
   };
 
-  const handleEdit = (license: License) => {
-    const company = companies.find(c => c._id === license.companyId);
-    if (company) {
-      setSelectedCompany(company);
-      setSelectedLicense(license);
-      setIsModalOpen(true);
-    }
+  const handleEdit = (companyWithLicense: CompanyWithLicense) => {
+    setSelectedCompany(companyWithLicense);
+    setIsModalOpen(true);
   };
 
-  const handleDelete = (license: License) => {
-    setSelectedLicense(license);
+  const handleDelete = (companyWithLicense: CompanyWithLicense) => {
+    setSelectedCompany(companyWithLicense);
     setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedLicense) {
+    if (selectedCompany?.license) {
       try {
         setError(null);
-        await licenseAPI.delete(selectedLicense._id);
-        setLicenses(licenses.filter(license => license._id !== selectedLicense._id));
+        await licenseAPI.delete(selectedCompany.license._id);
+        setLicenses(licenses.filter(license => license._id !== selectedCompany.license?._id));
         setIsDeleteModalOpen(false);
-        setSelectedLicense(undefined);
+        setSelectedCompany(undefined);
       } catch (error) {
         console.error('Error deleting license:', error);
         setError('Failed to delete license. Please try again later.');
@@ -119,27 +162,71 @@ const CompanyLicenses: React.FC = () => {
   const handleSubmit = async (licenseData: Omit<License, '_id' | '__v'>) => {
     try {
       setError(null);
-      if (selectedLicense) {
+      console.log('License Data:', licenseData);
+      console.log('Selected Company:', selectedCompany);
+      
+      if (!selectedCompany) {
+        throw new Error('No company selected');
+      }
+
+      // Check if company already has a license
+      const existingLicense = licenses.find(license => license.companyId === selectedCompany._id);
+      
+      if (existingLicense) {
         // Update existing license
-        const response = await licenseAPI.update(selectedLicense._id, licenseData);
+        console.log('Updating existing license...');
+        const response = await licenseAPI.update(existingLicense._id, licenseData);
+        console.log('Update response:', response);
+        
+        // Update the licenses state
         setLicenses(licenses.map(license => 
-          license._id === selectedLicense._id ? response.data.data : license
+          license._id === existingLicense._id ? response.data.data : license
         ));
       } else {
         // Add new license
-        const response = await licenseAPI.create(licenseData);
-        setLicenses([...licenses, response.data.data]);
+        console.log('Creating new license...');
+        const newLicenseData = {
+          ...licenseData,
+          companyId: selectedCompany._id,
+          status: licenseData.status || 'active',
+          startDate: licenseData.startDate || new Date().toISOString(),
+          endDate: licenseData.endDate || new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString(),
+        };
+        console.log('New license data:', newLicenseData);
+        const response = await licenseAPI.create(newLicenseData);
+        console.log('Create response:', response);
+        
+        // Update the licenses state with the new license
+        const newLicense = response.data.data;
+        setLicenses([...licenses, newLicense]);
       }
+      
       setIsModalOpen(false);
-      setSelectedLicense(undefined);
       setSelectedCompany(undefined);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving license:', error);
-      setError('Failed to save license. Please try again later.');
+      console.error('Error details:', error.response?.data);
+      setError(error.response?.data?.message || 'Failed to save license. Please try again later.');
     }
   };
 
-  const filteredLicenses = licenses.filter(createSearchFilter(searchQuery, SEARCH_FIELDS));
+  console.log(companiesWithLicenses, 'withLicenses');
+  const filteredCompanies = companiesWithLicenses.filter(company => {
+    if (!searchQuery) return true;
+    
+    const searchLower = searchQuery.toLowerCase();
+    return SEARCH_FIELDS.some(field => {
+      if (field.includes('.')) {
+        const [parent, child] = field.split('.');
+        const parentValue = company[parent as keyof CompanyWithLicense];
+        if (parent === 'license' && parentValue && typeof parentValue === 'object') {
+          return (parentValue as License)[child as keyof License]?.toString().toLowerCase().includes(searchLower);
+        }
+        return false;
+      }
+      return company[field as keyof CompanyWithLicense]?.toString().toLowerCase().includes(searchLower);
+    });
+  });
 
   if (isLoading) {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
@@ -162,45 +249,54 @@ const CompanyLicenses: React.FC = () => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button
-          onClick={handleAdd}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          <AddRegular className="mr-2" />
-          Add License
-        </button>
       </div>
 
       <Table 
         columns={columns} 
-        data={filteredLicenses} 
+        data={filteredCompanies}
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
 
-      <EditLicenseModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedLicense(undefined);
-          setSelectedCompany(undefined);
-        }}
-        onSubmit={handleSubmit}
-        license={selectedLicense}
-        selectedCompany={selectedCompany || companies[0]}
-        companies={companies}
-        generateLicenseKey={() => Math.random().toString(36).substring(2, 15).toUpperCase()}
-      />
+      {selectedCompany && (
+        <EditLicenseModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedCompany(undefined);
+          }}
+          onSubmit={handleSubmit}
+          license={selectedCompany.license}
+          selectedCompany={selectedCompany}
+          companies={companies}
+          generateLicenseKey={() => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            const segments = 4;
+            const segmentLength = 4;
+            const segments_arr = [];
+            
+            for (let i = 0; i < segments; i++) {
+              let segment = '';
+              for (let j = 0; j < segmentLength; j++) {
+                segment += chars.charAt(Math.floor(Math.random() * chars.length));
+              }
+              segments_arr.push(segment);
+            }
+            
+            return segments_arr.join('-');
+          }}
+        />
+      )}
 
       <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={() => {
           setIsDeleteModalOpen(false);
-          setSelectedLicense(undefined);
+          setSelectedCompany(undefined);
         }}
         onConfirm={handleConfirmDelete}
         title="Delete License"
-        itemName={selectedLicense?.licenseKey || ''}
+        itemName={`license for ${selectedCompany?.name || ''}`}
       />
     </div>
   );

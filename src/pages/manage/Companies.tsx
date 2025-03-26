@@ -6,7 +6,7 @@ import { createSearchFilter } from '../../utils/search';
 import { Company } from '../../types';
 import { CompanyModal } from '../../components/Modal/AddCompanyModal';
 import { DeleteModal } from '../../components/Modal/DeleteModal';
-import { companyAPI } from '../../services/api';
+import { companyAPI, licenseAPI } from '../../services/api';
 
 const SEARCH_FIELDS: (keyof Company)[] = ['name', 'status', '_id'];
 
@@ -104,8 +104,29 @@ const Companies: React.FC = () => {
         ));
       } else {
         // Add new company
-        const response = await companyAPI.create(companyData);
-        setCompanies([...companies, response.data.data]);
+        const companyResponse = await companyAPI.create(companyData);
+        const newCompany = companyResponse.data.data;
+        setCompanies([...companies, newCompany]);
+
+        // Create a default license for the new company
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+        
+        const licenseData = {
+          companyId: newCompany._id,
+          licenseKey: generateLicenseKey(), // You'll need to implement this function
+          startDate: new Date().toISOString(),
+          endDate: oneYearFromNow.toISOString(),
+          status: 'active' as const
+        };
+
+        try {
+          await licenseAPI.create(licenseData);
+        } catch (licenseError) {
+          console.error('Error creating default license:', licenseError);
+          // We don't want to block company creation if license creation fails
+          // but we should log it for monitoring
+        }
       }
       setIsModalOpen(false);
       setSelectedCompany(undefined);
@@ -113,6 +134,24 @@ const Companies: React.FC = () => {
       console.error('Error saving company:', error);
       setError('Failed to save company. Please try again later.');
     }
+  };
+
+  // Add helper function to generate license key
+  const generateLicenseKey = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const segments = 4;
+    const segmentLength = 4;
+    const segments_arr = [];
+    
+    for (let i = 0; i < segments; i++) {
+      let segment = '';
+      for (let j = 0; j < segmentLength; j++) {
+        segment += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      segments_arr.push(segment);
+    }
+    
+    return segments_arr.join('-');
   };
 
   const filteredCompanies = companies.filter(createSearchFilter(searchQuery, SEARCH_FIELDS));
