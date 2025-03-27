@@ -25,7 +25,7 @@ export interface AnnualTargetContent {
 export interface AnnualTargetObjective {
     perspective: string;
     name: string;
-    KPIs: string[];
+    KPIs: AnnualTargetKPI[];
 }
 
 export interface AnnualTargetKPI {

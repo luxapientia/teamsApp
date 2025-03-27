@@ -39,13 +39,13 @@ export const createAnnualTarget = createAsyncThunk(
   'scorecard/createAnnualTarget',
   async (target: Omit<AnnualTarget, 'id'>) => {
     // Replace with your API call
-    const response = await fetch('/api/annual-targets', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(target),
-    });
+    // const response = await fetch('/api/annual-targets', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(target),
+    // });
     // return response.json();
     return {
       ...target,
@@ -58,13 +58,13 @@ export const updateAnnualTarget = createAsyncThunk(
   'scorecard/updateAnnualTarget',
   async (target: AnnualTarget) => {
     // Replace with your API call
-    const response = await fetch(`/api/annual-targets/${target.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(target),
-    });
+    // const response = await fetch(`/api/annual-targets/${target.id}`, {
+    //   method: 'PUT',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(target),
+    // });
     // return response.json();
     return target;
   }
