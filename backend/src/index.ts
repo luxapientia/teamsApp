@@ -28,10 +28,31 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/teams-score-cards';
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((error) => console.error('MongoDB connection error:', error));
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/teams-score-cards';
+mongoose.connect(MONGODB_URI, {
+  // Force IPv4 
+  family: 4,
+  // Add other connection options if needed
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+})
+  .then(() => console.log('Connected to MongoDB successfully'))
+  .catch((error) => {
+    console.error('MongoDB connection error:', error);
+    console.error('Please ensure MongoDB is running on 127.0.0.1:27017');
+  });
+
+// Add connection event listeners for better debugging
+mongoose.connection.on('connected', () => {
+  console.log('Mongoose connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('Mongoose connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('Mongoose disconnected from MongoDB');
+});
 
 // Mount API routes
 app.use('/api', routes);
