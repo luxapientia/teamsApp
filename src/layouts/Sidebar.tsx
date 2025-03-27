@@ -5,30 +5,28 @@ import {
   ChevronRightRegular,
   GridRegular
 } from '@fluentui/react-icons';
+import { PageProps } from '../types';
 
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  activePageTitle: string;
+  onPageChange: (title: string) => void;
+  pagePropsList: PageProps[];
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   isOpen,
   onToggle,
-  activeTab,
-  onTabChange,
+  activePageTitle,
+  onPageChange,
+  pagePropsList
 }) => {
-  const menuItems = [
-    { id: 'manage-companies', label: 'Manage Companies', icon: <GridRegular /> },
-    { id: 'annual-corporate-scorecards', label: 'Annual Corporate Scorecards', icon: <PeopleTeamRegular /> },
-    { id: 'admin-panel', label: 'Admin Panel', icon: <PeopleTeamRegular /> },
-  ];
 
   return (
     <aside
       className={`fixed inset-y-0 left-0 bg-white shadow-ms z-10 transition-all duration-300 ease-in-out ${
-        isOpen ? 'w-64' : 'w-16'
+        isOpen ? 'w-80' : 'w-16'
       }`}
     >
       <div className="h-16 flex items-center justify-between px-4 border-b">
@@ -42,20 +40,20 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
       <nav className="mt-4">
         <ul>
-          {menuItems.map((item) => (
-            <li key={item.id}>
+          {pagePropsList.map((pageProps, index) => (
+            <li key={index}>
               <button
                 className={`w-full flex items-center px-4 py-3 text-left transition-colors ${
-                  activeTab === item.id
+                  activePageTitle === pageProps.title
                     ? 'bg-ms-blue bg-opacity-10 text-ms-blue'
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
-                onClick={() => onTabChange(item.id)}
+                onClick={() => onPageChange(pageProps.title)}
               >
                 <span className="inline-flex items-center justify-center w-6 h-6">
-                  {item.icon}
+                  {pageProps.icon}
                 </span>
-                {isOpen && <span className="ml-3">{item.label}</span>}
+                {isOpen && <span className="ml-3">{pageProps.title}</span>}
               </button>
             </li>
           ))}
