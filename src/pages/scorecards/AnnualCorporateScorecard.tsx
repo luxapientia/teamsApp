@@ -18,10 +18,14 @@ const AnnualCorporateScorecard = () => {
   const [selectedTab, setSelectedTab] = useState('annual');
   const [scorecards, setScorecards] = useState<Scorecard[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedScorecard, setSelectedScorecard] = useState<Scorecard | undefined>();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [selectedScorecard, setSelectedScorecard] = useState<Scorecard | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
