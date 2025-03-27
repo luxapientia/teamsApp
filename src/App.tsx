@@ -5,16 +5,20 @@ import AnnualCorporateScorecard from './pages/scorecards/AnnualCorporateScorecar
 import { AdminPanel } from './pages/admin/';
 import { ManagePage } from './pages/manage';
 import { GridRegular, PeopleTeamRegular } from '@fluentui/react-icons';
+import { Provider } from 'react-redux';
+import { store } from './store';
 
 const iconSize = 24;
 
 function App() {
   return (
-    <Layout>
-      {/* <AdminPanel /> */}
-      <ManagePage title="Manage Companies" icon={<GridRegular fontSize={iconSize}/>} tabs={['Companies', 'Users']} />
-      <AnnualCorporateScorecard title="Annual Corporate Scorecard" icon={<PeopleTeamRegular fontSize={iconSize}/>} tabs={['Annual', 'Quarterly']} />
-    </Layout>
+    <Provider store={store}>
+      <Layout>
+        {/* <AdminPanel /> */}
+        <ManagePage title="Manage Companies" icon={<GridRegular fontSize={iconSize}/>} tabs={['Companies', 'Users']} />
+        <AnnualCorporateScorecard title="Annual Corporate Scorecard" icon={<PeopleTeamRegular fontSize={iconSize}/>} tabs={['Annual', 'Quarterly']} />
+      </Layout>
+    </Provider>
   );
 }
 
