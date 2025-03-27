@@ -58,17 +58,20 @@ interface ContentProps {
   tabs: string[];
   icon: React.ReactNode;
   children: React.ReactNode;
+  selectedTabChanger: (tab: string) => void;
 }
 
 const Content: React.FC<ContentProps> = ({
   title,
   tabs,
   icon,
-  children
+  children,
+  selectedTabChanger
 }) => {
   const [selectedTab, setSelectedTab] = useState<string>(tabs[0]);
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setSelectedTab(newValue);
+    selectedTabChanger(newValue);
   };
 
   return (
