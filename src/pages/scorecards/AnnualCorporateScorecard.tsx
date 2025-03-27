@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { AnnualScorecard, TargetTab } from '../../types';
+import { AnnualScorecard, TargetTab, PageProps } from '../../types';
 import AnnualTargetTable from './components/AnnualTargetTable';
-const AnnualCorporateScorecard = () => {
+
+const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs }) => {
   const [selectedTab, setSelectedTab] = useState<TargetTab>(TargetTab.Annual);
 
   return (
