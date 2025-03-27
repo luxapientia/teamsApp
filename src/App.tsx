@@ -21,7 +21,7 @@ function App() {
       <Layout selectedTabChanger={selectedTabChanger}>
         {/* <AdminPanel /> */}
         <ManagePage title="Manage Companies" icon={<GridRegular fontSize={iconSize} />} tabs={['Companies', 'Users']} selectedTab={selectedTab} />
-        <AnnualCorporateScorecard title="Annual Corporate Scorecard" icon={<PeopleTeamRegular fontSize={iconSize} />} tabs={['Annual', 'Quarterly']} selectedTab={selectedTab} />
+        <AnnualCorporateScorecard title="Annual Corporate Scorecard" icon={<PeopleTeamRegular fontSize={iconSize} />} tabs={['Quarterly Targets', 'Annual Targets']} selectedTab={selectedTab} />
         <AdminPanel title='Admin Panel' icon={<BoardSplitRegular fontSize={iconSize} />} tabs={[
           'Performance Contracting Periods',
           'Performance Assessments Periods',

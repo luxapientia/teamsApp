@@ -10,11 +10,15 @@ interface ScorecardState {
 const initialState: ScorecardState = {
   annualTargets: [
     {
+      id: '1',
       name: 'Annual Target 1',
       startDate: '2020-01-01',
       endDate: '2020-12-31',
       status: AnnualTargetStatus.Active,
-      content: [],
+      content: {
+        perspectives: [],
+        objectives: [],
+      },
     }
   ],
   status: 'idle',
@@ -35,15 +39,45 @@ export const createAnnualTarget = createAsyncThunk(
   'scorecard/createAnnualTarget',
   async (target: Omit<AnnualTarget, 'id'>) => {
     // Replace with your API call
-    const response = await fetch('/api/annual-targets', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(target),
-    });
+    // const response = await fetch('/api/annual-targets', {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(target),
+    // });
+    // return response.json();
+    return {
+      ...target,
+      id: Math.random().toString(36).substring(2, 15),
+    };
+  }
+);
+
+export const updateAnnualTarget = createAsyncThunk(
+  'scorecard/updateAnnualTarget',
+  async (target: AnnualTarget) => {
+    // Replace with your API call
+    // const response = await fetch(`/api/annual-targets/${target.id}`, {
+    //   method: 'PUT',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(target),
+    // });
     // return response.json();
     return target;
+  }
+);
+
+export const deleteAnnualTarget = createAsyncThunk(
+  'scorecard/deleteAnnualTarget',
+  async (targetId: string) => {
+    // Replace with your API call
+    // await fetch(`/api/annual-targets/${targetId}`, {
+    //   method: 'DELETE',
+    // });
+    return targetId;
   }
 );
 
@@ -76,6 +110,17 @@ const scorecardSlice = createSlice({
       })
       .addCase(createAnnualTarget.fulfilled, (state, action) => {
         state.annualTargets.push(action.payload);
+      })
+      .addCase(updateAnnualTarget.fulfilled, (state, action) => {
+        const index = state.annualTargets.findIndex(t => t.name === action.payload.name);
+        if (index !== -1) {
+          state.annualTargets[index] = action.payload;
+        }
+      })
+      .addCase(deleteAnnualTarget.fulfilled, (state, action) => {
+        state.annualTargets = state.annualTargets.filter(
+          target => target.id !== action.payload
+        );
       });
   },
 });
