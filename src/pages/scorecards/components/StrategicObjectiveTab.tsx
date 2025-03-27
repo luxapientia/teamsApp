@@ -9,9 +9,16 @@ import {
   TableHead,
   TableRow,
   styled,
+  IconButton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import AddStrategicObjectiveModal from './AddStrategicObjectiveModal';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { RootState } from '../../../store';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -31,7 +38,36 @@ interface StrategicObjectiveTabProps {
 }
 
 const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetName }) => {
+  const dispatch = useAppDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingObjective, setEditingObjective] = useState<{
+    perspective: string;
+    name: string;
+    KPIs: any[];
+  } | null>(null);
+
+  const annualTarget = useAppSelector((state: RootState) =>
+    state.scorecard.annualTargets.find(target => target.name === targetName)
+  );
+
+  const objectives = annualTarget?.content.objectives || [];
+
+  const handleEdit = (objective: any) => {
+    setEditingObjective(objective);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (objectiveName: string) => {
+    if (annualTarget) {
+      dispatch(updateAnnualTarget({
+        ...annualTarget,
+        content: {
+          ...annualTarget.content,
+          objectives: annualTarget.content.objectives.filter(obj => obj.name !== objectiveName)
+        }
+      }));
+    }
+  };
 
   return (
     <Box p={2}>
@@ -41,14 +77,71 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
             <TableRow>
               <StyledHeaderCell>Perspective</StyledHeaderCell>
               <StyledHeaderCell>Strategic Objective</StyledHeaderCell>
-              <StyledHeaderCell>Weight %</StyledHeaderCell>
+              <StyledHeaderCell align="right">Weight %</StyledHeaderCell>
               <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
-              <StyledHeaderCell>Baseline</StyledHeaderCell>
-              <StyledHeaderCell>Target</StyledHeaderCell>
+              <StyledHeaderCell align="right">Baseline</StyledHeaderCell>
+              <StyledHeaderCell align="right">Target</StyledHeaderCell>
+              <StyledHeaderCell align="right">Rating Score</StyledHeaderCell>
+              <StyledHeaderCell align="right">Actions</StyledHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {/* Strategic objectives will be listed here */}
+            {objectives.map((objective) => (
+              objective.KPIs.map((kpi, kpiIndex) => (
+                <TableRow key={`${objective.name}-${kpiIndex}`}>
+                  {kpiIndex === 0 && (
+                    <>
+                      <StyledTableCell rowSpan={objective.KPIs.length}>
+                        {objective.perspective}
+                      </StyledTableCell>
+                      <StyledTableCell rowSpan={objective.KPIs.length}>
+                        {objective.name}
+                      </StyledTableCell>
+                    </>
+                  )}
+                  <StyledTableCell align="right">{kpi.weight}</StyledTableCell>
+                  <StyledTableCell>{kpi.indicator}</StyledTableCell>
+                  <StyledTableCell align="right">{kpi.baseline}</StyledTableCell>
+                  <StyledTableCell align="right">{kpi.target}</StyledTableCell>
+                  <StyledTableCell align="right">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      sx={{
+                        borderColor: '#E5E7EB',
+                        color: '#374151',
+                        '&:hover': {
+                          borderColor: '#D1D5DB',
+                          backgroundColor: '#F9FAFB',
+                        },
+                      }}
+                    >
+                      View
+                    </Button>
+                  </StyledTableCell>
+                  {kpiIndex === 0 && (
+                    <StyledTableCell align="right" rowSpan={objective.KPIs.length}>
+                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <IconButton
+                          size="small"
+                          sx={{ color: '#6B7280' }}
+                          onClick={() => handleEdit(objective)}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          sx={{ color: '#6B7280' }}
+                          onClick={() => handleDelete(objective.name)}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    </StyledTableCell>
+                  )}
+                </TableRow>
+              ))
+            ))}
           </TableBody>
         </Table>
 
@@ -76,8 +169,12 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
 
       <AddStrategicObjectiveModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingObjective(null);
+        }}
         targetName={targetName}
+        editingObjective={editingObjective}
       />
     </Box>
   );
