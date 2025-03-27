@@ -3,8 +3,9 @@ import { GridRegular } from '@fluentui/react-icons';
 import Companies from './Companies';
 import SuperUsers from './SuperUsers';
 import CompanyLicenses from './CompanyLicenses';
+import { PageProps } from '../../types/page';
 
-const ManagePage: React.FC = () => {
+const ManagePage: React.FC<PageProps> = (props) => {
   const [activeTab, setActiveTab] = useState('companies');
 
   const tabs = [
