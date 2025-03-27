@@ -1,59 +1,53 @@
 <!--This file is used during the Teams authentication flow to assist with retrieval of the access token.-->
 <!--If you're not familiar with this, do not alter or remove this file from your project.-->
-<html>
-  <head>
-    <title>Login End Page</title>
-    <meta charset="utf-8" />
-  </head>
-
-  <body>
-    <script
-    src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"
-    integrity="sha384-QtTBFeFlfRDZBfwHJHYQp7MdLJ2C3sfAEB1Qpy+YblvjavBye+q87TELpTnvlXw4"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      type="text/javascript"
-      src="https://alcdn.msauth.net/browser/2.21.0/js/msal-browser.min.js"
-      integrity="sha384-s/NxjjAgw1QgpDhOlVjTceLl4axrp5nqpUbCPOEQy1PqbFit9On6uw2XmEF1eq0s"
-      crossorigin="anonymous">
-    </script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authentication End Page</title>
+    <script src="https://res.cdn.office.net/teams-js/2.19.0/js/MicrosoftTeams.min.js"></script>
     <script type="text/javascript">
-      var currentURL = new URL(window.location);
-      var clientId = currentURL.searchParams.get("clientId") || "38681428-5b78-4e82-97ff-e168419e7611";
+        microsoftTeams.initialize();
 
-      microsoftTeams.app.initialize().then(() => {
-        microsoftTeams.app.getContext().then(async (context) => {
-          // Use context tenant ID or fallback to the specified one
-          var tenantId = context.tid || "987eaa8d-6b2d-4a86-9b2e-8af581ec8056";
-          
-          const msalConfig = {
-            auth: {
-              clientId: clientId,
-              authority: `https://login.microsoftonline.com/${tenantId}`,
-              navigateToLoginRequestUrl: false
-            },
-            cache: {
-              cacheLocation: "sessionStorage",
-            },
-          }
+        // Parse hash parameters
+        function getHashParameters() {
+            const hash = window.location.hash.substring(1);
+            return hash.split('&').reduce((params, param) => {
+                const [key, value] = param.split('=');
+                params[key] = decodeURIComponent(value);
+                return params;
+            }, {});
+        }
 
-          const msalInstance = new window.msal.PublicClientApplication(msalConfig);
-          msalInstance.handleRedirectPromise()
-            .then((tokenResponse) => {
-              if (tokenResponse !== null) {
-                microsoftTeams.authentication.notifySuccess(JSON.stringify({
-                  sessionStorage: sessionStorage
-                }));
-              } else {
-                microsoftTeams.authentication.notifyFailure("Get empty response.");
-              }
-            })
-            .catch((error) => {
-              microsoftTeams.authentication.notifyFailure(JSON.stringify(error));
-            });
-        });
-      });
+        // Handle authentication result
+        const handleAuthResult = () => {
+            const params = getHashParameters();
+            
+            if (params.error) {
+                // Handle error
+                microsoftTeams.authentication.notifyFailure(params.error);
+            } else if (params.access_token) {
+                // Success - return token
+                microsoftTeams.authentication.notifySuccess({
+                    accessToken: params.access_token,
+                    tokenType: params.token_type,
+                    expiresIn: params.expires_in,
+                    scope: params.scope,
+                    idToken: params.id_token
+                });
+            } else {
+                // Unexpected result
+                microsoftTeams.authentication.notifyFailure("Unknown error");
+            }
+        };
+
+        // Execute when page loads
+        handleAuthResult();
     </script>
-  </body>
+</head>
+<body>
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <p>Completing authentication...</p>
+    </div>
+</body>
 </html>
