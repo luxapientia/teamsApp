@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box } from '@mui/material';
 import Sidebar from './Sidebar';
-import { ManagePage } from '../pages/manage';
-import AnnualCorporateScorecard from '../pages/scorecards/AnnualCorporateScorecard';
-import { AdminPanel } from '../pages/admin/';
 import Content from './Content';
 import { PageProps } from '../types';
 
@@ -25,6 +22,9 @@ const Layout: React.FC<LayoutProps> = (props) => {
   });
 
   useEffect(() => {
+    if (pagePropsList[0].tabs.length > 0) {
+      props.selectedTabChanger(pagePropsList[0].tabs[0]);
+    }
   }, []);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -32,6 +32,10 @@ const Layout: React.FC<LayoutProps> = (props) => {
 
   const handlePageChange = (title: string) => {
     setActivePageTitle(title);
+    const clickedPage = pagePropsList.find(page => page.title === title);
+    if (clickedPage && clickedPage.tabs.length > 0) {
+      props.selectedTabChanger(clickedPage.tabs[0]);
+    }
   };
 
   const toggleSidebar = () => {
@@ -46,6 +50,7 @@ const Layout: React.FC<LayoutProps> = (props) => {
         tabs={activePage.props.tabs}
         icon={activePage.props.icon}
         selectedTabChanger={props.selectedTabChanger}
+        selectedTab={activePage.props.selectedTab}
       >
         {activePage}
       </Content>
