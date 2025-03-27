@@ -31,8 +31,8 @@ export interface AnnualTargetObjective {
 export interface AnnualTargetKPI {
     indicator: string;
     weight: number;
-    baseline: number;
-    target: number;
+    baseline: string;
+    target: string;
     ratingScores: AnnualTargetRatingScore[];
 }
 

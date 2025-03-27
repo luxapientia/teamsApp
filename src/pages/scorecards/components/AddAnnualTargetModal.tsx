@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,12 +20,14 @@ interface AddAnnualTargetModalProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (target: Omit<AnnualTarget, 'id'>) => void;
+  editingTarget: AnnualTarget | null;
 }
 
 const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
   open,
   onClose,
   onSubmit,
+  editingTarget,
 }) => {
   const formatDateForInput = (date: Date): string => {
     return date.toISOString().split('T')[0];
@@ -35,6 +37,16 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
   const [endDate, setEndDate] = useState<string>(formatDateForInput(new Date()));
   const [status, setStatus] = useState<AnnualTargetStatus>(AnnualTargetStatus.Active);
   const [dateError, setDateError] = useState('');
+
+  useEffect(() => {
+    if (editingTarget) {
+      // Pre-fill form with editing target data
+      setName(editingTarget.name);
+      setStartDate(editingTarget.startDate);
+      setEndDate(editingTarget.endDate);
+      setStatus(editingTarget.status);
+    }
+  }, [editingTarget]);
 
   // Helper function to format date to YYYY-MM-DD
 

@@ -111,15 +111,22 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 interface RowProps {
     target: AnnualTarget;
     onMenuClick: (event: React.MouseEvent<HTMLElement>, name: string) => void;
+    onOpen?: (setOpen: (open: boolean) => void) => void;
 }
 
-const Row: React.FC<RowProps> = ({ target, onMenuClick }) => {
+const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
     const [open, setOpen] = useState(false);
     const [tabValue, setTabValue] = useState(0);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
     };
+
+    useEffect(() => {
+        if (onOpen) {
+            onOpen(setOpen);
+        }
+    }, [onOpen]);
 
     return (
         <>
@@ -147,7 +154,9 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick }) => {
                 <StyledTableCell>{target.endDate}</StyledTableCell>
                 <StyledTableCell>{target.status}</StyledTableCell>
                 <StyledTableCell align="right">
-                    <ViewButton>View</ViewButton>
+                    <ViewButton onClick={() => setOpen(true)}>
+                        View
+                    </ViewButton>
                 </StyledTableCell>
             </TableRow>
             <TableRow>
@@ -194,11 +203,17 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick }) => {
     );
 };
 
-const AnnualTargetTable: React.FC = () => {
+interface AnnualTargetTableProps {
+    onEdit: (target: AnnualTarget) => void;
+    onDelete: (targetId: string) => void;
+}
+
+const AnnualTargetTable: React.FC<AnnualTargetTableProps> = ({ onEdit, onDelete }) => {
     const dispatch = useAppDispatch();
     const { annualTargets, status, error } = useAppSelector((state: RootState) => state.scorecard);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedRow, setSelectedRow] = useState<string | null>(null);
+    const [expandRow, setExpandRow] = useState<((open: boolean) => void) | null>(null);
 
     useEffect(() => {
         // if (status === 'idle') {
@@ -218,17 +233,26 @@ const AnnualTargetTable: React.FC = () => {
 
     const handleOpen = () => {
         handleMenuClose();
-        // Add open functionality
+        if (expandRow) {
+            expandRow(true);
+        }
     };
 
     const handleEdit = () => {
-        handleMenuClose();
-        // Add edit functionality
+        if (selectedRow) {
+            const target = annualTargets.find(t => t.name === selectedRow);
+            if (target) {
+                onEdit(target);
+                handleMenuClose();
+            }
+        }
     };
 
     const handleDelete = () => {
-        handleMenuClose();
-        // Add delete functionality
+        if (selectedRow) {
+            onDelete(selectedRow);
+            handleMenuClose();
+        }
     };
 
     return (
@@ -251,6 +275,7 @@ const AnnualTargetTable: React.FC = () => {
                                 key={target.name} 
                                 target={target} 
                                 onMenuClick={handleMenuClick}
+                                onOpen={target.name === selectedRow ? setExpandRow : undefined}
                             />
                         ))}
                     </TableBody>

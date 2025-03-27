@@ -70,6 +70,17 @@ export const updateAnnualTarget = createAsyncThunk(
   }
 );
 
+export const deleteAnnualTarget = createAsyncThunk(
+  'scorecard/deleteAnnualTarget',
+  async (targetId: string) => {
+    // Replace with your API call
+    // await fetch(`/api/annual-targets/${targetId}`, {
+    //   method: 'DELETE',
+    // });
+    return targetId;
+  }
+);
+
 const scorecardSlice = createSlice({
   name: 'scorecard',
   initialState,
@@ -105,6 +116,11 @@ const scorecardSlice = createSlice({
         if (index !== -1) {
           state.annualTargets[index] = action.payload;
         }
+      })
+      .addCase(deleteAnnualTarget.fulfilled, (state, action) => {
+        state.annualTargets = state.annualTargets.filter(
+          target => target.id !== action.payload
+        );
       });
   },
 });
