@@ -8,7 +8,15 @@ interface ScorecardState {
 }
 
 const initialState: ScorecardState = {
-  annualTargets: [],
+  annualTargets: [
+    {
+      name: 'Annual Target 1',
+      startDate: '2020-01-01',
+      endDate: '2020-12-31',
+      status: AnnualTargetStatus.Active,
+      content: [],
+    }
+  ],
   status: 'idle',
   error: null,
 };
@@ -34,7 +42,8 @@ export const createAnnualTarget = createAsyncThunk(
       },
       body: JSON.stringify(target),
     });
-    return response.json();
+    // return response.json();
+    return target;
   }
 );
 
