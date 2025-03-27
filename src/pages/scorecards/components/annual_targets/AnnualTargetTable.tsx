@@ -26,11 +26,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { AnnualTarget, AnnualTargetStatus } from '../../../types/annualCorporateScorecard';
-import { fetchAnnualTargets, updateTargetStatus, deleteAnnualTarget } from '../../../store/slices/scorecardSlice';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import { RootState } from '../../../store';
+import { AnnualTarget, AnnualTargetStatus } from '../../../../types/annualCorporateScorecard';
+import { fetchAnnualTargets, updateTargetStatus, deleteAnnualTarget } from '../../../../store/slices/scorecardSlice';
+import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../../hooks/useAppSelector';
+import { RootState } from '../../../../store';
 import StrategicObjectiveTab from './StrategicObjectiveTab';
 import PerspectiveTab from './PerspectiveTab';
 

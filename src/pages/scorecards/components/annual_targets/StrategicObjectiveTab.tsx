@@ -14,11 +14,11 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import AddStrategicObjectiveModal from './annual_targets/AddStrategicObjectiveModal';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import { RootState } from '../../../store';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
+import AddStrategicObjectiveModal from './AddStrategicObjectiveModal';
+import { useAppSelector } from '../../../../hooks/useAppSelector';
+import { RootState } from '../../../../store';
+import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { updateAnnualTarget } from '../../../../store/slices/scorecardSlice';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',

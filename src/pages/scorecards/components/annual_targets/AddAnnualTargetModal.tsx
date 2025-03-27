@@ -14,7 +14,7 @@ import {
   Box,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { AnnualTarget, AnnualTargetStatus } from '../../../types/annualCorporateScorecard';
+import { AnnualTarget, AnnualTargetStatus } from '../../../../types/annualCorporateScorecard';
 
 interface AddAnnualTargetModalProps {
   open: boolean;
