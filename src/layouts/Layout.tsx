@@ -9,6 +9,7 @@ import { PageProps } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
+  selectedTabChanger: (tab: string) => void;
 }
 
 const Layout: React.FC<LayoutProps> = (props) => {
@@ -19,6 +20,7 @@ const Layout: React.FC<LayoutProps> = (props) => {
       title: page?.props?.title,
       icon: page?.props?.icon,
       tabs: page?.props?.tabs,
+      selectedTab: page?.props?.selectedTab
     }
   });
 
@@ -43,6 +45,7 @@ const Layout: React.FC<LayoutProps> = (props) => {
         title={activePage.props.title}
         tabs={activePage.props.tabs}
         icon={activePage.props.icon}
+        selectedTabChanger={props.selectedTabChanger}
       >
         {activePage}
       </Content>
