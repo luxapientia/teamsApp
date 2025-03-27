@@ -1,56 +1,46 @@
 <!--This file is used during the Teams authentication flow to assist with retrieval of the access token.-->
 <!--If you're not familiar with this, do not alter or remove this file from your project.-->
-<html>
-  <head>
-    <title>Login Start Page</title>
-    <meta charset="utf-8" />
-  </head>
-
-  <body>
-    <script
-    src="https://res.cdn.office.net/teams-js/2.0.0/js/MicrosoftTeams.min.js"
-    integrity="sha384-QtTBFeFlfRDZBfwHJHYQp7MdLJ2C3sfAEB1Qpy+YblvjavBye+q87TELpTnvlXw4"
-      crossorigin="anonymous"
-    ></script>
-    <script
-      type="text/javascript"
-      src="https://alcdn.msauth.net/browser/2.21.0/js/msal-browser.min.js"
-      integrity="sha384-s/NxjjAgw1QgpDhOlVjTceLl4axrp5nqpUbCPOEQy1PqbFit9On6uw2XmEF1eq0s"
-      crossorigin="anonymous">
-    </script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authentication Start Page</title>
+    <script src="https://res.cdn.office.net/teams-js/2.19.0/js/MicrosoftTeams.min.js"></script>
     <script type="text/javascript">
-      microsoftTeams.app.initialize().then(() => {
-        microsoftTeams.app.getContext().then(async (context) => {
-          // Generate random state string and store it, so we can verify it in the callback
-          var currentURL = new URL(window.location);
-          var clientId = currentURL.searchParams.get("clientId") || "38681428-5b78-4e82-97ff-e168419e7611";
-          var scope = currentURL.searchParams.get("scope");
-          var loginHint = currentURL.searchParams.get("loginHint");
-          
-          // Use context tenant ID or fallback to the specified one
-          var tenantId = context.user?.tenant?.id || "987eaa8d-6b2d-4a86-9b2e-8af581ec8056";
+        microsoftTeams.initialize();
 
-          const msalConfig = {
-            auth: {
-              clientId: clientId,
-              authority: `https://login.microsoftonline.com/${tenantId}`,
-              navigateToLoginRequestUrl: false
-            },
-            cache: {
-              cacheLocation: "sessionStorage",
-            },
-          };
+        // Get authentication context from Teams
+        microsoftTeams.getContext((context) => {
+            // Get auth configuration
+            const clientId = "%REACT_APP_CLIENT_ID%";
+            const tenantId = context.tid;
+            
+            // Configure auth parameters
+            const queryParams = {
+                client_id: clientId,
+                response_type: "token",
+                response_mode: "fragment",
+                scope: "https://graph.microsoft.com/User.Read email openid profile offline_access",
+                redirect_uri: window.location.origin + "/auth-end.html",
+                nonce: Math.random().toString(36).substring(7),
+                state: Math.random().toString(36).substring(7),
+                login_hint: context.loginHint
+            };
 
-          const msalInstance = new msal.PublicClientApplication(msalConfig);
-          const scopesArray = scope.split(" ");
-          const scopesRequest = {
-            scopes: scopesArray,
-            redirectUri: window.location.origin + `/auth-end.html?clientId=${clientId}`,
-            loginHint: loginHint
-          };
-          await msalInstance.loginRedirect(scopesRequest);
+            // Build authorization URL
+            const authorityUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize`;
+            const queryString = Object.keys(queryParams)
+                .map(key => `${key}=${encodeURIComponent(queryParams[key])}`)
+                .join("&");
+
+            // Redirect to authorization endpoint
+            window.location.assign(`${authorityUrl}?${queryString}`);
         });
-      });
     </script>
-  </body>
+</head>
+<body>
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <p>Initializing authentication...</p>
+    </div>
+</body>
 </html>
