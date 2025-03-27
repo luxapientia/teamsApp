@@ -1,4 +1,4 @@
-export enum AnnualScorecardStatus {
+export enum AnnualTargetStatus {
     Active = 'active',
     Inactive = 'inactive'
 }
@@ -8,35 +8,34 @@ export enum TargetTab {
     Annual = 'annual'
 }
 
-export interface AnnualScorecard {
-    id: string;
+export interface AnnualTarget {
     name: string;
     startDate: string;
     endDate: string;
-    status: AnnualScorecardStatus;
-    content: AnnualScorecardContent[];
+    status: AnnualTargetStatus;
+    content: AnnualTargetContent[];
 }
 
-export interface AnnualScorecardContent {
+export interface AnnualTargetContent {
     perspectives: string[];
-    objectives: AnnualScorecardObjective[];
+    objectives: AnnualTargetObjective[];
 }
 
-export interface AnnualScorecardObjective {
+export interface AnnualTargetObjective {
     perspective: string;
     name: string;
     KPIs: string[];
 }
 
-export interface AnnualScorecardKPI {
+export interface AnnualTargetKPI {
     indicator: string;
     weight: number;
     baseline: number;
     target: number;
-    ratingScores: AnnualScorecardRatingScore[];
+    ratingScores: AnnualTargetRatingScore[];
 }
 
-export interface AnnualScorecardRatingScore {
+export interface AnnualTargetRatingScore {
     name: string;
     max: number;
     min: number;
