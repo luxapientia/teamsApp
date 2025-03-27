@@ -84,25 +84,39 @@ const StyledTabs = styled(Tabs)({
 });
 
 const StyledTab = styled(Tab)(({ theme }) => ({
+    marginTop: '10px',
     textTransform: 'none',
     minHeight: 'unset',
     padding: '8px 20px',
     borderRadius: '20px',
-    color: '#666666',
-    backgroundColor: '#F3F3F3',
+    color: '#374151',
+    backgroundColor: '#fff',
+    border: '1px solid #E5E7EB',
     minWidth: 'unset',
     fontSize: '14px',
     fontWeight: 500,
     transition: 'all 0.2s ease',
+    
     '&.Mui-selected': {
         color: '#fff',
-        backgroundColor: '#6264A7',
+        backgroundColor: '#0078D4',
+        borderColor: '#0078D4',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        
+        '&:hover': {
+            backgroundColor: '#106EBE',
+            borderColor: '#106EBE',
+            color: '#fff',
+        }
     },
-    '&:hover': {
-        backgroundColor: theme.palette.mode === 'light' ? '#E5E5E5' : '#484848',
+    
+    '&:not(.Mui-selected):hover': {
+        backgroundColor: '#F9FAFB',
+        borderColor: '#0078D4',
+        color: '#0078D4',
         transform: 'translateY(-1px)',
     },
+    
     '&:active': {
         transform: 'translateY(0)',
     },
@@ -160,29 +174,29 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
                 </StyledTableCell>
             </TableRow>
             <TableRow>
-                <StyledTableCell 
-                    style={{ paddingBottom: 0, paddingTop: 0 }} 
+                <StyledTableCell
+                    style={{ paddingBottom: 0, paddingTop: 0 }}
                     colSpan={6}
                 >
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Box sx={{ p: 2 }}>
-                            <Box sx={{ 
-                                display: 'flex', 
+                            <Box sx={{
+                                display: 'flex',
                                 justifyContent: 'flex-end',
-                                mb: 2 
+                                mb: 2
                             }}>
                                 <StyledTabs
                                     value={tabValue}
                                     onChange={handleTabChange}
                                     aria-label="annual target tabs"
                                 >
-                                    <StyledTab 
-                                        label="Strategic Objectives" 
+                                    <StyledTab
+                                        label="Strategic Objectives"
                                         disableRipple
                                         aria-label="View strategic objectives"
                                     />
-                                    <StyledTab 
-                                        label="Perspectives" 
+                                    <StyledTab
+                                        label="Perspectives"
                                         disableRipple
                                         aria-label="View perspectives"
                                     />
@@ -190,9 +204,9 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
                             </Box>
                             <Box>
                                 {tabValue === 0 ? (
-                                    <StrategicObjectiveTab targetName={target.name}/>
+                                    <StrategicObjectiveTab targetName={target.name} />
                                 ) : (
-                                    <PerspectiveTab targetName={target.name}/>
+                                    <PerspectiveTab targetName={target.name} />
                                 )}
                             </Box>
                         </Box>
@@ -273,9 +287,9 @@ const AnnualTargetTable: React.FC<AnnualTargetTableProps> = ({ onEdit }) => {
                     </TableHead>
                     <TableBody>
                         {annualTargets.map((target) => (
-                            <Row 
-                                key={target.name} 
-                                target={target} 
+                            <Row
+                                key={target.name}
+                                target={target}
                                 onMenuClick={handleMenuClick}
                                 onOpen={target.name === selectedRow ? setExpandRow : undefined}
                             />
