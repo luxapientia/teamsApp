@@ -10,10 +10,10 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import { RootState } from '../../../store';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
+import { useAppSelector } from '../../../../hooks/useAppSelector';
+import { RootState } from '../../../../store';
+import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { updateAnnualTarget } from '../../../../store/slices/scorecardSlice';
  
 
 interface PerspectiveTabProps {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Box, Button } from '@mui/material';
 import { TargetTab, PageProps, AnnualTarget } from '../../types';
-import AnnualTargetTable from './components/AnnualTargetTable';
-import AddAnnualTargetModal from './components/AddAnnualTargetModal';
+import AnnualTargetTable from './components/annual_targets/AnnualTargetTable';
+import AddAnnualTargetModal from './components/annual_targets/AddAnnualTargetModal';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { createAnnualTarget, updateAnnualTarget, deleteAnnualTarget } from '../../store/slices/scorecardSlice';
 import AddIcon from '@mui/icons-material/Add';

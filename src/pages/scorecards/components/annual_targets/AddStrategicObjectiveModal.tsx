@@ -21,11 +21,11 @@ import {
   Alert,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
-import { RootState } from '../../../store';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import { AnnualTargetObjective, AnnualTargetKPI } from '../../../types/annualCorporateScorecard';
+import { updateAnnualTarget } from '../../../../store/slices/scorecardSlice';
+import { RootState } from '../../../../store';
+import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../../hooks/useAppSelector';
+import { AnnualTargetObjective, AnnualTargetKPI } from '../../../../types/annualCorporateScorecard';
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
