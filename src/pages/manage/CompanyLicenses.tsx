@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { SearchRegular } from '@fluentui/react-icons';
+import { SearchRegular, AddRegular } from '@fluentui/react-icons';
 import { Table, type Column } from '../../components/Table';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Company, License } from '../../types';
 import { EditLicenseModal } from '../../components/Modal/EditLicenseModal';
 import { DeleteModal } from '../../components/Modal/DeleteModal';
 import { companyAPI, licenseAPI } from '../../services/api';
+import { Button } from "@fluentui/react-button";
 
 interface CompanyWithLicense extends Company {
   license?: License;
@@ -249,6 +250,7 @@ const CompanyLicenses: React.FC = () => {
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
           />
         </div>
+        <Button icon={<AddRegular />} onClick={() => handleAdd(companies[0])}>Add License</Button>
       </div>
 
       <Table 
