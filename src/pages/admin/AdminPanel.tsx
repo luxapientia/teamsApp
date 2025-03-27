@@ -6,6 +6,7 @@ import { PrimaryButton } from '@fluentui/react/lib/Button';
 import { SearchBox } from '@fluentui/react/lib/SearchBox';
 import { ChoiceGroup, IChoiceGroupOption } from '@fluentui/react/lib/ChoiceGroup';
 import Contracting from './Contracting';
+import Assessments from './Assessments';
 
 const AdminPanel: React.FC = () => {
   const [selectedSearchOption, setSelectedSearchOption] = useState<string>('contracting');
@@ -65,17 +66,10 @@ const AdminPanel: React.FC = () => {
       </div>
 
       {/* Conditional Rendering */}
-      {selectedSearchOption === 'contracting' ? (
-        <div>
-          {/* Component for Performance Contracting Periods */}
-          <Contracting />
-        </div>
-      ) : (
-        <div>
-          {/* Component for Performance Assessments Periods */}
-          {/* ... existing code ... */}
-        </div>
-      )}
+      {selectedSearchOption === 'contracting' && <Contracting />}
+      {selectedSearchOption === 'assessments' && <Assessments />}
+      {/* {selectedSearchOption === 'teams' && renderTeams()} */}
+      {/* {selectedSearchOption === 'ratingscale' && renderRatingScale()} */}
     </div>
   );
 };
