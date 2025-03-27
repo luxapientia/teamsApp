@@ -1,15 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Box } from '@mui/material';
 import Sidebar from './Sidebar';
 import { ManagePage } from '../pages/manage';
 import AnnualCorporateScorecard from '../pages/scorecards/AnnualCorporateScorecard';
 import { AdminPanel } from '../pages/admin/';
+import Content from './Content';
+import { PageProps } from '../types';
 
-const Layout: React.FC = () => {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = (props) => {
+
+  const pages: React.ReactNode[] = props.children as React.ReactNode[];
+  const pagePropsList: PageProps[] = pages.map((page: any) => {
+    return {
+      title: page?.props?.title,
+      icon: page?.props?.icon,
+      tabs: page?.props?.tabs,
+    }
+  });
+
+  useEffect(() => {
+  }, []);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState('manage-companies');
+  const [activePageTitle, setActivePageTitle] = useState(pagePropsList[0].title);
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
+  const handlePageChange = (title: string) => {
+    setActivePageTitle(title);
   };
 
   const toggleSidebar = () => {
@@ -17,34 +37,36 @@ const Layout: React.FC = () => {
   };
 
   const renderContent = () => {
-    switch (activeTab) {
-      case 'manage-companies':
-        return <ManagePage />;
-      case 'annual-corporate-scorecards':
-        return <AnnualCorporateScorecard />;
-      case 'admin-panel':
-        return <AdminPanel />
-      default:
-        return <div className="flex items-center justify-center h-full">Select a tab</div>;
-    }
-  };
+    const activePage: any = pages.find((page: any) => page.props.title === activePageTitle);
+    return (
+      <Content
+        title={activePage.props.title}
+        tabs={activePage.props.tabs}
+        icon={activePage.props.icon}
+      >
+        {activePage}
+      </Content>
+    )
+  }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        onToggle={toggleSidebar} 
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
+    <Box sx={{ display: 'flex' }}>
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onToggle={toggleSidebar}
+        activePageTitle={activePageTitle}
+        onPageChange={handlePageChange}
+        pagePropsList={pagePropsList}
+
       />
       <main 
         className={`flex-1 transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? 'ml-64' : 'ml-16'
+          isSidebarOpen ? 'ml-80' : 'ml-16'
         }`}
       >
         {renderContent()}
       </main>
-    </div>
+    </Box>
   );
 };
 
