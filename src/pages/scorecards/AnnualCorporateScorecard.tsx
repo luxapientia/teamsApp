@@ -7,9 +7,8 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { createAnnualTarget, updateAnnualTarget, deleteAnnualTarget } from '../../store/slices/scorecardSlice';
 import AddIcon from '@mui/icons-material/Add';
 
-const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs }) => {
+const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
   const dispatch = useAppDispatch();
-  const [selectedTab, setSelectedTab] = useState<TargetTab>(TargetTab.Annual);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState<AnnualTarget | null>(null);
 
@@ -21,10 +20,6 @@ const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs }) =>
   const handleEditTarget = (target: AnnualTarget) => {
     setEditingTarget(target);
     setIsModalOpen(true);
-  };
-
-  const handleDeleteTarget = (targetId: string) => {
-    dispatch(deleteAnnualTarget(targetId));
   };
 
   const handleCloseModal = () => {
@@ -56,7 +51,6 @@ const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs }) =>
       {selectedTab === TargetTab.Annual ? (
         <AnnualTargetTable 
           onEdit={handleEditTarget}
-          onDelete={handleDeleteTarget}
         />
       ) : (
         <div>
