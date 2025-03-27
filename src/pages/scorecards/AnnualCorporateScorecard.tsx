@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AnnualScorecard, TargetTab, PageProps } from '../../types';
+import { TargetTab, PageProps } from '../../types';
 import AnnualTargetTable from './components/AnnualTargetTable';
 
 const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs }) => {
