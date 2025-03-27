@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -59,6 +59,7 @@ interface ContentProps {
   icon: React.ReactNode;
   children: React.ReactNode;
   selectedTabChanger: (tab: string) => void;
+  selectedTab?: string;
 }
 
 const Content: React.FC<ContentProps> = ({
@@ -66,15 +67,21 @@ const Content: React.FC<ContentProps> = ({
   tabs,
   icon,
   children,
-  selectedTabChanger
+  selectedTabChanger,
+  selectedTab: propSelectedTab
 }) => {
-  const [selectedTab, setSelectedTab] = useState<string>(tabs[0]);
+  const [selectedTab, setSelectedTab] = useState<string>(propSelectedTab || tabs[0]);
+
+  useEffect(() => {
+    if (propSelectedTab) {
+      setSelectedTab(propSelectedTab);
+    }
+  }, [propSelectedTab]);
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setSelectedTab(newValue);
     selectedTabChanger(newValue);
   };
-
-  
 
   return (
     <Box
