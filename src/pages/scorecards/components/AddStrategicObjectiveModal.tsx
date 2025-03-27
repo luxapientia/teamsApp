@@ -61,8 +61,8 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
   const [kpis, setKpis] = useState<AnnualTargetKPI[]>([{
     indicator: '',
     weight: 0,
-    baseline: 0,
-    target: 0,
+    baseline: '',
+    target: '',
     ratingScores: defaultRatingScores
   }]);
   const [expandedKPI, setExpandedKPI] = useState<number | null>(null);
@@ -133,11 +133,11 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     });
 
     // Validate total weight equals 100
-    const totalWeight = kpis.reduce((sum, kpi) => sum + (kpi.weight || 0), 0);
-    if (totalWeight !== 100) {
-      newErrors.general = 'Total weight must equal 100%';
-      isValid = false;
-    }
+    // const totalWeight = kpis.reduce((sum, kpi) => sum + (kpi.weight || 0), 0);
+    // if (totalWeight !== 100) {
+    //   newErrors.general = 'Total weight must equal 100%';
+    //   isValid = false;
+    // }
 
     if (kpiErrors.some(error => Object.keys(error).length > 0)) {
       newErrors.kpis = kpiErrors;
@@ -176,7 +176,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
   const handleClose = () => {
     setPerspective('');
     setObjective('');
-    setKpis([{ indicator: '', weight: 0, baseline: 0, target: 0, ratingScores: defaultRatingScores }]);
+    setKpis([{ indicator: '', weight: 0, baseline: '', target: '', ratingScores: defaultRatingScores }]);
     onClose();
   };
 
@@ -184,8 +184,8 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     setKpis([...kpis, {
       indicator: '',
       weight: 0,
-      baseline: 0,
-      target: 0,
+      baseline: '',
+      target: '',
       ratingScores: defaultRatingScores
     }]);
   };
@@ -328,7 +328,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               value={kpi.baseline}
                               onChange={(e) => {
                                 const newKpis = [...kpis];
-                                newKpis[index].baseline = Number(e.target.value);
+                                newKpis[index].baseline = e.target.value;
                                 setKpis(newKpis);
                               }}
                               variant="standard"
@@ -343,7 +343,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               value={kpi.target}
                               onChange={(e) => {
                                 const newKpis = [...kpis];
-                                newKpis[index].target = Number(e.target.value);
+                                newKpis[index].target = e.target.value;
                                 setKpis(newKpis);
                               }}
                               variant="standard"

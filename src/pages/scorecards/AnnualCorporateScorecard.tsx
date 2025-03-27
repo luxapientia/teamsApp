@@ -1,19 +1,35 @@
 import React, { useState } from 'react';
 import { Box, Button } from '@mui/material';
-import { TargetTab, PageProps } from '../../types';
+import { TargetTab, PageProps, AnnualTarget } from '../../types';
 import AnnualTargetTable from './components/AnnualTargetTable';
 import AddAnnualTargetModal from './components/AddAnnualTargetModal';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { createAnnualTarget } from '../../store/slices/scorecardSlice';
+import { createAnnualTarget, updateAnnualTarget, deleteAnnualTarget } from '../../store/slices/scorecardSlice';
 import AddIcon from '@mui/icons-material/Add';
 
 const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs }) => {
+  const dispatch = useAppDispatch();
   const [selectedTab, setSelectedTab] = useState<TargetTab>(TargetTab.Annual);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const dispatch = useAppDispatch();
+  const [editingTarget, setEditingTarget] = useState<AnnualTarget | null>(null);
 
-  const handleAddTarget = (target: any) => {
+  const handleAddTarget = (target: Omit<AnnualTarget, 'id'>) => {
     dispatch(createAnnualTarget(target));
+    setIsModalOpen(false);
+  };
+
+  const handleEditTarget = (target: AnnualTarget) => {
+    setEditingTarget(target);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteTarget = (targetId: string) => {
+    dispatch(deleteAnnualTarget(targetId));
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingTarget(null);
   };
 
   return (
@@ -38,7 +54,10 @@ const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs }) =>
       </Box>
 
       {selectedTab === TargetTab.Annual ? (
-        <AnnualTargetTable />
+        <AnnualTargetTable 
+          onEdit={handleEditTarget}
+          onDelete={handleDeleteTarget}
+        />
       ) : (
         <div>
           <h1>Quarterly Target Table</h1>
@@ -47,8 +66,9 @@ const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs }) =>
 
       <AddAnnualTargetModal
         open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
         onSubmit={handleAddTarget}
+        editingTarget={editingTarget}
       />
     </Box>
   );
