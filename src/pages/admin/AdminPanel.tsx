@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
-import { GridRegular, Search24Regular } from '@fluentui/react-icons';
-import { Dropdown } from '@fluentui/react/lib/Dropdown';
-import { DatePicker } from '@fluentui/react/lib/DatePicker';
-import { PrimaryButton } from '@fluentui/react/lib/Button';
-import { SearchBox } from '@fluentui/react/lib/SearchBox';
-import { ChoiceGroup, IChoiceGroupOption } from '@fluentui/react/lib/ChoiceGroup';
+import { GridRegular } from '@fluentui/react-icons';
 import Contracting from './Contracting';
 import Assessments from './Assessments';
+import Teams from './Teams';
 
 const AdminPanel: React.FC = () => {
   const [selectedSearchOption, setSelectedSearchOption] = useState<string>('contracting');
@@ -68,7 +64,7 @@ const AdminPanel: React.FC = () => {
       {/* Conditional Rendering */}
       {selectedSearchOption === 'contracting' && <Contracting />}
       {selectedSearchOption === 'assessments' && <Assessments />}
-      {/* {selectedSearchOption === 'teams' && renderTeams()} */}
+      {selectedSearchOption === 'teams' && <Teams />}
       {/* {selectedSearchOption === 'ratingscale' && renderRatingScale()} */}
     </div>
   );
