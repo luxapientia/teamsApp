@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import { ManagePage } from '../pages/manage';
 import AnnualCorporateScorecard from '../pages/scorecards/AnnualCorporateScorecard';
+import { AdminPanel } from '../pages/admin/';
 
 const Layout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -21,6 +22,8 @@ const Layout: React.FC = () => {
         return <ManagePage />;
       case 'annual-corporate-scorecards':
         return <AnnualCorporateScorecard />;
+      case 'admin-panel':
+        return <AdminPanel />
       default:
         return <div className="flex items-center justify-center h-full">Select a tab</div>;
     }
