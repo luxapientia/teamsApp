@@ -16,7 +16,7 @@ function App() {
       <Layout>
         {/* <AdminPanel /> */}
         <ManagePage title="Manage Companies" icon={<GridRegular fontSize={iconSize}/>} tabs={['Companies', 'Users']} />
-        <AnnualCorporateScorecard title="Annual Corporate Scorecard" icon={<PeopleTeamRegular fontSize={iconSize}/>} tabs={['Annual', 'Quarterly']} />
+        <AnnualCorporateScorecard title="Annual Corporate Scorecard" icon={<PeopleTeamRegular fontSize={iconSize}/>} tabs={['Annual Targets', 'Quarterly Targets']} />
       </Layout>
     </Provider>
   );
