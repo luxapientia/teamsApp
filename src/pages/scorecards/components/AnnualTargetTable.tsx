@@ -27,7 +27,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { AnnualTarget, AnnualTargetStatus } from '../../../types/annualCorporateScorecard';
-import { fetchAnnualTargets, updateTargetStatus } from '../../../store/slices/scorecardSlice';
+import { fetchAnnualTargets, updateTargetStatus, deleteAnnualTarget } from '../../../store/slices/scorecardSlice';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { RootState } from '../../../store';
@@ -205,10 +205,9 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
 
 interface AnnualTargetTableProps {
     onEdit: (target: AnnualTarget) => void;
-    onDelete: (targetId: string) => void;
 }
 
-const AnnualTargetTable: React.FC<AnnualTargetTableProps> = ({ onEdit, onDelete }) => {
+const AnnualTargetTable: React.FC<AnnualTargetTableProps> = ({ onEdit }) => {
     const dispatch = useAppDispatch();
     const { annualTargets, status, error } = useAppSelector((state: RootState) => state.scorecard);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -250,8 +249,11 @@ const AnnualTargetTable: React.FC<AnnualTargetTableProps> = ({ onEdit, onDelete 
 
     const handleDelete = () => {
         if (selectedRow) {
-            onDelete(selectedRow);
-            handleMenuClose();
+            const target = annualTargets.find(t => t.name === selectedRow);
+            if (target) {
+                dispatch(deleteAnnualTarget(target.id));
+                handleMenuClose();
+            }
         }
     };
 
