@@ -73,21 +73,40 @@ const StyledListItemIcon = styled(ListItemIcon)({
 });
 
 const StyledTabs = styled(Tabs)({
-    borderBottom: '1px solid #E5E7EB',
+    minHeight: 'unset',
     '& .MuiTabs-indicator': {
-        backgroundColor: '#0078D4',
+        display: 'none',
+    },
+    '& .MuiTabs-flexContainer': {
+        justifyContent: 'flex-end',
+        gap: '8px',
     },
 });
 
-const StyledTab = styled(Tab)({
+const StyledTab = styled(Tab)(({ theme }) => ({
     textTransform: 'none',
-    minWidth: 0,
-    padding: '12px 16px',
-    color: '#6B7280',
+    minHeight: 'unset',
+    padding: '8px 20px',
+    borderRadius: '20px',
+    color: '#666666',
+    backgroundColor: '#F3F3F3',
+    minWidth: 'unset',
+    fontSize: '14px',
+    fontWeight: 500,
+    transition: 'all 0.2s ease',
     '&.Mui-selected': {
-        color: '#0078D4',
+        color: '#fff',
+        backgroundColor: '#6264A7',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     },
-});
+    '&:hover': {
+        backgroundColor: theme.palette.mode === 'light' ? '#E5E5E5' : '#484848',
+        transform: 'translateY(-1px)',
+    },
+    '&:active': {
+        transform: 'translateY(0)',
+    },
+}));
 
 interface RowProps {
     target: AnnualTarget;
@@ -137,22 +156,36 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick }) => {
                     colSpan={6}
                 >
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <StyledTabs
-                                value={tabValue}
-                                onChange={handleTabChange}
-                                aria-label="annual target tabs"
-                            >
-                                <StyledTab label="Strategic Objective" />
-                                <StyledTab label="Perspectives" />
-                            </StyledTabs>
-                        </Box>
-                        <Box sx={{ py: 2 }}>
-                            {tabValue === 0 ? (
-                                <StrategicObjectiveTab />
-                            ) : (
-                                <PerspectiveTab />
-                            )}
+                        <Box sx={{ p: 2 }}>
+                            <Box sx={{ 
+                                display: 'flex', 
+                                justifyContent: 'flex-end',
+                                mb: 2 
+                            }}>
+                                <StyledTabs
+                                    value={tabValue}
+                                    onChange={handleTabChange}
+                                    aria-label="annual target tabs"
+                                >
+                                    <StyledTab 
+                                        label="Strategic Objectives" 
+                                        disableRipple
+                                        aria-label="View strategic objectives"
+                                    />
+                                    <StyledTab 
+                                        label="Perspectives" 
+                                        disableRipple
+                                        aria-label="View perspectives"
+                                    />
+                                </StyledTabs>
+                            </Box>
+                            <Box>
+                                {tabValue === 0 ? (
+                                    <StrategicObjectiveTab />
+                                ) : (
+                                    <PerspectiveTab targetName={target.name}/>
+                                )}
+                            </Box>
                         </Box>
                     </Collapse>
                 </StyledTableCell>

@@ -71,7 +71,10 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
         startDate,
         endDate,
         status,
-        content: [],
+        content: {
+          perspectives: [],
+          objectives: [],
+        },
       });
       handleClose();
     }

@@ -9,11 +9,12 @@ export enum TargetTab {
 }
 
 export interface AnnualTarget {
+    id: string;
     name: string;
     startDate: string;
     endDate: string;
     status: AnnualTargetStatus;
-    content: AnnualTargetContent[];
+    content: AnnualTargetContent;
 }
 
 export interface AnnualTargetContent {
