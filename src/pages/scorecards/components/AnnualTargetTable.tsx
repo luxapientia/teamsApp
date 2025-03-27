@@ -181,7 +181,7 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick }) => {
                             </Box>
                             <Box>
                                 {tabValue === 0 ? (
-                                    <StrategicObjectiveTab />
+                                    <StrategicObjectiveTab targetName={target.name}/>
                                 ) : (
                                     <PerspectiveTab targetName={target.name}/>
                                 )}
