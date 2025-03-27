@@ -26,25 +26,37 @@ const AdminPanel: React.FC = () => {
       <div className="flex items-center gap-4 mb-6">
         <div className="flex space-x-2">
           <button
-            className={`px-3 py-1.5 text-sm rounded-full ${selectedSearchOption === 'contracting' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            className={`px-3 py-1.5 text-sm rounded-full border ${selectedSearchOption === 'contracting'
+              ? 'border-blue-600 text-blue-600 bg-white'
+              : 'border-gray-200 text-gray-700 bg-gray-100'
+              }`}
             onClick={() => handleToggle('contracting')}
           >
             Performance Contracting Periods
           </button>
           <button
-            className={`px-3 py-1.5 text-sm rounded-full ${selectedSearchOption === 'assessments' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            className={`px-3 py-1.5 text-sm rounded-full border ${selectedSearchOption === 'assessments'
+              ? 'border-blue-600 text-blue-600 bg-white'
+              : 'border-gray-200 text-gray-700 bg-gray-100'
+              }`}
             onClick={() => handleToggle('assessments')}
           >
             Performance Assessments Periods
           </button>
           <button
-            className={`px-3 py-1.5 text-sm rounded-full ${selectedSearchOption === 'teams' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            className={`px-3 py-1.5 text-sm rounded-full border ${selectedSearchOption === 'teams'
+              ? 'border-blue-600 text-blue-600 bg-white'
+              : 'border-gray-200 text-gray-700 bg-gray-100'
+              }`}
             onClick={() => handleToggle('teams')}
           >
             Teams
           </button>
           <button
-            className={`px-3 py-1.5 text-sm rounded-full ${selectedSearchOption === 'rating' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            className={`px-3 py-1.5 text-sm rounded-full border ${selectedSearchOption === 'rating'
+              ? 'border-blue-600 text-blue-600 bg-white'
+              : 'border-gray-200 text-gray-700 bg-gray-100'
+              }`}
             onClick={() => handleToggle('rating')}
           >
             Performance Rating Scale
@@ -52,8 +64,18 @@ const AdminPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Form Section */}
-      <Contracting />
+      {/* Conditional Rendering */}
+      {selectedSearchOption === 'contracting' ? (
+        <div>
+          {/* Component for Performance Contracting Periods */}
+          <Contracting />
+        </div>
+      ) : (
+        <div>
+          {/* Component for Performance Assessments Periods */}
+          {/* ... existing code ... */}
+        </div>
+      )}
     </div>
   );
 };

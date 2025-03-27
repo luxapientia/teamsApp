@@ -9,6 +9,10 @@ const Contracting: React.FC = () => {
   const [selectedScorecard, setSelectedScorecard] = useState<string | undefined>();
   const [selectedQuarter, setSelectedQuarter] = useState<string | undefined>();
   const [showDateInputs, setShowDateInputs] = useState<boolean>(false);
+  const [scorecardError, setScorecardError] = useState<string>('');
+  const [quarterError, setQuarterError] = useState<string>('');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   const scorecardOptions = [
     { key: '2025-2026', text: 'Annual Corporate Scorecard 2025 - 2026' },
@@ -23,7 +27,25 @@ const Contracting: React.FC = () => {
   ];
 
   const handleViewClick = () => {
-    setShowDateInputs(true);
+    let hasError = false;
+
+    if (!selectedScorecard) {
+      setScorecardError('Please select an Annual Corporate Scorecard.');
+      hasError = true;
+    } else {
+      setScorecardError('');
+    }
+
+    if (!selectedQuarter) {
+      setQuarterError('Please select a Quarter.');
+      hasError = true;
+    } else {
+      setQuarterError('');
+    }
+
+    if (!hasError) {
+      setShowDateInputs(true);
+    }
   };
 
   return (
@@ -39,6 +61,7 @@ const Contracting: React.FC = () => {
           onChange={(_, option) => setSelectedScorecard(option?.key as string)}
           className="w-full"
         />
+        {scorecardError && <p className="text-red-500 text-sm">{scorecardError}</p>}
       </div>
 
       <div className="space-y-4">
@@ -55,10 +78,11 @@ const Contracting: React.FC = () => {
           />
           <PrimaryButton
             text="View"
-            className="bg-blue-600 hover:bg-blue-700 rounded-full"
+            className="bg-blue-500 hover:bg-blue-600 rounded-full shadow-md text-white"
             onClick={handleViewClick}
           />
         </div>
+        {quarterError && <p className="text-red-500 text-sm">{quarterError}</p>}
       </div>
 
       {showDateInputs && (
@@ -72,6 +96,10 @@ const Contracting: React.FC = () => {
                 placeholder="Select a date..."
                 ariaLabel="Select a date"
                 className="w-full"
+                value={startDate}
+                onSelectDate={(date) => {
+                  setStartDate(date || undefined);
+                }}
               />
               <Calendar24Regular className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
@@ -86,9 +114,14 @@ const Contracting: React.FC = () => {
                 placeholder="Select a date..."
                 ariaLabel="Select a date"
                 className="w-full"
+                value={endDate}
+                onSelectDate={(date) => {
+                  setEndDate(date || undefined);
+                }}
               />
               <Calendar24Regular className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
+            {startDate && endDate && startDate >= endDate && <p className="text-red-500 text-sm">End Date must be greater than Start Date.</p>}
           </div>
         </>
       )}
@@ -96,4 +129,4 @@ const Contracting: React.FC = () => {
   );
 };
 
-export default Contracting; 
+export default Contracting;
