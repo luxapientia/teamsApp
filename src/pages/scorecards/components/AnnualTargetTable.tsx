@@ -73,34 +73,60 @@ const StyledListItemIcon = styled(ListItemIcon)({
 });
 
 const StyledTabs = styled(Tabs)({
-    borderBottom: '1px solid #E5E7EB',
+    minHeight: 'unset',
     '& .MuiTabs-indicator': {
-        backgroundColor: '#0078D4',
+        display: 'none',
+    },
+    '& .MuiTabs-flexContainer': {
+        justifyContent: 'flex-end',
+        gap: '8px',
     },
 });
 
-const StyledTab = styled(Tab)({
+const StyledTab = styled(Tab)(({ theme }) => ({
     textTransform: 'none',
-    minWidth: 0,
-    padding: '12px 16px',
-    color: '#6B7280',
+    minHeight: 'unset',
+    padding: '8px 20px',
+    borderRadius: '20px',
+    color: '#666666',
+    backgroundColor: '#F3F3F3',
+    minWidth: 'unset',
+    fontSize: '14px',
+    fontWeight: 500,
+    transition: 'all 0.2s ease',
     '&.Mui-selected': {
-        color: '#0078D4',
+        color: '#fff',
+        backgroundColor: '#6264A7',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
     },
-});
+    '&:hover': {
+        backgroundColor: theme.palette.mode === 'light' ? '#E5E5E5' : '#484848',
+        transform: 'translateY(-1px)',
+    },
+    '&:active': {
+        transform: 'translateY(0)',
+    },
+}));
 
 interface RowProps {
     target: AnnualTarget;
     onMenuClick: (event: React.MouseEvent<HTMLElement>, name: string) => void;
+    onOpen?: (setOpen: (open: boolean) => void) => void;
 }
 
-const Row: React.FC<RowProps> = ({ target, onMenuClick }) => {
+const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
     const [open, setOpen] = useState(false);
     const [tabValue, setTabValue] = useState(0);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
     };
+
+    useEffect(() => {
+        if (onOpen) {
+            onOpen(setOpen);
+        }
+    }, [onOpen]);
 
     return (
         <>
@@ -128,7 +154,9 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick }) => {
                 <StyledTableCell>{target.endDate}</StyledTableCell>
                 <StyledTableCell>{target.status}</StyledTableCell>
                 <StyledTableCell align="right">
-                    <ViewButton>View</ViewButton>
+                    <ViewButton onClick={() => setOpen(true)}>
+                        View
+                    </ViewButton>
                 </StyledTableCell>
             </TableRow>
             <TableRow>
@@ -137,22 +165,36 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick }) => {
                     colSpan={6}
                 >
                     <Collapse in={open} timeout="auto" unmountOnExit>
-                        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                            <StyledTabs
-                                value={tabValue}
-                                onChange={handleTabChange}
-                                aria-label="annual target tabs"
-                            >
-                                <StyledTab label="Strategic Objective" />
-                                <StyledTab label="Perspectives" />
-                            </StyledTabs>
-                        </Box>
-                        <Box sx={{ py: 2 }}>
-                            {tabValue === 0 ? (
-                                <StrategicObjectiveTab />
-                            ) : (
-                                <PerspectiveTab />
-                            )}
+                        <Box sx={{ p: 2 }}>
+                            <Box sx={{ 
+                                display: 'flex', 
+                                justifyContent: 'flex-end',
+                                mb: 2 
+                            }}>
+                                <StyledTabs
+                                    value={tabValue}
+                                    onChange={handleTabChange}
+                                    aria-label="annual target tabs"
+                                >
+                                    <StyledTab 
+                                        label="Strategic Objectives" 
+                                        disableRipple
+                                        aria-label="View strategic objectives"
+                                    />
+                                    <StyledTab 
+                                        label="Perspectives" 
+                                        disableRipple
+                                        aria-label="View perspectives"
+                                    />
+                                </StyledTabs>
+                            </Box>
+                            <Box>
+                                {tabValue === 0 ? (
+                                    <StrategicObjectiveTab targetName={target.name}/>
+                                ) : (
+                                    <PerspectiveTab targetName={target.name}/>
+                                )}
+                            </Box>
                         </Box>
                     </Collapse>
                 </StyledTableCell>
@@ -161,11 +203,17 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick }) => {
     );
 };
 
-const AnnualTargetTable: React.FC = () => {
+interface AnnualTargetTableProps {
+    onEdit: (target: AnnualTarget) => void;
+    onDelete: (targetId: string) => void;
+}
+
+const AnnualTargetTable: React.FC<AnnualTargetTableProps> = ({ onEdit, onDelete }) => {
     const dispatch = useAppDispatch();
     const { annualTargets, status, error } = useAppSelector((state: RootState) => state.scorecard);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedRow, setSelectedRow] = useState<string | null>(null);
+    const [expandRow, setExpandRow] = useState<((open: boolean) => void) | null>(null);
 
     useEffect(() => {
         // if (status === 'idle') {
@@ -185,17 +233,26 @@ const AnnualTargetTable: React.FC = () => {
 
     const handleOpen = () => {
         handleMenuClose();
-        // Add open functionality
+        if (expandRow) {
+            expandRow(true);
+        }
     };
 
     const handleEdit = () => {
-        handleMenuClose();
-        // Add edit functionality
+        if (selectedRow) {
+            const target = annualTargets.find(t => t.name === selectedRow);
+            if (target) {
+                onEdit(target);
+                handleMenuClose();
+            }
+        }
     };
 
     const handleDelete = () => {
-        handleMenuClose();
-        // Add delete functionality
+        if (selectedRow) {
+            onDelete(selectedRow);
+            handleMenuClose();
+        }
     };
 
     return (
@@ -218,6 +275,7 @@ const AnnualTargetTable: React.FC = () => {
                                 key={target.name} 
                                 target={target} 
                                 onMenuClick={handleMenuClick}
+                                onOpen={target.name === selectedRow ? setExpandRow : undefined}
                             />
                         ))}
                     </TableBody>

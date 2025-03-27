@@ -9,11 +9,12 @@ export enum TargetTab {
 }
 
 export interface AnnualTarget {
+    id: string;
     name: string;
     startDate: string;
     endDate: string;
     status: AnnualTargetStatus;
-    content: AnnualTargetContent[];
+    content: AnnualTargetContent;
 }
 
 export interface AnnualTargetContent {
@@ -24,14 +25,14 @@ export interface AnnualTargetContent {
 export interface AnnualTargetObjective {
     perspective: string;
     name: string;
-    KPIs: string[];
+    KPIs: AnnualTargetKPI[];
 }
 
 export interface AnnualTargetKPI {
     indicator: string;
     weight: number;
-    baseline: number;
-    target: number;
+    baseline: string;
+    target: string;
     ratingScores: AnnualTargetRatingScore[];
 }
 

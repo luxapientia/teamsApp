@@ -74,6 +74,8 @@ const Content: React.FC<ContentProps> = ({
     selectedTabChanger(newValue);
   };
 
+  
+
   return (
     <Box
       component="main"
@@ -123,6 +125,7 @@ const Content: React.FC<ContentProps> = ({
 
         {/* Content section */}
         {children}
+        
       </Container>
     </Box>
   );
