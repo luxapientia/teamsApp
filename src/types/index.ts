@@ -1,3 +1,6 @@
+export * from './annualCorporateScorecard';
+export * from './page';
+
 export type BaseEntity = {
   _id: string;
   __v?: number;
@@ -35,3 +38,4 @@ export interface ApiResponse<T> {
   status: number;
   message?: string;
 } 
+
