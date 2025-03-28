@@ -26,14 +26,18 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { AnnualTarget, AnnualTargetStatus } from '../../../../types/annualCorporateScorecard';
-import { fetchAnnualTargets, updateTargetStatus, deleteAnnualTarget } from '../../../../store/slices/scorecardSlice';
-import { useAppDispatch } from '../../../../hooks/useAppDispatch';
-import { useAppSelector } from '../../../../hooks/useAppSelector';
-import { RootState } from '../../../../store';
-import StrategicObjectiveTab from './StrategicObjectiveTab';
-import PerspectiveTab from './PerspectiveTab';
-
+import { AnnualTarget, AnnualTargetStatus } from '../../../types/annualCorporateScorecard';
+import { deleteAnnualTarget } from '../../../store/slices/scorecardSlice';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { RootState } from '../../../store';
+import StrategicObjectiveTab from './tabs/strategic_objective';
+import PerspectiveTab from './tabs/perspective';
+import RatingScoreTab from './tabs/rating_scale';
+import ContractingPeriodTab from './tabs/contracting_period';
+import AssessmentsPeriodTab from './tabs/assessments_period';
+import AddIcon from '@mui/icons-material/Add';
+import AddAnnualTargetModal from './AddAnnualTargetModal';
 // Styled components
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     borderBottom: '1px solid #E5E7EB',
@@ -96,27 +100,27 @@ const StyledTab = styled(Tab)(({ theme }) => ({
     fontSize: '14px',
     fontWeight: 500,
     transition: 'all 0.2s ease',
-    
+
     '&.Mui-selected': {
         color: '#fff',
         backgroundColor: '#0078D4',
         borderColor: '#0078D4',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        
+
         '&:hover': {
             backgroundColor: '#106EBE',
             borderColor: '#106EBE',
             color: '#fff',
         }
     },
-    
+
     '&:not(.Mui-selected):hover': {
         backgroundColor: '#F9FAFB',
         borderColor: '#0078D4',
         color: '#0078D4',
         transform: 'translateY(-1px)',
     },
-    
+
     '&:active': {
         transform: 'translateY(0)',
     },
@@ -141,6 +145,23 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
             onOpen(setOpen);
         }
     }, [onOpen]);
+
+    const renderTab = () => {
+        switch (tabValue) {
+            case 0:
+                return <ContractingPeriodTab targetName={target.name} />;
+            case 1:
+                return <AssessmentsPeriodTab targetName={target.name} />;
+            case 2:
+                return <RatingScoreTab targetName={target.name} />;
+            case 3:
+                return <StrategicObjectiveTab targetName={target.name} />;
+            case 4:
+                return <PerspectiveTab targetName={target.name} />;
+            default:
+                return null;
+        }
+    }
 
     return (
         <>
@@ -191,6 +212,21 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
                                     aria-label="annual target tabs"
                                 >
                                     <StyledTab
+                                        label="Performance Contracting Period"
+                                        disableRipple
+                                        aria-label="View performance contracting period"
+                                    />
+                                    <StyledTab
+                                        label="Performance Assessments Period"
+                                        disableRipple
+                                        aria-label="View performance assessments period"
+                                    />
+                                    <StyledTab
+                                        label="Rating Scale"
+                                        disableRipple
+                                        aria-label="View rating scale"
+                                    />
+                                    <StyledTab
                                         label="Strategic Objectives"
                                         disableRipple
                                         aria-label="View strategic objectives"
@@ -203,11 +239,7 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
                                 </StyledTabs>
                             </Box>
                             <Box>
-                                {tabValue === 0 ? (
-                                    <StrategicObjectiveTab targetName={target.name} />
-                                ) : (
-                                    <PerspectiveTab targetName={target.name} />
-                                )}
+                                {renderTab()}
                             </Box>
                         </Box>
                     </Collapse>
@@ -217,16 +249,15 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
     );
 };
 
-interface AnnualTargetTableProps {
-    onEdit: (target: AnnualTarget) => void;
-}
-
-const AnnualTargetTable: React.FC<AnnualTargetTableProps> = ({ onEdit }) => {
+const AnnualTargets: React.FC = () => {
     const dispatch = useAppDispatch();
-    const { annualTargets, status, error } = useAppSelector((state: RootState) => state.scorecard);
+    const { annualTargets, status } = useAppSelector((state: RootState) => state.scorecard);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedRow, setSelectedRow] = useState<string | null>(null);
     const [expandRow, setExpandRow] = useState<((open: boolean) => void) | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingTarget, setEditingTarget] = useState<AnnualTarget | null>(null);
+
 
     useEffect(() => {
         // if (status === 'idle') {
@@ -255,7 +286,8 @@ const AnnualTargetTable: React.FC<AnnualTargetTableProps> = ({ onEdit }) => {
         if (selectedRow) {
             const target = annualTargets.find(t => t.name === selectedRow);
             if (target) {
-                onEdit(target);
+                setEditingTarget(target);
+                setIsModalOpen(true);
                 handleMenuClose();
             }
         }
@@ -272,75 +304,100 @@ const AnnualTargetTable: React.FC<AnnualTargetTableProps> = ({ onEdit }) => {
     };
 
     return (
-        <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
-            <TableContainer>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <StyledHeaderCell>Annual Target</StyledHeaderCell>
-                            <StyledHeaderCell></StyledHeaderCell>
-                            <StyledHeaderCell>Start Date</StyledHeaderCell>
-                            <StyledHeaderCell>End Date</StyledHeaderCell>
-                            <StyledHeaderCell>Status</StyledHeaderCell>
-                            <StyledHeaderCell></StyledHeaderCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {annualTargets.map((target) => (
-                            <Row
-                                key={target.name}
-                                target={target}
-                                onMenuClick={handleMenuClick}
-                                onOpen={target.name === selectedRow ? setExpandRow : undefined}
-                            />
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+        <div>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => setIsModalOpen(true)}
+                    sx={{
+                        textTransform: 'none',
+                        borderColor: '#E5E7EB',
+                        color: '#374151',
+                        '&:hover': {
+                            borderColor: '#D1D5DB',
+                            backgroundColor: '#F9FAFB',
+                        },
+                    }}
+                >
+                    New
+                </Button>
+            </Box>
+            <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+                <TableContainer>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <StyledHeaderCell>Annual Target</StyledHeaderCell>
+                                <StyledHeaderCell></StyledHeaderCell>
+                                <StyledHeaderCell>Start Date</StyledHeaderCell>
+                                <StyledHeaderCell>End Date</StyledHeaderCell>
+                                <StyledHeaderCell>Status</StyledHeaderCell>
+                                <StyledHeaderCell></StyledHeaderCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {annualTargets.map((target, index) => (
+                                <Row
+                                    key={index}
+                                    target={target}
+                                    onMenuClick={handleMenuClick}
+                                    onOpen={target.name === selectedRow ? setExpandRow : undefined}
+                                />
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
 
-            <Menu
-                anchorEl={anchorEl}
-                open={Boolean(anchorEl)}
-                onClose={handleMenuClose}
-                PaperProps={{
-                    elevation: 1,
-                    sx: {
-                        width: '180px',
-                        padding: '4px 0',
-                        borderRadius: '8px',
-                        border: '1px solid #E5E7EB',
-                    },
-                }}
-                anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'right',
-                }}
-                transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                }}
-            >
-                <StyledMenuItem onClick={handleOpen}>
-                    <StyledListItemIcon>
-                        <OpenInNewIcon fontSize="small" />
-                    </StyledListItemIcon>
-                    <ListItemText>Open</ListItemText>
-                </StyledMenuItem>
-                <StyledMenuItem onClick={handleEdit}>
-                    <StyledListItemIcon>
-                        <EditIcon fontSize="small" />
-                    </StyledListItemIcon>
-                    <ListItemText>Edit</ListItemText>
-                </StyledMenuItem>
-                <StyledMenuItem onClick={handleDelete}>
-                    <StyledListItemIcon>
-                        <DeleteIcon fontSize="small" />
-                    </StyledListItemIcon>
-                    <ListItemText>Delete</ListItemText>
-                </StyledMenuItem>
-            </Menu>
-        </Paper>
+                <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleMenuClose}
+                    PaperProps={{
+                        elevation: 1,
+                        sx: {
+                            width: '180px',
+                            padding: '4px 0',
+                            borderRadius: '8px',
+                            border: '1px solid #E5E7EB',
+                        },
+                    }}
+                    anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                    }}
+                >
+                    <StyledMenuItem onClick={handleOpen}>
+                        <StyledListItemIcon>
+                            <OpenInNewIcon fontSize="small" />
+                        </StyledListItemIcon>
+                        <ListItemText>Open</ListItemText>
+                    </StyledMenuItem>
+                    <StyledMenuItem onClick={handleEdit}>
+                        <StyledListItemIcon>
+                            <EditIcon fontSize="small" />
+                        </StyledListItemIcon>
+                        <ListItemText>Edit</ListItemText>
+                    </StyledMenuItem>
+                    <StyledMenuItem onClick={handleDelete}>
+                        <StyledListItemIcon>
+                            <DeleteIcon fontSize="small" />
+                        </StyledListItemIcon>
+                        <ListItemText>Delete</ListItemText>
+                    </StyledMenuItem>
+                </Menu>
+            </Paper>
+            <AddAnnualTargetModal
+                open={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                editingAnnualTarget={editingTarget}
+            />
+        </div>
     );
 };
 
-export default AnnualTargetTable;
+export default AnnualTargets;

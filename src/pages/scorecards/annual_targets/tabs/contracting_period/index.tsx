@@ -10,17 +10,17 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { useAppSelector } from '../../../../hooks/useAppSelector';
-import { RootState } from '../../../../store';
-import { useAppDispatch } from '../../../../hooks/useAppDispatch';
-import { updateAnnualTarget } from '../../../../store/slices/scorecardSlice';
+import { useAppSelector } from '../../../../../hooks/useAppSelector';
+import { RootState } from '../../../../../store';
+import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
+import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
  
 
-interface PerspectiveTabProps {
+interface ContractingPeriodTabProps {
   targetName: string;
 }
 
-const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
+const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName }) => {
   const dispatch = useAppDispatch();
   const [isAdding, setIsAdding] = useState(false);
   const [newPerspective, setNewPerspective] = useState('');
@@ -214,4 +214,4 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
   );
 };
 
-export default PerspectiveTab;
+export default ContractingPeriodTab;

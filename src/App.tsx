@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Layout from './layouts/Layout';
 import './styles/globals.css';
-import AnnualCorporateScorecard from './pages/scorecards/AnnualCorporateScorecard';
+import AnnualCorporateScorecard from './pages/scorecards';
 import { AdminPanel } from './pages/admin/';
 import { ManagePage } from './pages/manage';
 import { BoardSplitRegular, GridRegular, PeopleTeamRegular } from '@fluentui/react-icons';

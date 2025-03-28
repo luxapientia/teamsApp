@@ -18,6 +18,43 @@ const initialState: ScorecardState = {
       content: {
         perspectives: [],
         objectives: [],
+        ratingScores: [],
+        assesmentPeriod: {
+          Q1: {
+            startDate: '',
+            endDate: '',
+          },
+          Q2: {
+            startDate: '',
+            endDate: '',
+          },
+          Q3: {
+            startDate: '',
+            endDate: '',
+          },
+          Q4: {
+            startDate: '',
+            endDate: '',
+          },
+        },
+        contractingPeriod: {
+          Q1: {
+            startDate: '',
+            endDate: '',
+          },
+          Q2: {
+            startDate: '',
+            endDate: '',
+          },
+          Q3: {
+            startDate: '',
+            endDate: '',
+          },
+          Q4: {
+            startDate: '',
+            endDate: '',
+          },
+        },
       },
     }
   ],
@@ -57,6 +94,7 @@ export const createAnnualTarget = createAsyncThunk(
 export const updateAnnualTarget = createAsyncThunk(
   'scorecard/updateAnnualTarget',
   async (target: AnnualTarget) => {
+    console.log(target);
     // Replace with your API call
     // const response = await fetch(`/api/annual-targets/${target.id}`, {
     //   method: 'PUT',
@@ -112,7 +150,7 @@ const scorecardSlice = createSlice({
         state.annualTargets.push(action.payload);
       })
       .addCase(updateAnnualTarget.fulfilled, (state, action) => {
-        const index = state.annualTargets.findIndex(t => t.name === action.payload.name);
+        const index = state.annualTargets.findIndex(t => t.id === action.payload.id);
         if (index !== -1) {
           state.annualTargets[index] = action.payload;
         }
