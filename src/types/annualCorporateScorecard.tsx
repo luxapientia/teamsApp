@@ -40,9 +40,11 @@ export interface AnnualTargetKPI {
 }
 
 export interface AnnualTargetRatingScore {
+    score: number;
     name: string;
     max: number;
     min: number;
+    color: string;
 }
 
 export interface AnnualTargetAssesmentPeriod {
