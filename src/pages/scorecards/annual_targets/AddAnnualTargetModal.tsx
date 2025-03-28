@@ -14,24 +14,27 @@ import {
   Box,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { AnnualTarget, AnnualTargetStatus } from '../../../../types/annualCorporateScorecard';
+import { AnnualTarget, AnnualTargetStatus } from '../../../types/annualCorporateScorecard';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { createAnnualTarget, updateAnnualTarget } from '../../../store/slices/scorecardSlice';
+
 
 interface AddAnnualTargetModalProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (target: Omit<AnnualTarget, 'id'>) => void;
-  editingTarget: AnnualTarget | null;
+  // onSubmit: (target: Omit<AnnualTarget, 'id'>) => void;
+  editingAnnualTarget: AnnualTarget | null;
 }
 
 const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
   open,
   onClose,
-  onSubmit,
-  editingTarget,
+  editingAnnualTarget,
 }) => {
   const formatDateForInput = (date: Date): string => {
     return date.toISOString().split('T')[0];
   };
+  const dispatch = useAppDispatch();
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState<string>(formatDateForInput(new Date()));
   const [endDate, setEndDate] = useState<string>(formatDateForInput(new Date()));
@@ -39,21 +42,21 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
   const [dateError, setDateError] = useState('');
 
   useEffect(() => {
-    if (editingTarget) {
+    if (editingAnnualTarget) {
       // Pre-fill form with editing target data
-      setName(editingTarget.name);
-      setStartDate(editingTarget.startDate);
-      setEndDate(editingTarget.endDate);
-      setStatus(editingTarget.status);
+      setName(editingAnnualTarget.name);
+      setStartDate(editingAnnualTarget.startDate);
+      setEndDate(editingAnnualTarget.endDate);
+      setStatus(editingAnnualTarget.status);
     }
-  }, [editingTarget]);
+  }, [editingAnnualTarget]);
 
   // Helper function to format date to YYYY-MM-DD
 
   const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newStartDate = new Date(e.target.value);
     setStartDate(newStartDate.toISOString().split('T')[0]);
-    
+
     // If end date is before new start date, update end date
     if (endDate < newStartDate.toISOString().split('T')[0]) {
       setEndDate(newStartDate.toISOString().split('T')[0]);
@@ -77,8 +80,17 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
       setDateError('End date cannot be before start date');
       return;
     }
-    if (name && startDate && endDate) {
-      onSubmit({
+
+    if (editingAnnualTarget) {
+      dispatch(updateAnnualTarget({
+        ...editingAnnualTarget,
+        name,
+        startDate,
+        endDate,
+        status,
+      }));
+    } else {
+      dispatch(createAnnualTarget({
         name,
         startDate,
         endDate,
@@ -86,10 +98,48 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
         content: {
           perspectives: [],
           objectives: [],
+          ratingScores: [],
+          assesmentPeriod: {
+            Q1: {
+              startDate: '',
+              endDate: '',
+            },
+            Q2: {
+              startDate: '',
+              endDate: '',
+            },
+            Q3: {
+              startDate: '',
+              endDate: '',
+            },
+            Q4: {
+              startDate: '',
+              endDate: '',
+            },
+          },
+          contractingPeriod: {
+            Q1: {
+              startDate: '',
+              endDate: '',
+            },
+            Q2: {
+              startDate: '',
+              endDate: '',
+            },
+            Q3: {
+              startDate: '',
+              endDate: '',
+            },
+            Q4: {
+              startDate: '',
+              endDate: '',
+            },
+          },
         },
-      });
-      handleClose();
+      }));
     }
+
+    onClose();
   };
 
   const handleClose = () => {
@@ -101,8 +151,8 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
   };
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={handleClose}
       maxWidth="sm"
       fullWidth

@@ -20,6 +20,9 @@ export interface AnnualTarget {
 export interface AnnualTargetContent {
     perspectives: string[];
     objectives: AnnualTargetObjective[];
+    ratingScores: AnnualTargetRatingScore[];
+    assesmentPeriod: AnnualTargetAssesmentPeriod;
+    contractingPeriod: AnnualTargetContractingPeriod;
 }
 
 export interface AnnualTargetObjective {
@@ -42,3 +45,40 @@ export interface AnnualTargetRatingScore {
     min: number;
 }
 
+export interface AnnualTargetAssesmentPeriod {
+    Q1: {
+        startDate: string;
+        endDate: string;
+    },
+    Q2: {
+        startDate: string;
+        endDate: string;
+    },
+    Q3: {
+        startDate: string;
+        endDate: string;
+    },
+    Q4: {
+        startDate: string;
+        endDate: string;
+    }
+}
+
+export interface AnnualTargetContractingPeriod {
+    Q1: {
+        startDate: string;
+        endDate: string;
+    },
+    Q2: {
+        startDate: string;
+        endDate: string;
+    },
+    Q3: {
+        startDate: string;
+        endDate: string;
+    },
+    Q4: {
+        startDate: string;
+        endDate: string;
+    }
+}
