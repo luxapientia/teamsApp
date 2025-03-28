@@ -38,11 +38,11 @@ interface AddStrategicObjectiveModalProps {
 }
 
 const defaultRatingScores = [
-  { name: 'Unacceptable', min: 0, max: 49 },
-  { name: 'Room for Improvement', min: 50, max: 89 },
-  { name: 'Target Achieved', min: 90, max: 100 },
-  { name: 'High Achiever', min: 101, max: 110 },
-  { name: 'Superior Performance', min: 111, max: 140 },
+  {score:1, name: 'Unacceptable', min: 0, max: 49, color: '#FF0000' },
+  {score:2, name: 'Room for Improvement', min: 50, max: 89, color: '#FFA500' },
+  {score:3, name: 'Target Achieved', min: 90, max: 100, color: '#008000' },
+  {score:4, name: 'High Achiever', min: 101, max: 110, color: '#0000FF' },
+  {score:5, name: 'Superior Performance', min: 111, max: 140, color: '#000080' },
 ];
 
 const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
