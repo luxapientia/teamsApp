@@ -1,215 +1,260 @@
 import React, { useState } from 'react';
 import {
   Box,
-  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  styled,
+  IconButton,
+  TextField,
   Button,
   Stack,
-  TextField,
-  IconButton,
-  Paper,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
-import { RootState } from '../../../../../store';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
+import { RootState } from '../../../../../store';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
- 
+
+const StyledTableCell = styled(TableCell)(({ theme }) => ({
+  borderBottom: '1px solid #E5E7EB',
+  padding: '16px',
+  color: '#374151',
+}));
+
+const StyledHeaderCell = styled(TableCell)(({ theme }) => ({
+  borderBottom: '1px solid #E5E7EB',
+  padding: '16px',
+  color: '#6B7280',
+  fontWeight: 500,
+}));
 
 interface AssessmentsPeriodTabProps {
   targetName: string;
 }
 
+interface PeriodData {
+  startDate: string;
+  endDate: string;
+}
+
+interface ValidationErrors {
+  startDate?: string;
+  endDate?: string;
+}
+
 const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName }) => {
   const dispatch = useAppDispatch();
-  const [isAdding, setIsAdding] = useState(false);
-  const [newPerspective, setNewPerspective] = useState('');
-
   const annualTarget = useAppSelector((state: RootState) => 
     state.scorecard.annualTargets.find(target => target.name === targetName)
   );
-  const perspectives = annualTarget?.content.perspectives || [];
 
-  const handleAdd = () => {
-    setIsAdding(true);
+  const [editingQuarter, setEditingQuarter] = useState<string | null>(null);
+  const [editData, setEditData] = useState<PeriodData>({ startDate: '', endDate: '' });
+  const [errors, setErrors] = useState<ValidationErrors>({});
+
+  const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
+
+  const handleEdit = (quarter: string) => {
+    const period = annualTarget?.content.assesmentPeriod?.[quarter as keyof typeof annualTarget.content.assesmentPeriod];
+    if (period) {
+      setEditData({
+        startDate: period.startDate,
+        endDate: period.endDate
+      });
+    }
+    setEditingQuarter(quarter);
+    setErrors({});
+  };
+
+  const validateDates = (): boolean => {
+    const newErrors: ValidationErrors = {};
+    let isValid = true;
+
+    if (!editData.startDate.trim()) {
+      newErrors.startDate = 'Start date is required';
+      isValid = false;
+    }
+
+    if (!editData.endDate.trim()) {
+      newErrors.endDate = 'End date is required';
+      isValid = false;
+    }
+
+    if (editData.startDate && editData.endDate && annualTarget) {
+      const start = new Date(editData.startDate);
+      const end = new Date(editData.endDate);
+      const targetStart = new Date(annualTarget.startDate);
+      const targetEnd = new Date(annualTarget.endDate);
+
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      targetStart.setHours(0, 0, 0, 0);
+      targetEnd.setHours(0, 0, 0, 0);
+
+      if (end < start) {
+        newErrors.endDate = 'End date must be after start date';
+        isValid = false;
+      }
+
+      if (start < targetStart) {
+        newErrors.startDate = 'Start date cannot be before annual target period';
+        isValid = false;
+      }
+
+      if (start > targetEnd) {
+        newErrors.startDate = 'Start date cannot be after annual target period';
+        isValid = false;
+      }
+
+      if (end < targetStart) {
+        newErrors.endDate = 'End date cannot be before annual target period';
+        isValid = false;
+      }
+
+      if (end > targetEnd) {
+        newErrors.endDate = 'End date cannot be after annual target period';
+        isValid = false;
+      }
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleSave = () => {
-    if (newPerspective.trim() && annualTarget) {
+    if (annualTarget && editingQuarter && validateDates()) {
+      const updatedPeriods = {
+        ...annualTarget.content.assesmentPeriod,
+        [editingQuarter]: editData
+      };
+
       dispatch(updateAnnualTarget({
         ...annualTarget,
         content: {
           ...annualTarget.content,
-          perspectives: [...perspectives, newPerspective.trim()],
+          assesmentPeriod: updatedPeriods
         },
       }));
-      setNewPerspective('');
+      setEditingQuarter(null);
+      setErrors({});
     }
-    setIsAdding(false);
   };
 
   const handleCancel = () => {
-    setNewPerspective('');
-    setIsAdding(false);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSave();
-    } else if (e.key === 'Escape') {
-      handleCancel();
-    }
-  };
-
-  const handleDelete = (index: number) => {
-    if (annualTarget) {
-      dispatch(updateAnnualTarget({
-        ...annualTarget,
-        content: {
-          ...annualTarget.content,
-          perspectives: perspectives.filter((_, i) => i !== index),
-        },
-      }));
-    }
+    setEditingQuarter(null);
+    setEditData({ startDate: '', endDate: '' });
+    setErrors({});
   };
 
   return (
     <Box p={2}>
-      <Stack spacing={2}>
-        {perspectives.map((perspective, index) => (
-          <Paper
-            key={index}
-            elevation={0}
-            sx={{
-              border: '1px solid #E5E7EB',
-              borderRadius: '8px',
-              transition: 'all 0.2s ease',
-              '&:hover': {
-                borderColor: '#D1D5DB',
-                backgroundColor: '#F9FAFB',
-                '& .delete-icon': {
-                  opacity: 1,
-                },
-              },
-            }}
-          >
-            <Stack 
-              direction="row" 
-              alignItems="center" 
-              justifyContent="space-between"
-              sx={{ p: 2 }}
-            >
-              <Typography sx={{ color: '#374151' }}>
-                {perspective}
-              </Typography>
-              <IconButton
-                size="small"
-                onClick={() => handleDelete(index)}
-                className="delete-icon"
-                sx={{
-                  opacity: 0,
-                  transition: 'all 0.2s ease',
-                  color: '#6B7280',
-                  '&:hover': {
-                    color: '#DC2626',
-                    backgroundColor: '#FEE2E2',
-                  },
-                }}
-              >
-                <DeleteOutlineIcon fontSize="small" />
-              </IconButton>
-            </Stack>
-          </Paper>
-        ))}
-
-        {isAdding ? (
-          <Paper
-            elevation={0}
-            sx={{
-              border: '1px solid #E5E7EB',
-              borderRadius: '8px',
-              p: 2,
-            }}
-          >
-            <Stack spacing={2}>
-              <TextField
-                autoFocus
-                fullWidth
-                size="small"
-                value={newPerspective}
-                onChange={(e) => setNewPerspective(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Enter perspective name"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: '#F9FAFB',
-                    '& fieldset': {
-                      borderColor: '#E5E7EB',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: '#D1D5DB',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#6264A7',
-                    },
-                  },
-                }}
-              />
-              <Stack direction="row" spacing={1} justifyContent="flex-end">
-                <Button 
-                  onClick={handleCancel}
-                  variant="outlined"
-                  size="small"
-                  sx={{
-                    borderColor: '#E5E7EB',
-                    color: '#374151',
-                    '&:hover': {
-                      borderColor: '#D1D5DB',
-                      backgroundColor: '#F9FAFB',
-                    },
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleSave}
-                  variant="contained"
-                  size="small"
-                  sx={{
-                    backgroundColor: '#6264A7',
-                    '&:hover': {
-                      backgroundColor: '#4F46E5',
-                    },
-                  }}
-                >
-                  Save
-                </Button>
-              </Stack>
-            </Stack>
-          </Paper>
-        ) : (
-          <Button
-            startIcon={<AddIcon />}
-            onClick={handleAdd}
-            sx={{
-              color: '#6B7280',
-              justifyContent: 'flex-start',
-              textTransform: 'none',
-              p: 2,
-              border: '1px dashed #E5E7EB',
-              borderRadius: '8px',
-              width: '100%',
-              '&:hover': {
-                backgroundColor: '#F9FAFB',
-                borderColor: '#6264A7',
-                color: '#6264A7',
-              },
-            }}
-          >
-            Add new
-          </Button>
-        )}
-      </Stack>
+      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <StyledHeaderCell>Quarter</StyledHeaderCell>
+              <StyledHeaderCell>Start Date</StyledHeaderCell>
+              <StyledHeaderCell>End Date</StyledHeaderCell>
+              <StyledHeaderCell align="right">Actions</StyledHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {quarters.map((quarter) => {
+              const period = annualTarget?.content.assesmentPeriod?.[quarter as keyof typeof annualTarget.content.assesmentPeriod];
+              return (
+                <TableRow key={quarter}>
+                  <StyledTableCell>{quarter}</StyledTableCell>
+                  <StyledTableCell>
+                    {editingQuarter === quarter ? (
+                      <TextField
+                        type="date"
+                        value={editData.startDate}
+                        onChange={(e) => setEditData({ ...editData, startDate: e.target.value })}
+                        variant="standard"
+                        size="small"
+                        fullWidth
+                        error={!!errors.startDate}
+                        helperText={errors.startDate}
+                      />
+                    ) : (
+                      period?.startDate
+                    )}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {editingQuarter === quarter ? (
+                      <TextField
+                        type="date"
+                        value={editData.endDate}
+                        onChange={(e) => setEditData({ ...editData, endDate: e.target.value })}
+                        variant="standard"
+                        size="small"
+                        fullWidth
+                        error={!!errors.endDate}
+                        helperText={errors.endDate}
+                      />
+                    ) : (
+                      period?.endDate
+                    )}
+                  </StyledTableCell>
+                  <StyledTableCell align="right">
+                    {editingQuarter === quarter ? (
+                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={handleCancel}
+                          sx={{
+                            borderColor: '#E5E7EB',
+                            color: '#374151',
+                            '&:hover': {
+                              borderColor: '#D1D5DB',
+                              backgroundColor: '#F9FAFB',
+                            },
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          onClick={handleSave}
+                          sx={{
+                            backgroundColor: '#0078D4',
+                            '&:hover': {
+                              backgroundColor: '#106EBE',
+                            },
+                          }}
+                        >
+                          Save
+                        </Button>
+                      </Stack>
+                    ) : (
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(quarter)}
+                        sx={{
+                          color: '#6B7280',
+                          padding: '4px',
+                          '&:hover': {
+                            color: '#0078D4',
+                            backgroundColor: '#F0F9FF',
+                          },
+                        }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                  </StyledTableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </Paper>
     </Box>
   );
 };
