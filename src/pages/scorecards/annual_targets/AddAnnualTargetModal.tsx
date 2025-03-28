@@ -101,38 +101,38 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
           ratingScores: [],
           assesmentPeriod: {
             Q1: {
-              startDate: '',
-              endDate: '',
+              startDate,
+              endDate,
             },
             Q2: {
-              startDate: '',
-              endDate: '',
+              startDate,
+              endDate,
             },
             Q3: {
-              startDate: '',
-              endDate: '',
+              startDate,
+              endDate,
             },
             Q4: {
-              startDate: '',
-              endDate: '',
+              startDate,
+              endDate,
             },
           },
           contractingPeriod: {
             Q1: {
-              startDate: '',
-              endDate: '',
+              startDate,
+              endDate,
             },
             Q2: {
-              startDate: '',
-              endDate: '',
+              startDate,
+              endDate,
             },
             Q3: {
-              startDate: '',
-              endDate: '',
+              startDate,
+              endDate,
             },
             Q4: {
-              startDate: '',
-              endDate: '',
+              startDate,
+              endDate,
             },
           },
         },
