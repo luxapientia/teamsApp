@@ -97,7 +97,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     // Validate KPIs
     const kpiErrors = kpis.map(kpi => {
       const errors: { [key: string]: string } = {};
-      
+
       if (!kpi.indicator.trim()) {
         errors.indicator = 'KPI is required';
         isValid = false;
@@ -159,9 +159,9 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
       };
 
       const updatedObjectives = editingObjective
-        ? annualTarget.content.objectives.map(obj => 
-            obj.name === editingObjective.name ? newObjective : obj
-          )
+        ? annualTarget.content.objectives.map(obj =>
+          obj.name === editingObjective.name ? newObjective : obj
+        )
         : [...annualTarget.content.objectives, newObjective];
 
       const newTotalWeight = calculateTotalWeight(updatedObjectives);
@@ -199,14 +199,14 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     setExpandedKPI(expandedKPI === index ? null : index);
   };
 
-  const handleRatingScaleChange = (kpiIndex: number, scoreIndex: number, field: 'min' | 'max', value: number) => {
+  const handleRatingScaleChange = (kpiIndex: number, scaleIndex: number, field: 'min' | 'max', value: string) => {
     const newKpis = [...kpis];
     newKpis[kpiIndex] = {
       ...newKpis[kpiIndex],
-      ratingScales: newKpis[kpiIndex].ratingScales.map((score, idx) => 
-        idx === scoreIndex 
-          ? { ...score, [field]: value }
-          : score
+      ratingScales: newKpis[kpiIndex].ratingScales.map((scale, idx) =>
+        idx === scaleIndex
+          ? { ...scale, [field]: value }
+          : scale
       )
     };
     setKpis(newKpis);
@@ -330,16 +330,23 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                           </TableCell>
                           <TableCell align="right">
                             <TextField
-                              type="number"
+                              inputProps={{
+                                inputMode: "numeric",
+                                pattern: "[0-9]*",
+                              }}
                               value={kpi.weight}
                               onChange={(e) => {
-                                const newKpis = [...kpis];
-                                const newWeight = e.target.value === '' ? 0 : Number(e.target.value);
-                                newKpis[index] = {
-                                  ...newKpis[index],
-                                  weight: newWeight
-                                };
-                                setKpis(newKpis);
+                                const newValue = e.target.value;
+                                // Allow empty value or valid number
+                                if (newValue === "" || /^-?\d*$/.test(newValue)) {
+                                  const newKpis = [...kpis];
+                                  const newWeight = Number(newValue);
+                                  newKpis[index] = {
+                                    ...newKpis[index],
+                                    weight: newWeight
+                                  };
+                                  setKpis(newKpis);
+                                }
                               }}
                               variant="standard"
                               error={!!errors.kpis?.[index]?.weight}
@@ -399,17 +406,16 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
-                                    {kpi.ratingScales.map((score, scoreIndex) => (
-                                      <TableRow key={scoreIndex}>
-                                        <TableCell>{scoreIndex + 1}</TableCell>
-                                        <TableCell>{score.name}</TableCell>
+                                    {kpi.ratingScales.map((scale, scaleIndex) => (
+                                      <TableRow key={scaleIndex}>
+                                        <TableCell>{scaleIndex + 1}</TableCell>
+                                        <TableCell>{scale.name}</TableCell>
                                         <TableCell align="right">
                                           <TextField
-                                            type="number"
-                                            value={kpi.ratingScales[scoreIndex].min}
+                                            value={kpi.ratingScales[scaleIndex].min}
                                             onChange={(e) => {
-                                              const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                              handleRatingScaleChange(index, scoreIndex, 'min', value);
+                                              const value = e.target.value === '' ? '0' : e.target.value;
+                                              handleRatingScaleChange(index, scaleIndex, 'min', value);
                                             }}
                                             variant="standard"
                                             sx={{ width: '80px' }}
@@ -417,11 +423,10 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                         </TableCell>
                                         <TableCell align="right">
                                           <TextField
-                                            type="number"
-                                            value={kpi.ratingScales[scoreIndex].max}
+                                            value={kpi.ratingScales[scaleIndex].max}
                                             onChange={(e) => {
-                                              const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                              handleRatingScaleChange(index, scoreIndex, 'max', value);
+                                              const value = e.target.value === '' ? '0' : e.target.value;
+                                              handleRatingScaleChange(index, scaleIndex, 'max', value);
                                             }}
                                             variant="standard"
                                             sx={{ width: '80px' }}
