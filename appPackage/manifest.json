@@ -2,13 +2,13 @@
     "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.15/MicrosoftTeams.schema.json",
     "manifestVersion": "1.15",
     "version": "1.0.0",
-    "id": "${{TEAMS_APP_ID}}",
+    "id": "af138b87-5e67-40bd-ad03-575faf285d97",
     "packageName": "com.microsoft.teams.extension",
     "developer": {
         "name": "Teams App, Inc.",
-        "websiteUrl": "https://0778-188-253-25-153.ngrok-free.app",
-        "privacyUrl": "https://0778-188-253-25-153.ngrok-free.app/index.html#/privacy",
-        "termsOfUseUrl": "https://0778-188-253-25-153.ngrok-free.app/index.html#/termsofuse"
+        "websiteUrl": "https://0d17-188-253-25-153.ngrok-free.app",
+        "privacyUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/privacy",
+        "termsOfUseUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/termsofuse"
     },
     "icons": {
         "color": "color.png",
@@ -16,18 +16,18 @@
     },
     "name": {
         "short": "TeamsScoreCards",
-        "full": "Full name for TeamsScoreCards"
+        "full": "TeamsScoreCards - Performance Management System"
     },
     "description": {
-        "short": "Short description of TeamsScoreCards",
-        "full": "Full description of TeamsScoreCards"
+        "short": "Teams app for managing corporate scorecards and performance",
+        "full": "A comprehensive Teams application for managing corporate scorecards, performance metrics, and team evaluations."
     },
     "accentColor": "#FFFFFF",
     "bots": [],
     "composeExtensions": [],
     "configurableTabs": [
         {
-            "configurationUrl": "https://0778-188-253-25-153.ngrok-free.app/index.html#/configure",
+            "configurationUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/configure",
             "canUpdateConfiguration": true,
             "scopes": ["team"]
         }
@@ -36,8 +36,8 @@
         {
             "entityId": "index",
             "name": "Personal Tab",
-            "contentUrl": "https://0778-188-253-25-153.ngrok-free.app/index.html#/tab",
-            "websiteUrl": "https://0778-188-253-25-153.ngrok-free.app/index.html#/tab",
+            "contentUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/tab",
+            "websiteUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/tab",
             "scopes": [
                 "personal"
             ]
