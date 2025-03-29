@@ -47,8 +47,8 @@ export interface AnnualTargetKPI {
 export interface AnnualTargetRatingScale {
     score: number;
     name: string;
-    max: number;
-    min: number;
+    max: string;
+    min: string;
     color: string;
 }
 

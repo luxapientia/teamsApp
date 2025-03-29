@@ -69,8 +69,8 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
   const [newRating, setNewRating] = useState<AnnualTargetRatingScale>({
     score: getNextScore(),
     name: '',
-    min: 0,
-    max: 0,
+    min: '0',
+    max: '0',
     color: '#000000',
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -85,17 +85,17 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
       isValid = false;
     }
 
-    // Validate min percentage
-    if (newRating.min < 0) {
-      newErrors.min = 'Min % must be greater than or equal to 0';
-      isValid = false;
-    }
+    // // Validate min percentage
+    // if (Number(newRating.min) < 0) {
+    //   newErrors.min = 'Min % must be greater than or equal to 0';
+    //   isValid = false;
+    // }
 
-    // Validate max percentage
-    if (newRating.max <= newRating.min) {
-      newErrors.max = 'Max % must be greater than Min %';
-      isValid = false;
-    }
+    // // Validate max percentage
+    // if (Number(newRating.max) <= Number(newRating.min)) {
+    //   newErrors.max = 'Max % must be greater than Min %';
+    //   isValid = false;
+    // }
 
     setErrors(newErrors);
     return isValid;
@@ -145,8 +145,8 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
       setNewRating({
         score: getNextScore(),
         name: '',
-        min: 0,
-        max: 0,
+        min: '0',
+        max: '0',
         color: '#000000',
       });
       setIsAdding(false);
@@ -161,8 +161,8 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
     setNewRating({
       score: getNextScore(),
       name: '',
-      min: 0,
-      max: 0,
+      min: '0',
+      max: '0',
       color: '#000000',
     });
     setErrors({});
@@ -204,9 +204,8 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
                 <StyledTableCell>
                   {editingIndex === index ? (
                     <TextField
-                      type="number"
                       value={newRating.min}
-                      onChange={(e) => setNewRating({ ...newRating, min: Number(e.target.value) })}
+                      onChange={(e) => setNewRating({ ...newRating, min: e.target.value })}
                       variant="standard"
                       size="small"
                       fullWidth
@@ -220,9 +219,8 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
                 <StyledTableCell>
                   {editingIndex === index ? (
                     <TextField
-                      type="number"
                       value={newRating.max}
-                      onChange={(e) => setNewRating({ ...newRating, max: Number(e.target.value) })}
+                      onChange={(e) => setNewRating({ ...newRating, max: e.target.value })}
                       variant="standard"
                       size="small"
                       fullWidth
@@ -339,9 +337,8 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
                 </StyledTableCell>
                 <StyledTableCell>
                   <TextField
-                    type="number"
                     value={newRating.min}
-                    onChange={(e) => setNewRating({ ...newRating, min: Number(e.target.value) })}
+                    onChange={(e) => setNewRating({ ...newRating, min: e.target.value })}
                     variant="standard"
                     size="small"
                     fullWidth
@@ -351,9 +348,8 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
                 </StyledTableCell>
                 <StyledTableCell>
                   <TextField
-                    type="number"
                     value={newRating.max}
-                    onChange={(e) => setNewRating({ ...newRating, max: Number(e.target.value) })}
+                    onChange={(e) => setNewRating({ ...newRating, max: e.target.value })}
                     variant="standard"
                     size="small"
                     fullWidth
