@@ -27,6 +27,7 @@ router.get('/', authenticateToken, async (_req: Request, res: Response) => {
 // Create super user
 router.post('/', authenticateToken, async (req: Request, res: Response) => {
   try {
+    console.log('Creating super user with data:', req.body);
     const superUser = await superUserService.create(req.body);
     return res.status(201).json({ 
       data: superUser,
@@ -34,7 +35,12 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
       message: 'Super user created successfully'
     } as ApiResponse<typeof superUser>);
   } catch (error: any) {
-    console.error('Error creating super user:', error);
+    console.error('Error creating super user. Request body:', req.body);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
     
     // Handle duplicate email error
     if (error.code === 11000) {
