@@ -1,8 +1,9 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AnnualTarget, AnnualTargetStatus } from '../../types/annualCorporateScorecard';
+import { AnnualTarget, AnnualTargetStatus, QuarterlyTarget } from '../../types/annualCorporateScorecard';
 
 interface ScorecardState {
   annualTargets: AnnualTarget[];
+  quarterlyTargets: QuarterlyTarget[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
@@ -55,7 +56,38 @@ const initialState: ScorecardState = {
             endDate: '2020-12-31',
           },
         },
+        totalWeight: 0,
       },
+    }
+  ],
+  quarterlyTargets: [
+    {
+      id: '1',
+      annualTargetId: '1',
+      quarter: 'Q1',
+      objectives: [],
+      editable: false,
+    },
+    {
+      id: '2',
+      annualTargetId: '1',
+      quarter: 'Q2',
+      objectives: [],
+      editable: false,
+    },
+    {
+      id: '3',
+      annualTargetId: '1',
+      quarter: 'Q3',
+      objectives: [],
+      editable: false,
+    },
+    {
+      id: '4',
+      annualTargetId: '1',
+      quarter: 'Q4',
+      objectives: [],
+      editable: false,
     }
   ],
   status: 'idle',

@@ -10,6 +10,7 @@ import {
   TableRow,
   styled,
   IconButton,
+  Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -19,7 +20,7 @@ import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { RootState } from '../../../../../store';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
-
+import { AnnualTargetObjective, AnnualTargetKPI } from '../../../../../types/annualCorporateScorecard';
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
   padding: '12px 16px',
@@ -40,30 +41,56 @@ interface StrategicObjectiveTabProps {
 const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetName }) => {
   const dispatch = useAppDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingObjective, setEditingObjective] = useState<{
-    perspective: string;
-    name: string;
-    KPIs: any[];
-  } | null>(null);
+  const [editingObjective, setEditingObjective] = useState<AnnualTargetObjective | null>(null);
 
   const annualTarget = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target.name === targetName)
   );
 
   const objectives = annualTarget?.content.objectives || [];
+  const totalWeight = annualTarget?.content.totalWeight || 0;
 
-  const handleEdit = (objective: any) => {
+  // Sort objectives by perspective
+  const sortedObjectives = [...objectives].sort((a, b) => {
+    // First sort by perspective
+    const perspectiveComparison = a.perspective.localeCompare(b.perspective);
+    
+    // If perspectives are the same, sort by objective name
+    if (perspectiveComparison === 0) {
+      return a.name.localeCompare(b.name);
+    }
+    
+    return perspectiveComparison;
+  });
+
+  const calculateTotalWeight = (objectives: AnnualTargetObjective[]) => {
+    let total = 0;
+    objectives.forEach(objective => {
+      objective.KPIs.forEach((kpi: AnnualTargetKPI) => {
+        total += Number(kpi.weight) || 0;
+      });
+    });
+    return total;
+  };
+
+  const handleEdit = (objective: AnnualTargetObjective) => {
     setEditingObjective(objective);
     setIsModalOpen(true);
   };
 
   const handleDelete = (objectiveName: string) => {
     if (annualTarget) {
+      const updatedObjectives = annualTarget.content.objectives.filter(
+        obj => obj.name !== objectiveName
+      );
+      const newTotalWeight = calculateTotalWeight(updatedObjectives);
+
       dispatch(updateAnnualTarget({
         ...annualTarget,
         content: {
           ...annualTarget.content,
-          objectives: annualTarget.content.objectives.filter(obj => obj.name !== objectiveName)
+          objectives: updatedObjectives,
+          totalWeight: newTotalWeight
         }
       }));
     }
@@ -72,6 +99,34 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
   return (
     <Box p={2}>
       <Stack spacing={2}>
+        <Box 
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: '#6B7280',
+              fontWeight: 500 
+            }}
+          >
+            Total Weight:
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: totalWeight === 100 ? '#059669' : '#DC2626',
+              fontWeight: 600 
+            }}
+          >
+            {totalWeight}%
+          </Typography>
+        </Box>
+
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -86,8 +141,8 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
             </TableRow>
           </TableHead>
           <TableBody>
-            {objectives.map((objective) => (
-              objective.KPIs.map((kpi, kpiIndex) => (
+            {sortedObjectives.map((objective: AnnualTargetObjective) => (
+              objective.KPIs.map((kpi: AnnualTargetKPI, kpiIndex) => (
                 <TableRow key={`${objective.name}-${kpiIndex}`}>
                   {kpiIndex === 0 && (
                     <>
