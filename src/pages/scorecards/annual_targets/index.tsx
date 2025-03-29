@@ -227,9 +227,9 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
                                         aria-label="View strategic objectives"
                                     />
                                     <StyledTab
-                                        label="Rating Scale"
+                                        label="Performance Rating Scale"
                                         disableRipple
-                                        aria-label="View rating scale"
+                                        aria-label="View performance rating scale"
                                     />
                                     <StyledTab
                                         label="Perspectives"
