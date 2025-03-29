@@ -18,7 +18,7 @@ const initialState: ScorecardState = {
       content: {
         perspectives: [],
         objectives: [],
-        ratingScores: [
+        ratingScales: [
           { score: 1, name: 'Unacceptable', min: 0, max: 49, color: '#FF0000' },
           { score: 2, name: 'Room for Improvement', min: 50, max: 89, color: '#FFA500' },
           { score: 3, name: 'Target Achieved', min: 90, max: 100, color: '#008000' },

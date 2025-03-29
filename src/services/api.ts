@@ -71,3 +71,4 @@ export const licenseAPI = {
     api.put<ApiResponse<License>>(`/licenses/${id}`, data),
   delete: (id: string) => api.delete(`/licenses/${id}`),
 }; 
+

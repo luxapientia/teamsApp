@@ -54,7 +54,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
     weight: 0,
     baseline: '',
     target: '',
-    ratingScores: annualTarget?.content.ratingScores || []
+    ratingScales: annualTarget?.content.ratingScales || []
   }]);
   const [expandedKPI, setExpandedKPI] = useState<number | null>(null);
   const [errors, setErrors] = useState<{
@@ -169,7 +169,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
       weight: 0,
       baseline: '',
       target: '',
-      ratingScores: annualTarget?.content.ratingScores || []
+      ratingScales: annualTarget?.content.ratingScales || []
     }]);
     onClose();
   };
@@ -180,19 +180,19 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
       weight: 0,
       baseline: '',
       target: '',
-      ratingScores: annualTarget?.content.ratingScores || []
+      ratingScales: annualTarget?.content.ratingScales || []
     }]);
   };
 
-  const handleToggleRatingScore = (index: number) => {
+  const handleToggleRatingScale = (index: number) => {
     setExpandedKPI(expandedKPI === index ? null : index);
   };
 
-  const handleRatingScoreChange = (kpiIndex: number, scoreIndex: number, field: 'min' | 'max', value: number) => {
+  const handleRatingScaleChange = (kpiIndex: number, scoreIndex: number, field: 'min' | 'max', value: number) => {
     const newKpis = [...kpis];
     newKpis[kpiIndex] = {
       ...newKpis[kpiIndex],
-      ratingScores: newKpis[kpiIndex].ratingScores.map((score, idx) => 
+      ratingScales: newKpis[kpiIndex].ratingScales.map((score, idx) => 
         idx === scoreIndex 
           ? { ...score, [field]: value }
           : score
@@ -268,7 +268,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
                           <TableCell>
                             <IconButton
                               size="small"
-                              onClick={() => handleToggleRatingScore(index)}
+                              onClick={() => handleToggleRatingScale(index)}
                             >
                               {expandedKPI === index ? (
                                 <KeyboardArrowUpIcon />
@@ -364,7 +364,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
-                                    {kpi.ratingScores.map((score, scoreIndex) => (
+                                    {kpi.ratingScales.map((score, scoreIndex) => (
                                       <TableRow key={scoreIndex}>
                                         <TableCell>{scoreIndex + 1}</TableCell>
                                         <TableCell>{score.name}</TableCell>
@@ -374,7 +374,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
                                             value={score.min}
                                             onChange={(e) => {
                                               const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                              handleRatingScoreChange(index, scoreIndex, 'min', value);
+                                              handleRatingScaleChange(index, scoreIndex, 'min', value);
                                             }}
                                             variant="standard"
                                             sx={{ width: '80px' }}
@@ -386,7 +386,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
                                             value={score.max}
                                             onChange={(e) => {
                                               const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                              handleRatingScoreChange(index, scoreIndex, 'max', value);
+                                              handleRatingScaleChange(index, scoreIndex, 'max', value);
                                             }}
                                             variant="standard"
                                             sx={{ width: '80px' }}
