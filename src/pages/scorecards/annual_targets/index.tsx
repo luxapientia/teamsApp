@@ -153,9 +153,9 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
             case 1:
                 return <AssessmentsPeriodTab targetName={target.name} />;
             case 2:
-                return <RatingScoreTab targetName={target.name} />;
-            case 3:
                 return <StrategicObjectiveTab targetName={target.name} />;
+            case 3:
+                return <RatingScoreTab targetName={target.name} />;
             case 4:
                 return <PerspectiveTab targetName={target.name} />;
             default:
@@ -222,14 +222,14 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
                                         aria-label="View performance assessments period"
                                     />
                                     <StyledTab
-                                        label="Rating Scale"
-                                        disableRipple
-                                        aria-label="View rating scale"
-                                    />
-                                    <StyledTab
                                         label="Strategic Objectives"
                                         disableRipple
                                         aria-label="View strategic objectives"
+                                    />
+                                    <StyledTab
+                                        label="Rating Scale"
+                                        disableRipple
+                                        aria-label="View rating scale"
                                     />
                                     <StyledTab
                                         label="Perspectives"
