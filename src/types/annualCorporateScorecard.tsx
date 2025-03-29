@@ -23,6 +23,7 @@ export interface AnnualTargetContent {
     ratingScores: AnnualTargetRatingScore[];
     assesmentPeriod: AnnualTargetAssesmentPeriod;
     contractingPeriod: AnnualTargetContractingPeriod;
+    totalWeight: number;
 }
 
 export interface AnnualTargetObjective {
@@ -83,4 +84,14 @@ export interface AnnualTargetContractingPeriod {
         startDate: string;
         endDate: string;
     }
+}
+
+export type QuarterType = 'Q1' | 'Q2' | 'Q3' | 'Q4';
+
+export interface QuarterlyTarget {
+    id: string;
+    annualTargetId: string;
+    quarter: QuarterType;
+    objectives: AnnualTargetObjective[];
+    editable: boolean;
 }
