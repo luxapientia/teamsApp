@@ -99,6 +99,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
           perspectives: [],
           objectives: [],
           ratingScores: [],
+          totalWeight: 0,
           assesmentPeriod: {
             Q1: {
               startDate,
