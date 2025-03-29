@@ -93,7 +93,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
 
     const kpiErrors = kpis.map(kpi => {
       const errors: { [key: string]: string } = {};
-      
+
       if (!kpi.indicator.trim()) {
         errors.indicator = 'KPI is required';
         isValid = false;
@@ -188,14 +188,14 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
     setExpandedKPI(expandedKPI === index ? null : index);
   };
 
-  const handleRatingScaleChange = (kpiIndex: number, scoreIndex: number, field: 'min' | 'max', value: number) => {
+  const handleRatingScaleChange = (kpiIndex: number, scaleIndex: number, field: 'min' | 'max', value: string) => {
     const newKpis = [...kpis];
     newKpis[kpiIndex] = {
       ...newKpis[kpiIndex],
-      ratingScales: newKpis[kpiIndex].ratingScales.map((score, idx) => 
-        idx === scoreIndex 
-          ? { ...score, [field]: value }
-          : score
+      ratingScales: newKpis[kpiIndex].ratingScales.map((scale, idx) =>
+        idx === scaleIndex
+          ? { ...scale, [field]: value }
+          : scale
       )
     };
     setKpis(newKpis);
@@ -296,15 +296,22 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
                           </TableCell>
                           <TableCell align="right">
                             <TextField
-                              type="number"
                               value={kpi.weight}
+                              inputProps={{
+                                inputMode: "numeric",
+                                pattern: "[0-9]*",
+                              }}
                               onChange={(e) => {
-                                const newKpis = [...kpis];
-                                newKpis[index] = {
-                                  ...newKpis[index],
-                                  weight: Number(e.target.value)
-                                };
-                                setKpis(newKpis);
+                                const newValue = e.target.value;
+                                // Allow empty value or valid number
+                                if (newValue === "" || /^-?\d*$/.test(newValue)) {
+                                  const newKpis = [...kpis];
+                                  newKpis[index] = {
+                                    ...newKpis[index],
+                                    weight: Number(e.target.value)
+                                  };
+                                  setKpis(newKpis);
+                                }
                               }}
                               variant="standard"
                               error={!!errors.kpis?.[index]?.weight}
@@ -364,17 +371,16 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
-                                    {kpi.ratingScales.map((score, scoreIndex) => (
-                                      <TableRow key={scoreIndex}>
-                                        <TableCell>{scoreIndex + 1}</TableCell>
-                                        <TableCell>{score.name}</TableCell>
+                                    {kpi.ratingScales.map((scale, scaleIndex) => (
+                                      <TableRow key={scaleIndex}>
+                                        <TableCell>{scaleIndex + 1}</TableCell>
+                                        <TableCell>{scale.name}</TableCell>
                                         <TableCell align="right">
                                           <TextField
-                                            type="number"
-                                            value={score.min}
+                                            value={scale.min}
                                             onChange={(e) => {
-                                              const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                              handleRatingScaleChange(index, scoreIndex, 'min', value);
+                                              const value = e.target.value === '' ? '0' : e.target.value;
+                                              handleRatingScaleChange(index, scaleIndex, 'min', value);
                                             }}
                                             variant="standard"
                                             sx={{ width: '80px' }}
@@ -382,11 +388,10 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
                                         </TableCell>
                                         <TableCell align="right">
                                           <TextField
-                                            type="number"
-                                            value={score.max}
+                                            value={scale.max}
                                             onChange={(e) => {
-                                              const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                              handleRatingScaleChange(index, scoreIndex, 'max', value);
+                                              const value = e.target.value === '' ? '0' : e.target.value;
+                                              handleRatingScaleChange(index, scaleIndex, 'max', value);
                                             }}
                                             variant="standard"
                                             sx={{ width: '80px' }}
