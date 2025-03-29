@@ -10,6 +10,9 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
+import CloseIcon from '@mui/icons-material/Close';
+import CheckIcon from '@mui/icons-material/Check';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { RootState } from '../../../../../store';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
@@ -24,6 +27,8 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
   const dispatch = useAppDispatch();
   const [isAdding, setIsAdding] = useState(false);
   const [newPerspective, setNewPerspective] = useState('');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingValue, setEditingValue] = useState('');
 
   const annualTarget = useAppSelector((state: RootState) => 
     state.scorecard.annualTargets.find(target => target.name === targetName)
@@ -73,6 +78,41 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
     }
   };
 
+  const handleEdit = (perspective: string, index: number) => {
+    setEditingIndex(index);
+    setEditingValue(perspective);
+  };
+
+  const handleEditSave = () => {
+    if (editingValue.trim() && annualTarget && editingIndex !== null) {
+      const updatedPerspectives = [...perspectives];
+      updatedPerspectives[editingIndex] = editingValue.trim();
+
+      dispatch(updateAnnualTarget({
+        ...annualTarget,
+        content: {
+          ...annualTarget.content,
+          perspectives: updatedPerspectives,
+        },
+      }));
+      setEditingValue('');
+      setEditingIndex(null);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingValue('');
+    setEditingIndex(null);
+  };
+
+  const handleEditKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleEditSave();
+    } else if (e.key === 'Escape') {
+      handleEditCancel();
+    }
+  };
+
   return (
     <Box p={2}>
       <Stack spacing={2}>
@@ -87,7 +127,7 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
               '&:hover': {
                 borderColor: '#D1D5DB',
                 backgroundColor: '#F9FAFB',
-                '& .delete-icon': {
+                '& .action-icons': {
                   opacity: 1,
                 },
               },
@@ -99,25 +139,83 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
               justifyContent="space-between"
               sx={{ p: 2 }}
             >
-              <Typography sx={{ color: '#374151' }}>
-                {perspective}
-              </Typography>
-              <IconButton
-                size="small"
-                onClick={() => handleDelete(index)}
-                className="delete-icon"
-                sx={{
-                  opacity: 0,
-                  transition: 'all 0.2s ease',
-                  color: '#6B7280',
-                  '&:hover': {
-                    color: '#DC2626',
-                    backgroundColor: '#FEE2E2',
-                  },
-                }}
+              {editingIndex === index ? (
+                <TextField
+                  autoFocus
+                  fullWidth
+                  size="small"
+                  value={editingValue}
+                  onChange={(e) => setEditingValue(e.target.value)}
+                  onKeyDown={handleEditKeyPress}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: '#F9FAFB',
+                      '& fieldset': {
+                        borderColor: '#E5E7EB',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#D1D5DB',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#6264A7',
+                      },
+                    },
+                  }}
+                />
+              ) : (
+                <Typography sx={{ color: '#374151' }}>
+                  {perspective}
+                </Typography>
+              )}
+              <Stack 
+                direction="row" 
+                spacing={1}
+                className="action-icons"
+                sx={{ opacity: 0 }}
               >
-                <DeleteOutlineIcon fontSize="small" />
-              </IconButton>
+                {editingIndex === index ? (
+                  <>
+                    <IconButton
+                      size="small"
+                      onClick={handleEditCancel}
+                      sx={{ color: '#6B7280' }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={handleEditSave}
+                      sx={{ color: '#6B7280' }}
+                    >
+                      <CheckIcon fontSize="small" />
+                    </IconButton>
+                  </>
+                ) : (
+                  <>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEdit(perspective, index)}
+                      sx={{ color: '#6B7280' }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(index)}
+                      className="delete-icon"
+                      sx={{
+                        color: '#6B7280',
+                        '&:hover': {
+                          color: '#DC2626',
+                          backgroundColor: '#FEE2E2',
+                        },
+                      }}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </>
+                )}
+              </Stack>
             </Stack>
           </Paper>
         ))}
