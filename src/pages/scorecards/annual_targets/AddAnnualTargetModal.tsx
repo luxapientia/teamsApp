@@ -98,7 +98,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
         content: {
           perspectives: [],
           objectives: [],
-          ratingScores: [],
+          ratingScales: [],
           totalWeight: 0,
           quarterlyTarget: {
             editable: false,

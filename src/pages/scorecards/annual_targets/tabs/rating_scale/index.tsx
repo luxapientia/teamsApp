@@ -20,7 +20,7 @@ import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { RootState } from '../../../../../store';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
-import { AnnualTargetRatingScore } from '../../../../../types/annualCorporateScorecard';
+import { AnnualTargetRatingScale } from '../../../../../types/annualCorporateScorecard';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -60,13 +60,13 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
   const getNextScore = (): number => {
-    if (editingIndex !== null && annualTarget?.content.ratingScores) {
-      return annualTarget.content.ratingScores[editingIndex].score;
+    if (editingIndex !== null && annualTarget?.content.ratingScales) {
+      return annualTarget.content.ratingScales[editingIndex].score;
     }
-    return (annualTarget?.content.ratingScores?.length || 0) + 1;
+    return (annualTarget?.content.ratingScales?.length || 0) + 1;
   };
 
-  const [newRating, setNewRating] = useState<AnnualTargetRatingScore>({
+  const [newRating, setNewRating] = useState<AnnualTargetRatingScale>({
     score: getNextScore(),
     name: '',
     min: 0,
@@ -102,7 +102,7 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
   };
 
   const handleEdit = (index: number) => {
-    const ratingToEdit = annualTarget?.content.ratingScores[index];
+    const ratingToEdit = annualTarget?.content.ratingScales[index];
     if (ratingToEdit) {
       setNewRating(ratingToEdit);
       setEditingIndex(index);
@@ -111,14 +111,14 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
 
   const handleDelete = (index: number) => {
     if (annualTarget) {
-      const updatedRatings = annualTarget.content.ratingScores.filter((_, i) => i !== index)
+      const updatedRatings = annualTarget.content.ratingScales.filter((_, i) => i !== index)
         .map((rating, i) => ({ ...rating, score: i + 1 })); // Reorder scores after deletion
 
       dispatch(updateAnnualTarget({
         ...annualTarget,
         content: {
           ...annualTarget.content,
-          ratingScores: updatedRatings,
+          ratingScales: updatedRatings,
         },
       }));
     }
@@ -126,7 +126,7 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
 
   const handleAdd = () => {
     if (annualTarget && validateForm()) {
-      const updatedRatings = [...(annualTarget.content.ratingScores || [])];
+      const updatedRatings = [...(annualTarget.content.ratingScales || [])];
       
       if (editingIndex !== null) {
         updatedRatings[editingIndex] = newRating;
@@ -138,7 +138,7 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
         ...annualTarget,
         content: {
           ...annualTarget.content,
-          ratingScores: updatedRatings,
+          ratingScales: updatedRatings,
         },
       }));
 
@@ -183,7 +183,7 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {annualTarget?.content.ratingScores?.map((rating, index) => (
+            {annualTarget?.content.ratingScales?.map((rating, index) => (
               <TableRow key={index}>
                 <StyledTableCell>{rating.score}</StyledTableCell>
                 <StyledTableCell>

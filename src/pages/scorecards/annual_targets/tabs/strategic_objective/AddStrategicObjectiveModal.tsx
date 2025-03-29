@@ -55,7 +55,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     weight: 0,
     baseline: '',
     target: '',
-    ratingScores: annualTarget?.content.ratingScores || []
+    ratingScales: annualTarget?.content.ratingScales || []
   }]);
   const [expandedKPI, setExpandedKPI] = useState<number | null>(null);
   const [errors, setErrors] = useState<{
@@ -181,7 +181,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
   const handleClose = () => {
     setPerspective('');
     setObjective('');
-    setKpis([{ indicator: '', weight: 0, baseline: '', target: '', ratingScores: annualTarget?.content.ratingScores || [] }]);
+    setKpis([{ indicator: '', weight: 0, baseline: '', target: '', ratingScales: annualTarget?.content.ratingScales || [] }]);
     onClose();
   };
 
@@ -191,19 +191,19 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
       weight: 0,
       baseline: '',
       target: '',
-      ratingScores: annualTarget?.content.ratingScores || []
+      ratingScales: annualTarget?.content.ratingScales || []
     }]);
   };
 
-  const handleToggleRatingScore = (index: number) => {
+  const handleToggleRatingScale = (index: number) => {
     setExpandedKPI(expandedKPI === index ? null : index);
   };
 
-  const handleRatingScoreChange = (kpiIndex: number, scoreIndex: number, field: 'min' | 'max', value: number) => {
+  const handleRatingScaleChange = (kpiIndex: number, scoreIndex: number, field: 'min' | 'max', value: number) => {
     const newKpis = [...kpis];
     newKpis[kpiIndex] = {
       ...newKpis[kpiIndex],
-      ratingScores: newKpis[kpiIndex].ratingScores.map((score, idx) => 
+      ratingScales: newKpis[kpiIndex].ratingScales.map((score, idx) => 
         idx === scoreIndex 
           ? { ...score, [field]: value }
           : score
@@ -302,7 +302,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                           <TableCell>
                             <IconButton
                               size="small"
-                              onClick={() => handleToggleRatingScore(index)}
+                              onClick={() => handleToggleRatingScale(index)}
                             >
                               {expandedKPI === index ? (
                                 <KeyboardArrowUpIcon />
@@ -399,17 +399,17 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
-                                    {kpi.ratingScores.map((score, scoreIndex) => (
+                                    {kpi.ratingScales.map((score, scoreIndex) => (
                                       <TableRow key={scoreIndex}>
                                         <TableCell>{scoreIndex + 1}</TableCell>
                                         <TableCell>{score.name}</TableCell>
                                         <TableCell align="right">
                                           <TextField
                                             type="number"
-                                            value={kpi.ratingScores[scoreIndex].min}
+                                            value={kpi.ratingScales[scoreIndex].min}
                                             onChange={(e) => {
                                               const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                              handleRatingScoreChange(index, scoreIndex, 'min', value);
+                                              handleRatingScaleChange(index, scoreIndex, 'min', value);
                                             }}
                                             variant="standard"
                                             sx={{ width: '80px' }}
@@ -418,10 +418,10 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                         <TableCell align="right">
                                           <TextField
                                             type="number"
-                                            value={kpi.ratingScores[scoreIndex].max}
+                                            value={kpi.ratingScales[scoreIndex].max}
                                             onChange={(e) => {
                                               const value = e.target.value === '' ? 0 : Number(e.target.value);
-                                              handleRatingScoreChange(index, scoreIndex, 'max', value);
+                                              handleRatingScaleChange(index, scoreIndex, 'max', value);
                                             }}
                                             variant="standard"
                                             sx={{ width: '80px' }}

@@ -33,7 +33,7 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { RootState } from '../../../store';
 import StrategicObjectiveTab from './tabs/strategic_objective';
 import PerspectiveTab from './tabs/perspective';
-import RatingScoreTab from './tabs/rating_scale';
+import RatingScaleTab from './tabs/rating_scale';
 import ContractingPeriodTab from './tabs/contracting_period';
 import AssessmentsPeriodTab from './tabs/assessments_period';
 import AddIcon from '@mui/icons-material/Add';
@@ -155,7 +155,7 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
             case 2:
                 return <StrategicObjectiveTab targetName={target.name} />;
             case 3:
-                return <RatingScoreTab targetName={target.name} />;
+                return <RatingScaleTab targetName={target.name} />;
             case 4:
                 return <PerspectiveTab targetName={target.name} />;
             default:

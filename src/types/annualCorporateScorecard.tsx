@@ -20,7 +20,7 @@ export interface AnnualTarget {
 export interface AnnualTargetContent {
     perspectives: string[];
     objectives: AnnualTargetObjective[];
-    ratingScores: AnnualTargetRatingScore[];
+    ratingScales: AnnualTargetRatingScale[];
     assesmentPeriod: AnnualTargetAssesmentPeriod;
     contractingPeriod: AnnualTargetContractingPeriod;
     totalWeight: number;
@@ -41,10 +41,10 @@ export interface AnnualTargetKPI {
     weight: number;
     baseline: string;
     target: string;
-    ratingScores: AnnualTargetRatingScore[];
+    ratingScales: AnnualTargetRatingScale[];
 }
 
-export interface AnnualTargetRatingScore {
+export interface AnnualTargetRatingScale {
     score: number;
     name: string;
     max: number;

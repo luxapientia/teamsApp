@@ -8,7 +8,7 @@ enum AnnualTargetStatus {
 interface AnnualTargetContent {
   perspectives: string[];
   objectives: AnnualTargetObjective[];
-  ratingScores: AnnualTargetRatingScore[];
+  ratingScales: AnnualTargetRatingScale[];
   assesmentPeriod: AnnualTargetAssesmentPeriod;
   contractingPeriod: AnnualTargetContractingPeriod;
   totalWeight: number;
@@ -29,10 +29,10 @@ interface AnnualTargetKPI {
   weight: number;
   baseline: string;
   target: string;
-  ratingScores: AnnualTargetRatingScore[];
+  ratingScales: AnnualTargetRatingScale[];
 }
 
-interface AnnualTargetRatingScore {
+interface AnnualTargetRatingScale {
   score: number;
   name: string;
   max: number;
@@ -96,7 +96,7 @@ export interface AnnualTarget extends Document {
 }
 
 const annualTargetSchema = new Schema<AnnualTarget>({
-  
+
   name: {
     type: String,
     required: true,
@@ -127,7 +127,7 @@ const annualTargetSchema = new Schema<AnnualTarget>({
         weight: Number,
         baseline: String,
         target: String,
-        ratingScores: [{
+        ratingScales: [{
           score: Number,
           name: String,
           max: Number,
@@ -136,7 +136,7 @@ const annualTargetSchema = new Schema<AnnualTarget>({
         }]
       }]
     }],
-    ratingScores: [{
+    ratingScales: [{
       score: Number,
       name: String,
       max: Number,
@@ -201,7 +201,7 @@ const annualTargetSchema = new Schema<AnnualTarget>({
             weight: Number,
             baseline: String,
             target: String,
-            ratingScores: [{
+            ratingScales: [{
               score: Number,
               name: String,
               max: Number,
