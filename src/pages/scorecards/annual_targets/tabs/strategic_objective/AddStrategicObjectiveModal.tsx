@@ -399,7 +399,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
-                                    {annualTarget?.content.ratingScores.map((score, scoreIndex) => (
+                                    {kpi.ratingScores.map((score, scoreIndex) => (
                                       <TableRow key={scoreIndex}>
                                         <TableCell>{scoreIndex + 1}</TableCell>
                                         <TableCell>{score.name}</TableCell>
