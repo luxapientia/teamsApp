@@ -49,19 +49,31 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
 
   const objectives = annualTarget?.content.objectives || [];
   const totalWeight = annualTarget?.content.totalWeight || 0;
+  const perspectives = annualTarget?.content.perspectives || [];
 
   // Sort objectives by perspective
-  const sortedObjectives = [...objectives].sort((a, b) => {
-    // First sort by perspective
-    const perspectiveComparison = a.perspective.localeCompare(b.perspective);
+  // const sortedObjectives = [...objectives].sort((a, b) => {
+  //   // First sort by perspective
+  //   // const perspectiveComparison = a.perspective.localeCompare(b.perspective);
     
-    // If perspectives are the same, sort by objective name
-    if (perspectiveComparison === 0) {
-      return a.name.localeCompare(b.name);
-    }
+  //   // // If perspectives are the same, sort by objective name
+  //   // if (perspectiveComparison === 0) {
+  //   //   return a.name.localeCompare(b.name);
+  //   // }
     
-    return perspectiveComparison;
-  });
+  //   return perspectiveComparison;
+  // });
+
+  const sortedObjectives = () => {
+    let result: AnnualTargetObjective[] = [];
+    perspectives.forEach((val) => {
+      const filtered = objectives.filter(objective => objective.perspective === val);
+      filtered.forEach((objective) => {
+        result.push(objective);
+      })
+    })
+    return result;
+  }
 
   const calculateTotalWeight = (objectives: AnnualTargetObjective[]) => {
     let total = 0;
@@ -141,7 +153,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
             </TableRow>
           </TableHead>
           <TableBody>
-            {sortedObjectives.map((objective: AnnualTargetObjective) => (
+            {sortedObjectives().map((objective: AnnualTargetObjective) => (
               objective.KPIs.map((kpi: AnnualTargetKPI, kpiIndex) => (
                 <TableRow key={`${objective.name}-${kpiIndex}`}>
                   {kpiIndex === 0 && (
