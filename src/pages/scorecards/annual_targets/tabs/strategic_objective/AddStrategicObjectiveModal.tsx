@@ -82,7 +82,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     if (editingObjective) {
       setPerspective(editingObjective.perspective);
       setObjective(editingObjective.name);
-      setKpis(editingObjective.KPIs);
+      setKpis([...editingObjective.KPIs]);
     }
   }, [editingObjective]);
 
@@ -147,6 +147,16 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     return isValid;
   };
 
+  const calculateTotalWeight = (objectives: AnnualTargetObjective[]) => {
+    let total = 0;
+    objectives.forEach(objective => {
+      objective.KPIs.forEach((kpi: AnnualTargetKPI) => {
+        total += Number(kpi.weight) || 0;
+      });
+    });
+    return total;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm() && annualTarget) {
@@ -162,11 +172,14 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
           )
         : [...annualTarget.content.objectives, newObjective];
 
+      const newTotalWeight = calculateTotalWeight(updatedObjectives);
+
       dispatch(updateAnnualTarget({
         ...annualTarget,
         content: {
           ...annualTarget.content,
           objectives: updatedObjectives,
+          totalWeight: newTotalWeight
         },
       }));
       handleClose();
@@ -299,7 +312,10 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               value={kpi.indicator}
                               onChange={(e) => {
                                 const newKpis = [...kpis];
-                                newKpis[index].indicator = e.target.value;
+                                newKpis[index] = {
+                                  ...newKpis[index],
+                                  indicator: e.target.value
+                                };
                                 setKpis(newKpis);
                               }}
                               variant="standard"
@@ -313,7 +329,11 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               value={kpi.weight}
                               onChange={(e) => {
                                 const newKpis = [...kpis];
-                                newKpis[index].weight = Number(e.target.value);
+                                const newWeight = e.target.value === '' ? 0 : Number(e.target.value);
+                                newKpis[index] = {
+                                  ...newKpis[index],
+                                  weight: newWeight
+                                };
                                 setKpis(newKpis);
                               }}
                               variant="standard"
@@ -327,7 +347,10 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               value={kpi.baseline}
                               onChange={(e) => {
                                 const newKpis = [...kpis];
-                                newKpis[index].baseline = e.target.value;
+                                newKpis[index] = {
+                                  ...newKpis[index],
+                                  baseline: e.target.value
+                                };
                                 setKpis(newKpis);
                               }}
                               variant="standard"
@@ -341,7 +364,10 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               value={kpi.target}
                               onChange={(e) => {
                                 const newKpis = [...kpis];
-                                newKpis[index].target = e.target.value;
+                                newKpis[index] = {
+                                  ...newKpis[index],
+                                  target: e.target.value
+                                };
                                 setKpis(newKpis);
                               }}
                               variant="standard"
