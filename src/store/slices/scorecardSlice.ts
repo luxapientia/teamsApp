@@ -1,9 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AnnualTarget, AnnualTargetStatus, QuarterlyTarget } from '../../types/annualCorporateScorecard';
-
+import { AnnualTarget, AnnualTargetStatus, QuarterlyTarget, QuarterType } from '../../types/annualCorporateScorecard';
+import { RootState } from '../index';
 interface ScorecardState {
   annualTargets: AnnualTarget[];
-  quarterlyTargets: QuarterlyTarget[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
@@ -19,7 +18,13 @@ const initialState: ScorecardState = {
       content: {
         perspectives: [],
         objectives: [],
-        ratingScores: [],
+        ratingScores: [
+          { score: 1, name: 'Unacceptable', min: 0, max: 49, color: '#FF0000' },
+          { score: 2, name: 'Room for Improvement', min: 50, max: 89, color: '#FFA500' },
+          { score: 3, name: 'Target Achieved', min: 90, max: 100, color: '#008000' },
+          { score: 4, name: 'High Achiever', min: 101, max: 110, color: '#0000FF' },
+          { score: 5, name: 'Superior Performance', min: 111, max: 140, color: '#000080' },
+        ],
         assesmentPeriod: {
           Q1: {
             startDate: '2020-01-01',
@@ -57,37 +62,28 @@ const initialState: ScorecardState = {
           },
         },
         totalWeight: 0,
+        quarterlyTarget: {
+          editable: false,
+          quarterlyTargets: [
+            {
+              quarter: 'Q1',
+              objectives: []
+            },
+            {
+              quarter: 'Q2',
+              objectives: []
+            },
+            {
+              quarter: 'Q3',
+              objectives: []
+            },  
+            {
+              quarter: 'Q4',
+              objectives: []
+            },
+          ],
+        },
       },
-    }
-  ],
-  quarterlyTargets: [
-    {
-      id: '1',
-      annualTargetId: '1',
-      quarter: 'Q1',
-      objectives: [],
-      editable: false,
-    },
-    {
-      id: '2',
-      annualTargetId: '1',
-      quarter: 'Q2',
-      objectives: [],
-      editable: false,
-    },
-    {
-      id: '3',
-      annualTargetId: '1',
-      quarter: 'Q3',
-      objectives: [],
-      editable: false,
-    },
-    {
-      id: '4',
-      annualTargetId: '1',
-      quarter: 'Q4',
-      objectives: [],
-      editable: false,
     }
   ],
   status: 'idle',
@@ -125,9 +121,7 @@ export const createAnnualTarget = createAsyncThunk(
 
 export const updateAnnualTarget = createAsyncThunk(
   'scorecard/updateAnnualTarget',
-  async (target: AnnualTarget) => {
-    console.log(target);
-    // Replace with your API call
+  async (target: AnnualTarget, {getState}) => {
     // const response = await fetch(`/api/annual-targets/${target.id}`, {
     //   method: 'PUT',
     //   headers: {
@@ -136,7 +130,26 @@ export const updateAnnualTarget = createAsyncThunk(
     //   body: JSON.stringify(target),
     // });
     // return response.json();
-    return target;
+
+    const currentState = getState() as RootState;
+    const currentAnnualTarget = currentState.scorecard.annualTargets.find(t => t.id === target.id);
+
+    const newTarget = {
+      ...target,
+      content: {
+        ...target.content,
+        quarterlyTarget: {
+          ...target.content.quarterlyTarget,
+          // editable: currentAnnualTarget?.content.quarterlyTarget.editable || target.content.totalWeight >= 100 ? true : false,
+          quarterlyTargets: currentAnnualTarget?.content.quarterlyTarget.editable ? (currentAnnualTarget?.content.quarterlyTarget.quarterlyTargets) :
+            ['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => ({
+              quarter: quarter as QuarterType,
+              objectives: [...target.content.objectives]
+            }))
+        }
+      }
+    };
+    return newTarget;
   }
 );
 
@@ -150,6 +163,8 @@ export const deleteAnnualTarget = createAsyncThunk(
     return targetId;
   }
 );
+
+
 
 const scorecardSlice = createSlice({
   name: 'scorecard',

@@ -100,6 +100,10 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
           objectives: [],
           ratingScores: [],
           totalWeight: 0,
+          quarterlyTarget: {
+            editable: false,
+            quarterlyTargets: [],
+          },
           assesmentPeriod: {
             Q1: {
               startDate,
