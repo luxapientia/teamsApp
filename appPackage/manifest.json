@@ -6,9 +6,9 @@
     "packageName": "com.microsoft.teams.extension",
     "developer": {
         "name": "Teams App, Inc.",
-        "websiteUrl": "https://0d17-188-253-25-153.ngrok-free.app",
-        "privacyUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/privacy",
-        "termsOfUseUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/termsofuse"
+        "websiteUrl": "https://816a-188-253-25-153.ngrok-free.app",
+        "privacyUrl": "https://816a-188-253-25-153.ngrok-free.app/index.html#/privacy",
+        "termsOfUseUrl": "https://816a-188-253-25-153.ngrok-free.app/index.html#/termsofuse"
     },
     "icons": {
         "color": "color.png",
@@ -27,7 +27,7 @@
     "composeExtensions": [],
     "configurableTabs": [
         {
-            "configurationUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/configure",
+            "configurationUrl": "https://816a-188-253-25-153.ngrok-free.app/index.html#/configure",
             "canUpdateConfiguration": true,
             "scopes": ["team"]
         }
@@ -36,8 +36,8 @@
         {
             "entityId": "index",
             "name": "Personal Tab",
-            "contentUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/tab",
-            "websiteUrl": "https://0d17-188-253-25-153.ngrok-free.app/index.html#/tab",
+            "contentUrl": "https://816a-188-253-25-153.ngrok-free.app/index.html#/tab",
+            "websiteUrl": "https://816a-188-253-25-153.ngrok-free.app/index.html#/tab",
             "scopes": [
                 "personal"
             ]
@@ -48,10 +48,10 @@
         "messageTeamMembers"
     ],
     "validDomains": [
-        "0778-188-253-25-153.ngrok-free.app"
+        "816a-188-253-25-153.ngrok-free.app"
     ],
     "webApplicationInfo": {
         "id": "38681428-5b78-4e82-97ff-e168419e7611",
-        "resource": "api://0778-188-253-25-153.ngrok-free.app/38681428-5b78-4e82-97ff-e168419e7611"
+        "resource": "api://816a-188-253-25-153.ngrok-free.app/38681428-5b78-4e82-97ff-e168419e7611"
     }
 }
