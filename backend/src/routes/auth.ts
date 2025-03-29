@@ -15,17 +15,30 @@ router.get('/login', async (_req: Request, res: Response) => {
 
 router.post('/callback', async (req: Request, res: Response) => {
   try {
+    console.log('Received callback request:', {
+      body: req.body,
+      headers: req.headers
+    });
+
     const { code } = req.body;
     
     if (!code) {
+      console.error('No code provided in callback request');
       return res.status(400).json({ error: 'Authorization code is required' });
     }
 
+    console.log('Processing callback with code:', code);
     const result = await authService.handleCallback(code);
+    console.log('Callback processed successfully:', result);
+    
     return res.json(result);
-  } catch (error) {
-    console.error('Callback error:', error);
-    return res.status(500).json({ error: 'Authentication failed' });
+  } catch (error: any) {
+    console.error('Callback error details:', {
+      error: error.message,
+      response: error.response?.data,
+      stack: error.stack
+    });
+    return res.status(500).json({ error: 'Authentication failed', details: error.message });
   }
 });
 

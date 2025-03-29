@@ -1,90 +1,112 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/authService';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-
-interface UserProfile {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  status: string;
-}
+import { getAPIBaseURL } from '../services/api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: UserProfile | null;
+  token: string | null;
   login: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  user: any | null;
   loading: boolean;
   setIsAuthenticated: (value: boolean) => void;
-  setUser: (user: UserProfile | null) => void;
+  setUser: (user: any) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const API_BASE_URL = getAPIBaseURL();
+
+const authApi = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          try {
-            const response = await axios.get('http://localhost:3001/api/auth/profile', {
-              headers: {
-                Authorization: `Bearer ${token}`
-              }
-            });
-            setUser(response.data);
-            setIsAuthenticated(true);
-          } catch (error) {
-            console.error('Profile fetch error:', error);
-            localStorage.removeItem('token');
-          }
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setUser(null);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
+  const fetchUserProfile = useCallback(async (authToken: string) => {
+    try {
+      const response = await authApi.get('/auth/profile', {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+      setUser(response.data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      // If token is invalid, logout
+      logout();
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      setToken(storedToken);
+      setIsAuthenticated(true);
+      fetchUserProfile(storedToken);
+    } else {
+      setLoading(false);
+    }
+  }, [fetchUserProfile]);
 
   const login = async () => {
     try {
-      await authService.login();
+      console.log('Making login request to:', `${API_BASE_URL}/auth/login`);
+      const response = await authApi.get('/auth/login');
+      console.log('Login response:', response.data);
+      
+      // Handle both string and object responses
+      const loginUrl = typeof response.data === 'string' 
+        ? response.data 
+        : response.data?.url;
+      
+      if (loginUrl) {
+        window.location.href = loginUrl;
+      } else {
+        console.error('Login response missing URL:', response.data);
+        throw new Error('No login URL received');
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setUser(null);
-    setIsAuthenticated(false);
+  const logout = async () => {
+    try {
+      if (token) {
+        await authApi.post('/auth/logout', null, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('token');
+      setToken(null);
+      setIsAuthenticated(false);
+      setUser(null);
+    }
   };
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        isAuthenticated, 
-        user, 
-        login, 
-        logout, 
-        loading,
-        setIsAuthenticated,
-        setUser
-      }}
-    >
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      token, 
+      login, 
+      logout, 
+      user,
+      loading,
+      setIsAuthenticated,
+      setUser
+    }}>
       {children}
     </AuthContext.Provider>
   );
