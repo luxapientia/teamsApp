@@ -131,17 +131,13 @@ export const updateAnnualTarget = createAsyncThunk(
     // });
     // return response.json();
 
-    const currentState = getState() as RootState;
-    const currentAnnualTarget = currentState.scorecard.annualTargets.find(t => t.id === target.id);
-
     const newTarget = {
       ...target,
       content: {
         ...target.content,
         quarterlyTarget: {
           ...target.content.quarterlyTarget,
-          // editable: currentAnnualTarget?.content.quarterlyTarget.editable || target.content.totalWeight >= 100 ? true : false,
-          quarterlyTargets: currentAnnualTarget?.content.quarterlyTarget.editable ? (currentAnnualTarget?.content.quarterlyTarget.quarterlyTargets) :
+          quarterlyTargets: target?.content.quarterlyTarget.editable ? (target?.content.quarterlyTarget.quarterlyTargets) :
             ['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => ({
               quarter: quarter as QuarterType,
               objectives: [...target.content.objectives]
@@ -149,6 +145,8 @@ export const updateAnnualTarget = createAsyncThunk(
         }
       }
     };
+
+
     return newTarget;
   }
 );
