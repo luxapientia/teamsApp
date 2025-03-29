@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import { config } from './config';
 import authRoutes from './routes/auth';
 import companyRoutes from './routes/companies';
+import superUserRoutes from './routes/superUsers';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/companies', companyRoutes);
+app.use('/api/super-users', superUserRoutes);
 
 // Connect to MongoDB
 mongoose.connect(config.mongoUri)
