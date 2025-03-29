@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import React, { useEffect, useRef, useState } from 'react';
+import { Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { createTeam } from '../../store/slices/teamsSlice';
+import { createTeam, deleteTeam } from '../../store/slices/teamsSlice';
 import { RootState } from '../../store';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
+import * as microsoftTeams from "@microsoft/teams-js";
 
 enum ViewStatus {
   TEAM_LIST = 'TEAM_LIST',
@@ -13,9 +15,13 @@ enum ViewStatus {
 };
 
 const Teams: React.FC = () => {
-  const [status, setStatus] = useState<ViewStatus>(ViewStatus.TEAM_LIST);
+  const dispatch = useAppDispatch();
   const teams = useAppSelector((state: RootState) => state.teams);
+  const [status, setStatus] = useState<ViewStatus>(ViewStatus.TEAM_LIST);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [newTeamName, setNewTeamName] = useState<string>('');
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleViewClick = (teamId: string) => {
     setStatus(ViewStatus.MEMBER_LIST);
@@ -25,6 +31,62 @@ const Teams: React.FC = () => {
   const handleBackClick = () => {
     setStatus(ViewStatus.TEAM_LIST);
   };
+
+  const handleAddTeamClick = () => {
+    setStatus(ViewStatus.TEAM_ADDING);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+  };
+
+  const handleAddMemberClick = () => {
+    if (isInitialized) {
+      microsoftTeams.people.selectPeople().then((people) => {
+        console.log('Selected people:', people);
+      }).catch((error) => {
+        console.error('Error selecting people:', error);
+      });
+    } else {
+      console.error("Teams SDK is not initialized");
+    }
+  };
+
+  const handleNewTeamNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNewTeamName(event.target.value);
+  };
+
+  const handleAddNewTeam = () => {
+    if (newTeamName.trim()) {
+      dispatch(createTeam(newTeamName));
+      setNewTeamName('');
+      setStatus(ViewStatus.TEAM_LIST);
+    }
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleAddNewTeam();
+    }
+  };
+
+  const handleDeleteTeam = (teamId: string) => {
+    dispatch(deleteTeam(teamId));
+  };
+
+  useEffect(() => {
+    console.log("Checking Teams SDK...");
+    if (microsoftTeams.app) {
+      console.log("Teams SDK is available");
+      microsoftTeams.app.initialize().then(() => {
+        console.log("Teams SDK initialized");
+        setIsInitialized(true);
+      }).catch((error) => {
+        console.error("Teams SDK initialization failed", error);
+      });
+    } else {
+      console.warn("Not running inside Microsoft Teams");
+    }
+  }, []);
 
   return (
     <Box>
@@ -48,11 +110,11 @@ const Teams: React.FC = () => {
         </Box>
       }
 
-      {status.includes('LIST') &&
+      {status === ViewStatus.TEAM_LIST &&
         <Button
           variant="text"
           startIcon={<AddIcon />}
-          // onClick={() => setIsModalOpen(true)}
+          onClick={handleAddTeamClick}
           sx={{
             textTransform: 'none',
             borderColor: '#E5E7EB',
@@ -63,7 +125,26 @@ const Teams: React.FC = () => {
             },
           }}
         >
-          {status === ViewStatus.TEAM_LIST ? 'Add Team' : 'Add Member'}
+          Add Team
+        </Button>
+      }
+
+      {status === ViewStatus.MEMBER_LIST &&
+        <Button
+          variant="text"
+          startIcon={<AddIcon />}
+          onClick={handleAddMemberClick}
+          sx={{
+            textTransform: 'none',
+            borderColor: '#E5E7EB',
+            color: '#374151',
+            '&:hover': {
+              borderColor: '#D1D5DB',
+              backgroundColor: '#F9FAFB',
+            },
+          }}
+        >
+          Add Member
         </Button>
       }
 
@@ -85,13 +166,64 @@ const Teams: React.FC = () => {
             )}
           </TableHead>
           <TableBody>
-            {status === ViewStatus.TEAM_LIST && teams.map(team => (
-              <TableRow key={team.name}>
+            {status === ViewStatus.TEAM_ADDING && (
+              <TableRow>
+                <TableCell>
+                  <TextField
+                    inputRef={inputRef}
+                    value={newTeamName}
+                    onChange={handleNewTeamNameChange}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Enter team name"
+                    fullWidth
+                    variant="standard"
+                  />
+                </TableCell>
+                <TableCell align="right">
+                  <Button
+                    variant="contained"
+                    onClick={handleAddNewTeam}
+                    sx={{
+                      fontSize: '0.75rem',
+                      padding: '4px 12px',
+                      minWidth: 'auto',
+                    }}>
+                    Add
+                  </Button>
+                </TableCell>
+              </TableRow>
+            )}
+
+            {status.includes('TEAM') && teams.map(team => (
+              <TableRow key={team.id}>
                 <TableCell>{team.name}</TableCell>
                 <TableCell align="right">
-                  <Button variant="contained" onClick={() => handleViewClick(team.id)}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => handleViewClick(team.id)}
+                    sx={{
+                      fontSize: '0.75rem',
+                      padding: '4px 8px',
+                      minWidth: 'auto',
+                    }}
+                  >
                     View
                   </Button>
+                  {team.members.length === 0 && (
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      onClick={() => handleDeleteTeam(team.id)}
+                      sx={{
+                        fontSize: '0.75rem',
+                        padding: '4px 8px',
+                        minWidth: 'auto',
+                        marginLeft: '8px',
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
