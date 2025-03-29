@@ -1,6 +1,5 @@
-import { Request, Response } from 'express';
-import * as jwt from 'jsonwebtoken';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 import { config } from '../config';
 
 export interface UserProfile {
@@ -12,37 +11,31 @@ export interface UserProfile {
   status: string;
 }
 
-class AuthService {
-  async login(_req: Request, res: Response): Promise<void> {
+export class AuthService {
+  async getLoginUrl(): Promise<string> {
     const authUrl = `https://login.microsoftonline.com/${config.azure.tenantId}/oauth2/v2.0/authorize`;
     const params = new URLSearchParams({
       client_id: config.azure.clientId!,
       response_type: 'code',
       redirect_uri: config.azure.redirectUri,
-      scope: 'openid profile email',
-      state: 'random-state-value'
+      scope: 'openid profile email User.Read',
+      response_mode: 'query'
     });
 
-    res.redirect(`${authUrl}?${params.toString()}`);
+    return `${authUrl}?${params.toString()}`;
   }
 
-  async callback(req: Request, res: Response): Promise<void> {
-    const { code } = req.query;
-
-    if (!code) {
-      res.status(400).json({ error: 'Authorization code is required' });
-      return;
-    }
-
+  async handleCallback(code: string): Promise<{ token: string }> {
     try {
       const tokenResponse = await axios.post(
         `https://login.microsoftonline.com/${config.azure.tenantId}/oauth2/v2.0/token`,
         new URLSearchParams({
           client_id: config.azure.clientId!,
           client_secret: config.azure.clientSecret!,
-          code: code as string,
+          code,
           grant_type: 'authorization_code',
-          redirect_uri: config.azure.redirectUri
+          redirect_uri: config.azure.redirectUri,
+          scope: 'openid profile email User.Read'
         })
       );
 
@@ -60,40 +53,42 @@ class AuthService {
         email: profileResponse.data.userPrincipalName,
         firstName: profileResponse.data.givenName,
         lastName: profileResponse.data.surname,
-        role: 'user', // You can set this based on your requirements
+        role: 'user',
         status: 'active'
       };
 
       // Create JWT token
-      const token = jwt.sign(userProfile, config.jwtSecret, { expiresIn: '1h' });
+      const token = jwt.sign(userProfile, config.jwtSecret, { 
+        expiresIn: '1h',
+        audience: config.azure.clientId,
+        issuer: `https://login.microsoftonline.com/${config.azure.tenantId}/v2.0`
+      });
 
-      // Redirect to frontend with token
-      res.redirect(`${config.frontend.url}/auth/callback?token=${token}`);
-    } catch (error) {
-      console.error('Authentication error:', error);
-      res.status(500).json({ error: 'Authentication failed' });
+      return { token };
+    } catch (error: any) {
+      console.error('Authentication error:', error.response?.data || error.message);
+      throw new Error('Authentication failed');
     }
   }
 
-  async getProfile(req: Request, res: Response): Promise<void> {
+  async getProfile(token: string): Promise<UserProfile> {
     try {
-      const token = req.headers.authorization?.split(' ')[1];
-      if (!token) {
-        res.status(401).json({ error: 'No token provided' });
-        return;
-      }
-
       const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
-      res.json(decoded);
+      return decoded;
     } catch (error) {
       console.error('Profile error:', error);
-      res.status(401).json({ error: 'Invalid token' });
+      throw new Error('Invalid token');
     }
   }
 
-  async logout(_req: Request, res: Response): Promise<void> {
-    // Clear any server-side session if needed
-    res.json({ message: 'Logged out successfully' });
+  async logout(token: string): Promise<void> {
+    try {
+      // Verify token is valid
+      jwt.verify(token, config.jwtSecret);
+      // You could implement token blacklisting here if needed
+    } catch (error) {
+      throw new Error('Invalid token');
+    }
   }
 
   verifyToken(token: string): UserProfile | null {
@@ -105,4 +100,5 @@ class AuthService {
   }
 }
 
+// Create and export an instance of AuthService
 export const authService = new AuthService(); 
