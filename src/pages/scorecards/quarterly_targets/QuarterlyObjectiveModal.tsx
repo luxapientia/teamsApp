@@ -21,32 +21,31 @@ import {
   Alert,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
-import { RootState } from '../../../../../store';
-import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
-import { useAppSelector } from '../../../../../hooks/useAppSelector';
-import { AnnualTargetObjective, AnnualTargetKPI } from '../../../../../types/annualCorporateScorecard';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
+import { AnnualTarget, AnnualTargetObjective, AnnualTargetKPI, QuarterType } from '../../../types/annualCorporateScorecard';
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import { useAppSelector } from '@/hooks/useAppSelector';
+import { RootState } from '@/store';
 
-interface AddStrategicObjectiveModalProps {
+interface QuarterlyObjectiveModalProps {
   open: boolean;
   onClose: () => void;
-  targetName: string;
+  annualTarget: AnnualTarget;
+  quarter: QuarterType;
   editingObjective?: AnnualTargetObjective | null;
 }
 
-const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
+const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
   open,
   onClose,
-  targetName,
+  annualTarget,
+  quarter,
   editingObjective
 }) => {
   const dispatch = useAppDispatch();
-  const annualTarget = useAppSelector((state: RootState) =>
-    state.scorecard.annualTargets.find(target => target.name === targetName)
-  );
   const perspectives = annualTarget?.content.perspectives || [];
   const [perspective, setPerspective] = useState('');
   const [objective, setObjective] = useState('');
@@ -82,19 +81,16 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     const newErrors: typeof errors = {};
     let isValid = true;
 
-    // Validate perspective
     if (!perspective) {
       newErrors.perspective = 'Perspective is required';
       isValid = false;
     }
 
-    // Validate objective
     if (!objective) {
       newErrors.objective = 'Strategic objective is required';
       isValid = false;
     }
 
-    // Validate KPIs
     const kpiErrors = kpis.map(kpi => {
       const errors: { [key: string]: string } = {};
       
@@ -111,25 +107,18 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
         isValid = false;
       }
 
-      if (kpi.baseline === null || kpi.baseline === undefined) {
+      if (!kpi.baseline) {
         errors.baseline = 'Baseline is required';
         isValid = false;
       }
 
-      if (kpi.target === null || kpi.target === undefined) {
+      if (!kpi.target) {
         errors.target = 'Target is required';
         isValid = false;
       }
 
       return errors;
     });
-
-    // Validate total weight equals 100
-    // const totalWeight = kpis.reduce((sum, kpi) => sum + (kpi.weight || 0), 0);
-    // if (totalWeight !== 100) {
-    //   newErrors.general = 'Total weight must equal 100%';
-    //   isValid = false;
-    // }
 
     if (kpiErrors.some(error => Object.keys(error).length > 0)) {
       newErrors.kpis = kpiErrors;
@@ -139,40 +128,34 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     return isValid;
   };
 
-  const calculateTotalWeight = (objectives: AnnualTargetObjective[]) => {
-    let total = 0;
-    objectives.forEach(objective => {
-      objective.KPIs.forEach((kpi: AnnualTargetKPI) => {
-        total += Number(kpi.weight) || 0;
-      });
-    });
-    return total;
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm() && annualTarget) {
+    if (validateForm()) {
       const newObjective: AnnualTargetObjective = {
         perspective,
         name: objective,
         KPIs: kpis,
       };
 
-      const updatedObjectives = editingObjective
-        ? annualTarget.content.objectives.map(obj => 
-            obj.name === editingObjective.name ? newObjective : obj
-          )
-        : [...annualTarget.content.objectives, newObjective];
-
-      const newTotalWeight = calculateTotalWeight(updatedObjectives);
+      const updatedQuarterlyTargets = annualTarget.content.quarterlyTarget.quarterlyTargets.map(qt => {
+        if (qt.quarter === quarter) {
+          const objectives = editingObjective
+            ? qt.objectives.map(obj => obj.name === editingObjective.name ? newObjective : obj)
+            : [...qt.objectives, newObjective];
+          return { ...qt, objectives };
+        }
+        return qt;
+      });
 
       dispatch(updateAnnualTarget({
         ...annualTarget,
         content: {
           ...annualTarget.content,
-          objectives: updatedObjectives,
-          totalWeight: newTotalWeight
-        },
+          quarterlyTarget: {
+            ...annualTarget.content.quarterlyTarget,
+            quarterlyTargets: updatedQuarterlyTargets
+          }
+        }
       }));
       handleClose();
     }
@@ -181,7 +164,13 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
   const handleClose = () => {
     setPerspective('');
     setObjective('');
-    setKpis([{ indicator: '', weight: 0, baseline: '', target: '', ratingScores: annualTarget?.content.ratingScores || [] }]);
+    setKpis([{
+      indicator: '',
+      weight: 0,
+      baseline: '',
+      target: '',
+      ratingScores: annualTarget?.content.ratingScores || []
+    }]);
     onClose();
   };
 
@@ -218,15 +207,13 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
       onClose={handleClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{
-        sx: { borderRadius: '8px' }
-      }}
+      PaperProps={{ sx: { borderRadius: '8px' } }}
     >
       <DialogContent sx={{ p: 0 }}>
         <Stack spacing={3} sx={{ p: 3 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              Add Strategic Objective
+              {editingObjective ? 'Edit' : 'Add'} Quarterly Objective
             </Typography>
             <IconButton onClick={handleClose} size="small">
               <CloseIcon />
@@ -235,26 +222,21 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
 
           <form onSubmit={handleSubmit}>
             <Stack spacing={3}>
-              {errors.general && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {errors.general}
-                </Alert>
-              )}
-
-              <FormControl fullWidth error={!!errors.perspective}>
+              <FormControl error={!!errors.perspective}>
                 <InputLabel>Perspective</InputLabel>
                 <Select
                   value={perspective}
                   label="Perspective"
                   onChange={(e) => setPerspective(e.target.value)}
-                  sx={{ backgroundColor: '#F9FAFB' }}
                 >
                   {perspectives.map((p) => (
-                    <MenuItem key={p} value={p}>{p}</MenuItem>
+                    <MenuItem key={p} value={p}>
+                      {p}
+                    </MenuItem>
                   ))}
                 </Select>
                 {errors.perspective && (
-                  <Typography color="error" variant="caption" sx={{ mt: 1 }}>
+                  <Typography color="error" variant="caption">
                     {errors.perspective}
                   </Typography>
                 )}
@@ -264,31 +246,15 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                 label="Strategic Objective"
                 value={objective}
                 onChange={(e) => setObjective(e.target.value)}
-                fullWidth
                 error={!!errors.objective}
                 helperText={errors.objective}
-                sx={{ backgroundColor: '#F9FAFB' }}
               />
 
-              {/* KPI Section */}
               <Box>
-                <Button
-                  variant="contained"
-                  onClick={handleAddKPI}
-                  startIcon={<AddIcon />}
-                  sx={{
-                    mb: 2,
-                    backgroundColor: '#6264A7',
-                    '&:hover': { backgroundColor: '#4F46E5' },
-                  }}
-                >
-                  Add KPI
-                </Button>
-
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ width: '40px' }} /> {/* For expand button */}
+                      <TableCell sx={{ width: '40px' }} />
                       <TableCell>Key Performance Indicator</TableCell>
                       <TableCell align="right">Weight %</TableCell>
                       <TableCell align="right">Baseline</TableCell>
@@ -298,7 +264,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                   <TableBody>
                     {kpis.map((kpi, index) => (
                       <React.Fragment key={index}>
-                        <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+                        <TableRow>
                           <TableCell>
                             <IconButton
                               size="small"
@@ -334,10 +300,9 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               value={kpi.weight}
                               onChange={(e) => {
                                 const newKpis = [...kpis];
-                                const newWeight = e.target.value === '' ? 0 : Number(e.target.value);
                                 newKpis[index] = {
                                   ...newKpis[index],
-                                  weight: newWeight
+                                  weight: Number(e.target.value)
                                 };
                                 setKpis(newKpis);
                               }}
@@ -399,14 +364,14 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
-                                    {annualTarget?.content.ratingScores.map((score, scoreIndex) => (
+                                    {kpi.ratingScores.map((score, scoreIndex) => (
                                       <TableRow key={scoreIndex}>
                                         <TableCell>{scoreIndex + 1}</TableCell>
                                         <TableCell>{score.name}</TableCell>
                                         <TableCell align="right">
                                           <TextField
                                             type="number"
-                                            value={kpi.ratingScores[scoreIndex].min}
+                                            value={score.min}
                                             onChange={(e) => {
                                               const value = e.target.value === '' ? 0 : Number(e.target.value);
                                               handleRatingScoreChange(index, scoreIndex, 'min', value);
@@ -418,7 +383,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                         <TableCell align="right">
                                           <TextField
                                             type="number"
-                                            value={kpi.ratingScores[scoreIndex].max}
+                                            value={score.max}
                                             onChange={(e) => {
                                               const value = e.target.value === '' ? 0 : Number(e.target.value);
                                               handleRatingScoreChange(index, scoreIndex, 'max', value);
@@ -439,9 +404,22 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                     ))}
                   </TableBody>
                 </Table>
+
+                <Button
+                  startIcon={<AddIcon />}
+                  onClick={handleAddKPI}
+                  sx={{
+                    mt: 2,
+                    color: '#6B7280',
+                    '&:hover': {
+                      backgroundColor: '#F9FAFB',
+                    },
+                  }}
+                >
+                  Add KPI
+                </Button>
               </Box>
 
-              {/* Save Button */}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
                   variant="contained"
@@ -462,4 +440,4 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
   );
 };
 
-export default AddStrategicObjectiveModal; 
+export default QuarterlyObjectiveModal; 

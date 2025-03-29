@@ -24,6 +24,10 @@ export interface AnnualTargetContent {
     assesmentPeriod: AnnualTargetAssesmentPeriod;
     contractingPeriod: AnnualTargetContractingPeriod;
     totalWeight: number;
+    quarterlyTarget: {
+        editable: boolean;
+        quarterlyTargets: QuarterlyTarget[];
+    };
 }
 
 export interface AnnualTargetObjective {
@@ -89,9 +93,6 @@ export interface AnnualTargetContractingPeriod {
 export type QuarterType = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
 export interface QuarterlyTarget {
-    id: string;
-    annualTargetId: string;
     quarter: QuarterType;
     objectives: AnnualTargetObjective[];
-    editable: boolean;
 }
