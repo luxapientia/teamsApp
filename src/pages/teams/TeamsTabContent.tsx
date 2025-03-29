@@ -14,7 +14,7 @@ enum ViewStatus {
   MEMBER_ADDING = 'MEMBER_ADDING',
 };
 
-const Teams: React.FC = () => {
+const TeamsTabContent: React.FC = () => {
   const dispatch = useAppDispatch();
   const teams = useAppSelector((state: RootState) => state.teams);
   const [status, setStatus] = useState<ViewStatus>(ViewStatus.TEAM_LIST);
@@ -243,4 +243,4 @@ const Teams: React.FC = () => {
   );
 };
 
-export default Teams;
+export default TeamsTabContent;
