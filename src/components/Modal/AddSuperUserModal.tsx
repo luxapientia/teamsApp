@@ -60,6 +60,14 @@ export const SuperUserModal: React.FC<AddSuperUserModalProps> = ({
     setError('');
     setIsSubmitting(true);
     
+    if (!formData.companyId) {
+      setError('Please select a company');
+      setIsSubmitting(false);
+      return;
+    }
+
+    console.log('Submitting form data:', formData);
+    
     try {
       await onSubmit(formData);
       onClose();
@@ -124,6 +132,7 @@ export const SuperUserModal: React.FC<AddSuperUserModalProps> = ({
             label: company.name,
           }))}
           required
+          placeholder="Select a company..."
         />
         <FormSelect
           id="status"
