@@ -1,48 +1,113 @@
-import React from 'react';
-import { PrimaryButton, DefaultButton } from '@fluentui/react/lib/Button';
-import { Add24Regular } from '@fluentui/react-icons';
+import React, { useState } from 'react';
+import { Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { createTeam } from '../../store/slices/teamsSlice';
+import { RootState } from '../../store';
+import { useAppSelector } from '../../hooks/useAppSelector';
+
+enum ViewStatus {
+  TEAM_LIST = 'TEAM_LIST',
+  TEAM_ADDING = 'TEAM_ADDING',
+  MEMBER_LIST = 'MEMBER_LIST',
+  MEMBER_ADDING = 'MEMBER_ADDING',
+};
 
 const Teams: React.FC = () => {
+  const [status, setStatus] = useState<ViewStatus>(ViewStatus.TEAM_LIST);
+  const teams = useAppSelector((state: RootState) => state.teams);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+
+  const handleViewClick = (teamId: string) => {
+    setStatus(ViewStatus.MEMBER_LIST);
+    setSelectedTeamId(teamId);
+  };
+
+  const handleBackClick = () => {
+    setStatus(ViewStatus.TEAM_LIST);
+  };
+
   return (
-    <div className="p-4">
-      <div className="flex justify-end items-center mb-4">
-        <DefaultButton
-          className="border border-black text-black flex items-center px-3 py-1 rounded"
+    <Box>
+      {status !== ViewStatus.TEAM_LIST &&
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={handleBackClick}
+            sx={{
+              textTransform: 'none',
+              borderColor: '#E5E7EB',
+              color: '#374151',
+              '&:hover': {
+                borderColor: '#D1D5DB',
+                backgroundColor: '#F9FAFB',
+              },
+            }}
+          >
+            Back
+          </Button>
+        </Box>
+      }
+
+      {status.includes('LIST') &&
+        <Button
+          variant="text"
+          startIcon={<AddIcon />}
+          // onClick={() => setIsModalOpen(true)}
+          sx={{
+            textTransform: 'none',
+            borderColor: '#E5E7EB',
+            color: '#374151',
+            '&:hover': {
+              borderColor: '#D1D5DB',
+              backgroundColor: '#F9FAFB',
+            },
+          }}
         >
-          <Add24Regular className="mr-2 w-4 h-4" />
-          New
-        </DefaultButton>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 border-b-2 border-gray-200 text-left text-sm font-semibold text-gray-700">
-                Name
-              </th>
-              <th className="py-2 px-4 border-b-2 border-gray-200 text-right text-sm font-semibold text-gray-700">
-                {/* Empty header for Action column */}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="py-2 px-4 border-b border-gray-200 text-sm text-gray-700">
-                Human Capital
-              </td>
-              <td className="py-2 px-4 border-b border-gray-200 text-sm text-right">
-                <PrimaryButton
-                  text="View"
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 text-sm rounded-full"
-                  style={{ border: 'none' }}
-                />
-              </td>
-            </tr>
-            {/* Add more rows as needed */}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          {status === ViewStatus.TEAM_LIST ? 'Add Team' : 'Add Member'}
+        </Button>
+      }
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            {status.includes('TEAM') ? (
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            ) : (
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Title</TableCell>
+                <TableCell>Location</TableCell>
+                <TableCell>Role</TableCell>
+              </TableRow>
+            )}
+          </TableHead>
+          <TableBody>
+            {status === ViewStatus.TEAM_LIST && teams.map(team => (
+              <TableRow key={team.name}>
+                <TableCell>{team.name}</TableCell>
+                <TableCell align="right">
+                  <Button variant="contained" onClick={() => handleViewClick(team.id)}>
+                    View
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+
+            {status === ViewStatus.MEMBER_LIST && teams.find(team => team.id === selectedTeamId)?.members.map(member => (
+              <TableRow key={member.name}>
+                <TableCell>{member.name}</TableCell>
+                <TableCell>{member.title}</TableCell>
+                <TableCell>{member.location}</TableCell>
+                <TableCell>{member.role}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 };
 
