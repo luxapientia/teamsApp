@@ -142,8 +142,9 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
         },
       }));
 
+      const nextScore = (updatedRatings.length || 0) + 1;
       setNewRating({
-        score: getNextScore(),
+        score: nextScore,
         name: '',
         min: '0',
         max: '0',
