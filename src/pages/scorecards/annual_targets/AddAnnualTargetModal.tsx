@@ -50,7 +50,6 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
       setEndDate(editingAnnualTarget.endDate);
       setStatus(editingAnnualTarget.status);
     }
-    toast.showToast('Annual target created successfully', 'success');
   }, [editingAnnualTarget]);
 
   // Helper function to format date to YYYY-MM-DD
