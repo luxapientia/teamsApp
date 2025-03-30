@@ -179,7 +179,7 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
               <StyledHeaderCell>Min %</StyledHeaderCell>
               <StyledHeaderCell>Max %</StyledHeaderCell>
               <StyledHeaderCell>Colour</StyledHeaderCell>
-              <StyledHeaderCell align="right">Actions</StyledHeaderCell>
+              <StyledHeaderCell align="center">Actions</StyledHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>

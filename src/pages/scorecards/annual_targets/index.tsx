@@ -297,7 +297,7 @@ const AnnualTargets: React.FC = () => {
         if (selectedRow) {
             const target = annualTargets.find(t => t.name === selectedRow);
             if (target) {
-                dispatch(deleteAnnualTarget(target.id));
+                dispatch(deleteAnnualTarget(target._id));
                 handleMenuClose();
             }
         }
