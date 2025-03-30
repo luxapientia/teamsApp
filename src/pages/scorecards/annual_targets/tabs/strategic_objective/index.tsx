@@ -64,16 +64,16 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
   //   return perspectiveComparison;
   // });
 
-  const sortedObjectives = () => {
-    let result: AnnualTargetObjective[] = [];
-    perspectives.forEach((val) => {
-      const filtered = objectives.filter(objective => objective.perspective === val);
-      filtered.forEach((objective) => {
-        result.push(objective);
-      })
-    })
-    return result;
-  }
+  // const sortedObjectives = () => {
+  //   let result: AnnualTargetObjective[] = [];
+  //   perspectives.forEach((val) => {
+  //     const filtered = objectives.filter(objective => objective.perspective.name === val.name);
+  //     filtered.forEach((objective) => {
+  //       result.push(objective);
+  //     })
+  //   })
+  //   return result;
+  // }
 
   const calculateTotalWeight = (objectives: AnnualTargetObjective[]) => {
     let total = 0;
@@ -107,6 +107,12 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
       }));
     }
   };
+
+  const sortedObjectives = () => {
+    if (!objectives || objectives.length === 0) return [];
+    return [...objectives].sort((a, b) => a.perspective.order - b.perspective.order);
+  }
+  
 
   return (
     <Box p={2}>
@@ -159,7 +165,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
                   {kpiIndex === 0 && (
                     <>
                       <StyledTableCell rowSpan={objective.KPIs.length}>
-                        {objective.perspective}
+                        {objective.perspective.name}
                       </StyledTableCell>
                       <StyledTableCell rowSpan={objective.KPIs.length}>
                         {objective.name}
@@ -208,7 +214,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
                   )}
                 </TableRow>
               ))
-            ))}
+            )).flat()}
           </TableBody>
         </Table>
 
