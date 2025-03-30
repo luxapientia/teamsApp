@@ -105,7 +105,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
             editable: false,
             quarterlyTargets: [],
           },
-          assesmentPeriod: {
+          assessmentPeriod: {
             Q1: {
               startDate,
               endDate,

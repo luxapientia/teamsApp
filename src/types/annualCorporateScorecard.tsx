@@ -21,7 +21,7 @@ export interface AnnualTargetContent {
     perspectives: AnnualTargetPerspective[];
     objectives: AnnualTargetObjective[];
     ratingScales: AnnualTargetRatingScale[];
-    assesmentPeriod: AnnualTargetAssesmentPeriod;
+    assessmentPeriod: AnnualTargetAssessmentPeriod;
     contractingPeriod: AnnualTargetContractingPeriod;
     totalWeight: number;
     quarterlyTarget: {
@@ -57,7 +57,7 @@ export interface AnnualTargetRatingScale {
     color: string;
 }
 
-export interface AnnualTargetAssesmentPeriod {
+export interface AnnualTargetAssessmentPeriod {
     Q1: {
         startDate: string;
         endDate: string;
