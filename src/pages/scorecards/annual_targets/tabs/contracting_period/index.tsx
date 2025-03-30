@@ -159,7 +159,7 @@ const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName 
               <StyledHeaderCell>Quarter</StyledHeaderCell>
               <StyledHeaderCell>Start Date</StyledHeaderCell>
               <StyledHeaderCell>End Date</StyledHeaderCell>
-              <StyledHeaderCell align="right">Actions</StyledHeaderCell>
+              <StyledHeaderCell align="center">Actions</StyledHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -200,7 +200,7 @@ const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName 
                       period?.endDate
                     )}
                   </StyledTableCell>
-                  <StyledTableCell align="right">
+                  <StyledTableCell align="center">
                     {editingQuarter === quarter ? (
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Button
