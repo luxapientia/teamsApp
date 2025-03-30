@@ -111,9 +111,13 @@ const QuarterlyTargetTable: React.FC = () => {
 
   const getQuarterlyObjectives = () => {
     if (!selectedAnnualTarget || !selectedQuarter) return [];
+    
     const quarterData = selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets
       .find(q => q.quarter === selectedQuarter);
-    return quarterData?.objectives || [];
+
+    if (!quarterData?.objectives) return [];
+    
+    return [...quarterData.objectives].sort((a, b) => a.perspective.order - b.perspective.order);
   };
 
   const handleEdit = (objective: AnnualTargetObjective) => {
@@ -258,7 +262,7 @@ const QuarterlyTargetTable: React.FC = () => {
                         {kpiIndex === 0 && (
                           <>
                             <StyledTableCell rowSpan={objective.KPIs.length}>
-                              {objective.perspective}
+                              {objective.perspective.name}
                             </StyledTableCell>
                             <StyledTableCell rowSpan={objective.KPIs.length}>
                               {objective.name}

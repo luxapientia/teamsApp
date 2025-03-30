@@ -18,7 +18,7 @@ export interface AnnualTarget {
 }
 
 export interface AnnualTargetContent {
-    perspectives: string[];
+    perspectives: AnnualTargetPerspective[];
     objectives: AnnualTargetObjective[];
     ratingScales: AnnualTargetRatingScale[];
     assesmentPeriod: AnnualTargetAssesmentPeriod;
@@ -30,8 +30,13 @@ export interface AnnualTargetContent {
     };
 }
 
+export interface AnnualTargetPerspective {
+    order: number;
+    name: string;
+}
+
 export interface AnnualTargetObjective {
-    perspective: string;
+    perspective: AnnualTargetPerspective;
     name: string;
     KPIs: AnnualTargetKPI[];
 }
