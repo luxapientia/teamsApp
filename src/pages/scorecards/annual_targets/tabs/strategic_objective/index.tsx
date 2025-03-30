@@ -144,12 +144,12 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
             <TableRow>
               <StyledHeaderCell>Perspective</StyledHeaderCell>
               <StyledHeaderCell>Strategic Objective</StyledHeaderCell>
-              <StyledHeaderCell align="right">Weight %</StyledHeaderCell>
+              <StyledHeaderCell align="center">Weight %</StyledHeaderCell>
               <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
-              <StyledHeaderCell align="right">Baseline</StyledHeaderCell>
-              <StyledHeaderCell align="right">Target</StyledHeaderCell>
-              <StyledHeaderCell align="right">Rating Score</StyledHeaderCell>
-              <StyledHeaderCell align="right">Actions</StyledHeaderCell>
+              <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
+              <StyledHeaderCell align="center">Target</StyledHeaderCell>
+              <StyledHeaderCell align="center">Rating Score</StyledHeaderCell>
+              <StyledHeaderCell align="center">Actions</StyledHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -166,11 +166,11 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
                       </StyledTableCell>
                     </>
                   )}
-                  <StyledTableCell align="right">{kpi.weight}</StyledTableCell>
+                  <StyledTableCell align="center">{kpi.weight}</StyledTableCell>
                   <StyledTableCell>{kpi.indicator}</StyledTableCell>
-                  <StyledTableCell align="right">{kpi.baseline}</StyledTableCell>
-                  <StyledTableCell align="right">{kpi.target}</StyledTableCell>
-                  <StyledTableCell align="right">
+                  <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
+                  <StyledTableCell align="center">{kpi.target}</StyledTableCell>
+                  <StyledTableCell align="center">
                     <Button
                       variant="outlined"
                       size="small"
@@ -187,7 +187,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
                     </Button>
                   </StyledTableCell>
                   {kpiIndex === 0 && (
-                    <StyledTableCell align="right" rowSpan={objective.KPIs.length}>
+                    <StyledTableCell align="center" rowSpan={objective.KPIs.length}>
                       <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <IconButton
                           size="small"

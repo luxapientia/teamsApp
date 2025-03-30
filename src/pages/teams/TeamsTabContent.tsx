@@ -154,7 +154,7 @@ const TeamsTabContent: React.FC = () => {
             {status.includes('TEAM') ? (
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             ) : (
               <TableRow>
@@ -179,7 +179,7 @@ const TeamsTabContent: React.FC = () => {
                     variant="standard"
                   />
                 </TableCell>
-                <TableCell align="right">
+                <TableCell align="center">
                   <Button
                     variant="contained"
                     onClick={handleAddNewTeam}
@@ -197,7 +197,7 @@ const TeamsTabContent: React.FC = () => {
             {status.includes('TEAM') && teams.map(team => (
               <TableRow key={team.id}>
                 <TableCell>{team.name}</TableCell>
-                <TableCell align="right">
+                <TableCell align="center">
                   <Button
                     variant="outlined"
                     onClick={() => handleViewClick(team.id)}
