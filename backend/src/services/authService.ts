@@ -9,6 +9,7 @@ export interface UserProfile {
   lastName: string;
   role: string;
   status: string;
+  tenantId: string;
 }
 
 export class AuthService {
@@ -18,7 +19,7 @@ export class AuthService {
       client_id: config.azure.clientId!,
       response_type: 'code',
       redirect_uri: config.azure.redirectUri,
-      scope: 'openid profile email User.Read',
+      scope: 'openid profile email User.Read Organization.Read.All',
       response_mode: 'query'
     });
 
@@ -35,7 +36,7 @@ export class AuthService {
           code,
           grant_type: 'authorization_code',
           redirect_uri: config.azure.redirectUri,
-          scope: 'openid profile email User.Read'
+          scope: 'openid profile email User.Read Organization.Read.All'
         })
       );
 
@@ -48,13 +49,21 @@ export class AuthService {
         }
       });
 
+      // Get organization info
+      const orgResponse = await axios.get('https://graph.microsoft.com/v1.0/organization', {
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      });
+
       const userProfile: UserProfile = {
         id: profileResponse.data.id,
         email: profileResponse.data.userPrincipalName,
         firstName: profileResponse.data.givenName,
         lastName: profileResponse.data.surname,
         role: 'user',
-        status: 'active'
+        status: 'active',
+        tenantId: orgResponse.data.value[0].id
       };
 
       // Create JWT token
