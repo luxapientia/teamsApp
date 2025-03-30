@@ -150,6 +150,16 @@ const QuarterlyTargetTable: React.FC = () => {
     }
   };
 
+  const calculateTotalWeight = (objectives: AnnualTargetObjective[]) => {
+    let total = 0;
+    objectives.forEach(objective => {
+      objective.KPIs.forEach(kpi => {
+        total += Number(kpi.weight) || 0;
+      });
+    });
+    return total;
+  };
+
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
@@ -217,6 +227,35 @@ const QuarterlyTargetTable: React.FC = () => {
                 </TableRow>
               </TableBody>
             </Table>
+          </Box>
+
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              gap: 1,
+              mb: 2
+            }}
+          >
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#6B7280',
+                fontWeight: 500 
+              }}
+            >
+              Total Weight:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: calculateTotalWeight(getQuarterlyObjectives()) === 100 ? '#059669' : '#DC2626',
+                fontWeight: 600 
+              }}
+            >
+              {calculateTotalWeight(getQuarterlyObjectives())}%
+            </Typography>
           </Box>
 
           <Stack spacing={2}>
