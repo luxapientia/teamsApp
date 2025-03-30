@@ -14,28 +14,31 @@ import { BoardSplitRegular, GridRegular, PeopleTeamRegular } from '@fluentui/rea
 import { Provider } from 'react-redux';
 import { store } from './store';
 import Main from './Main';
+import { ToastProvider } from './contexts/ToastContext';
 
 const iconSize = 24;
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/unauthorized" element={<Unauthorized />} />
-          <Route
-            path="/main"
-            element={
-              <ProtectedRoute>
-                <Main />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
+      <ToastProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route
+              path="/main"
+              element={
+                <ProtectedRoute>
+                  <Main />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </Router>
+      </ToastProvider>
     </AuthProvider>
   );
 };

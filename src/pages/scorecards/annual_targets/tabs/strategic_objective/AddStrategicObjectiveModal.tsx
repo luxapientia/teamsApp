@@ -29,6 +29,7 @@ import { AnnualTargetObjective, AnnualTargetKPI } from '../../../../../types/ann
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
 interface AddStrategicObjectiveModalProps {
   open: boolean;
@@ -212,6 +213,10 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     setKpis(newKpis);
   };
 
+  const handleDeleteKPI = (indexToDelete: number) => {
+    setKpis(kpis.filter((_, index) => index !== indexToDelete));
+  };
+
   return (
     <Dialog
       open={open}
@@ -289,10 +294,11 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                   <TableHead>
                     <TableRow>
                       <TableCell sx={{ width: '40px' }} /> {/* For expand button */}
-                      <TableCell>Key Performance Indicator</TableCell>
-                      <TableCell align="right">Weight %</TableCell>
-                      <TableCell align="right">Baseline</TableCell>
-                      <TableCell align="right">Target</TableCell>
+                      <TableCell align="center">Key Performance Indicator</TableCell>
+                      <TableCell align="center">Weight %</TableCell>
+                      <TableCell align="center">Baseline</TableCell>
+                      <TableCell align="center">Target</TableCell>
+                      <TableCell align="center">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -328,7 +334,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               helperText={errors.kpis?.[index]?.indicator}
                             />
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="center">
                             <TextField
                               inputProps={{
                                 inputMode: "numeric",
@@ -354,7 +360,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               sx={{ width: '80px' }}
                             />
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="center">
                             <TextField
                               value={kpi.baseline}
                               onChange={(e) => {
@@ -371,7 +377,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               sx={{ width: '80px' }}
                             />
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="center">
                             <TextField
                               value={kpi.target}
                               onChange={(e) => {
@@ -388,6 +394,21 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               sx={{ width: '80px' }}
                             />
                           </TableCell>
+                          <TableCell align="center">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteKPI(index)}
+                              sx={{
+                                color: '#6B7280',
+                                '&:hover': {
+                                  color: '#DC2626',
+                                  backgroundColor: '#FEE2E2',
+                                },
+                              }}
+                            >
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
@@ -401,8 +422,8 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                     <TableRow>
                                       <TableCell width="40px">No</TableCell>
                                       <TableCell>Rating</TableCell>
-                                      <TableCell align="right">Min</TableCell>
-                                      <TableCell align="right">Max</TableCell>
+                                      <TableCell align="center">Min</TableCell>
+                                      <TableCell align="center">Max</TableCell>
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
@@ -410,7 +431,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                       <TableRow key={scaleIndex}>
                                         <TableCell>{scaleIndex + 1}</TableCell>
                                         <TableCell>{scale.name}</TableCell>
-                                        <TableCell align="right">
+                                        <TableCell align="center">
                                           <TextField
                                             value={kpi.ratingScales[scaleIndex].min}
                                             onChange={(e) => {
@@ -421,7 +442,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                                             sx={{ width: '80px' }}
                                           />
                                         </TableCell>
-                                        <TableCell align="right">
+                                        <TableCell align="center">
                                           <TextField
                                             value={kpi.ratingScales[scaleIndex].max}
                                             onChange={(e) => {
