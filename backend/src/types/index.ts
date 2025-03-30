@@ -4,7 +4,7 @@ export type BaseEntity = {
 };
 
 export type Status = 'active' | 'inactive';
-export type LicenseStatus = 'active' | 'pending' | 'expired';
+export type LicenseStatus = 'active' | 'inactive' | 'pending' | 'expired';
 export type LicenseType = 'Basic' | 'Professional' | 'Enterprise';
 
 export interface Company extends BaseEntity {
