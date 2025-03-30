@@ -6,7 +6,7 @@ enum AnnualTargetStatus {
 }
 
 interface AnnualTargetContent {
-  perspectives: string[];
+  perspectives: AnnualTargetPerspective[];
   objectives: AnnualTargetObjective[];
   ratingScales: AnnualTargetRatingScale[];
   assesmentPeriod: AnnualTargetAssesmentPeriod;
@@ -18,8 +18,13 @@ interface AnnualTargetContent {
   };
 }
 
+interface AnnualTargetPerspective {
+  order: number;
+  name: string;
+}
+
 interface AnnualTargetObjective {
-  perspective: string;
+  perspective: AnnualTargetPerspective;
   name: string;
   KPIs: AnnualTargetKPI[];
 }
@@ -114,12 +119,15 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
     required: true
   },
   content: {
-    perspectives: {
-      type: [String],
-      default: []
-    },
+    perspectives: [{
+      order: Number,
+      name: String
+    }],
     objectives: [{
-      perspective: String,
+      perspective: {
+        order: Number,
+        name: String
+      },
       name: String,
       KPIs: [{
         indicator: String,
@@ -193,7 +201,10 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
           enum: ['Q1', 'Q2', 'Q3', 'Q4']
         },
         objectives: [{
-          perspective: String,
+          perspective: {
+            order: Number,
+            name: String
+          },
           name: String,
           KPIs: [{
             indicator: String,

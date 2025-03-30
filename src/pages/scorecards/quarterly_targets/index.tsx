@@ -111,9 +111,13 @@ const QuarterlyTargetTable: React.FC = () => {
 
   const getQuarterlyObjectives = () => {
     if (!selectedAnnualTarget || !selectedQuarter) return [];
+    
     const quarterData = selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets
       .find(q => q.quarter === selectedQuarter);
-    return quarterData?.objectives || [];
+
+    if (!quarterData?.objectives) return [];
+    
+    return [...quarterData.objectives].sort((a, b) => a.perspective.order - b.perspective.order);
   };
 
   const handleEdit = (objective: AnnualTargetObjective) => {
@@ -144,6 +148,16 @@ const QuarterlyTargetTable: React.FC = () => {
         }
       }));
     }
+  };
+
+  const calculateTotalWeight = (objectives: AnnualTargetObjective[]) => {
+    let total = 0;
+    objectives.forEach(objective => {
+      objective.KPIs.forEach(kpi => {
+        total += Number(kpi.weight) || 0;
+      });
+    });
+    return total;
   };
 
   return (
@@ -215,6 +229,35 @@ const QuarterlyTargetTable: React.FC = () => {
             </Table>
           </Box>
 
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              gap: 1,
+              mb: 2
+            }}
+          >
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#6B7280',
+                fontWeight: 500 
+              }}
+            >
+              Total Weight:
+            </Typography>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: calculateTotalWeight(getQuarterlyObjectives()) === 100 ? '#059669' : '#DC2626',
+                fontWeight: 600 
+              }}
+            >
+              {calculateTotalWeight(getQuarterlyObjectives())}%
+            </Typography>
+          </Box>
+
           <Stack spacing={2}>
             {selectedAnnualTarget.content.quarterlyTarget.editable && (
               <Button
@@ -258,7 +301,7 @@ const QuarterlyTargetTable: React.FC = () => {
                         {kpiIndex === 0 && (
                           <>
                             <StyledTableCell rowSpan={objective.KPIs.length}>
-                              {objective.perspective}
+                              {objective.perspective.name}
                             </StyledTableCell>
                             <StyledTableCell rowSpan={objective.KPIs.length}>
                               {objective.name}

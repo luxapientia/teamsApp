@@ -23,7 +23,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
-import { AnnualTarget, AnnualTargetObjective, AnnualTargetKPI, QuarterType } from '../../../types/annualCorporateScorecard';
+import { AnnualTarget, AnnualTargetObjective, AnnualTargetKPI, AnnualTargetPerspective, QuarterType } from '../../../types/annualCorporateScorecard';
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -48,7 +48,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const perspectives = annualTarget?.content.perspectives || [];
-  const [perspective, setPerspective] = useState('');
+  const [perspective, setPerspective] = useState<AnnualTargetPerspective | null>(null);
   const [objective, setObjective] = useState('');
   const [kpis, setKpis] = useState<AnnualTargetKPI[]>([{
     indicator: '',
@@ -131,7 +131,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
+    if (validateForm() && perspective) {
       const newObjective: AnnualTargetObjective = {
         perspective,
         name: objective,
@@ -163,7 +163,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
   };
 
   const handleClose = () => {
-    setPerspective('');
+    setPerspective(null);
     setObjective('');
     setKpis([{
       indicator: '',
@@ -230,13 +230,13 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
               <FormControl error={!!errors.perspective}>
                 <InputLabel>Perspective</InputLabel>
                 <Select
-                  value={perspective}
+                  value={perspective?.order}
                   label="Perspective"
-                  onChange={(e) => setPerspective(e.target.value)}
+                  onChange={(e) => setPerspective(perspectives.find(p => p.order === e.target.value) || null)}
                 >
-                  {perspectives.map((p) => (
-                    <MenuItem key={p} value={p}>
-                      {p}
+                  {perspectives.map((p, index) => (
+                    <MenuItem key={index} value={p.order}>
+                      {p.name}
                     </MenuItem>
                   ))}
                 </Select>
