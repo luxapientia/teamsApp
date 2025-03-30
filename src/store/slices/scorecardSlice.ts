@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AnnualTarget, AnnualTargetStatus, QuarterlyTarget, QuarterType } from '../../types/annualCorporateScorecard';
 import { RootState } from '../index';
+import { api } from '../../services/api';
+import { AxiosError } from 'axios';
 interface ScorecardState {
   annualTargets: AnnualTarget[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
@@ -10,7 +12,7 @@ interface ScorecardState {
 const initialState: ScorecardState = {
   annualTargets: [
     {
-      id: '1',
+      _id: '1',
       name: 'Annual Target 1',
       startDate: '2020-01-01',
       endDate: '2020-12-31',
@@ -76,7 +78,7 @@ const initialState: ScorecardState = {
             {
               quarter: 'Q3',
               objectives: []
-            },  
+            },
             {
               quarter: 'Q4',
               objectives: []
@@ -94,60 +96,71 @@ const initialState: ScorecardState = {
 export const fetchAnnualTargets = createAsyncThunk(
   'scorecard/fetchAnnualTargets',
   async () => {
-    // Replace with your API call
-    const response = await fetch('/api/annual-targets');
-    return response.json();
+    try {
+      const response = await api.get('/score-card/annual-targets');
+      if (response.status === 200) {
+        return response.data.data as AnnualTarget[];
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.log('error', error);
+      return [];
+    }
   }
 );
 
 export const createAnnualTarget = createAsyncThunk(
   'scorecard/createAnnualTarget',
-  async (target: Omit<AnnualTarget, 'id'>) => {
-    // Replace with your API call
-    // const response = await fetch('/api/annual-targets', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify(target),
-    // });
-    // return response.json();
-    return {
-      ...target,
-      id: Math.random().toString(36).substring(2, 15),
-    };
+  async (target: Omit<AnnualTarget, '_id'>) => {
+    try {
+      // Replace with your API call
+      const response = await api.post('/score-card/create-annual-target', {
+        annualTarget: target,
+      });
+
+      if (response.status === 200) {
+        return response.data.data as AnnualTarget;
+      } else {
+
+      }
+    } catch (error) {
+      console.log('error', error);
+    }
   }
 );
 
 export const updateAnnualTarget = createAsyncThunk(
   'scorecard/updateAnnualTarget',
-  async (target: AnnualTarget, {getState}) => {
-    // const response = await fetch(`/api/annual-targets/${target.id}`, {
-    //   method: 'PUT',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify(target),
-    // });
-    // return response.json();
-
-    const newTarget = {
-      ...target,
-      content: {
-        ...target.content,
-        quarterlyTarget: {
-          ...target.content.quarterlyTarget,
-          quarterlyTargets: target?.content.quarterlyTarget.editable ? (target?.content.quarterlyTarget.quarterlyTargets) :
-            ['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => ({
-              quarter: quarter as QuarterType,
-              objectives: [...target.content.objectives]
-            }))
+  async (target: AnnualTarget) => {
+    try {
+      const newTarget = {
+        ...target,
+        content: {
+          ...target.content,
+          quarterlyTarget: {
+            ...target.content.quarterlyTarget,
+            quarterlyTargets: target?.content.quarterlyTarget.editable ? (target?.content.quarterlyTarget.quarterlyTargets) :
+              ['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => ({
+                quarter: quarter as QuarterType,
+                objectives: [...target.content.objectives]
+              }))
+          }
         }
+      };
+
+      const response = await api.put(`/score-card/update-annual-target/${target._id}`, {
+        annualTarget: newTarget,
+      });
+
+      if (response.status === 200) {
+        return response.data.data as AnnualTarget;
+      } else {
+
       }
-    };
-
-
-    return newTarget;
+    } catch (error) {
+      console.log('error', error);
+    }
   }
 );
 
@@ -155,10 +168,16 @@ export const deleteAnnualTarget = createAsyncThunk(
   'scorecard/deleteAnnualTarget',
   async (targetId: string) => {
     // Replace with your API call
-    // await fetch(`/api/annual-targets/${targetId}`, {
-    //   method: 'DELETE',
-    // });
-    return targetId;
+    try {
+      const response = await api.delete(`/score-card/delete-annual-target/${targetId}`);
+      if (response.status === 200) {
+        return targetId;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      return null;
+    }
   }
 );
 
@@ -192,17 +211,22 @@ const scorecardSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch targets';
       })
       .addCase(createAnnualTarget.fulfilled, (state, action) => {
-        state.annualTargets.push(action.payload);
+        if (action.payload) {
+          state.annualTargets.push(action.payload);
+        }
       })
       .addCase(updateAnnualTarget.fulfilled, (state, action) => {
-        const index = state.annualTargets.findIndex(t => t.id === action.payload.id);
-        if (index !== -1) {
-          state.annualTargets[index] = action.payload;
+        if (action.payload && action.payload._id) {
+          const id = action.payload._id;
+          const index = state.annualTargets.findIndex(t => t._id === id);
+          if (index !== -1) {
+            state.annualTargets[index] = action.payload;
+          }
         }
       })
       .addCase(deleteAnnualTarget.fulfilled, (state, action) => {
         state.annualTargets = state.annualTargets.filter(
-          target => target.id !== action.payload
+          target => target._id !== action.payload
         );
       });
   },

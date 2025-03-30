@@ -76,7 +76,7 @@ const QuarterlyTargetTable: React.FC = () => {
   );
 
   const selectedAnnualTarget = useAppSelector((state: RootState) =>
-    state.scorecard.annualTargets.find(target => target.id === selectedAnnualTargetId)
+    state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
 
   const dispatch = useAppDispatch();
@@ -157,7 +157,7 @@ const QuarterlyTargetTable: React.FC = () => {
             onChange={handleScorecardChange}
           >
             {annualTargets.map((target) => (
-              <MenuItem key={target.id} value={target.id}>
+              <MenuItem key={target._id} value={target._id}>
                 {target.name}
               </MenuItem>
             ))}

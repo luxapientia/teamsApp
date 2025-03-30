@@ -9,7 +9,7 @@ export enum TargetTab {
 }
 
 export interface AnnualTarget {
-    id: string;
+    _id: string;
     name: string;
     startDate: string;
     endDate: string;
