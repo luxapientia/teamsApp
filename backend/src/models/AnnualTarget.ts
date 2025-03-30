@@ -9,7 +9,7 @@ interface AnnualTargetContent {
   perspectives: AnnualTargetPerspective[];
   objectives: AnnualTargetObjective[];
   ratingScales: AnnualTargetRatingScale[];
-  assesmentPeriod: AnnualTargetAssesmentPeriod;
+  assessmentPeriod: AnnualTargetAssessmentPeriod;
   contractingPeriod: AnnualTargetContractingPeriod;
   totalWeight: number;
   quarterlyTarget: {
@@ -45,7 +45,7 @@ interface AnnualTargetRatingScale {
   color: string;
 }
 
-interface AnnualTargetAssesmentPeriod {
+interface AnnualTargetAssessmentPeriod {
   Q1: {
     startDate: string;
     endDate: string;
@@ -150,7 +150,7 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
       min: Number,
       color: String
     }],
-    assesmentPeriod: {
+    assessmentPeriod: {
       Q1: {
         startDate: String,
         endDate: String
