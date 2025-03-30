@@ -25,7 +25,7 @@ import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
 import { RootState } from '../../../../../store';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../../../hooks/useAppSelector';
-import { AnnualTargetObjective, AnnualTargetKPI } from '../../../../../types/annualCorporateScorecard';
+import { AnnualTargetObjective, AnnualTargetKPI, AnnualTargetPerspective } from '../../../../../types/annualCorporateScorecard';
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -49,7 +49,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     state.scorecard.annualTargets.find(target => target.name === targetName)
   );
   const perspectives = annualTarget?.content.perspectives || [];
-  const [perspective, setPerspective] = useState('');
+  const [perspective, setPerspective] = useState<AnnualTargetPerspective | null>(null);
   const [objective, setObjective] = useState('');
   const [kpis, setKpis] = useState<AnnualTargetKPI[]>([{
     indicator: '',
@@ -152,7 +152,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm() && annualTarget) {
+    if (validateForm() && annualTarget && perspective) {
       const newObjective: AnnualTargetObjective = {
         perspective,
         name: objective,
@@ -180,7 +180,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
   };
 
   const handleClose = () => {
-    setPerspective('');
+    setPerspective(null);
     setObjective('');
     setKpis([{ indicator: '', weight: 0, baseline: '', target: '', ratingScales: annualTarget?.content.ratingScales || [] }]);
     onClose();
@@ -249,13 +249,13 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
               <FormControl fullWidth error={!!errors.perspective}>
                 <InputLabel>Perspective</InputLabel>
                 <Select
-                  value={perspective}
+                  value={perspective?.order}
                   label="Perspective"
-                  onChange={(e) => setPerspective(e.target.value)}
+                  onChange={(e) => setPerspective(perspectives.find(p => p.order === e.target.value) || null)}
                   sx={{ backgroundColor: '#F9FAFB' }}
                 >
-                  {perspectives.map((p) => (
-                    <MenuItem key={p} value={p}>{p}</MenuItem>
+                  {perspectives.map((p, index) => (
+                    <MenuItem key={index} value={p.order}>{p.name}</MenuItem>
                   ))}
                 </Select>
                 {errors.perspective && (

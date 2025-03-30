@@ -17,7 +17,7 @@ import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { RootState } from '../../../../../store';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
- 
+import { AnnualTargetPerspective } from '../../../../../types/annualCorporateScorecard';
 
 interface PerspectiveTabProps {
   targetName: string;
@@ -26,9 +26,9 @@ interface PerspectiveTabProps {
 const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
   const dispatch = useAppDispatch();
   const [isAdding, setIsAdding] = useState(false);
-  const [newPerspective, setNewPerspective] = useState('');
+  const [newPerspectiveName, setNewPerspectiveName] = useState<string>('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingValue, setEditingValue] = useState('');
+  const [editingValue, setEditingValue] = useState<string>('');
 
   const annualTarget = useAppSelector((state: RootState) => 
     state.scorecard.annualTargets.find(target => target.name === targetName)
@@ -40,21 +40,26 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
   };
 
   const handleSave = () => {
-    if (newPerspective.trim() && annualTarget) {
+    if (newPerspectiveName.trim() && annualTarget) {
+      const newPerspective: AnnualTargetPerspective = {
+        order: perspectives[perspectives.length - 1]?.order + 1 || 0,
+        name: newPerspectiveName
+      };
+
       dispatch(updateAnnualTarget({
         ...annualTarget,
         content: {
           ...annualTarget.content,
-          perspectives: [...perspectives, newPerspective.trim()],
+          perspectives: [...perspectives, newPerspective],
         },
       }));
-      setNewPerspective('');
+      setNewPerspectiveName('');
     }
     setIsAdding(false);
   };
 
   const handleCancel = () => {
-    setNewPerspective('');
+    setNewPerspectiveName('');
     setIsAdding(false);
   };
 
@@ -66,27 +71,48 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
     }
   };
 
-  const handleDelete = (index: number) => {
+  const handleDelete = (perspective: AnnualTargetPerspective) => {
     if (annualTarget) {
+      const updatedPerspectives = perspectives
+        .filter((p) => p.order !== perspective.order)
+
+      const updatedObjectives = annualTarget.content.objectives
+        .filter((o) => o.perspective.order !== perspective.order)
+
+      const updatedQuarterlyTargets = annualTarget.content.quarterlyTarget.quarterlyTargets.map((qt) => {
+        return {
+          ...qt,
+          objectives: qt.objectives.filter((o) => o.perspective.order !== perspective.order)
+        }
+      })
+
       dispatch(updateAnnualTarget({
         ...annualTarget,
         content: {
           ...annualTarget.content,
-          perspectives: perspectives.filter((_, i) => i !== index),
+          perspectives: updatedPerspectives,
+          objectives: updatedObjectives,
+          quarterlyTarget: {
+            ...annualTarget.content.quarterlyTarget,
+            quarterlyTargets: updatedQuarterlyTargets
+          }
         },
       }));
     }
   };
 
-  const handleEdit = (perspective: string, index: number) => {
+  const handleEdit = (perspective: AnnualTargetPerspective, index: number) => {
     setEditingIndex(index);
-    setEditingValue(perspective);
+    setEditingValue(perspective.name);
   };
 
   const handleEditSave = () => {
     if (editingValue.trim() && annualTarget && editingIndex !== null) {
       const updatedPerspectives = [...perspectives];
-      updatedPerspectives[editingIndex] = editingValue.trim();
+      updatedPerspectives[editingIndex] = {
+        ...updatedPerspectives[editingIndex],
+        name: editingValue.trim()
+      };
 
       dispatch(updateAnnualTarget({
         ...annualTarget,
@@ -164,7 +190,7 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
                 />
               ) : (
                 <Typography sx={{ color: '#374151' }}>
-                  {perspective}
+                  {perspective.name}
                 </Typography>
               )}
               <Stack 
@@ -201,7 +227,7 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => handleDelete(index)}
+                      onClick={() => handleDelete(perspective)}
                       className="delete-icon"
                       sx={{
                         color: '#6B7280',
@@ -234,8 +260,8 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
                 autoFocus
                 fullWidth
                 size="small"
-                value={newPerspective}
-                onChange={(e) => setNewPerspective(e.target.value)}
+                value={newPerspectiveName}
+                onChange={(e) => setNewPerspectiveName(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Enter perspective name"
                 sx={{
