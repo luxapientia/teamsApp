@@ -17,7 +17,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { AnnualTarget, AnnualTargetStatus } from '../../../types/annualCorporateScorecard';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { createAnnualTarget, updateAnnualTarget } from '../../../store/slices/scorecardSlice';
-
+import { useToast } from '../../../contexts/ToastContext';
 
 interface AddAnnualTargetModalProps {
   open: boolean;
@@ -35,6 +35,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
     return date.toISOString().split('T')[0];
   };
   const dispatch = useAppDispatch();
+  const toast = useToast();
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState<string>(formatDateForInput(new Date()));
   const [endDate, setEndDate] = useState<string>(formatDateForInput(new Date()));
@@ -49,6 +50,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
       setEndDate(editingAnnualTarget.endDate);
       setStatus(editingAnnualTarget.status);
     }
+    toast.showToast('Annual target created successfully', 'success');
   }, [editingAnnualTarget]);
 
   // Helper function to format date to YYYY-MM-DD
