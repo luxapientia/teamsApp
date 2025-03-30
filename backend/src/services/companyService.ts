@@ -1,5 +1,6 @@
 import { Company } from '../types';
 import { CompanyModel } from '../models/company';
+import { licenseService } from './licenseService';
 
 export class CompanyService {
   async getAll(): Promise<Company[]> {
@@ -7,20 +8,29 @@ export class CompanyService {
   }
 
   async create(data: Omit<Company, '_id' | '__v'>): Promise<Company> {
-    const company = new CompanyModel(data);
-    return company.save();
+    const company = await new CompanyModel(data).save();
+    // Create blank license for the new company
+    await licenseService.createBlankLicense(company._id.toString());
+    return company;
   }
 
   async update(id: string, data: Partial<Omit<Company, '_id' | '__v'>>): Promise<Company | null> {
-    return CompanyModel.findByIdAndUpdate(
+    const company = await CompanyModel.findByIdAndUpdate(
       id,
       { $set: data },
       { new: true }
     );
+    if (company) {
+      // Ensure license exists and is up to date
+      await licenseService.handleCompanyUpdate(company._id.toString());
+    }
+    return company;
   }
 
   async delete(id: string): Promise<void> {
     await CompanyModel.findByIdAndDelete(id);
+    // Delete associated license
+    await licenseService.handleCompanyDelete(id);
   }
 
   async getById(id: string): Promise<Company | null> {
