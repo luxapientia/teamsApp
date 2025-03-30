@@ -107,51 +107,20 @@ const Companies: React.FC = () => {
         const companyResponse = await companyAPI.create(companyData);
         const newCompany = companyResponse.data.data;
         setCompanies([...companies, newCompany]);
-
-        // Create a default license for the new company
-        const oneYearFromNow = new Date();
-        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
-        
-        const licenseData = {
-          companyId: newCompany._id,
-          licenseKey: generateLicenseKey(), // You'll need to implement this function
-          startDate: new Date().toISOString(),
-          endDate: oneYearFromNow.toISOString(),
-          status: 'active' as const
-        };
-
-        try {
-          await licenseAPI.create(licenseData);
-        } catch (licenseError) {
-          console.error('Error creating default license:', licenseError);
-          // We don't want to block company creation if license creation fails
-          // but we should log it for monitoring
-        }
       }
       setIsModalOpen(false);
       setSelectedCompany(undefined);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving company:', error);
-      setError('Failed to save company. Please try again later.');
-    }
-  };
-
-  // Add helper function to generate license key
-  const generateLicenseKey = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const segments = 4;
-    const segmentLength = 4;
-    const segments_arr = [];
-    
-    for (let i = 0; i < segments; i++) {
-      let segment = '';
-      for (let j = 0; j < segmentLength; j++) {
-        segment += chars.charAt(Math.floor(Math.random() * chars.length));
+      // Check for duplicate name error
+      if (error.response?.data?.message === 'Company name already exists') {
+        setError('A company with this name already exists. Please choose a different name.');
+      } else {
+        setError('Failed to save company. Please try again later.');
       }
-      segments_arr.push(segment);
+      // Don't close modal on error so user can fix the name
+      return;
     }
-    
-    return segments_arr.join('-');
   };
 
   const filteredCompanies = companies.filter(createSearchFilter(searchQuery, SEARCH_FIELDS));
