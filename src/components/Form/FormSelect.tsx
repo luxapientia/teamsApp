@@ -13,6 +13,7 @@ interface FormSelectProps {
   onChange: (value: string) => void;
   options: Option[];
   required?: boolean;
+  placeholder?: string;
 }
 
 export const FormSelect: React.FC<FormSelectProps> = ({
@@ -22,6 +23,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   onChange,
   options,
   required = false,
+  placeholder = "Select...",
 }) => {
   return (
     <div>
@@ -36,7 +38,10 @@ export const FormSelect: React.FC<FormSelectProps> = ({
           className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-8 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none"
           required={required}
         >
-          {options.map((option) => (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+          {options && options.map((option) => (
             <option key={option.value} value={option.value} className="py-1">
               {option.label}
             </option>

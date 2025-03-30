@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { Company, SuperUser, License } from '../types';
 
 // Get the API URL from environment or try common development ports
-const getAPIBaseURL = () => {
+export const getAPIBaseURL = () => {
   if (process.env.REACT_APP_API_URL) {
     return process.env.REACT_APP_API_URL;
   }
@@ -25,6 +25,15 @@ interface ApiResponse<T> {
   data: T;
 }
 
+// Add auth token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Add retry logic for connection errors
 api.interceptors.response.use(
   (response) => {
@@ -36,6 +45,12 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     console.error('API Error:', error.response?.data || error.message);
     
+    // If unauthorized, redirect to login
+    if (error.response?.status === 401) {
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
+    
     // If connection failed, it might be using wrong port
     if (!error.response && error.message.includes('Network Error')) {
       console.log('Connection failed. The API might be running on a different port.');
@@ -44,6 +59,9 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Export the api instance for use in other files
+export { api };
 
 // Company API
 export const companyAPI = {
