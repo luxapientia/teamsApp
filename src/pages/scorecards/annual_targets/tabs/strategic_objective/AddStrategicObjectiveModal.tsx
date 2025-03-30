@@ -29,6 +29,7 @@ import { AnnualTargetObjective, AnnualTargetKPI } from '../../../../../types/ann
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
 interface AddStrategicObjectiveModalProps {
   open: boolean;
@@ -212,6 +213,10 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     setKpis(newKpis);
   };
 
+  const handleDeleteKPI = (indexToDelete: number) => {
+    setKpis(kpis.filter((_, index) => index !== indexToDelete));
+  };
+
   return (
     <Dialog
       open={open}
@@ -293,6 +298,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                       <TableCell align="right">Weight %</TableCell>
                       <TableCell align="right">Baseline</TableCell>
                       <TableCell align="right">Target</TableCell>
+                      <TableCell align="right">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -387,6 +393,21 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                               helperText={errors.kpis?.[index]?.target}
                               sx={{ width: '80px' }}
                             />
+                          </TableCell>
+                          <TableCell align="right">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteKPI(index)}
+                              sx={{
+                                color: '#6B7280',
+                                '&:hover': {
+                                  color: '#DC2626',
+                                  backgroundColor: '#FEE2E2',
+                                },
+                              }}
+                            >
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
                           </TableCell>
                         </TableRow>
                         <TableRow>
