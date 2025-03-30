@@ -86,8 +86,8 @@ interface QuarterlyTarget {
 }
 
 
-export interface AnnualTarget extends Document {
-  id: string;
+export interface AnnualTargetDocument extends Document {
+  _id: string;
   name: string;
   startDate: string;
   endDate: string;
@@ -95,8 +95,7 @@ export interface AnnualTarget extends Document {
   content: AnnualTargetContent;
 }
 
-const annualTargetSchema = new Schema<AnnualTarget>({
-
+const annualTargetSchema = new Schema<AnnualTargetDocument>({
   name: {
     type: String,
     required: true,
@@ -217,4 +216,4 @@ const annualTargetSchema = new Schema<AnnualTarget>({
   timestamps: true,
 });
 
-export const AnnualTarget = model<AnnualTarget>('AnnualTarget', annualTargetSchema); 
+export default model<AnnualTargetDocument>('AnnualTarget', annualTargetSchema); 
