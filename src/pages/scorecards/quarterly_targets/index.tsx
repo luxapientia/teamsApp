@@ -259,27 +259,6 @@ const QuarterlyTargetTable: React.FC = () => {
           </Box>
 
           <Stack spacing={2}>
-            {selectedAnnualTarget.content.quarterlyTarget.editable && (
-              <Button
-                startIcon={<AddIcon />}
-                onClick={() => setIsModalOpen(true)}
-                sx={{
-                  alignSelf: 'flex-start',
-                  p: 2,
-                  border: '1px dashed #E5E7EB',
-                  borderRadius: '8px',
-                  width: '100%',
-                  '&:hover': {
-                    backgroundColor: '#F9FAFB',
-                    borderColor: '#6264A7',
-                    color: '#6264A7',
-                  },
-                }}
-              >
-                Add new
-              </Button>
-            )}
-
             <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
               <Table size="small">
                 <TableHead>
@@ -290,7 +269,7 @@ const QuarterlyTargetTable: React.FC = () => {
                     <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
                     <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                     <StyledHeaderCell align="center">Target</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Rating Score</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
                     <StyledHeaderCell align="center">Actions</StyledHeaderCell>
                   </TableRow>
                 </TableHead>
@@ -356,6 +335,27 @@ const QuarterlyTargetTable: React.FC = () => {
                 </TableBody>
               </Table>
             </Paper>
+            
+            {selectedAnnualTarget.content.quarterlyTarget.editable && (
+              <Button
+                startIcon={<AddIcon />}
+                onClick={() => setIsModalOpen(true)}
+                sx={{
+                  alignSelf: 'flex-start',
+                  p: 2,
+                  border: '1px dashed #E5E7EB',
+                  borderRadius: '8px',
+                  width: '100%',
+                  '&:hover': {
+                    backgroundColor: '#F9FAFB',
+                    borderColor: '#6264A7',
+                    color: '#6264A7',
+                  },
+                }}
+              >
+                Add new
+              </Button>
+            )}
           </Stack>
 
           <QuarterlyObjectiveModal

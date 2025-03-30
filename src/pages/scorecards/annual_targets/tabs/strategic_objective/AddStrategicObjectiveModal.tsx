@@ -415,7 +415,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
                             <Collapse in={expandedKPI === index} timeout="auto" unmountOnExit>
                               <Box sx={{ py: 2 }}>
                                 <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                                  Performance Rating Score
+                                  Performance Rating Scale
                                 </Typography>
                                 <Table size="small">
                                   <TableHead>
