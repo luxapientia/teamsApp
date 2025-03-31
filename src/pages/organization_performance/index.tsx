@@ -17,14 +17,21 @@ import {
   Paper,
   Stack,
   IconButton,
+  TextField,
 } from '@mui/material';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { RootState } from '../../store';
-import { QuarterType, AnnualTargetObjective } from '../../types/annualCorporateScorecard';
-// import QuarterlyObjectiveModal from './QuarterlyObjectiveModal';
+import { QuarterType, AnnualTargetObjective, QuarterlyTargetKPI } from '../../types/annualCorporateScorecard';
 import { updateAnnualTarget } from '../../store/slices/scorecardSlice';
 import { PageProps } from '@/types';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import CloseIcon from '@mui/icons-material/Close';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import AddIcon from '@mui/icons-material/Add';
+import KPIModal from './KPIModal';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -49,6 +56,17 @@ const ViewButton = styled(Button)({
   },
 });
 
+const AccessButton = styled(Button)({
+  backgroundColor: '#0078D4',
+  color: 'white',
+  textTransform: 'none',
+  padding: '6px 16px',
+  minWidth: 'unset',
+  '&:hover': {
+    backgroundColor: '#106EBE',
+  },
+});
+
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
   padding: '16px',
@@ -66,6 +84,7 @@ const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selec
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [showTable, setShowTable] = useState(false);
+  const [selectedKPI, setSelectedKPI] = useState<{kpi: QuarterlyTargetKPI; objectiveName: string; objectiveId: string; kpiIndex: number} | null>(null);
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -124,6 +143,15 @@ const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selec
       });
     });
     return total;
+  };
+
+  const handleAccess = (kpi: QuarterlyTargetKPI, objectiveName: string, objectiveId: string, kpiIndex: number) => {
+    setSelectedKPI({ 
+      kpi, 
+      objectiveName,
+      objectiveId,
+      kpiIndex 
+    });
   };
 
   return (
@@ -187,8 +215,8 @@ const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selec
               <TableBody>
                 <TableRow>
                   <StyledTableCell>{selectedAnnualTarget.name}</StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget.startDate}</StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget.endDate}</StyledTableCell>
+                  <StyledTableCell>{selectedAnnualTarget.content.assesmentPeriod[selectedQuarter as QuarterType].startDate}</StyledTableCell>
+                  <StyledTableCell>{selectedAnnualTarget.content.assesmentPeriod[selectedQuarter as QuarterType].endDate}</StyledTableCell>
                   <StyledTableCell>{selectedAnnualTarget.status}</StyledTableCell>
                 </TableRow>
               </TableBody>
@@ -234,6 +262,10 @@ const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selec
                   <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
                   <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                   <StyledHeaderCell align="center">Target</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Access</StyledHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -254,6 +286,18 @@ const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selec
                       <StyledTableCell>{kpi.indicator}</StyledTableCell>
                       <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
                       <StyledTableCell align="center">{kpi.target}</StyledTableCell>
+                      <StyledTableCell align="center">{kpi.actualAchieved}</StyledTableCell>
+                      <StyledTableCell align="center">{kpi.ratingScales.find(scale => scale.score === Number(kpi.actualAchieved))?.name}</StyledTableCell>
+                      <StyledTableCell align="center">{kpi.evidence}</StyledTableCell>
+                      <StyledTableCell align="center">
+                        <AccessButton
+                          size="small"
+                          startIcon={<VisibilityIcon />}
+                          onClick={() => handleAccess(kpi, objective.name, objective.perspectiveId.toString(), kpiIndex)}
+                        >
+                          Access
+                        </AccessButton>
+                      </StyledTableCell>
                     </TableRow>
                   ))
                 ))}
@@ -261,6 +305,19 @@ const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selec
             </Table>
           </Paper>
         </Box>
+      )}
+
+      {selectedKPI && (
+        <KPIModal
+          open={!!selectedKPI}
+          onClose={() => setSelectedKPI(null)}
+          kpi={selectedKPI.kpi}
+          objectiveName={selectedKPI.objectiveName}
+          annualTargetId={selectedAnnualTargetId}
+          quarter={selectedQuarter as QuarterType}
+          objectiveId={selectedKPI.objectiveId}
+          kpiIndex={selectedKPI.kpiIndex}
+        />
       )}
     </Box>
   );

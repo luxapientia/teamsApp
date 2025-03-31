@@ -87,9 +87,25 @@ type QuarterType = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
 interface QuarterlyTarget {
   quarter: QuarterType;
-  objectives: AnnualTargetObjective[];
+  objectives: QuarterlyTargetObjective[];
 }
 
+interface QuarterlyTargetObjective {
+  perspectiveId: number;
+  name: string;
+  KPIs: QuarterlyTargetKPI[];
+} 
+
+interface QuarterlyTargetKPI {
+  indicator: string;
+  weight: number;
+  baseline: string;
+  target: string;
+  ratingScales: AnnualTargetRatingScale[];
+  actualAchieved: string;
+  evidence: string;
+  attachments: string[];
+}
 
 export interface AnnualTargetDocument extends Document {
   _id: string;
@@ -211,6 +227,18 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
               max: Number,
               min: Number,
               color: String
+            }],
+            actualAchieved: {
+              type: String,
+              default: ''
+            },
+            evidence: {
+              type: String,
+              default: ''
+            },
+            attachments: [{
+              type: [String],
+              default: []
             }]
           }]
         }]

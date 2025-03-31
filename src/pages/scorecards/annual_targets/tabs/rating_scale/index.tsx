@@ -64,6 +64,7 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
       return annualTarget.content.ratingScales[editingIndex].score;
     }
     return (annualTarget?.content.ratingScales?.length || 0) + 1;
+
   };
 
   const [newRating, setNewRating] = useState<AnnualTargetRatingScale>({
@@ -104,7 +105,7 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
   const handleEdit = (index: number) => {
     const ratingToEdit = annualTarget?.content.ratingScales[index];
     if (ratingToEdit) {
-      setNewRating(ratingToEdit);
+      // setNewRating(ratingToEdit);
       setEditingIndex(index);
     }
   };
@@ -142,13 +143,13 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
         },
       }));
 
-      setNewRating({
-        score: getNextScore(),
-        name: '',
-        min: '0',
-        max: '0',
-        color: '#000000',
-      });
+      // setNewRating({
+      //   score: getNextScore(),
+      //   name: '',
+      //   min: '0',
+      //   max: '0',
+      //   color: '#000000',
+      // });
       setIsAdding(false);
       setEditingIndex(null);
       setErrors({});
@@ -158,13 +159,13 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
   const handleCancel = () => {
     setIsAdding(false);
     setEditingIndex(null);
-    setNewRating({
-      score: getNextScore(),
-      name: '',
-      min: '0',
-      max: '0',
-      color: '#000000',
-    });
+    // setNewRating({
+    //   score: getNextScore(),
+    //   name: '',
+    //   min: '0',
+    //   max: '0',
+    //   color: '#000000',
+    // });
     setErrors({});
   };
 
@@ -409,7 +410,16 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
       {!isAdding && editingIndex === null && (
         <Button
           startIcon={<AddIcon />}
-          onClick={() => setIsAdding(true)}
+          onClick={() => {
+            setIsAdding(true)
+            setNewRating({
+              score: getNextScore(),
+              name: '',
+              min: '0',
+              max: '0',
+              color: '#000000',
+            })
+          }}
           sx={{
             mt: 2,
             color: '#6B7280',
