@@ -21,12 +21,13 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { QuarterType, AnnualTargetObjective, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
+import { QuarterType, AnnualTargetObjective, QuarterlyTargetObjective, AnnualTargetRatingScale } from '../../../types/annualCorporateScorecard';
 import QuarterlyObjectiveModal from './QuarterlyObjectiveModal';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
+import RatingScalesModal from '../RatingScalesModal';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -70,6 +71,7 @@ const QuarterlyTargetTable: React.FC = () => {
   const [showTable, setShowTable] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingObjective, setEditingObjective] = useState<QuarterlyTargetObjective | null>(null);
+  const [selectedKPIRatingScales, setSelectedKPIRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -295,6 +297,7 @@ const QuarterlyTargetTable: React.FC = () => {
                           <Button
                             variant="outlined"
                             size="small"
+                            onClick={() => setSelectedKPIRatingScales(kpi.ratingScales)}
                             sx={{
                               borderColor: '#E5E7EB',
                               color: '#374151',
@@ -368,6 +371,14 @@ const QuarterlyTargetTable: React.FC = () => {
             quarter={selectedQuarter as QuarterType}
             editingObjective={editingObjective}
           />
+
+          {selectedKPIRatingScales && (
+            <RatingScalesModal
+              open={!!selectedKPIRatingScales}
+              onClose={() => setSelectedKPIRatingScales(null)}
+              ratingScales={selectedKPIRatingScales}
+            />
+          )}
         </Box>
       )}
     </Box>
