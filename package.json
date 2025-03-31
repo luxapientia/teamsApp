@@ -16,17 +16,21 @@
     "@mui/icons-material": "^7.0.0",
     "@mui/material": "^7.0.0",
     "@mui/styled-engine-sc": "^7.0.0",
+    "@react-pdf/renderer": "^4.3.0",
     "@reduxjs/toolkit": "^2.6.1",
     "axios": "^0.21.1",
+    "file-saver": "^2.0.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^6.8.0",
     "react-scripts": "^5.0.1",
-    "styled-components": "^6.1.16"
+    "styled-components": "^6.1.16",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@fluentui/react-icons": "^2.0.292",
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^14.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
