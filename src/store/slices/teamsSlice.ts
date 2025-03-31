@@ -1,10 +1,11 @@
-import { AnnualTarget } from '@/types/annualCorporateScorecard';
-import { Team } from '@/types/teams';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { CreateTeamPayload, Team } from '@/types/teams';
+import { api } from '../../services/api';
+
 
 const initialState: Team[] = [
   {
-    id: '0',
+    _id: '0',
     name: 'Human Capital',
     members: [
       {
@@ -28,7 +29,7 @@ const initialState: Team[] = [
     ]
   },
   {
-    id: '1',
+    _id: '1',
     name: 'Finance',
     members: [
       {
@@ -46,7 +47,7 @@ const initialState: Team[] = [
     ]
   },
   {
-    id: '2',
+    _id: '2',
     name: 'Marketing',
     members: [
       {
@@ -76,7 +77,7 @@ const initialState: Team[] = [
     ]
   },
   {
-    id: '3',
+    _id: '3',
     name: 'Engineering',
     members: [
       {
@@ -112,7 +113,7 @@ const initialState: Team[] = [
     ]
   },
   {
-    id: '4',
+    _id: '4',
     name: 'Sales',
     members: [
       {
@@ -139,29 +140,36 @@ const initialState: Team[] = [
 
 export const fetchTeams = createAsyncThunk(
   'teams/fetchTeams',
-  async () => {
-    // Replace with your API call
-    const response = await fetch('/api/teams');
-    return response.json();
+  async (tenantId: string) => {
+    try {
+      const response = await api.get(`/teams/${tenantId}`);
+      if (response.status === 200) {
+        return response.data.data as Team[];
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.log('error', error);
+      return [];
+    }
   }
 );
 
 export const createTeam = createAsyncThunk(
   'teams/createTeam',
-  async (teamName: string) => {
-    return {
-      name: teamName,
-      members: [],
-      id: Math.random().toString(36).substring(2, 15),
-    };
+  async ({tenantId, teamName}: CreateTeamPayload) => {
+    const response = await api.post('/teams', { tenantId, name: teamName });
+    return response.data.data as Team;
   }
 );
 
 export const deleteTeam = createAsyncThunk(
   'teams/deleteTeam',
   async (teamId: string) => {
-    // Simulate an API call or perform any async operation if needed
-    return teamId;
+    const response = await api.delete(`/teams/${teamId}`);
+    return response.data.data as string;
+    // await fetch(`/api/teams/${teamId}`, { method: 'DELETE' });
+    // return teamId;
   }
 );
 
@@ -170,11 +178,14 @@ const teamsSlice = createSlice({
   initialState,
   reducers: {},
   extraReducers: (builder) => {
+    builder.addCase(fetchTeams.fulfilled, (state, action) => {
+      return action.payload;
+    });
     builder.addCase(createTeam.fulfilled, (state, action) => {
       state.push(action.payload);
     });
     builder.addCase(deleteTeam.fulfilled, (state, action) => {
-      return state.filter(team => team.id !== action.payload);
+      return state.filter(team => team._id !== action.payload);
     });
   },
 });
