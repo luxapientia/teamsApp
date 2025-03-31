@@ -59,7 +59,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
 
   const handleEdit = (quarter: string) => {
-    const period = annualTarget?.content.assesmentPeriod?.[quarter as keyof typeof annualTarget.content.assesmentPeriod];
+    const period = annualTarget?.content.assessmentPeriod?.[quarter as keyof typeof annualTarget.content.assessmentPeriod];
     if (period) {
       setEditData({
         startDate: period.startDate,
@@ -128,7 +128,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
   const handleSave = () => {
     if (annualTarget && editingQuarter && validateDates()) {
       const updatedPeriods = {
-        ...annualTarget.content.assesmentPeriod,
+        ...annualTarget.content.assessmentPeriod,
         [editingQuarter]: editData
       };
 
@@ -136,7 +136,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
         ...annualTarget,
         content: {
           ...annualTarget.content,
-          assesmentPeriod: updatedPeriods
+          assessmentPeriod: updatedPeriods
         },
       }));
       setEditingQuarter(null);
@@ -164,7 +164,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
           </TableHead>
           <TableBody>
             {quarters.map((quarter) => {
-              const period = annualTarget?.content.assesmentPeriod?.[quarter as keyof typeof annualTarget.content.assesmentPeriod];
+              const period = annualTarget?.content.assessmentPeriod?.[quarter as keyof typeof annualTarget.content.assessmentPeriod];
               return (
                 <TableRow key={quarter}>
                   <StyledTableCell>{quarter}</StyledTableCell>
