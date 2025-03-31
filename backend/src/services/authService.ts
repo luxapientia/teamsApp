@@ -1,6 +1,10 @@
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
+import * as dotenv from 'dotenv';
+import { superUserService } from './superUserService';
+
+dotenv.config();
 
 export interface UserProfile {
   id: string;
@@ -56,12 +60,18 @@ export class AuthService {
         }
       });
 
+      const superUsers = await superUserService.getAll();
+      let isSuperUser = false;
+      if (superUsers.map(superUser => superUser.email).includes(profileResponse.data.userPrincipalName)) {
+        isSuperUser = true
+      }
+
       const userProfile: UserProfile = {
         id: profileResponse.data.id,
         email: profileResponse.data.userPrincipalName,
         firstName: profileResponse.data.givenName,
         lastName: profileResponse.data.surname,
-        role: 'user',
+        role: (process.env.APP_OWNER_EMAIL == profileResponse.data.userPrincipalName)?'Owner':(isSuperUser?'SuperUser':'User'),
         status: 'active',
         tenantId: orgResponse.data.value[0].id
       };
