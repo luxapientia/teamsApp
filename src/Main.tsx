@@ -15,7 +15,6 @@ function Main() {
   const [selectedTab, setSelectedTab] = useState('');
   const { user } = useAuth();
   const isAppOwner = user?.email === 'admin@siliconsoftwaresolutions.onmicrosoft.com';
-  console.log(isAppOwner,'dffd')
   const selectedTabChanger = (tab: string) => {
     setSelectedTab(tab);
   }

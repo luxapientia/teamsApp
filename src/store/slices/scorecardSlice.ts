@@ -27,7 +27,7 @@ const initialState: ScorecardState = {
           { score: 4, name: 'High Achiever', min: '101', max: '110', color: '#0000FF' },
           { score: 5, name: 'Superior Performance', min: '111', max: '140', color: '#000080' },
         ],
-        assesmentPeriod: {
+        assessmentPeriod: {
           Q1: {
             startDate: '2020-01-01',
             endDate: '2020-12-31',

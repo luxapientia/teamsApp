@@ -1,4 +1,4 @@
-import { AnnualTarget } from '@/types';
+import { AnnualTarget } from '@/types/annualCorporateScorecard';
 import { Team } from '@/types/teams';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
