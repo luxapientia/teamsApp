@@ -10,6 +10,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 
+
 interface EvidenceModalProps {
   open: boolean;
   onClose: () => void;
@@ -73,12 +74,12 @@ const EvidenceModal: React.FC<EvidenceModalProps> = ({
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#6B7280' }}>
                     <a 
-                      href={attachment.url} 
+                      href={"http://localhost:3001" + attachment.url} 
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ color: 'inherit', textDecoration: 'none' }}
                     >
-                      {attachment.url}
+                      {`attachment.url`}
                     </a>
                   </Typography>
                 </Box>
