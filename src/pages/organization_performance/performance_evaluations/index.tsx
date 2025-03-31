@@ -115,6 +115,9 @@ const PerformanceEvaluations: React.FC = () => {
     attachments: Array<{ name: string; url: string }>;
   } | null>(null);
 
+  const [editable, setEditable] = useState(false);
+
+
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
   );
@@ -122,6 +125,21 @@ const PerformanceEvaluations: React.FC = () => {
   const selectedAnnualTarget = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
+
+  useEffect(() => {
+    const quarterlyTargetEditable = selectedAnnualTarget?.content.quarterlyTarget.editable || false;
+    const currentDate = new Date();
+    const assessmentPeriod = selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as QuarterType];
+    if (assessmentPeriod) {
+      const startDate = new Date(assessmentPeriod.startDate);
+      const endDate = new Date(assessmentPeriod.endDate);
+      if (startDate <= currentDate && endDate >= currentDate) {
+        setEditable(true && quarterlyTargetEditable);
+      }
+    } else {
+      setEditable(false);
+    }
+  }, [selectedAnnualTarget]);
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
@@ -347,16 +365,16 @@ const PerformanceEvaluations: React.FC = () => {
 
       {showTable && selectedAnnualTarget && (
         <Box sx={{ mt: 3 }}>
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            mb: 3 
+            mb: 3
           }}>
             <Typography variant="h6">
               Quarterly Corporate Scorecard - {selectedQuarter}
             </Typography>
-            
+
             <Box sx={{ display: 'flex', gap: 2 }}>
               <ExportButton
                 className="excel"
@@ -410,6 +428,35 @@ const PerformanceEvaluations: React.FC = () => {
                 </TableRow>
               </TableBody>
             </Table>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              gap: 1,
+              mb: 2
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: '#6B7280',
+                fontWeight: 500
+              }}
+            >
+              Total Weight:
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: calculateTotalWeight(getQuarterlyObjectives()) === 100 ? '#059669' : '#DC2626',
+                fontWeight: 600
+              }}
+            >
+              {calculateTotalWeight(getQuarterlyObjectives())}%
+            </Typography>
           </Box>
 
           <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
@@ -467,15 +514,17 @@ const PerformanceEvaluations: React.FC = () => {
                           </IconButton>
                         )}
                       </StyledTableCell>
-                      <StyledTableCell align="center">
-                        <AccessButton
-                          size="small"
-                          startIcon={<VisibilityIcon />}
-                          onClick={() => handleAccess(kpi, objective.name, objective.perspectiveId?.toString() || '', kpiIndex)}
+                      {editable && (
+                        <StyledTableCell align="center">
+                          <AccessButton
+                            size="small"
+                            startIcon={<VisibilityIcon />}
+                            onClick={() => handleAccess(kpi, objective.name, objective.perspectiveId?.toString() || '', kpiIndex)}
                         >
                           Access
-                        </AccessButton>
-                      </StyledTableCell>
+                          </AccessButton>
+                        </StyledTableCell>
+                      )}
                     </TableRow>
                   ))
                 ))}
