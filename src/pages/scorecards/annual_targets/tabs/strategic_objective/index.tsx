@@ -110,7 +110,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
 
   const sortedObjectives = () => {
     if (!objectives || objectives.length === 0) return [];
-    return [...objectives].sort((a, b) => a.perspective.order - b.perspective.order);
+    return [...objectives].sort((a, b) => a.perspectiveId - b.perspectiveId);
   }
   
 
@@ -165,7 +165,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
                   {kpiIndex === 0 && (
                     <>
                       <StyledTableCell rowSpan={objective.KPIs.length}>
-                        {objective.perspective.name}
+                        {perspectives.find(p => p.index === objective.perspectiveId)?.name}
                       </StyledTableCell>
                       <StyledTableCell rowSpan={objective.KPIs.length}>
                         {objective.name}
