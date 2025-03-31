@@ -149,6 +149,8 @@ export const updateAnnualTarget = createAsyncThunk(
         }
       };
 
+      console.log(newTarget, 'newTarget');
+
       const response = await api.put(`/score-card/update-annual-target/${target._id}`, {
         annualTarget: newTarget,
       });
@@ -180,8 +182,6 @@ export const deleteAnnualTarget = createAsyncThunk(
     }
   }
 );
-
-
 
 const scorecardSlice = createSlice({
   name: 'scorecard',

@@ -19,80 +19,167 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import GetAppIcon from '@mui/icons-material/GetApp';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { QuarterlyTargetKPI, QuarterType } from '../../types/annualCorporateScorecard';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { updateAnnualTarget } from '../../store/slices/scorecardSlice';
-
+import { QuarterlyTarget, QuarterlyTargetKPI, QuarterlyTargetObjective, QuarterType, AnnualTarget } from '../../../types/annualCorporateScorecard';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
+import { api } from '../../../services/api';
+import { RootState } from '../../../store';
 interface KPIModalProps {
   open: boolean;
   onClose: () => void;
-  kpi: QuarterlyTargetKPI;
-  objectiveName: string;
+  // objectiveName: string;
   annualTargetId: string;
   quarter: QuarterType;
-  objectiveId: string;
-  kpiIndex: number;
+  // objectiveId: string;
+  // kpiIndex: number;
+  selectedKPI: {
+    kpi: QuarterlyTargetKPI;
+    objectiveName: string;
+    objectiveId: string;
+    kpiIndex: number;
+  }
 }
 
-const KPIModal: React.FC<KPIModalProps> = ({ 
-  open, 
-  onClose, 
-  kpi, 
-  objectiveName,
+interface FileToUpload {
+  file: File;
+  name: string;
+}
+
+const KPIModal: React.FC<KPIModalProps> = ({
+  open,
+  onClose,
+  selectedKPI,
+  // objectiveName,
   annualTargetId,
   quarter,
-  objectiveId,
-  kpiIndex
+  // objectiveId,
+  // kpiIndex
 }) => {
   const dispatch = useAppDispatch();
-  const [actualAchieved, setActualAchieved] = useState(kpi.actualAchieved);
-  const [evidence, setEvidence] = useState(kpi.evidence);
-  const [attachments, setAttachments] = useState(kpi.attachments);
-  const [selectedRating, setSelectedRating] = useState(kpi.actualAchieved);
+  const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
+  const [actualAchieved, setActualAchieved] = useState(selectedKPI.kpi?.actualAchieved || '');
+  const [evidence, setEvidence] = useState(selectedKPI.kpi?.evidence || '');
+  const [attachments, setAttachments] = useState(selectedKPI.kpi?.attachments || []);
+  const [selectedRating, setSelectedRating] = useState(selectedKPI.kpi?.ratingScore || -1);
+  const [filesToUpload, setFilesToUpload] = useState<FileToUpload[]>([]);
+
+  console.log(attachments, '----------------')
 
   useEffect(() => {
-    setActualAchieved(kpi.actualAchieved);
-    setEvidence(kpi.evidence);
-    setAttachments(kpi.attachments);
-    setSelectedRating(kpi.actualAchieved);
-  }, [kpi]);
+    setActualAchieved(selectedKPI.kpi?.actualAchieved || '');
+    setEvidence(selectedKPI.kpi?.evidence || '');
+    setAttachments(selectedKPI.kpi?.attachments || []);
+    setSelectedRating(selectedKPI.kpi?.ratingScore || -1);
+  }, [selectedKPI]);
 
-  const handleSubmit = () => {
-    // dispatch(updateAnnualTarget({
-    //   _id: annualTargetId,
-    //   content: {
-    //     quarterlyTarget: {
-    //       ...kpi.quarterlyTarget,
-    //       kpis: kpi.quarterlyTarget.kpis.map((kpi, index) => 
-    //         index === kpiIndex ? {
-    //           ...kpi,
-    //           actualAchieved,
-    //           evidence,
-    //           attachments,
-    //           ratingScale: selectedRating
-    //         } : kpi
-    //       )
-    //     }
-    //   }
-    // }));
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      const uploadedFiles = await Promise.all(
+        filesToUpload.map(async (fileData) => {
+          try {
+            const formData = new FormData();
+            formData.append('file', fileData.file);
+
+            const response = await api.post('/score-card/upload', formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+              },
+            });
+
+            if (response.status === 200) {
+              return {
+                name: fileData.name,
+                url: response.data.data
+              };
+            } else {
+              return null;
+            }
+          } catch (error) {
+            console.error('Error uploading file:', error);
+            return null;
+          }
+        })
+      );
+
+      console.log(attachments, '----------------++++++++++++++++++++++++')
+
+      const existingAttachments = attachments.filter(
+        att => !filesToUpload.find(f => f.name === att.name)
+      );
+
+      console.log(existingAttachments, '=======================')
+      console.log(uploadedFiles, '+++++++++++++++++++++++')
+
+      const finalAttachments = [...existingAttachments, ...uploadedFiles];
+
+      console.log(finalAttachments, '----------------')
+
+      const annualTarget = annualTargets.find(target => target._id === annualTargetId);
+      if (!annualTarget) {
+        return;
+      }
+      const updatedAnnualTarget = {
+        ...annualTarget,
+        content: {
+          ...annualTarget.content,
+          quarterlyTarget: {
+            ...annualTarget.content.quarterlyTarget,
+            quarterlyTargets: annualTarget.content.quarterlyTarget.quarterlyTargets.map(quarterlyTarget =>
+              quarterlyTarget.quarter === quarter
+                ? {
+                  ...quarterlyTarget,
+                  objectives: quarterlyTarget.objectives.map(objective => ({
+                    ...objective,
+                    KPIs: objective.KPIs.map(kpi =>
+                      kpi.indicator === selectedKPI.kpi.indicator
+                        ? { ...kpi, actualAchieved, evidence, ratingScore: Number(selectedRating), attachments: finalAttachments }
+                        : kpi
+                    ),
+                  })),
+                }
+                : quarterlyTarget
+            ),
+          },
+        },
+      };
+
+      if (updatedAnnualTarget) {
+        dispatch(updateAnnualTarget(updatedAnnualTarget as AnnualTarget));
+      }
+
+      onClose();
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      // TODO: Implement file upload logic
+      const newFiles: FileToUpload[] = [];
       const newAttachments = [...attachments];
+
       for (let i = 0; i < files.length; i++) {
-        newAttachments.push(files[i].name);
+        const file = files[i];
+        newFiles.push({
+          file,
+          name: file.name
+        });
+        newAttachments.push({
+          name: file.name,
+          url: URL.createObjectURL(file)
+        });
       }
+
+      setFilesToUpload(prev => [...prev, ...newFiles]);
       setAttachments(newAttachments);
     }
   };
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth="md"
       fullWidth
@@ -101,7 +188,7 @@ const KPIModal: React.FC<KPIModalProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 3 }}>
           <Box>
             <Typography variant="h6" sx={{ color: '#111827', mb: 1 }}>Key Performance Indicator</Typography>
-            <Typography variant="body1" sx={{ color: '#4B5563' }}>{kpi.indicator}</Typography>
+            <Typography variant="body1" sx={{ color: '#4B5563' }}>{selectedKPI.kpi.indicator}</Typography>
           </Box>
           <IconButton onClick={onClose} size="small" sx={{ color: '#6B7280' }}>
             <CloseIcon />
@@ -111,7 +198,7 @@ const KPIModal: React.FC<KPIModalProps> = ({
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3, mb: 3 }}>
           <Box>
             <Typography variant="subtitle2" sx={{ color: '#374151', mb: 1 }}>Target</Typography>
-            <Typography variant="body1" sx={{ color: '#111827' }}>{kpi.target}</Typography>
+            <Typography variant="body1" sx={{ color: '#111827' }}>{selectedKPI.kpi.target}</Typography>
           </Box>
           <Box>
             <Typography variant="subtitle2" sx={{ color: '#374151', mb: 1 }}>Actual Achieved</Typography>
@@ -134,7 +221,7 @@ const KPIModal: React.FC<KPIModalProps> = ({
             <Select
               fullWidth
               value={selectedRating}
-              onChange={(e) => setSelectedRating(e.target.value)}
+              onChange={(e) => setSelectedRating(Number(e.target.value))}
               size="small"
               sx={{
                 backgroundColor: '#F9FAFB',
@@ -143,7 +230,7 @@ const KPIModal: React.FC<KPIModalProps> = ({
                 }
               }}
             >
-              {kpi.ratingScales.map((scale) => (
+              {selectedKPI.kpi.ratingScales.map((scale) => (
                 <MenuItem key={scale.score} value={scale.score}>
                   {scale.name}
                 </MenuItem>
@@ -199,21 +286,21 @@ const KPIModal: React.FC<KPIModalProps> = ({
                     <InsertDriveFileIcon sx={{ fontSize: 48, color: '#6B7280' }} />
                   </Box>
                   <Box sx={{ p: 2 }}>
-                    <Typography 
-                      sx={{ 
+                    <Typography
+                      sx={{
                         color: '#374151',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {attachment}
+                      {attachment.name}
                     </Typography>
                   </Box>
-                  <IconButton 
+                  <IconButton
                     className="delete-button"
-                    size="small" 
-                    sx={{ 
+                    size="small"
+                    sx={{
                       position: 'absolute',
                       top: 8,
                       right: 8,

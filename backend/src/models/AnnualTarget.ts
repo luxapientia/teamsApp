@@ -102,9 +102,13 @@ interface QuarterlyTargetKPI {
   baseline: string;
   target: string;
   ratingScales: AnnualTargetRatingScale[];
+  ratingScore: number;
   actualAchieved: string;
   evidence: string;
-  attachments: string[];
+  attachments: {
+    name: string;
+    url: string;
+  }[];  
 }
 
 export interface AnnualTargetDocument extends Document {
@@ -228,6 +232,7 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
               min: Number,
               color: String
             }],
+            ratingScore: Number,
             actualAchieved: {
               type: String,
               default: ''
@@ -236,10 +241,13 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
               type: String,
               default: ''
             },
-            attachments: [{
-              type: [String],
+            attachments: {
+              type: [{
+                name: String,
+                url: String
+              }],
               default: []
-            }]
+            }
           }]
         }]
       }]

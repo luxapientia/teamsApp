@@ -114,7 +114,11 @@ export interface QuarterlyTargetKPI {
     baseline: string;
     target: string;
     ratingScales: AnnualTargetRatingScale[];
+    ratingScore: number;
     actualAchieved: string;
     evidence: string;
-    attachments: string[];
+    attachments: {
+        name: string;
+        url: string;
+    }[];
 }

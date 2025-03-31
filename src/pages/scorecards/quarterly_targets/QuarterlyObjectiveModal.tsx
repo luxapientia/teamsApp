@@ -56,6 +56,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
     baseline: '',
     target: '',
     ratingScales: annualTarget?.content.ratingScales || [],
+    ratingScore: annualTarget?.content.ratingScales[0].score || -1,
     actualAchieved: '',
     evidence: '',
     attachments: []
@@ -174,6 +175,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
       baseline: '',
       target: '',
       ratingScales: annualTarget?.content.ratingScales || [],
+      ratingScore: -1,
       actualAchieved: '',
       evidence: '',
       attachments: []
@@ -188,6 +190,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
       baseline: '',
       target: '',
       ratingScales: annualTarget?.content.ratingScales || [],
+      ratingScore: -1,
       actualAchieved: '',
       evidence: '',
       attachments: []
