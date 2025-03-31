@@ -21,7 +21,7 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { QuarterType, AnnualTargetObjective } from '../../../types/annualCorporateScorecard';
+import { QuarterType, AnnualTargetObjective, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
 import QuarterlyObjectiveModal from './QuarterlyObjectiveModal';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -69,7 +69,7 @@ const QuarterlyTargetTable: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [showTable, setShowTable] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingObjective, setEditingObjective] = useState<AnnualTargetObjective | null>(null);
+  const [editingObjective, setEditingObjective] = useState<QuarterlyTargetObjective | null>(null);
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -120,7 +120,7 @@ const QuarterlyTargetTable: React.FC = () => {
     return [...quarterData.objectives].sort((a, b) => a.perspectiveId - b.perspectiveId);
   };
 
-  const handleEdit = (objective: AnnualTargetObjective) => {
+  const handleEdit = (objective: QuarterlyTargetObjective) => {
     setEditingObjective(objective);
     setIsModalOpen(true);
   };
