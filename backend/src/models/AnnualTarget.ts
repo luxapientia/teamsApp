@@ -19,12 +19,12 @@ interface AnnualTargetContent {
 }
 
 interface AnnualTargetPerspective {
-  order: number;
+  index: number;
   name: string;
 }
 
 interface AnnualTargetObjective {
-  perspective: AnnualTargetPerspective;
+  perspectiveId: number;
   name: string;
   KPIs: AnnualTargetKPI[];
 }
@@ -87,9 +87,25 @@ type QuarterType = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
 interface QuarterlyTarget {
   quarter: QuarterType;
-  objectives: AnnualTargetObjective[];
+  objectives: QuarterlyTargetObjective[];
 }
 
+interface QuarterlyTargetObjective {
+  perspectiveId: number;
+  name: string;
+  KPIs: QuarterlyTargetKPI[];
+} 
+
+interface QuarterlyTargetKPI {
+  indicator: string;
+  weight: number;
+  baseline: string;
+  target: string;
+  ratingScales: AnnualTargetRatingScale[];
+  actualAchieved: string;
+  evidence: string;
+  attachments: string[];
+}
 
 export interface AnnualTargetDocument extends Document {
   _id: string;
@@ -120,14 +136,11 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
   },
   content: {
     perspectives: [{
-      order: Number,
+      index: Number,
       name: String
     }],
     objectives: [{
-      perspective: {
-        order: Number,
-        name: String
-      },
+      perspectiveId: Number,
       name: String,
       KPIs: [{
         indicator: String,
@@ -201,10 +214,7 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
           enum: ['Q1', 'Q2', 'Q3', 'Q4']
         },
         objectives: [{
-          perspective: {
-            order: Number,
-            name: String
-          },
+          perspectiveId: Number,
           name: String,
           KPIs: [{
             indicator: String,
@@ -217,6 +227,18 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
               max: Number,
               min: Number,
               color: String
+            }],
+            actualAchieved: {
+              type: String,
+              default: ''
+            },
+            evidence: {
+              type: String,
+              default: ''
+            },
+            attachments: [{
+              type: [String],
+              default: []
             }]
           }]
         }]

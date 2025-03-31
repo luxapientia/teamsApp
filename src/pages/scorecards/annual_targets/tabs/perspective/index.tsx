@@ -42,7 +42,7 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
   const handleSave = () => {
     if (newPerspectiveName.trim() && annualTarget) {
       const newPerspective: AnnualTargetPerspective = {
-        order: perspectives[perspectives.length - 1]?.order + 1 || 0,
+        index: perspectives[perspectives.length - 1]?.index + 1 || 0,
         name: newPerspectiveName
       };
 
@@ -74,17 +74,19 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
   const handleDelete = (perspective: AnnualTargetPerspective) => {
     if (annualTarget) {
       const updatedPerspectives = perspectives
-        .filter((p) => p.order !== perspective.order)
+        .filter((p) => p.index !== perspective.index)
 
       const updatedObjectives = annualTarget.content.objectives
-        .filter((o) => o.perspective.order !== perspective.order)
+        .filter((o) => o.perspectiveId !== perspective.index)
 
       const updatedQuarterlyTargets = annualTarget.content.quarterlyTarget.quarterlyTargets.map((qt) => {
         return {
           ...qt,
-          objectives: qt.objectives.filter((o) => o.perspective.order !== perspective.order)
+          objectives: qt.objectives.filter((o) => o.perspectiveId !== perspective.index)
         }
       })
+
+      const reducedTotalWeight = updatedObjectives.reduce((acc, curr) => acc + curr.KPIs.reduce((acc, curr) => acc + curr.weight, 0), 0);
 
       dispatch(updateAnnualTarget({
         ...annualTarget,
@@ -95,7 +97,8 @@ const PerspectiveTab: React.FC<PerspectiveTabProps> = ({ targetName }) => {
           quarterlyTarget: {
             ...annualTarget.content.quarterlyTarget,
             quarterlyTargets: updatedQuarterlyTargets
-          }
+          },
+          totalWeight: reducedTotalWeight
         },
       }));
     }

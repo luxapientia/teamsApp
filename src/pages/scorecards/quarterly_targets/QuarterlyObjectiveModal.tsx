@@ -23,7 +23,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
-import { AnnualTarget, AnnualTargetObjective, AnnualTargetKPI, AnnualTargetPerspective, QuarterType } from '../../../types/annualCorporateScorecard';
+import { AnnualTarget, AnnualTargetObjective, AnnualTargetKPI, AnnualTargetPerspective, QuarterlyTargetObjective, QuarterlyTargetKPI, QuarterType } from '../../../types/annualCorporateScorecard';
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -36,7 +36,7 @@ interface QuarterlyObjectiveModalProps {
   onClose: () => void;
   annualTarget: AnnualTarget;
   quarter: QuarterType;
-  editingObjective?: AnnualTargetObjective | null;
+  editingObjective?: QuarterlyTargetObjective | null;
 }
 
 const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
@@ -50,12 +50,15 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
   const perspectives = annualTarget?.content.perspectives || [];
   const [perspective, setPerspective] = useState<AnnualTargetPerspective | null>(null);
   const [objective, setObjective] = useState('');
-  const [kpis, setKpis] = useState<AnnualTargetKPI[]>([{
+  const [kpis, setKpis] = useState<QuarterlyTargetKPI[]>([{
     indicator: '',
     weight: 0,
     baseline: '',
     target: '',
-    ratingScales: annualTarget?.content.ratingScales || []
+    ratingScales: annualTarget?.content.ratingScales || [],
+    actualAchieved: '',
+    evidence: '',
+    attachments: []
   }]);
   const [expandedKPI, setExpandedKPI] = useState<number | null>(null);
   const [errors, setErrors] = useState<{
@@ -72,7 +75,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
 
   useEffect(() => {
     if (editingObjective) {
-      setPerspective(editingObjective.perspective);
+      setPerspective(perspectives.find(p => p.index === editingObjective.perspectiveId) || null);
       setObjective(editingObjective.name);
       setKpis([...editingObjective.KPIs]);
     }
@@ -132,8 +135,8 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm() && perspective) {
-      const newObjective: AnnualTargetObjective = {
-        perspective,
+      const newObjective: QuarterlyTargetObjective = {
+        perspectiveId: perspective.index,
         name: objective,
         KPIs: kpis,
       };
@@ -170,7 +173,10 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
       weight: 0,
       baseline: '',
       target: '',
-      ratingScales: annualTarget?.content.ratingScales || []
+      ratingScales: annualTarget?.content.ratingScales || [],
+      actualAchieved: '',
+      evidence: '',
+      attachments: []
     }]);
     onClose();
   };
@@ -181,7 +187,10 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
       weight: 0,
       baseline: '',
       target: '',
-      ratingScales: annualTarget?.content.ratingScales || []
+      ratingScales: annualTarget?.content.ratingScales || [],
+      actualAchieved: '',
+      evidence: '',
+      attachments: []
     }]);
   };
 
@@ -230,12 +239,12 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
               <FormControl error={!!errors.perspective}>
                 <InputLabel>Perspective</InputLabel>
                 <Select
-                  value={perspective?.order}
+                  value={perspective?.index}
                   label="Perspective"
-                  onChange={(e) => setPerspective(perspectives.find(p => p.order === e.target.value) || null)}
+                  onChange={(e) => setPerspective(perspectives.find(p => p.index === e.target.value) || null)}
                 >
                   {perspectives.map((p, index) => (
-                    <MenuItem key={index} value={p.order}>
+                    <MenuItem key={index} value={p.index}>
                       {p.name}
                     </MenuItem>
                   ))}
