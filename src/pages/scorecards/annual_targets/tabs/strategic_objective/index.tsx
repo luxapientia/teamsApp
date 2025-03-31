@@ -20,7 +20,9 @@ import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { RootState } from '../../../../../store';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
-import { AnnualTargetObjective, AnnualTargetKPI } from '../../../../../types/annualCorporateScorecard';
+import { AnnualTargetObjective, AnnualTargetKPI, AnnualTargetRatingScale } from '../../../../../types/annualCorporateScorecard';
+import RatingScalesModal from '../../../RatingScalesModal';
+
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
   padding: '12px 16px',
@@ -42,6 +44,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
   const dispatch = useAppDispatch();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingObjective, setEditingObjective] = useState<AnnualTargetObjective | null>(null);
+  const [selectedKPIRatingScales, setSelectedKPIRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
 
   const annualTarget = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target.name === targetName)
@@ -50,30 +53,6 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
   const objectives = annualTarget?.content.objectives || [];
   const totalWeight = annualTarget?.content.totalWeight || 0;
   const perspectives = annualTarget?.content.perspectives || [];
-
-  // Sort objectives by perspective
-  // const sortedObjectives = [...objectives].sort((a, b) => {
-  //   // First sort by perspective
-  //   // const perspectiveComparison = a.perspective.localeCompare(b.perspective);
-    
-  //   // // If perspectives are the same, sort by objective name
-  //   // if (perspectiveComparison === 0) {
-  //   //   return a.name.localeCompare(b.name);
-  //   // }
-    
-  //   return perspectiveComparison;
-  // });
-
-  // const sortedObjectives = () => {
-  //   let result: AnnualTargetObjective[] = [];
-  //   perspectives.forEach((val) => {
-  //     const filtered = objectives.filter(objective => objective.perspective.name === val.name);
-  //     filtered.forEach((objective) => {
-  //       result.push(objective);
-  //     })
-  //   })
-  //   return result;
-  // }
 
   const calculateTotalWeight = (objectives: AnnualTargetObjective[]) => {
     let total = 0;
@@ -180,6 +159,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
                     <Button
                       variant="outlined"
                       size="small"
+                      onClick={() => setSelectedKPIRatingScales(kpi.ratingScales)}
                       sx={{
                         borderColor: '#E5E7EB',
                         color: '#374151',
@@ -249,6 +229,14 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
         targetName={targetName}
         editingObjective={editingObjective}
       />
+
+      {selectedKPIRatingScales && (
+        <RatingScalesModal
+          open={!!selectedKPIRatingScales}
+          onClose={() => setSelectedKPIRatingScales(null)}
+          ratingScales={selectedKPIRatingScales}
+        />
+      )}
     </Box>
   );
 };
