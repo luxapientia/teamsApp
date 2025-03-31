@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { createTeam, deleteTeam } from '../../store/slices/teamsSlice';
+import { createTeam, deleteTeam, fetchTeams } from '../../store/slices/teamsSlice';
 import { RootState } from '../../store';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
@@ -14,6 +14,8 @@ enum ViewStatus {
   MEMBER_ADDING = 'MEMBER_ADDING',
 };
 
+const tenantId = '987eaa8d-6b2d-4a86-9b2e-8af581ec8056';
+
 const TeamsTabContent: React.FC = () => {
   const dispatch = useAppDispatch();
   const teams = useAppSelector((state: RootState) => state.teams);
@@ -24,6 +26,7 @@ const TeamsTabContent: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleViewClick = (teamId: string) => {
+    console.log('handleViewClick', teamId);
     setStatus(ViewStatus.MEMBER_LIST);
     setSelectedTeamId(teamId);
   };
@@ -57,9 +60,19 @@ const TeamsTabContent: React.FC = () => {
 
   const handleAddNewTeam = () => {
     if (newTeamName.trim()) {
-      dispatch(createTeam(newTeamName));
-      setNewTeamName('');
-      setStatus(ViewStatus.TEAM_LIST);
+      dispatch(createTeam({
+        tenantId: tenantId,
+        teamName: newTeamName
+      }))
+        .then(() => {
+          // Refresh the teams list after creation
+          dispatch(fetchTeams(tenantId));
+          setNewTeamName('');
+          setStatus(ViewStatus.TEAM_LIST);
+        })
+        .catch((error) => {
+          console.error('Error creating team:', error);
+        });
     }
   };
 
@@ -70,10 +83,18 @@ const TeamsTabContent: React.FC = () => {
   };
 
   const handleDeleteTeam = (teamId: string) => {
-    dispatch(deleteTeam(teamId));
+    dispatch(deleteTeam(teamId))
+      .then(() => {
+        // Refresh the teams list after deletion
+        dispatch(fetchTeams(tenantId));
+      })
+      .catch((error) => {
+        console.error('Error deleting team:', error);
+      });
   };
 
   useEffect(() => {
+    dispatch(fetchTeams(tenantId));
     console.log("Checking Teams SDK...");
     if (microsoftTeams.app) {
       console.log("Teams SDK is available");
@@ -195,12 +216,12 @@ const TeamsTabContent: React.FC = () => {
             )}
 
             {status.includes('TEAM') && teams.map(team => (
-              <TableRow key={team.id}>
+              <TableRow key={team._id}>
                 <TableCell>{team.name}</TableCell>
                 <TableCell align="center">
                   <Button
                     variant="outlined"
-                    onClick={() => handleViewClick(team.id)}
+                    onClick={() => handleViewClick(team._id)}
                     sx={{
                       fontSize: '0.75rem',
                       padding: '4px 8px',
@@ -213,7 +234,7 @@ const TeamsTabContent: React.FC = () => {
                     <Button
                       variant="outlined"
                       color="error"
-                      onClick={() => handleDeleteTeam(team.id)}
+                      onClick={() => handleDeleteTeam(team._id)}
                       sx={{
                         fontSize: '0.75rem',
                         padding: '4px 8px',
@@ -228,7 +249,7 @@ const TeamsTabContent: React.FC = () => {
               </TableRow>
             ))}
 
-            {status === ViewStatus.MEMBER_LIST && teams.find(team => team.id === selectedTeamId)?.members.map(member => (
+            {status === ViewStatus.MEMBER_LIST && teams.find(team => team._id === selectedTeamId)?.members.map(member => (
               <TableRow key={member.name}>
                 <TableCell>{member.name}</TableCell>
                 <TableCell>{member.title}</TableCell>
