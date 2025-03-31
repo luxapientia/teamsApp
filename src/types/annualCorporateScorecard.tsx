@@ -31,12 +31,12 @@ export interface AnnualTargetContent {
 }
 
 export interface AnnualTargetPerspective {
-    order: number;
+    index: number;
     name: string;
 }
 
 export interface AnnualTargetObjective {
-    perspective: AnnualTargetPerspective;
+    perspectiveId: number;
     name: string;
     KPIs: AnnualTargetKPI[];
 }
@@ -99,5 +99,22 @@ export type QuarterType = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
 export interface QuarterlyTarget {
     quarter: QuarterType;
-    objectives: AnnualTargetObjective[];
+    objectives: QuarterlyTargetObjective[];
+}
+
+export interface QuarterlyTargetObjective {
+    perspectiveId: number;
+    name: string;
+    KPIs: QuarterlyTargetKPI[];
+}
+
+export interface QuarterlyTargetKPI {
+    indicator: string;
+    weight: number;
+    baseline: string;
+    target: string;
+    ratingScales: AnnualTargetRatingScale[];
+    actualAchieved: string;
+    evidence: string;
+    attachments: string[];
 }

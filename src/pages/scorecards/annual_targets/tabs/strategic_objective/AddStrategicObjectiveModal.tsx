@@ -73,7 +73,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
 
   useEffect(() => {
     if (editingObjective) {
-      setPerspective(editingObjective.perspective);
+      setPerspective(perspectives.find(p => p.index === editingObjective.perspectiveId) || null);
       setObjective(editingObjective.name);
       setKpis([...editingObjective.KPIs]);
     }
@@ -154,7 +154,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     e.preventDefault();
     if (validateForm() && annualTarget && perspective) {
       const newObjective: AnnualTargetObjective = {
-        perspective,
+        perspectiveId: perspective.index,
         name: objective,
         KPIs: kpis,
       };
@@ -249,13 +249,13 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
               <FormControl fullWidth error={!!errors.perspective}>
                 <InputLabel>Perspective</InputLabel>
                 <Select
-                  value={perspective?.order}
+                  value={perspective?.index}
                   label="Perspective"
-                  onChange={(e) => setPerspective(perspectives.find(p => p.order === e.target.value) || null)}
+                  onChange={(e) => setPerspective(perspectives.find(p => p.index === e.target.value) || null)}
                   sx={{ backgroundColor: '#F9FAFB' }}
                 >
                   {perspectives.map((p, index) => (
-                    <MenuItem key={index} value={p.order}>{p.name}</MenuItem>
+                    <MenuItem key={index} value={p.index}>{p.name}</MenuItem>
                   ))}
                 </Select>
                 {errors.perspective && (
