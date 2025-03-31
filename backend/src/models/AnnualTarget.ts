@@ -19,12 +19,12 @@ interface AnnualTargetContent {
 }
 
 interface AnnualTargetPerspective {
-  order: number;
+  index: number;
   name: string;
 }
 
 interface AnnualTargetObjective {
-  perspective: AnnualTargetPerspective;
+  perspectiveId: number;
   name: string;
   KPIs: AnnualTargetKPI[];
 }
@@ -120,14 +120,11 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
   },
   content: {
     perspectives: [{
-      order: Number,
+      index: Number,
       name: String
     }],
     objectives: [{
-      perspective: {
-        order: Number,
-        name: String
-      },
+      perspectiveId: Number,
       name: String,
       KPIs: [{
         indicator: String,
@@ -201,10 +198,7 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
           enum: ['Q1', 'Q2', 'Q3', 'Q4']
         },
         objectives: [{
-          perspective: {
-            order: Number,
-            name: String
-          },
+          perspectiveId: Number,
           name: String,
           KPIs: [{
             indicator: String,

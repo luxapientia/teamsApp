@@ -72,7 +72,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
 
   useEffect(() => {
     if (editingObjective) {
-      setPerspective(editingObjective.perspective);
+      setPerspective(perspectives.find(p => p.index === editingObjective.perspectiveId) || null);
       setObjective(editingObjective.name);
       setKpis([...editingObjective.KPIs]);
     }
@@ -133,7 +133,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
     e.preventDefault();
     if (validateForm() && perspective) {
       const newObjective: AnnualTargetObjective = {
-        perspective,
+        perspectiveId: perspective.index,
         name: objective,
         KPIs: kpis,
       };
@@ -230,12 +230,12 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
               <FormControl error={!!errors.perspective}>
                 <InputLabel>Perspective</InputLabel>
                 <Select
-                  value={perspective?.order}
+                  value={perspective?.index}
                   label="Perspective"
-                  onChange={(e) => setPerspective(perspectives.find(p => p.order === e.target.value) || null)}
+                  onChange={(e) => setPerspective(perspectives.find(p => p.index === e.target.value) || null)}
                 >
                   {perspectives.map((p, index) => (
-                    <MenuItem key={index} value={p.order}>
+                    <MenuItem key={index} value={p.index}>
                       {p.name}
                     </MenuItem>
                   ))}

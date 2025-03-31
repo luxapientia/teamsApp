@@ -31,12 +31,12 @@ export interface AnnualTargetContent {
 }
 
 export interface AnnualTargetPerspective {
-    order: number;
+    index: number;
     name: string;
 }
 
 export interface AnnualTargetObjective {
-    perspective: AnnualTargetPerspective;
+    perspectiveId: number;
     name: string;
     KPIs: AnnualTargetKPI[];
 }
