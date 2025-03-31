@@ -46,7 +46,7 @@ function Main() {
         <OrganizationPerformance
           title='Organization Performance'
           icon={<Organization20Regular fontSize={iconSize} />}
-          tabs={['Organization Performance']}
+          tabs={['Performance Evaluations', 'Organization Performance']}
           selectedTab={selectedTab}
         />
       </Layout>
