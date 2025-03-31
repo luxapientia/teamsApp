@@ -22,12 +22,16 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { QuarterType, AnnualTargetObjective, QuarterlyTargetKPI } from '../../../types/annualCorporateScorecard';
+import { QuarterType, AnnualTargetObjective, QuarterlyTargetKPI, AnnualTargetPerspective, AnnualTargetRatingScale } from '../../../types/annualCorporateScorecard';
 import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import KPIModal from './KPIModal';
 import DescriptionIcon from '@mui/icons-material/Description';
 import EvidenceModal from './EvidenceModal';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import { PDFDownloadLink, Document, Page, View, Text, StyleSheet, pdf } from '@react-pdf/renderer';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -75,6 +79,30 @@ const StyledHeaderCell = styled(TableCell)(({ theme }) => ({
   color: '#6B7280',
   fontWeight: 500,
 }));
+
+const ExportButton = styled(Button)({
+  backgroundColor: '#fff',
+  color: '#374151',
+  textTransform: 'none',
+  padding: '6px 16px',
+  border: '1px solid #E5E7EB',
+  '&:hover': {
+    backgroundColor: '#F9FAFB',
+    borderColor: '#D1D5DB',
+  },
+  '&.excel': {
+    '&:hover': {
+      color: '#059669',
+      borderColor: '#059669',
+    },
+  },
+  '&.pdf': {
+    '&:hover': {
+      color: '#DC2626',
+      borderColor: '#DC2626',
+    },
+  }
+});
 
 const PerformanceEvaluations: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -153,6 +181,128 @@ const PerformanceEvaluations: React.FC = () => {
     });
   };
 
+  const exportToExcel = (objectives: any[], annualTarget: any, quarter: string) => {
+    // Add header rows for dates
+    const headerRows = [
+      {
+        'Start Date': annualTarget?.content.assessmentPeriod[quarter as QuarterType].startDate,
+        'End Date': annualTarget?.content.assessmentPeriod[quarter as QuarterType].endDate,
+      },
+      {}, // Empty row for spacing
+    ];
+
+    const data = objectives.flatMap(objective =>
+      objective.KPIs.map((kpi: QuarterlyTargetKPI) => ({
+        'Perspective': annualTarget?.content.perspectives.find((p: AnnualTargetPerspective) => p.index === objective.perspectiveId)?.name,
+        'Strategic Objective': objective.name,
+        'Weight %': kpi.weight,
+        'Key Performance Indicator': kpi.indicator,
+        'Baseline': kpi.baseline,
+        'Target': kpi.target,
+        'Actual Achieved': kpi.actualAchieved,
+        'Performance Rating Scale': kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))
+          ? `${kpi.ratingScore} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min}-${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
+          : '',
+        'Evidence': kpi.evidence
+      }))
+    );
+
+    const ws = XLSX.utils.json_to_sheet([...headerRows, ...data]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Performance Evaluation');
+
+    // Generate buffer
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    saveAs(dataBlob, `Performance_Evaluation_${quarter}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const styles = StyleSheet.create({
+    page: {
+      padding: 30,
+    },
+    header: {
+      fontSize: 14,
+      marginBottom: 20,
+      fontWeight: 'bold',
+    },
+    table: {
+      display: 'flex',
+      width: 'auto',
+      borderStyle: 'solid',
+      borderWidth: 1,
+      borderColor: '#E5E7EB',
+      marginBottom: 10,
+    },
+    tableRow: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderBottomColor: '#E5E7EB',
+      minHeight: 30,
+      alignItems: 'center',
+    },
+    tableHeader: {
+      backgroundColor: '#F9FAFB',
+      fontWeight: 'bold',
+    },
+    tableCell: {
+      flex: 1,
+      padding: 5,
+      fontSize: 8,
+    },
+  });
+
+  const PDFDocument = ({ objectives, annualTarget, quarter }: { objectives: any[], annualTarget: any, quarter: string }) => (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.header}>
+          Performance Evaluation - {quarter}
+        </Text>
+        <View style={styles.table}>
+          <View style={styles.tableRow}>
+            <Text style={styles.tableCell}>Start Date: {annualTarget?.content.assessmentPeriod[quarter as QuarterType].startDate}</Text>
+            <Text style={styles.tableCell}>End Date: {annualTarget?.content.assessmentPeriod[quarter as QuarterType].endDate}</Text>
+          </View>
+        </View>
+        <View style={[styles.table, { marginTop: 10 }]}>
+          {/* Table headers */}
+          <View style={[styles.tableRow, styles.tableHeader]}>
+            <Text style={styles.tableCell}>Perspective</Text>
+            <Text style={styles.tableCell}>Strategic Objective</Text>
+            <Text style={styles.tableCell}>Weight %</Text>
+            <Text style={styles.tableCell}>KPI</Text>
+            <Text style={styles.tableCell}>Baseline</Text>
+            <Text style={styles.tableCell}>Target</Text>
+            <Text style={styles.tableCell}>Actual</Text>
+            <Text style={styles.tableCell}>Rating</Text>
+          </View>
+          {/* Table data */}
+          {objectives.flatMap(objective =>
+            objective.KPIs.map((kpi: QuarterlyTargetKPI, index: number) => (
+              <View key={`${objective.name}-${index}`} style={styles.tableRow}>
+                <Text style={styles.tableCell}>
+                  {annualTarget?.content.perspectives.find((p: AnnualTargetPerspective) => p.index === objective.perspectiveId)?.name}
+                </Text>
+                <Text style={styles.tableCell}>{objective.name}</Text>
+                <Text style={styles.tableCell}>{kpi.weight}</Text>
+                <Text style={styles.tableCell}>{kpi.indicator}</Text>
+                <Text style={styles.tableCell}>{kpi.baseline}</Text>
+                <Text style={styles.tableCell}>{kpi.target}</Text>
+                <Text style={styles.tableCell}>{kpi.actualAchieved}</Text>
+                <Text style={styles.tableCell}>
+                  {kpi.ratingScales.find((scale: AnnualTargetRatingScale) => scale.score === Number(kpi.ratingScore))
+                    ? `${kpi.ratingScore} ${kpi.ratingScales.find((scale: AnnualTargetRatingScale) => scale.score === Number(kpi.ratingScore))?.name}`
+                    : ''}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+      </Page>
+    </Document>
+  );
+
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
@@ -197,9 +347,49 @@ const PerformanceEvaluations: React.FC = () => {
 
       {showTable && selectedAnnualTarget && (
         <Box sx={{ mt: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Quarterly Corporate Scorecard - {selectedQuarter}
-          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            mb: 3 
+          }}>
+            <Typography variant="h6">
+              Quarterly Corporate Scorecard - {selectedQuarter}
+            </Typography>
+            
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <ExportButton
+                className="excel"
+                startIcon={<FileDownloadIcon />}
+                onClick={() => exportToExcel(getQuarterlyObjectives(), selectedAnnualTarget, selectedQuarter)}
+                size="small"
+              >
+                Export to Excel
+              </ExportButton>
+
+              <PDFDownloadLink
+                document={
+                  <PDFDocument
+                    objectives={getQuarterlyObjectives()}
+                    annualTarget={selectedAnnualTarget}
+                    quarter={selectedQuarter}
+                  />
+                }
+                fileName={`Performance_Evaluation_${selectedQuarter}_${new Date().toISOString().split('T')[0]}.pdf`}
+              >
+                {({ loading }) => (
+                  <ExportButton
+                    className="pdf"
+                    startIcon={<FileDownloadIcon />}
+                    disabled={loading}
+                    size="small"
+                  >
+                    Export to PDF
+                  </ExportButton>
+                )}
+              </PDFDownloadLink>
+            </Box>
+          </Box>
 
           <Box sx={{ mb: 4 }}>
             <Table>
@@ -220,35 +410,6 @@ const PerformanceEvaluations: React.FC = () => {
                 </TableRow>
               </TableBody>
             </Table>
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              gap: 1,
-              mb: 2
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: '#6B7280',
-                fontWeight: 500
-              }}
-            >
-              Total Weight:
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: calculateTotalWeight(getQuarterlyObjectives()) === 100 ? '#059669' : '#DC2626',
-                fontWeight: 600
-              }}
-            >
-              {calculateTotalWeight(getQuarterlyObjectives())}%
-            </Typography>
           </Box>
 
           <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
@@ -321,6 +482,8 @@ const PerformanceEvaluations: React.FC = () => {
               </TableBody>
             </Table>
           </Paper>
+
+
         </Box>
       )}
 
