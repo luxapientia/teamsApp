@@ -215,8 +215,8 @@ const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selec
               <TableBody>
                 <TableRow>
                   <StyledTableCell>{selectedAnnualTarget.name}</StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget.content.assesmentPeriod[selectedQuarter as QuarterType].startDate}</StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget.content.assesmentPeriod[selectedQuarter as QuarterType].endDate}</StyledTableCell>
+                  <StyledTableCell>{selectedAnnualTarget.content.assessmentPeriod[selectedQuarter as QuarterType].startDate}</StyledTableCell>
+                  <StyledTableCell>{selectedAnnualTarget.content.assessmentPeriod[selectedQuarter as QuarterType].endDate}</StyledTableCell>
                   <StyledTableCell>{selectedAnnualTarget.status}</StyledTableCell>
                 </TableRow>
               </TableBody>
@@ -293,7 +293,7 @@ const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selec
                         <AccessButton
                           size="small"
                           startIcon={<VisibilityIcon />}
-                          onClick={() => handleAccess(kpi, objective.name, objective.perspectiveId.toString(), kpiIndex)}
+                          onClick={() => handleAccess(kpi, objective.name, objective.perspectiveId?.toString() || '', kpiIndex)}
                         >
                           Access
                         </AccessButton>
