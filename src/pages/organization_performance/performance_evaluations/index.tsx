@@ -22,7 +22,7 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { QuarterType, AnnualTargetObjective, QuarterlyTargetKPI, AnnualTargetPerspective, AnnualTargetRatingScale } from '../../../types/annualCorporateScorecard';
+import { QuarterType, AnnualTargetObjective, QuarterlyTargetKPI, AnnualTargetPerspective, AnnualTargetRatingScale, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
 import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import KPIModal from './KPIModal';
@@ -151,9 +151,7 @@ const PerformanceEvaluations: React.FC = () => {
     //     }));
     //   }
     // }
-    setShowTable(true);
     const quarterlyTargetEditable = selectedAnnualTarget?.content.quarterlyTarget.editable || false;
-    console.log(quarterlyTargetEditable, '----------------')
     const currentDate = new Date();
     const assessmentPeriod = selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as QuarterType];
     if (assessmentPeriod) {
@@ -161,10 +159,14 @@ const PerformanceEvaluations: React.FC = () => {
       const endDate = new Date(assessmentPeriod.endDate);
       if (startDate <= currentDate && endDate >= currentDate) {
         setEditable(true && quarterlyTargetEditable);
+      } else {
+        setEditable(false);
       }
     } else {
       setEditable(false);
     }
+
+    setShowTable(true);
   };
 
   const getQuarterlyObjectives = () => {
@@ -319,6 +321,33 @@ const PerformanceEvaluations: React.FC = () => {
     </Document>
   );
 
+  // Add function to calculate overall rating score
+  const calculateOverallRating = (objectives: QuarterlyTargetObjective[]) => {
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    objectives.forEach(objective => {
+      objective.KPIs.forEach(kpi => {
+        if (kpi.ratingScore !== -1) {
+          totalWeightedScore += (kpi.ratingScore * kpi.weight);
+          totalWeight += kpi.weight;
+        }
+      });
+    });
+
+    if (totalWeight === 0) return null;
+    return Math.round(totalWeightedScore / totalWeight);
+  };
+
+  // Add function to get rating scale info
+  const getRatingScaleInfo = (score: number | null) => {
+    if (!score || !selectedAnnualTarget) return null;
+    
+    return selectedAnnualTarget.content.ratingScales.find(
+      scale => scale.score === score
+    );
+  };
+
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
@@ -431,30 +460,28 @@ const PerformanceEvaluations: React.FC = () => {
           <Box
             sx={{
               display: 'flex',
-              justifyContent: 'flex-end',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              gap: 1,
-              mb: 2
+              mb: 2,
+              p: 2,
+              border: '1px solid #E5E7EB',
+              borderRadius: 1,
+              backgroundColor: '#F9FAFB'
             }}
           >
-            <Typography
-              variant="body2"
-              sx={{
-                color: '#6B7280',
-                fontWeight: 500
-              }}
-            >
-              Total Weight:
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" sx={{ color: '#6B7280', fontWeight: 500 }}>
+                Total Weight:
+              </Typography>
+              <Typography variant="body2" sx={{
                 color: calculateTotalWeight(getQuarterlyObjectives()) === 100 ? '#059669' : '#DC2626',
                 fontWeight: 600
-              }}
-            >
-              {calculateTotalWeight(getQuarterlyObjectives())}%
-            </Typography>
+              }}>
+                {calculateTotalWeight(getQuarterlyObjectives())}%
+              </Typography>
+            </Box>
+
+
           </Box>
 
           <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
@@ -528,7 +555,43 @@ const PerformanceEvaluations: React.FC = () => {
               </TableBody>
             </Table>
           </Paper>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+            <Typography variant="body2" sx={{ color: '#6B7280', fontWeight: 500 }}>
+              Overall Rating Score = 
+            </Typography>
+            {(() => {
+              const score = calculateOverallRating(getQuarterlyObjectives());
+              const ratingScale = getRatingScaleInfo(score);
+              
+              if (!score || !ratingScale) {
+                return (
+                  <Typography variant="body2" sx={{
+                    color: '#DC2626',
+                    fontWeight: 600,
+                    backgroundColor: '#E5E7EB',
+                    px: 2,
+                    py: 0.5,
+                    borderRadius: 1
+                  }}>
+                    N/A
+                  </Typography>
+                );
+              }
 
+              return (
+                <Typography variant="body2" sx={{
+                  color: ratingScale.color,
+                  fontWeight: 600,
+                  backgroundColor: '#E5E7EB',
+                  px: 2,
+                  py: 0.5,
+                  borderRadius: 1
+                }}>
+                  {`${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`}
+                </Typography>
+              );
+            })()}
+          </Box>
 
         </Box>
       )}
