@@ -50,11 +50,8 @@ const KPIModal: React.FC<KPIModalProps> = ({
   open,
   onClose,
   selectedKPI,
-  // objectiveName,
   annualTargetId,
   quarter,
-  // objectiveId,
-  // kpiIndex
 }) => {
   const dispatch = useAppDispatch();
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
@@ -63,8 +60,11 @@ const KPIModal: React.FC<KPIModalProps> = ({
   const [attachments, setAttachments] = useState(selectedKPI.kpi?.attachments || []);
   const [selectedRating, setSelectedRating] = useState(selectedKPI.kpi?.ratingScore || -1);
   const [filesToUpload, setFilesToUpload] = useState<FileToUpload[]>([]);
-
-  console.log(attachments, '----------------')
+  const [errors, setErrors] = useState<{
+    actualAchieved?: string;
+    evidence?: string;
+    ratingScore?: string;
+  }>({});
 
   useEffect(() => {
     setActualAchieved(selectedKPI.kpi?.actualAchieved || '');
@@ -73,7 +73,38 @@ const KPIModal: React.FC<KPIModalProps> = ({
     setSelectedRating(selectedKPI.kpi?.ratingScore || -1);
   }, [selectedKPI]);
 
+  const validateForm = () => {
+    const newErrors: {
+      actualAchieved?: string;
+      evidence?: string;
+      ratingScore?: string;
+    } = {};
+    let isValid = true;
+
+    if (!actualAchieved.trim()) {
+      newErrors.actualAchieved = 'Actual achieved is required';
+      isValid = false;
+    }
+
+    if (!evidence.trim()) {
+      newErrors.evidence = 'Evidence is required';
+      isValid = false;
+    }
+
+    if (selectedRating === -1) {
+      newErrors.ratingScore = 'Rating score is required';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       const uploadedFiles = await Promise.all(
         filesToUpload.map(async (fileData) => {
@@ -102,18 +133,11 @@ const KPIModal: React.FC<KPIModalProps> = ({
         })
       );
 
-      console.log(attachments, '----------------++++++++++++++++++++++++')
-
       const existingAttachments = attachments.filter(
         att => !filesToUpload.find(f => f.name === att.name)
       );
 
-      console.log(existingAttachments, '=======================')
-      console.log(uploadedFiles, '+++++++++++++++++++++++')
-
       const finalAttachments = [...existingAttachments, ...uploadedFiles];
-
-      console.log(finalAttachments, '----------------')
 
       const annualTarget = annualTargets.find(target => target._id === annualTargetId);
       if (!annualTarget) {
@@ -208,6 +232,8 @@ const KPIModal: React.FC<KPIModalProps> = ({
               onChange={(e) => setActualAchieved(e.target.value)}
               variant="outlined"
               size="small"
+              error={!!errors.actualAchieved}
+              helperText={errors.actualAchieved}
               sx={{
                 backgroundColor: '#F9FAFB',
                 '& .MuiOutlinedInput-root': {
@@ -223,19 +249,28 @@ const KPIModal: React.FC<KPIModalProps> = ({
               value={selectedRating}
               onChange={(e) => setSelectedRating(Number(e.target.value))}
               size="small"
+              error={!!errors.ratingScore}
               sx={{
                 backgroundColor: '#F9FAFB',
+                color: selectedKPI.kpi.ratingScales.find(scale => scale.score === selectedRating)?.color || '#000',
                 '& .MuiOutlinedInput-root': {
                   '& fieldset': { borderColor: '#E5E7EB' },
                 }
               }}
             >
               {selectedKPI.kpi.ratingScales.map((scale) => (
-                <MenuItem key={scale.score} value={scale.score}>
-                  {scale.name}
+                <MenuItem key={scale.score} value={scale.score} sx={{ color: scale.color }}>
+                  {
+                    `${scale.score} ${scale.name} (${scale.min} - ${scale.max})`
+                  }
                 </MenuItem>
               ))}
             </Select>
+            {errors.ratingScore && (
+              <Typography color="error" variant="caption">
+                {errors.ratingScore}
+              </Typography>
+            )}
           </Box>
         </Box>
 
@@ -248,6 +283,8 @@ const KPIModal: React.FC<KPIModalProps> = ({
             value={evidence}
             onChange={(e) => setEvidence(e.target.value)}
             variant="outlined"
+            error={!!errors.evidence}
+            helperText={errors.evidence}
             sx={{
               backgroundColor: '#F9FAFB',
               '& .MuiOutlinedInput-root': {

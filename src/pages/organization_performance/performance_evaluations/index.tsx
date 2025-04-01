@@ -126,21 +126,6 @@ const PerformanceEvaluations: React.FC = () => {
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
 
-  useEffect(() => {
-    const quarterlyTargetEditable = selectedAnnualTarget?.content.quarterlyTarget.editable || false;
-    const currentDate = new Date();
-    const assessmentPeriod = selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as QuarterType];
-    if (assessmentPeriod) {
-      const startDate = new Date(assessmentPeriod.startDate);
-      const endDate = new Date(assessmentPeriod.endDate);
-      if (startDate <= currentDate && endDate >= currentDate) {
-        setEditable(true && quarterlyTargetEditable);
-      }
-    } else {
-      setEditable(false);
-    }
-  }, [selectedAnnualTarget]);
-
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
     setShowTable(false);
@@ -152,21 +137,34 @@ const PerformanceEvaluations: React.FC = () => {
   };
 
   const handleView = () => {
-    if (selectedAnnualTarget) {
-      if (selectedAnnualTarget.content.totalWeight >= 100) {
-        dispatch(updateAnnualTarget({
-          ...selectedAnnualTarget,
-          content: {
-            ...selectedAnnualTarget.content,
-            quarterlyTarget: {
-              ...selectedAnnualTarget.content.quarterlyTarget,
-              editable: true,
-            }
-          }
-        }));
-      }
-    }
+    // if (selectedAnnualTarget) {
+    //   if (selectedAnnualTarget.content.totalWeight >= 100) {
+    //     dispatch(updateAnnualTarget({
+    //       ...selectedAnnualTarget,
+    //       content: {
+    //         ...selectedAnnualTarget.content,
+    //         quarterlyTarget: {
+    //           ...selectedAnnualTarget.content.quarterlyTarget,
+    //           editable: true,
+    //         }
+    //       }
+    //     }));
+    //   }
+    // }
     setShowTable(true);
+    const quarterlyTargetEditable = selectedAnnualTarget?.content.quarterlyTarget.editable || false;
+    console.log(quarterlyTargetEditable, '----------------')
+    const currentDate = new Date();
+    const assessmentPeriod = selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as QuarterType];
+    if (assessmentPeriod) {
+      const startDate = new Date(assessmentPeriod.startDate);
+      const endDate = new Date(assessmentPeriod.endDate);
+      if (startDate <= currentDate && endDate >= currentDate) {
+        setEditable(true && quarterlyTargetEditable);
+      }
+    } else {
+      setEditable(false);
+    }
   };
 
   const getQuarterlyObjectives = () => {
@@ -518,7 +516,6 @@ const PerformanceEvaluations: React.FC = () => {
                         <StyledTableCell align="center">
                           <AccessButton
                             size="small"
-                            startIcon={<VisibilityIcon />}
                             onClick={() => handleAccess(kpi, objective.name, objective.perspectiveId?.toString() || '', kpiIndex)}
                           >
                             Evaluate
