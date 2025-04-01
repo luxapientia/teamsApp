@@ -18,6 +18,18 @@ interface EvidenceModalProps {
   attachments: Array<{ name: string; url: string }>;
 }
 
+const FileLink = styled('a')({
+  color: '#2563EB',
+  textDecoration: 'none',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  '&:hover': {
+    textDecoration: 'underline',
+    color: '#1D4ED8',
+  },
+});
+
 const EvidenceModal: React.FC<EvidenceModalProps> = ({
   open,
   onClose,
@@ -64,24 +76,25 @@ const EvidenceModal: React.FC<EvidenceModalProps> = ({
                   mb: 1,
                   border: '1px solid #E5E7EB',
                   borderRadius: 1,
-                  backgroundColor: '#F9FAFB'
+                  backgroundColor: '#F9FAFB',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: '#F3F4F6',
+                  }
                 }}
               >
                 <InsertDriveFileIcon sx={{ color: '#6B7280' }} />
                 <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ color: '#111827' }}>
+                  <Typography sx={{ color: '#111827', mb: 0.5 }}>
                     {attachment.name}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                    <a 
-                      href={"http://localhost:3001" + attachment.url} 
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: 'inherit', textDecoration: 'none' }}
-                    >
-                      {`attachment.url`}
-                    </a>
-                  </Typography>
+                  <FileLink 
+                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}${attachment.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    View attachment
+                  </FileLink>
                 </Box>
               </Box>
             ))}
