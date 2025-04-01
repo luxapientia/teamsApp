@@ -3,8 +3,8 @@ import { Company, SuperUser, License } from '../types';
 
 // Get the API URL from environment or try common development ports
 export const getAPIBaseURL = () => {
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  if (process.env.BACKEND_URL + '/api') {
+    return process.env.BACKEND_URL + '/api';
   }
   
   // In development, try common ports
