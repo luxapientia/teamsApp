@@ -82,6 +82,10 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
     }
   }, [editingObjective]);
 
+  const calculateTotalWeight = (currentKpis: QuarterlyTargetKPI[]) => {
+    return currentKpis.reduce((total, kpi) => total + (Number(kpi.weight) || 0), 0);
+  };
+
   const validateForm = () => {
     const newErrors: typeof errors = {};
     let isValid = true;
@@ -152,6 +156,22 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
         return qt;
       });
 
+      let totalWeight = 0;
+      updatedQuarterlyTargets.forEach(qt => {
+        if (qt.quarter === quarter) {
+          qt.objectives.forEach(obj => {
+            obj.KPIs.forEach(kpi => {
+              totalWeight += Number(kpi.weight) || 0;
+            });
+          });
+        }
+      });
+
+      if (totalWeight > 100) {
+        setErrors({ general: 'Total weight must be 100%' });
+        return;
+      }
+
       dispatch(updateAnnualTarget({
         ...annualTarget,
         content: {
@@ -169,6 +189,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
   const handleClose = () => {
     setPerspective(null);
     setObjective('');
+    setErrors({});
     setKpis([{
       indicator: '',
       weight: 0,
@@ -457,6 +478,12 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
                   Add KPI
                 </Button>
               </Box>
+
+              {errors.general && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {errors.general}
+                </Alert>
+              )}
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
