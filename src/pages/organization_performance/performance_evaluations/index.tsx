@@ -520,8 +520,8 @@ const PerformanceEvaluations: React.FC = () => {
                             size="small"
                             startIcon={<VisibilityIcon />}
                             onClick={() => handleAccess(kpi, objective.name, objective.perspectiveId?.toString() || '', kpiIndex)}
-                        >
-                          Access
+                          >
+                            Evaluate
                           </AccessButton>
                         </StyledTableCell>
                       )}
