@@ -51,12 +51,12 @@ function Main() {
           tabs={['Teams']}
           selectedTab={selectedTab}
         />
-        <NotificationPage 
+        {/* <NotificationPage 
           title='Notifications'
           icon={<Alert24Regular fontSize={iconSize} />}
           tabs={['Quarterly Targets', 'Performance Assessments']}
           selectedTab={selectedTab}
-        />
+        /> */}
       </Layout>
     </Provider>
   );
