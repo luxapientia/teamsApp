@@ -95,35 +95,45 @@ const OrganizationPerformances: React.FC = () => {
   };
 
   const calculateQuarterScore = (objectives: QuarterlyTargetObjective[]) => {
-    if (!objectives.length) return null;
-
-    let totalScore = 0;
-    let count = 0;
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
 
     objectives.forEach(objective => {
       objective.KPIs.forEach(kpi => {
-        if (kpi.ratingScore) {
-          totalScore += kpi.ratingScore;
-          count++;
+        if (kpi.ratingScore !== -1) {
+          totalWeightedScore += (kpi.ratingScore * kpi.weight);
+          totalWeight += kpi.weight;
         }
       });
     });
 
-    return totalScore > 0 ? Math.round(totalScore / count) : null;
+    if (totalWeight === 0) return null;
+    return Math.round(totalWeightedScore / totalWeight);
   };
 
   const calculateOverallScore = (annualTarget: AnnualTarget) => {
-    if (!annualTarget.content.quarterlyTarget.quarterlyTargets.length) return null;
+    let totalWeightedScore = 0;
+    let totalQuarters = 0;
 
-    let totalScore = 0;
     annualTarget.content.quarterlyTarget.quarterlyTargets.forEach(quarter => {
-      totalScore += calculateQuarterScore(quarter.objectives) || 0;
+      const quarterScore = calculateQuarterScore(quarter.objectives);
+      if (quarterScore !== null) {
+        totalWeightedScore += quarterScore;
+        totalQuarters++;
+      }
     });
 
-    return totalScore > 0 ? Math.round(totalScore / annualTarget.content.quarterlyTarget.quarterlyTargets.length) : null;
-  }
+    if (totalQuarters === 0) return null;
+    return Math.round(totalWeightedScore / totalQuarters);
+  };
 
-  
+  const getRatingScaleInfo = (score: number | null, annualTarget: AnnualTarget) => {
+    if (!score) return null;
+    
+    return annualTarget.content.ratingScales.find(
+      scale => scale.score === score
+    );
+  };
 
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
@@ -206,43 +216,46 @@ const OrganizationPerformances: React.FC = () => {
               <TableBody>
                 <TableRow>
                   {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => {
-                    const ratingScales = selectedAnnualTarget.content.ratingScales;
-                    const score = calculateQuarterScore(quarter.objectives) || 0;
+                    const score = calculateQuarterScore(quarter.objectives);
+                    const ratingScale = getRatingScaleInfo(score, selectedAnnualTarget);
+                    
                     return (
                       <StyledTableCell
                         key={quarter.quarter}
                         align="center"
                         sx={{
-                          color: ratingScales.find(scale => scale.score === score)?.color || '#000',
+                          color: ratingScale?.color || '#DC2626',
                           fontWeight: 500
                         }}
                       >
-                        {
-                          ratingScales.find(scale => scale.score === score) && (
-                            <>
-                              
-                              {`${score} ${ratingScales.find(scale => scale.score === score)?.name} (${ratingScales.find(scale => scale.score === score)?.min || ''} - ${ratingScales.find(scale => scale.score === score)?.max || ''})`}
-                            </>
-                          )
-                        }
+                        {score && ratingScale ? (
+                          `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`
+                        ) : (
+                          'N/A'
+                        )}
                       </StyledTableCell>
                     );
                   })}
-                  <StyledTableCell
-                    align="center"
-                    sx={{
-                      color: selectedAnnualTarget.content.ratingScales.find(scale => scale.score === calculateOverallScore(selectedAnnualTarget))?.color || '#000',
-                      fontWeight: 500
-                    }}
-                  >
-
-                    {selectedAnnualTarget.content.ratingScales.find(scale => scale.score === calculateOverallScore(selectedAnnualTarget)) && (
-                      <>
-                        {calculateOverallScore(selectedAnnualTarget)}
-                        {`${selectedAnnualTarget.content.ratingScales.find(scale => scale.score === calculateOverallScore(selectedAnnualTarget))?.name} (${selectedAnnualTarget.content.ratingScales.find(scale => scale.score === calculateOverallScore(selectedAnnualTarget))?.min || '0'} - ${selectedAnnualTarget.content.ratingScales.find(scale => scale.score === calculateOverallScore(selectedAnnualTarget))?.max || '100'})`}
-                      </>
-                    )}
-                  </StyledTableCell>
+                  {(() => {
+                    const overallScore = calculateOverallScore(selectedAnnualTarget);
+                    const overallRatingScale = getRatingScaleInfo(overallScore, selectedAnnualTarget);
+                    
+                    return (
+                      <StyledTableCell
+                        align="center"
+                        sx={{
+                          color: overallRatingScale?.color || '#DC2626',
+                          fontWeight: 500
+                        }}
+                      >
+                        {overallScore && overallRatingScale ? (
+                          `${overallScore} ${overallRatingScale.name} (${overallRatingScale.min}-${overallRatingScale.max})`
+                        ) : (
+                          'N/A'
+                        )}
+                      </StyledTableCell>
+                    );
+                  })()}
                 </TableRow>
               </TableBody>
             </Table>

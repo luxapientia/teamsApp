@@ -100,25 +100,25 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
         isValid = false;
       }
 
-      if (start < targetStart) {
-        newErrors.startDate = 'Start date cannot be before annual target period';
-        isValid = false;
-      }
+      // if (start < targetStart) {
+      //   newErrors.startDate = 'Start date cannot be before annual target period';
+      //   isValid = false;
+      // }
 
-      if (start > targetEnd) {
-        newErrors.startDate = 'Start date cannot be after annual target period';
-        isValid = false;
-      }
+      // if (start > targetEnd) {
+      //   newErrors.startDate = 'Start date cannot be after annual target period';
+      //   isValid = false;
+      // }
 
-      if (end < targetStart) {
-        newErrors.endDate = 'End date cannot be before annual target period';
-        isValid = false;
-      }
+      // if (end < targetStart) {
+      //   newErrors.endDate = 'End date cannot be before annual target period';
+      //   isValid = false;
+      // }
 
-      if (end > targetEnd) {
-        newErrors.endDate = 'End date cannot be after annual target period';
-        isValid = false;
-      }
+      // if (end > targetEnd) {
+      //   newErrors.endDate = 'End date cannot be after annual target period';
+      //   isValid = false;
+      // }
     }
 
     setErrors(newErrors);
