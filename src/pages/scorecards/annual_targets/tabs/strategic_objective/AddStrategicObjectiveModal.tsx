@@ -126,8 +126,11 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     });
 
     // Validate total weight equals 100
-    // const totalWeight = kpis.reduce((sum, kpi) => sum + (kpi.weight || 0), 0);
-    // if (totalWeight !== 100) {
+    // let totalWeight = 0;
+    // perspectives.forEach(perspective => {
+    //   totalWeight += calculateTotalWeight(annualTarget);
+    // });
+    // if (totalWeight > 100) {
     //   newErrors.general = 'Total weight must equal 100%';
     //   isValid = false;
     // }
@@ -166,6 +169,13 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
         : [...annualTarget.content.objectives, newObjective];
 
       const newTotalWeight = calculateTotalWeight(updatedObjectives);
+
+      if (newTotalWeight > 100) {
+        const newErrors: typeof errors = {};
+        newErrors.general = 'The current total weight is ' + newTotalWeight + '%, please adjust the weight of the KPIs to make it equal to 100%';
+        setErrors(newErrors);
+        return;
+      }
 
       dispatch(updateAnnualTarget({
         ...annualTarget,

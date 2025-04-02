@@ -105,7 +105,7 @@ const RatingScaleTab: React.FC<RatingScaleTabProps> = ({ targetName }) => {
   const handleEdit = (index: number) => {
     const ratingToEdit = annualTarget?.content.ratingScales[index];
     if (ratingToEdit) {
-      // setNewRating(ratingToEdit);
+      setNewRating(ratingToEdit);
       setEditingIndex(index);
     }
   };

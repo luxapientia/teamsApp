@@ -40,8 +40,8 @@ interface AnnualTargetKPI {
 interface AnnualTargetRatingScale {
   score: number;
   name: string;
-  max: number;
-  min: number;
+  max: string;
+  min: string;
   color: string;
 }
 
@@ -154,8 +154,8 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
         ratingScales: [{
           score: Number,
           name: String,
-          max: Number,
-          min: Number,
+          max: String,
+          min: String,
           color: String
         }]
       }]
@@ -163,8 +163,8 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
     ratingScales: [{
       score: Number,
       name: String,
-      max: Number,
-      min: Number,
+      max: String,
+      min: String,
       color: String
     }],
     assessmentPeriod: {
@@ -228,8 +228,8 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
             ratingScales: [{
               score: Number,
               name: String,
-              max: Number,
-              min: Number,
+              max: String,
+              min: String,
               color: String
             }],
             ratingScore: Number,

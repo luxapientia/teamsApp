@@ -26,29 +26,29 @@ function Main() {
       <Layout selectedTabChanger={selectedTabChanger}>
         {/* <AdminPanel /> */}
         {isAppOwner && (
-          <ManagePage 
-            title="Manage Companies" 
-            icon={<GridRegular fontSize={iconSize} />} 
-            tabs={['Companies', 'Companies Super Users', 'Companies Licenses']} 
-            selectedTab={selectedTab} 
+          <ManagePage
+            title="Manage Companies"
+            icon={<GridRegular fontSize={iconSize} />}
+            tabs={['Companies', 'Companies Super Users', 'Companies Licenses']}
+            selectedTab={selectedTab}
           />
         )}
-        <AnnualCorporateScorecard 
-          title="Annual Corporate Scorecard" 
-          icon={<PeopleTeamRegular fontSize={iconSize} />} 
-          tabs={['Quarterly Targets', 'Annual Targets']} 
-          selectedTab={selectedTab} 
-        />
-        <Teams 
-          title='Teams' 
-          icon={<BoardSplitRegular fontSize={iconSize} />} 
-          tabs={['Teams']}
-          selectedTab={selectedTab}
-        />
         <OrganizationPerformance
           title='Organization Performance'
           icon={<Organization20Regular fontSize={iconSize} />}
           tabs={['Performance Evaluations', 'Organization Performance']}
+          selectedTab={selectedTab}
+        />
+        <AnnualCorporateScorecard
+          title="Annual Corporate Scorecard"
+          icon={<PeopleTeamRegular fontSize={iconSize} />}
+          tabs={['Quarterly Targets', 'Annual Targets']}
+          selectedTab={selectedTab}
+        />
+        <Teams
+          title='Teams'
+          icon={<BoardSplitRegular fontSize={iconSize} />}
+          tabs={['Teams']}
           selectedTab={selectedTab}
         />
         <NotificationPage 
