@@ -10,8 +10,8 @@ import {
   TableRow,
   Button
 } from '@mui/material';
-import { Eye24Regular } from '@fluentui/react-icons';
 import ScorecardViewModal from '../ScorecardViewModal';
+import { styled } from '@mui/material/styles';
 
 interface NotificationItem {
   fullName: string;
@@ -20,6 +20,16 @@ interface NotificationItem {
   action: string;
   dateTime: string;
 }
+
+const ViewButton = styled(Button)({
+  backgroundColor: '#0078D4',
+  color: 'white',
+  textTransform: 'none',
+  padding: '6px 16px',
+  '&:hover': {
+    backgroundColor: '#106EBE',
+  },
+});
 
 const QuarterlyNotification: React.FC = () => {
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
@@ -59,7 +69,7 @@ const QuarterlyNotification: React.FC = () => {
               <TableCell>Annual Corporate Scorecard</TableCell>
               <TableCell>Action</TableCell>
               <TableCell>Date, Time</TableCell>
-              <TableCell align="right">Action</TableCell>
+              <TableCell></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -71,19 +81,12 @@ const QuarterlyNotification: React.FC = () => {
                 <TableCell>{notification.action}</TableCell>
                 <TableCell>{notification.dateTime}</TableCell>
                 <TableCell align="right">
-                  <Button
+                  <ViewButton
                     variant="contained"
-                    startIcon={<Eye24Regular />}
                     onClick={() => handleView(notification)}
-                    sx={{
-                      bgcolor: '#6B5ECD', // Purple color from the image
-                      '&:hover': {
-                        bgcolor: '#5648B8'
-                      }
-                    }}
                   >
                     View
-                  </Button>
+                  </ViewButton>
                 </TableCell>
               </TableRow>
             ))}
