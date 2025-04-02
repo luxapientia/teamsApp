@@ -8,6 +8,8 @@ import superUserRoutes from './routes/superUsers';
 import licenseRoutes from './routes/licenses';
 import { errorHandler } from './middleware/errorHandler';
 import scoreCardRoutes from './routes/score_card';
+import teamsRoutes from './routes/teams';
+
 const app = express();
 
 // Middleware
@@ -24,6 +26,7 @@ app.use('/api/companies', companyRoutes);
 app.use('/api/super-users', superUserRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/score-card', scoreCardRoutes);
+app.use('/api/teams', teamsRoutes);
 
 // Connect to MongoDB
 mongoose.connect(config.mongoUri)

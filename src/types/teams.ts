@@ -1,3 +1,5 @@
+import exp from "constants";
+
 export type teamsColumn = {
   field: string;
   headeName: string;
@@ -12,8 +14,13 @@ export type Member = {
 }
 
 export type Team = {
-  id: string,
+  _id: string,
   name: string;
   members: Member[];
+}
+
+export type CreateTeamPayload = {
+  tenantId: string;
+  teamName: string;
 }
 
