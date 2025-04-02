@@ -52,7 +52,7 @@ const ScorecardViewModal: React.FC<ScorecardViewModalProps> = ({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="xl"
+      maxWidth="lg"
       fullWidth
     >
       <DialogTitle sx={{ p: 0, borderBottom: '1px solid #e0e0e0' }}>
