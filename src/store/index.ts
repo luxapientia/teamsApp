@@ -1,11 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import scorecardReducer from './slices/scorecardSlice';
 import teamsReducer from './slices/teamsSlice';
-
+import personalPerformanceReducer from './slices/personalPerformanceSlice';
 export const store = configureStore({
   reducer: {
     scorecard: scorecardReducer,
-    teams: teamsReducer
+    teams: teamsReducer,
+    personalPerformance: personalPerformanceReducer
   },
 });
 
