@@ -1,11 +1,5 @@
 import exp from "constants";
 
-export type teamsColumn = {
-  field: string;
-  headeName: string;
-  width: number;
-}
-
 export type Member = {
   name: string;
   title: string;
