@@ -3,23 +3,33 @@ import AnnualTarget, { AnnualTargetDocument } from '../models/AnnualTarget';
 import { authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 import fs from 'fs';
+import path from 'path';
 
 const router = express.Router();
 
 // Configure multer for file storage
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    const uploadDir = 'public/uploads';
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    const uploadDir = path.join(__dirname, '../../public/uploads');
+    console.log('Upload directory:', uploadDir);
+    
+    try {
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+        console.log('Created upload directory');
+      }
+      cb(null, uploadDir);
+    } catch (error) {
+      console.error('Error creating upload directory:', error);
+      cb(error as Error, uploadDir);
     }
-    cb(null, uploadDir);
   },
   filename: (_req, file, cb) => {
     // Keep original filename but make it unique with timestamp
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    cb(null, `${uniqueSuffix}-${file.originalname}`);
+    const filename = `${uniqueSuffix}-${file.originalname}`;
+    console.log('Generated filename:', filename);
+    cb(null, filename);
   }
 });
 
@@ -100,7 +110,10 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req: Req
 
   } catch (error) {
     console.error('Upload file error:', error);
-    return res.status(500).json({ error: 'Failed to upload file' });
+    return res.status(500).json({ 
+      error: 'Failed to upload file',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 });
 
