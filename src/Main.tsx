@@ -10,6 +10,7 @@ import { store } from './store';
 import { useAuth } from './contexts/AuthContext';
 import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
+import MyPerformanceAgreement from './pages/my_performance_agreement';
 
 const iconSize = 24;
 
@@ -33,6 +34,12 @@ function Main() {
             selectedTab={selectedTab}
           />
         )}
+        <MyPerformanceAgreement
+          title='My Performance Agreement'
+          icon={<Organization20Regular fontSize={iconSize} />}
+          tabs={['My Quarterly Targets']}
+          selectedTab={selectedTab}
+        />
         <OrganizationPerformance
           title='Organization Performance'
           icon={<Organization20Regular fontSize={iconSize} />}
