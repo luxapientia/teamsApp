@@ -1,58 +1,100 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
+import { useDispatch } from 'react-redux';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export const AuthCallback: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { setIsAuthenticated, setUser } = useAuth();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const handleCallback = async () => {
-      const params = new URLSearchParams(location.search);
-      const code = params.get('code');
-      
-      if (code) {
-        try {
-          console.log('Sending code to backend:', code);
-          const redirectUri = `${window.location.origin}${location.pathname}`;
-          const response = await axios.post(`${API_URL}/api/auth/callback`, {
-            code,
-            redirect_uri: redirectUri
-          });
-
-          console.log('Backend response:', response.data);
-
-          if (response.data && response.data.token && response.data.user) {
-            localStorage.setItem('auth_token', response.data.token);
-            setUser(response.data.user);
-            setIsAuthenticated(true);
-            navigate('/', { replace: true });
-          } else {
-            console.error('Invalid response from server');
-            navigate('/login', { replace: true });
-          }
-        } catch (error) {
-          console.error('Auth callback error:', error);
-          navigate('/login', { replace: true });
+      try {
+        const params = new URLSearchParams(location.search);
+        const code = params.get('code');
+        
+        if (!code) {
+          throw new Error('No authorization code found');
         }
-      } else {
-        console.error('No code found in URL');
+
+        console.log('Processing auth callback with code');
+        
+        const response = await axios.post(`${API_URL}/api/auth/callback`, {
+          code,
+          redirect_uri: `${window.location.origin}/auth/callback`
+        });
+
+        console.log('Auth callback response received:', response.data ? 'success' : 'empty');
+
+        if (response.data?.token) {
+          // Store token directly in localStorage first
+          localStorage.setItem('auth_token', response.data.token);
+          console.log('Token stored in localStorage, length:', response.data.token.length);
+          
+          // Dispatch Redux actions with correct action types
+          dispatch({ 
+            type: 'auth/setToken', 
+            payload: response.data.token 
+          });
+          
+          if (response.data.user) {
+            console.log('User data received:', response.data.user.email);
+            dispatch({ 
+              type: 'auth/setAuth', 
+              payload: {
+                isAuthenticated: true,
+                user: response.data.user
+              }
+            });
+          }
+          
+          // Get stored redirect location
+          const storedRedirect = localStorage.getItem('auth_redirect');
+          let redirectTo = '/'; // Default route
+          
+          if (storedRedirect) {
+            try {
+              const redirectLocation = JSON.parse(storedRedirect);
+              redirectTo = redirectLocation.pathname || '/';
+              console.log('Found stored redirect path:', redirectTo);
+            } catch (e) {
+              console.error('Failed to parse stored redirect location:', e);
+            }
+          }
+          
+          localStorage.removeItem('auth_redirect');
+          
+          // Debugging
+          console.log('Navigating to:', redirectTo);
+          
+          // Use window.location for hard navigation instead of React Router navigate
+          window.location.href = redirectTo;
+          
+          // If you want to use React Router's navigate, you can try this instead:
+          // setTimeout(() => {
+          //   navigate(redirectTo, { replace: true });
+          // }, 100);
+        } else {
+          console.error('No token received from server');
+          throw new Error('No token received from server');
+        }
+      } catch (error) {
+        console.error('Authentication callback error:', error);
         navigate('/login', { replace: true });
       }
     };
 
     handleCallback();
-  }, [location, navigate, setIsAuthenticated, setUser]);
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold mb-4">Processing Authentication</h2>
-        <p className="text-gray-600">Please wait while we complete your sign-in...</p>
+        <h2 className="text-2xl font-semibold mb-4">Authenticating...</h2>
+        <p className="text-gray-600">Please wait while we complete your sign-in.</p>
       </div>
     </div>
   );

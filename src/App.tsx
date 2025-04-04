@@ -15,40 +15,10 @@ import Teams from './pages/teams';
 import { ManagePage } from './pages/manage';
 import { BoardSplitRegular, GridRegular, PeopleTeamRegular } from '@fluentui/react-icons';
 import { ToastProvider } from './contexts/ToastContext';
+import Main from './Main';
 
-const iconSize = 24;
 
 const App: React.FC = () => {
-  const [selectedTab, setSelectedTab] = useState('');
-
-  const handleTabChange = (tab: string) => {
-    setSelectedTab(tab);
-  };
-
-  // Define the main content with Layout and all pages
-  const MainContent = () => (
-    <Layout selectedTabChanger={handleTabChange}>
-      <AnnualCorporateScorecard 
-        title="Scorecards"
-        icon={<BoardSplitRegular />}
-        tabs={['My Scorecard', 'Team Scorecard']}
-        selectedTab={selectedTab}
-      />
-      <Teams 
-        title="Teams"
-        icon={<PeopleTeamRegular />}
-        tabs={['My Team', 'All Teams']}
-        selectedTab={selectedTab}
-      />
-      <ManagePage 
-        title="Manage"
-        icon={<GridRegular />}
-        tabs={['Companies', 'Companies Super Users', 'Companies Licenses']}
-        selectedTab={selectedTab}
-      />
-    </Layout>
-  );
-
   return (
     <Provider store={store}>
       <AuthProvider>
@@ -66,46 +36,7 @@ const App: React.FC = () => {
               path="/" 
               element={
                 <ProtectedRoute>
-                  <MainContent />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/scorecards" 
-              element={
-                <ProtectedRoute>
-                  <AnnualCorporateScorecard 
-                    title="Scorecards"
-                    icon={<BoardSplitRegular />}
-                    tabs={['My Scorecard', 'Team Scorecard']}
-                    selectedTab={selectedTab}
-                  />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/teams" 
-              element={
-                <ProtectedRoute>
-                  <Teams 
-                    title="Teams"
-                    icon={<PeopleTeamRegular />}
-                    tabs={['My Team', 'All Teams']}
-                    selectedTab={selectedTab}
-                  />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/manage" 
-              element={
-                <ProtectedRoute>
-                  <ManagePage 
-                    title="Manage"
-                    icon={<GridRegular />}
-                    tabs={['Companies', 'Companies Super Users', 'Companies Licenses']}
-                    selectedTab={selectedTab}
-                  />
+                  <Main />
                 </ProtectedRoute>
               } 
             />
