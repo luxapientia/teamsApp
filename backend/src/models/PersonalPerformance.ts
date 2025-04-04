@@ -3,6 +3,7 @@ import { QuarterlyTargetObjective } from './AnnualTarget';
 
 interface PersonalQuarterlyTarget {
   quarter: string;
+  isEditable: boolean;
   isDraft: boolean;
   supervisorId?: string;
   objectives: QuarterlyTargetObjective[];
@@ -34,6 +35,11 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
       type: Boolean,
       required: true,
       default: true,
+    },
+    isEditable: {
+      type: Boolean,
+      required: true,
+      default: false,
     },
     supervisorId: {
       type: String,
