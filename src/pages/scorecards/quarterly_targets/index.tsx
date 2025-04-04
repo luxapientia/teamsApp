@@ -27,7 +27,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
-import RatingScalesModal from '../RatingScalesModal';
+import RatingScalesModal from '../../../components/RatingScalesModal';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',

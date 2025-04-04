@@ -25,11 +25,27 @@ const router = express.Router();
 
 // const upload = multer({ storage });
 
-router.get('/personal-quarterly-targets', authenticateToken, async (_req: Request, res: Response) => {
+router.get('/personal-performances', authenticateToken, async (_req: Request, res: Response) => {
   try {
     const annualTargetId = _req.query.annualTargetId as string;
     const quarter = _req.query.quarter as string;
-    const personalPerformances = await PersonalPerformance.find({ annualTargetId, quarter }) as PersonalPerformanceDocument[];
+    const personalPerformances = await PersonalPerformance.find({ annualTargetId }) as PersonalPerformanceDocument[];
+
+    if(personalPerformances.length === 0) {
+      const newPersonalPerformance = await PersonalPerformance.create({
+        annualTargetId,
+        quarter,
+        userId: annualTargetId,
+        quarterlyTargets: ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => ({
+          quarter,
+          isDraft: true,
+          supervisorId: '',
+          objectives: []
+        }))
+      }) as PersonalPerformanceDocument;
+      personalPerformances.push(newPersonalPerformance);
+    }
+
     return res.json(personalPerformances);
   } catch (error) {
     console.error('Annual targets error:', error);
@@ -53,18 +69,18 @@ router.get('/personal-quarterly-targets', authenticateToken, async (_req: Reques
 //   }
 // });
 
-// router.put('/update-annual-target/:id', authenticateToken, async (req: Request, res: Response) => {
-//   try {
-//     const { id } = req.params;
-//     const { annualTarget } = req.body;
+router.put('/update-personal-performance/:id', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { personalPerformance } = req.body;
 
-//     const updatedAnnualTarget = await AnnualTarget.findByIdAndUpdate(id, annualTarget, { new: true });
-//     return res.json(updatedAnnualTarget);
-//   } catch (error) {
-//     console.error('Update annual target error:', error);
-//     return res.status(500).json({ error: 'Failed to update annual target' });
-//   }
-// });
+    const updatedPersonalPerformance = await PersonalPerformance.findByIdAndUpdate(id, personalPerformance, { new: true });
+    return res.json(updatedPersonalPerformance);
+  } catch (error) {
+    console.error('Update personal performance error:', error);
+    return res.status(500).json({ error: 'Failed to update personal performance' });
+  }
+});
 
 // router.delete('/delete-annual-target/:id', authenticateToken, async (req: Request, res: Response) => {
 //   try {
