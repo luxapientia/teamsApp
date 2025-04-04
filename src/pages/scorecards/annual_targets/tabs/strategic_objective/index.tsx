@@ -21,7 +21,7 @@ import { RootState } from '../../../../../store';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
 import { AnnualTargetObjective, AnnualTargetKPI, AnnualTargetRatingScale, AnnualTargetPerspective } from '../../../../../types/annualCorporateScorecard';
-import RatingScalesModal from '../../../RatingScalesModal';
+import RatingScalesModal from '../../../../../components/RatingScalesModal';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',

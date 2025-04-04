@@ -59,7 +59,7 @@ const OrganizationPerformances: React.FC = () => {
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showQuarterlyTargets, setShowQuarterlyTargets] = useState(false);
   const [selectedQuarter, setSelectedQuarter] = useState('');
-  const [selectedPersonalQuarterlyTarget, setSelectedPersonalQuarterlyTarget] = useState<PersonalQuarterlyTarget | null>(null);
+  const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
   const [supervisors] = useState([
@@ -98,6 +98,7 @@ const OrganizationPerformances: React.FC = () => {
     if (selectedAnnualTarget && selectedQuarter) {
       dispatch(fetchPersonalQuarterlyTargets({ annualTargetId: selectedAnnualTargetId, quarter: selectedQuarter }));
       setShowQuarterlyTargets(true);
+      setShowPersonalQuarterlyTarget(false);
     }
   };
 
@@ -159,55 +160,31 @@ const OrganizationPerformances: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {personalPerformances.length > 0 ? (
-                  personalPerformances.map((target: PersonalPerformance, index: number) => (
-                    <TableRow key={index}>
-                      <StyledTableCell>{selectedAnnualTarget?.name}</StyledTableCell>
-                      <StyledTableCell>
-                        {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.startDate}
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.endDate}
-                      </StyledTableCell>
-                      <StyledTableCell>{selectedAnnualTarget?.status}</StyledTableCell>
-                      <StyledTableCell>{'team'}</StyledTableCell>
-                      <StyledTableCell align="center">
-                        <ViewButton
-                          size="small"
-                          onClick={() => {
-                            // Handle view action
-                          }}
-                        >
-                          View
-                        </ViewButton>
-                      </StyledTableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
+                {personalPerformances.map((personalPerformance: PersonalPerformance, index: number) => (
+                  <TableRow key={index}>
                     <StyledTableCell>{selectedAnnualTarget?.name}</StyledTableCell>
                     <StyledTableCell>
-                      {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.startDate}
-                    </StyledTableCell>
-                    <StyledTableCell>
-                      {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.endDate}
-                    </StyledTableCell>
-                    <StyledTableCell>{selectedAnnualTarget?.status}</StyledTableCell>
-                    <StyledTableCell>{'team'}</StyledTableCell>
-                    <StyledTableCell align="center">
-                      <ViewButton
-                        size="small"
-                        onClick={() => {
-                          setShowQuarterlyTargets(false);
-                          setShowPersonalQuarterlyTarget(true);
-                          setSelectedPersonalQuarterlyTarget(null);
-                        }}
-                      >
-                        View
-                      </ViewButton>
-                    </StyledTableCell>
+                    {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.startDate}
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.endDate}
+                  </StyledTableCell>
+                  <StyledTableCell>{selectedAnnualTarget?.status}</StyledTableCell>
+                  <StyledTableCell>{'team'}</StyledTableCell>
+                  <StyledTableCell align="center">
+                    <ViewButton
+                      size="small"
+                      onClick={() => {
+                        setShowQuarterlyTargets(false);
+                        setShowPersonalQuarterlyTarget(true);
+                        setSelectedPersonalPerformance(personalPerformance);
+                      }}
+                    >
+                      View
+                    </ViewButton>
+                  </StyledTableCell>
                   </TableRow>
-                )}
+                ))}
 
               </TableBody>
             </Table>
@@ -219,11 +196,15 @@ const OrganizationPerformances: React.FC = () => {
         <PersonalQuarterlyTargetContent
           annualTarget={selectedAnnualTarget}
           quarter={selectedQuarter as QuarterType}
-          isEditing={selectedPersonalQuarterlyTarget?true:false}
-          onSupervisorChange={(supervisorId) => {
+          onSupervisorChange={(supervisorId: string) => {
             // Handle supervisor change
             console.log('Selected supervisor:', supervisorId);
           }}
+          onBack={() => {
+            setShowPersonalQuarterlyTarget(false);
+            setShowQuarterlyTargets(true);
+          }}
+          personalPerformance={selectedPersonalPerformance}
         />
       )}
     </Box>
