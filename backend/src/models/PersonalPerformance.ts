@@ -1,12 +1,20 @@
 import { Schema, model, Document } from 'mongoose';
-import { QuarterlyTargetObjective } from './AnnualTarget';
+import { QuarterlyTargetKPI } from './AnnualTarget';
+
+
+interface PersonalQuarterlyTargetObjective {
+  perspectiveId: number;
+  name: string;
+  initiativeName: string; 
+  KPIs: QuarterlyTargetKPI[];
+}
 
 interface PersonalQuarterlyTarget {
   quarter: string;
   isEditable: boolean;
   isDraft: boolean;
   supervisorId?: string;
-  objectives: QuarterlyTargetObjective[];
+  objectives: PersonalQuarterlyTargetObjective[];
 }
 
 
@@ -48,6 +56,7 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
     objectives: [{
       perspectiveId: Number,
       name: String,
+      initiativeName: String,
       KPIs: [{
         indicator: String,
         weight: Number,

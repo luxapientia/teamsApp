@@ -54,18 +54,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   onSupervisorChange = () => { },
   personalPerformance = null,
 }) => {
-  const dispatch = useAppDispatch();  
+  const dispatch = useAppDispatch();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [isAddInitiativeModalOpen, setIsAddInitiativeModalOpen] = useState(false);
   const [editingObjective, setEditingObjective] = useState<PersonalQuarterlyTargetObjective | null>(null);
   const [selectedRatingScales, setSelectedRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
   useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
+      setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.isDraft === false);
     }
   }, [personalPerformance]);
 
@@ -95,10 +97,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (editingObjective) {
       setPersonalQuarterlyObjectives(prevObjectives =>
         prevObjectives.map(obj =>
-          (obj.name === editingObjective.name && 
-           obj.initiativeName === editingObjective.initiativeName &&
-           obj.perspectiveId === editingObjective.perspectiveId) 
-            ? newObjective 
+          (obj.name === editingObjective.name &&
+            obj.initiativeName === editingObjective.initiativeName &&
+            obj.perspectiveId === editingObjective.perspectiveId)
+            ? newObjective
             : obj
         )
       );
@@ -115,10 +117,107 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleDraft = () => {
-    console.log('Draft');
-    console.log('personalPerformance', personalPerformance);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-      if(target.quarter === quarter) {
+
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          isDraft: true,
+          supervisorId: selectedSupervisor,
+          objectives: personalQuarterlyObjectives
+        }
+      }
+
+      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+        return {
+          ...target,
+          isDraft: true,
+          isEditable: calculateTotalWeight() === 100 ? true : false,
+          supervisorId: selectedSupervisor,
+          objectives: personalQuarterlyObjectives
+        }
+
+      }
+      return target;
+    });
+
+    dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
+
+  };
+
+  // Add total weight calculation function
+  const calculateTotalWeight = () => {
+    return personalQuarterlyObjectives.reduce((total, objective) => {
+      const totalWeight = objective.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0);
+      return total + totalWeight;
+    }, 0);
+  };
+
+  const handleSubmit = () => {
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          isDraft: false,
+          supervisorId: selectedSupervisor,
+          objectives: personalQuarterlyObjectives
+        }
+      }
+
+      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+        return {
+          ...target,
+          isDraft: true,
+          isEditable: calculateTotalWeight() === 100 ? true : false,
+          supervisorId: selectedSupervisor,
+          objectives: personalQuarterlyObjectives
+        }
+      }
+
+      return target;
+    });
+
+    dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
+
+    setIsSubmitted(true);
+  }
+
+  // Add date validation function
+  const isWithinPeriod = () => {
+    const assessmentPeriod = annualTarget.content.assessmentPeriod[quarter];
+    if (!assessmentPeriod) return false;
+
+    const today = new Date();
+    const startDate = new Date(assessmentPeriod.startDate);
+    const endDate = new Date(assessmentPeriod.endDate);
+
+    return today >= startDate && today <= endDate;
+  };
+
+  // Add isEditable check
+  const canEdit = () => {
+    const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+    return isWithinPeriod() && quarterlyTarget?.isEditable !== false;
+  };
+
+  // Add validation function for submit button
+  const canSubmit = () => {
+    return selectedSupervisor !== '' && calculateTotalWeight() === 100;
+  };
+
+  // Add recall handler
+  const handleRecall = () => {
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+      if (target.quarter === quarter) {
         return {
           ...target,
           isDraft: true,
@@ -128,18 +227,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       }
       return target;
     });
-    console.log('newPersonalQuarterlyTargets', newPersonalQuarterlyTargets);
+
     dispatch(updatePersonalPerformance({
       _id: personalPerformance?._id || '',
       annualTargetId: personalPerformance?.annualTargetId || '',
       quarterlyTargets: newPersonalQuarterlyTargets || []
     }));
 
+    setIsSubmitted(false);
   };
 
   return (
     <Box>
-      <Box sx={{ 
+      <Box sx={{
         mb: 3,
         display: 'flex',
         justifyContent: 'space-between',
@@ -149,7 +249,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           {`${annualTarget.name}, ${quarter}`}
         </Typography>
 
-        <Button 
+        <Button
           onClick={onBack}
           variant="outlined"
           color="primary"
@@ -199,40 +299,78 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Button
-          startIcon={<AddIcon />}
-          onClick={() => setIsAddInitiativeModalOpen(true)}
-          sx={{
-            color: '#6B7280',
-            '&:hover': {
-              backgroundColor: '#F9FAFB',
-            },
-          }}
-        >
-          Add Initiative
-        </Button>
+        {canEdit() ? (
+          <Button
+            startIcon={<AddIcon />}
+            onClick={() => setIsAddInitiativeModalOpen(true)}
+            sx={{
+              color: '#6B7280',
+              '&:hover': {
+                backgroundColor: '#F9FAFB',
+              },
+            }}
+          >
+            Add Initiative
+          </Button>
+        ) : (
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: '#6B7280',
+              fontStyle: 'italic'
+            }}
+          >
+            Not Editable
+          </Typography>
+        )}
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="contained"
             sx={{
-              backgroundColor: '#F59E0B',
-              '&:hover': { backgroundColor: '#D97706' },
+              backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
+              '&:hover': { 
+                backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706' 
+              },
+              cursor: isSubmitted ? 'default' : 'pointer'
             }}
-            onClick={() => handleDraft()}
+            disabled={isSubmitted}
           >
-            Draft
+            {isSubmitted ? 'Submitted' : 'Draft'}
           </Button>
           <Button
             variant="contained"
             sx={{
-              backgroundColor: '#059669',
-              '&:hover': { backgroundColor: '#047857' },
+              backgroundColor: isSubmitted ? '#EF4444' : '#059669',
+              '&:hover': { 
+                backgroundColor: isSubmitted ? '#DC2626' : '#047857' 
+              },
+              '&.Mui-disabled': {
+                backgroundColor: '#E5E7EB',
+                color: '#9CA3AF'
+              }
             }}
+            onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
+            disabled={!isSubmitted && !canSubmit()}
           >
-            Submit
+            {isSubmitted ? 'Recall' : 'Submit'}
           </Button>
         </Box>
       </Box>
+
+      {/* Show helper text only when not submitted */}
+      {!isSubmitted && !canSubmit() && (
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            color: '#DC2626',
+            display: 'block',
+            mt: 1,
+            textAlign: 'right'
+          }}
+        >
+          {!selectedSupervisor ? 'Please select a supervisor' : 'Total weight must be 100%'}
+        </Typography>
+      )}
 
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
         <TableContainer>
@@ -256,7 +394,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 const groups = personalQuarterlyObjectives.reduce((acc, obj) => {
                   const perspectiveKey = `${obj.perspectiveId}`;
                   const objectiveKey = `${obj.perspectiveId}-${obj.name}`;
-                  
+
                   if (!acc[perspectiveKey]) {
                     acc[perspectiveKey] = {
                       perspectiveId: obj.perspectiveId,
@@ -264,14 +402,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                       objectives: {}
                     };
                   }
-                  
+
                   if (!acc[perspectiveKey].objectives[objectiveKey]) {
                     acc[perspectiveKey].objectives[objectiveKey] = {
                       name: obj.name,
                       initiatives: []
                     };
                   }
-                  
+
                   acc[perspectiveKey].objectives[objectiveKey].initiatives.push(obj);
                   return acc;
                 }, {} as Record<string, {
@@ -283,92 +421,160 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   }>;
                 }>);
 
-                // Calculate row spans
+                // Calculate row spans considering KPI counts
                 return Object.values(groups).map(perspectiveGroup => {
                   let firstInPerspective = true;
+                  // Calculate total rows for perspective including all KPIs
                   const perspectiveRowSpan = Object.values(perspectiveGroup.objectives)
-                    .reduce((sum, obj) => sum + obj.initiatives.length, 0);
+                    .reduce((sum, obj) => sum + obj.initiatives.reduce((kpiSum, initiative) => 
+                      kpiSum + initiative.KPIs.length, 0), 0);
 
                   return Object.values(perspectiveGroup.objectives).map(objectiveGroup => {
                     let firstInObjective = true;
-                    const objectiveRowSpan = objectiveGroup.initiatives.length;
+                    // Calculate total rows for objective including all KPIs
+                    const objectiveRowSpan = objectiveGroup.initiatives.reduce((sum, initiative) => 
+                      sum + initiative.KPIs.length, 0);
 
-                    return objectiveGroup.initiatives.map((initiative, initiativeIndex) => {
-                      const row = (
-                        <TableRow key={`${initiative.perspectiveId}-${initiative.name}-${initiative.initiativeName}`}>
-                          {firstInPerspective && (
-                            <StyledTableCell rowSpan={perspectiveRowSpan}>
-                              {perspectiveGroup.perspectiveName}
+                    return objectiveGroup.initiatives.map((initiative) => 
+                      // Map each KPI to a row
+                      initiative.KPIs.map((kpi, kpiIndex) => {
+                        const row = (
+                          <TableRow key={`${initiative.perspectiveId}-${initiative.name}-${initiative.initiativeName}-${kpiIndex}`}>
+                            {firstInPerspective && kpiIndex === 0 && (
+                              <StyledTableCell rowSpan={perspectiveRowSpan}>
+                                {perspectiveGroup.perspectiveName}
+                              </StyledTableCell>
+                            )}
+                            {firstInObjective && kpiIndex === 0 && (
+                              <StyledTableCell rowSpan={objectiveRowSpan}>
+                                {objectiveGroup.name}
+                              </StyledTableCell>
+                            )}
+                            {kpiIndex === 0 && (
+                              <StyledTableCell rowSpan={initiative.KPIs.length}>
+                                {initiative.initiativeName}
+                              </StyledTableCell>
+                            )}
+                            <StyledTableCell align="center">
+                              {kpi.weight}
                             </StyledTableCell>
-                          )}
-                          {firstInObjective && (
-                            <StyledTableCell rowSpan={objectiveRowSpan}>
-                              {objectiveGroup.name}
+                            <StyledTableCell>
+                              {kpi.indicator}
                             </StyledTableCell>
-                          )}
-                          <StyledTableCell>
-                            {initiative.initiativeName}
-                          </StyledTableCell>
-                          <StyledTableCell align="center">
-                            {initiative.KPIs[0].weight}
-                          </StyledTableCell>
-                          <StyledTableCell>
-                            {initiative.KPIs[0].indicator}
-                          </StyledTableCell>
-                          <StyledTableCell align="center">
-                            {initiative.KPIs[0].baseline}
-                          </StyledTableCell>
-                          <StyledTableCell align="center">
-                            {initiative.KPIs[0].target}
-                          </StyledTableCell>
-                          <StyledTableCell align="center">
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              onClick={() => handleViewRatingScales(initiative.KPIs[0])}
-                              sx={{
-                                borderColor: '#E5E7EB',
-                                color: '#374151',
-                                '&:hover': {
-                                  borderColor: '#D1D5DB',
-                                  backgroundColor: '#F9FAFB',
-                                },
-                              }}
-                            >
-                              View
-                            </Button>
-                          </StyledTableCell>
-                          <StyledTableCell align="center">
-                            <Stack direction="row" spacing={1} justifyContent="center">
-                              <IconButton
+                            <StyledTableCell align="center">
+                              {kpi.baseline}
+                            </StyledTableCell>
+                            <StyledTableCell align="center">
+                              {kpi.target}
+                            </StyledTableCell>
+                            <StyledTableCell align="center">
+                              <Button
+                                variant="outlined"
                                 size="small"
-                                sx={{ color: '#6B7280' }}
-                                onClick={() => handleEdit(initiative)}
+                                onClick={() => handleViewRatingScales(kpi)}
+                                sx={{
+                                  borderColor: '#E5E7EB',
+                                  color: '#374151',
+                                  '&:hover': {
+                                    borderColor: '#D1D5DB',
+                                    backgroundColor: '#F9FAFB',
+                                  },
+                                }}
                               >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" sx={{ color: '#6B7280' }}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Stack>
-                          </StyledTableCell>
-                        </TableRow>
-                      );
+                                View
+                              </Button>
+                            </StyledTableCell>
+                            {kpiIndex === 0 && (
+                              <StyledTableCell align="center" rowSpan={initiative.KPIs.length}>
+                                {canEdit() ? (
+                                  <Stack direction="row" spacing={1} justifyContent="center">
+                                    <IconButton
+                                      size="small"
+                                      sx={{ color: '#6B7280' }}
+                                      onClick={() => handleEdit(initiative)}
+                                    >
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                    <IconButton 
+                                      size="small" 
+                                      sx={{ color: '#6B7280' }}
+                                      onClick={() => {
+                                        if (window.confirm('Are you sure you want to delete this objective?')) {
+                                          setPersonalQuarterlyObjectives(prev => 
+                                            prev.filter(obj => 
+                                              !(obj.name === initiative.name && 
+                                                obj.initiativeName === initiative.initiativeName &&
+                                                obj.perspectiveId === initiative.perspectiveId)
+                                            )
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Stack>
+                                ) : (
+                                  <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                      color: '#6B7280',
+                                      fontStyle: 'italic'
+                                    }}
+                                  >
+                                    Not Editable
+                                  </Typography>
+                                )}
+                              </StyledTableCell>
+                            )}
+                          </TableRow>
+                        );
 
-                      if (initiativeIndex === 0) {
-                        firstInObjective = false;
-                      }
-                      if (firstInPerspective) {
-                        firstInPerspective = false;
-                      }
-                      return row;
-                    });
+                        if (kpiIndex === 0) {
+                          firstInObjective = false;
+                        }
+                        if (firstInPerspective && kpiIndex === 0) {
+                          firstInPerspective = false;
+                        }
+                        return row;
+                      })
+                    ).flat();
                   }).flat();
                 }).flat();
               })()}
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* Add total weight display */}
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            p: 2,
+            borderTop: '1px solid #E5E7EB'
+          }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 500,
+              color: calculateTotalWeight() > 100 ? '#DC2626' : '#374151'
+            }}
+          >
+            Total Weight: {calculateTotalWeight()}%
+            {calculateTotalWeight() > 100 && (
+              <Typography
+                component="span"
+                sx={{
+                  color: '#DC2626',
+                  ml: 2,
+                  fontSize: '0.875rem'
+                }}
+              >
+                (Total weight cannot exceed 100%)
+              </Typography>
+            )}
+          </Typography>
+        </Box>
       </Paper>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
