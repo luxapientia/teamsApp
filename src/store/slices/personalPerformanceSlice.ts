@@ -19,7 +19,7 @@ export const fetchPersonalQuarterlyTargets = createAsyncThunk(
   'personalPerformance/fetchPersonalQuarterlyTargets',
   async (payload: {annualTargetId: string, quarter: string}) => {
     try {
-      const response = await api.get(`/personal-performance/personal-quarterly-targets`, {
+      const response = await api.get(`/personal-performance/personal-performances`, {
         params: {
           annualTargetId: payload.annualTargetId,
           quarter: payload.quarter
@@ -61,7 +61,17 @@ export const createPersonalPerformance = createAsyncThunk(
 export const updatePersonalPerformance = createAsyncThunk(
   'personalPerformance/updatePersonalPerformance',
   async (target: PersonalPerformance) => {
-    
+    try {
+      const response = await api.put(`/personal-performance/update-personal-performance/${target._id}`, {
+        personalPerformance: target
+      });
+      if (response.status === 200) {
+        return response.data.data as PersonalPerformance;
+      } else {
+      }
+    } catch (error) {
+      console.log('error', error);
+    }
   }
 );
 
@@ -94,6 +104,7 @@ const personalPerformanceSlice = createSlice({
       })
       .addCase(fetchPersonalQuarterlyTargets.fulfilled, (state, action) => {
         state.status = 'succeeded';
+        console.log('action.payload', action.payload);
         state.personalPerformances = action.payload;
       })
       .addCase(fetchPersonalQuarterlyTargets.rejected, (state, action) => {
@@ -106,13 +117,11 @@ const personalPerformanceSlice = createSlice({
         // }
       })
       .addCase(updatePersonalPerformance.fulfilled, (state, action) => {
-        // if (action.payload && action.payload._id) {
-        //   const id = action.payload._id;
-        //   const index = state.personalPerformance.findIndex(t => t._id === id);
-        //   if (index !== -1) {
-        //     state.personalPerformance[index] = action.payload;
-        //   }
-        // }
+        if (action.payload) {
+          state.personalPerformances = state.personalPerformances.map(personalPerformance => 
+            personalPerformance._id === action.payload?._id ? action.payload : personalPerformance
+          ) as PersonalPerformance[];
+        }
       })
       .addCase(deletePersonalPerformance.fulfilled, (state, action) => {
         // state.personalPerformance = state.personalPerformance.filter(

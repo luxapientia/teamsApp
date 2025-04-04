@@ -13,7 +13,7 @@ import {
   styled,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { AnnualTargetRatingScale } from '../../types/annualCorporateScorecard';
+import { AnnualTargetRatingScale } from '../types/annualCorporateScorecard';
 
 interface RatingScalesModalProps {
   open: boolean;
