@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express';
 import { authService } from '../services/authService';
+import { authenticateToken } from '../middleware/auth';
+import { AuthenticatedRequest } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -75,6 +77,18 @@ router.post('/logout', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Logout error:', error);
     return res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+    return res.json(req.user);
+  } catch (error) {
+    console.error('Error in /me endpoint:', error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
