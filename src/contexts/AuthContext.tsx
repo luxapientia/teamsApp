@@ -1,77 +1,55 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { getAPIBaseURL } from '../services/api';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isLoading: boolean;
+  user: any | null;
   token: string | null;
   login: () => Promise<void>;
   logout: () => Promise<void>;
-  user: any | null;
-  loading: boolean;
   setIsAuthenticated: (value: boolean) => void;
   setUser: (user: any) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const API_BASE_URL = getAPIBaseURL();
-
-const authApi = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+export const AuthContext = createContext<AuthContextType>({
+  isAuthenticated: false,
+  isLoading: true,
+  user: null,
+  token: null,
+  login: async () => {},
+  logout: async () => {},
+  setIsAuthenticated: () => {},
+  setUser: () => {}
 });
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUserProfile = useCallback(async (authToken: string) => {
-    try {
-      const response = await authApi.get('/auth/profile', {
-        headers: { Authorization: `Bearer ${authToken}` }
-      });
-      setUser(response.data);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      // If token is invalid, logout
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      setToken(storedToken);
-      setIsAuthenticated(true);
-      fetchUserProfile(storedToken);
-    } else {
-      setLoading(false);
-    }
-  }, [fetchUserProfile]);
+  const location = useLocation();
 
   const login = async () => {
     try {
-      console.log('Making login request to:', `${API_BASE_URL}/auth/login`);
-      const response = await authApi.get('/auth/login');
-      console.log('Login response:', response.data);
+      const redirectUri = `${window.location.origin}/auth/callback`;
+      const response = await axios.get(`${API_URL}/api/auth/login`, {
+        params: {
+          redirect_uri: redirectUri
+        }
+      });
       
-      // Handle both string and object responses
-      const loginUrl = typeof response.data === 'string' 
-        ? response.data 
-        : response.data?.url;
-      
-      if (loginUrl) {
-        window.location.href = loginUrl;
+      if (response.data?.url) {
+        window.location.href = response.data.url;
       } else {
-        console.error('Login response missing URL:', response.data);
-        throw new Error('No login URL received');
+        throw new Error('Invalid login response');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -81,32 +59,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      if (token) {
-        await authApi.post('/auth/logout', null, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
+      setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('token');
-      setToken(null);
-      setIsAuthenticated(false);
-      setUser(null);
     }
   };
 
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const storedToken = localStorage.getItem('auth_token');
+        if (!storedToken) {
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await axios.get(`${API_URL}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${storedToken}`
+          }
+        });
+
+        if (response.data) {
+          setUser(response.data);
+          setToken(storedToken);
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        localStorage.removeItem('auth_token');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      token, 
-      login, 
-      logout, 
-      user,
-      loading,
-      setIsAuthenticated,
-      setUser
-    }}>
+    <AuthContext.Provider 
+      value={{ 
+        isAuthenticated, 
+        isLoading,
+        user, 
+        token,
+        login, 
+        logout,
+        setIsAuthenticated,
+        setUser
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -114,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

@@ -1,75 +1,58 @@
 import React, { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { api } from '../../services/api';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export const AuthCallback: React.FC = () => {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
-  const code = searchParams.get('code');
-  const { setIsAuthenticated, setUser, token } = useAuth();
+  const { setIsAuthenticated, setUser } = useAuth();
 
   useEffect(() => {
     const handleCallback = async () => {
-      if (!code) {
-        console.error('No code received');
-        navigate('/login', { replace: true });
-        return;
-      }
+      const params = new URLSearchParams(location.search);
+      const code = params.get('code');
+      
+      if (code) {
+        try {
+          console.log('Sending code to backend:', code);
+          const redirectUri = `${window.location.origin}${location.pathname}`;
+          const response = await axios.post(`${API_URL}/api/auth/callback`, {
+            code,
+            redirect_uri: redirectUri
+          });
 
-      try {
-        console.log('Sending callback request with code:', code);
-        const response = await api.post('/auth/callback', { code });
-        console.log('Callback response:', response.data);
+          console.log('Backend response:', response.data);
 
-        const authToken = response.data?.data?.token || response.data?.token;
-        
-        if (authToken) {
-          localStorage.setItem('token', authToken);
-          
-          // Get user profile from the token
-          try {
-            const profileResponse = await api.get('/auth/profile', {
-              headers: {
-                Authorization: `Bearer ${authToken}`
-              }
-            });
-            
-            const userProfile = profileResponse.data?.data || profileResponse.data;
-            setUser(userProfile);
+          if (response.data && response.data.token && response.data.user) {
+            localStorage.setItem('auth_token', response.data.token);
+            setUser(response.data.user);
             setIsAuthenticated(true);
-            navigate('/main', { replace: true });
-          } catch (profileError) {
-            console.error('Profile fetch error:', profileError);
-            localStorage.removeItem('token');
+            navigate('/', { replace: true });
+          } else {
+            console.error('Invalid response from server');
             navigate('/login', { replace: true });
           }
-        } else {
-          console.error('No token in response:', response.data);
-          throw new Error('No token received');
+        } catch (error) {
+          console.error('Auth callback error:', error);
+          navigate('/login', { replace: true });
         }
-      } catch (error: any) {
-        console.error('Callback error:', error);
-        console.error('Error details:', error.response?.data);
-        localStorage.removeItem('token');
+      } else {
+        console.error('No code found in URL');
         navigate('/login', { replace: true });
       }
     };
 
-    if (!token) {
-      handleCallback();
-    } else {
-      navigate('/main', { replace: true });
-    }
-  }, [code, navigate, setIsAuthenticated, setUser, token]);
+    handleCallback();
+  }, [location, navigate, setIsAuthenticated, setUser]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-          <p className="mt-4 text-gray-600">Processing authentication...</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold mb-4">Processing Authentication</h2>
+        <p className="text-gray-600">Please wait while we complete your sign-in...</p>
       </div>
     </div>
   );
