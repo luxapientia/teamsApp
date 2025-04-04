@@ -29,7 +29,7 @@ interface AnnualTargetObjective {
   KPIs: AnnualTargetKPI[];
 }
 
-interface AnnualTargetKPI {
+export interface AnnualTargetKPI {
   indicator: string;
   weight: number;
   baseline: string;
@@ -96,7 +96,7 @@ export interface QuarterlyTargetObjective {
   KPIs: QuarterlyTargetKPI[];
 } 
 
-interface QuarterlyTargetKPI {
+export interface QuarterlyTargetKPI {
   indicator: string;
   weight: number;
   baseline: string;
