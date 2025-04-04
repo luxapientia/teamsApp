@@ -86,7 +86,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
   };
 
   const handleAddKPI = () => {
-    setKpis([...kpis, { indicator: '', weight: 0, baseline: '', target: '', ratingScales: [], ratingScore: 0, actualAchieved: '', evidence: '', attachments: []  }]);
+    setKpis([...kpis, { indicator: '', weight: 0, baseline: '', target: '', ratingScales: annualTarget.content.ratingScales || [], ratingScore: 0, actualAchieved: '', evidence: '', attachments: []  }]);
   };
 
   const handleToggleRatingScale = (index: number) => {
@@ -120,6 +120,21 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
     return exists;
   };
 
+  const validateTotalWeight = (newWeight: number): boolean => {
+    const currentTotalWeight = personalQuarterlyObjectives.reduce((total, obj) => {
+      if (editingObjective && 
+          obj.name === editingObjective.name && 
+          obj.initiativeName === editingObjective.initiativeName && 
+          obj.perspectiveId === editingObjective.perspectiveId) {
+        return total;
+      }
+      const totalWeight = obj.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0);
+      return total + totalWeight;
+    }, 0);
+
+    return (currentTotalWeight + newWeight) <= 100;
+  };
+
   const handleSave = () => {
     setError(null);
 
@@ -135,6 +150,14 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
 
     if (!editingObjective && validateDuplicate(selectedPerspective.index, selectedObjective, initiative)) {
       setError('This combination of Perspective, Strategic Objective and Initiative already exists');
+      return;
+    }
+
+    const newWeight = kpis[0].weight;
+    if (!validateTotalWeight(newWeight)) {
+      setError(`Total weight cannot exceed 100%. Current total weight would be ${
+        personalQuarterlyObjectives.reduce((total, obj) => total + obj.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0), 0) + newWeight
+      }%`);
       return;
     }
 
