@@ -3,15 +3,20 @@
     "appId": "${{AAD_APP_CLIENT_ID}}",
     "name": "TeamsScoreCards-aad",
     "accessTokenAcceptedVersion": 2,
-    "signInAudience": "AzureADMyOrg",
+    "signInAudience": "AzureADMultipleOrgs",
     "optionalClaims": {
-        "idToken": [],
+        "idToken": [
+            {
+                "name": "tid",
+                "source": null,
+                "essential": true
+            }
+        ],
         "accessToken": [
             {
                 "name": "idtyp",
                 "source": null,
-                "essential": false,
-                "additionalProperties": []
+                "essential": false
             }
         ],
         "saml2Token": []
@@ -22,6 +27,10 @@
             "resourceAccess": [
                 {
                     "id": "User.Read",
+                    "type": "Scope"
+                },
+                {
+                    "id": "Organization.Read.All",
                     "type": "Scope"
                 }
             ]
