@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Box, Button } from '@mui/material';
 import { TargetTab, PageProps, AnnualTarget } from '../../types';
-import QuarterlyNotification from './quarterly_target';
+import QuarterlyTargetNotification from './quarterly_target';
 // import OrganizationPerformances from './organization_performance';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { createAnnualTarget, updateAnnualTarget, deleteAnnualTarget, fetchAnnualTargets } from '../../store/slices/scorecardSlice';
@@ -16,7 +16,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
   return (
     <Box>
       {selectedTab === "Quarterly Targets" ? (
-        <QuarterlyNotification />
+        <QuarterlyTargetNotification />
       ) : (
         // <OrganizationPerformances />
         "hello"
