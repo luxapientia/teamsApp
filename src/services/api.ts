@@ -26,13 +26,24 @@ interface ApiResponse<T> {
 }
 
 // Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('auth_token');
+    console.log(`API Request to ${config.url}: Token ${token ? 'exists' : 'missing'}`);
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      // For debugging only - avoid this in production
+      console.warn(`No auth token available for request to: ${config.url}`);
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
 // Add retry logic for connection errors
 api.interceptors.response.use(
@@ -42,20 +53,20 @@ api.interceptors.response.use(
     }
     return { ...response, data: { data: response.data } };
   },
-  async (error: AxiosError) => {
-    console.error('API Error:', error.response?.data || error.message);
-    
-    // If unauthorized, redirect to login
-    if (error.response?.status === 401) {
-      window.location.href = '/login';
-      return Promise.reject(error);
+  (error) => {
+    if (error.response) {
+      console.error(`API Error ${error.response.status} for ${error.config.url}:`, error.response.data);
+      
+      // Handle 401 Unauthorized errors
+      if (error.response.status === 401) {
+        console.error('Unauthorized request - check token validity');
+        // Only clear token and redirect if it's an auth issue, not a missing token
+        if (error.response.data?.message !== 'No token provided') {
+          localStorage.removeItem('auth_token');
+          window.location.href = '/login';
+        }
+      }
     }
-    
-    // If connection failed, it might be using wrong port
-    if (!error.response && error.message.includes('Network Error')) {
-      console.log('Connection failed. The API might be running on a different port.');
-    }
-    
     return Promise.reject(error);
   }
 );
