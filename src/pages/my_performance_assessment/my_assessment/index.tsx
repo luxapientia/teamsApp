@@ -25,7 +25,7 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
 import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective, QuarterType } from '../../../types/annualCorporateScorecard';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
-import { fetchPersonalQuarterlyTargets } from '../../../store/slices/personalPerformanceSlice';
+import { fetchPersonalPerformances } from '../../../store/slices/personalPerformanceSlice';
 import { StyledHeaderCell, StyledTableCell, StyledMenuItem, StyledListItemIcon } from '../../../components/StyledTableComponents';
 import { PersonalPerformance, PersonalQuarterlyTarget } from '../../../types';
 import AddIcon from '@mui/icons-material/Add';
@@ -96,7 +96,7 @@ const PerformanceAssessment: React.FC = () => {
 
   const handleView = () => {
     if (selectedAnnualTarget && selectedQuarter) {
-      dispatch(fetchPersonalQuarterlyTargets({ annualTargetId: selectedAnnualTargetId, quarter: selectedQuarter }));
+      dispatch(fetchPersonalPerformances({ annualTargetId: selectedAnnualTargetId, quarter: selectedQuarter }));
       setShowQuarterlyTargets(true);
       setShowPersonalQuarterlyTarget(false);
     }

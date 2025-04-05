@@ -4,19 +4,21 @@ import { AxiosError } from 'axios';
 import { PersonalPerformance } from '@/types';
 interface PersonalPerformanceState {
   personalPerformances: PersonalPerformance[];
+  teamPerformances: PersonalPerformance[];  
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
 
 const initialState: PersonalPerformanceState = {
   personalPerformances: [],
+  teamPerformances: [],
   status: 'idle',
   error: null,
 };
 
 // Async thunks
-export const fetchPersonalQuarterlyTargets = createAsyncThunk(
-  'personalPerformance/fetchPersonalQuarterlyTargets',
+export const fetchPersonalPerformances = createAsyncThunk(
+  'personalPerformance/fetchPersonalPerformances',
   async (payload: {annualTargetId: string, quarter: string}) => {
     try {
       const response = await api.get(`/personal-performance/personal-performances`, {
@@ -99,15 +101,15 @@ const personalPerformanceSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchPersonalQuarterlyTargets.pending, (state) => {
+      .addCase(fetchPersonalPerformances.pending, (state) => {
         state.status = 'loading';
       })
-      .addCase(fetchPersonalQuarterlyTargets.fulfilled, (state, action) => {
+      .addCase(fetchPersonalPerformances.fulfilled, (state, action) => {
         state.status = 'succeeded';
         console.log('action.payload', action.payload);
         state.personalPerformances = action.payload;
       })
-      .addCase(fetchPersonalQuarterlyTargets.rejected, (state, action) => {
+      .addCase(fetchPersonalPerformances.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch targets';
       })
