@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { UserRole, UserRoleAssignment } from '../types/role';
 
 const userRoleSchema = new mongoose.Schema<UserRoleAssignment>({
-  userId: {
+  MicrosoftId: {
     type: String,
     required: true,
     unique: true,
