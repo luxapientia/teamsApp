@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleToken = async (token: string) => {
     try {
       console.log('Handling token...');
-      const response = await api.post('/auth/token', { token });
+      const response = await api.post('/auth/callback', { token });
       const { user, accessToken } = response.data;
       
       localStorage.setItem('token', accessToken);
