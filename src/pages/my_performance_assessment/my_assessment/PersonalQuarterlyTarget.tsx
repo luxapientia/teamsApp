@@ -88,7 +88,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   // Add function to calculate overall rating score
-  const calculateOverallRating = (objectives: QuarterlyTargetObjective[]) => {
+  const calculateOverallScore = (objectives: QuarterlyTargetObjective[]) => {
     let totalWeightedScore = 0;
     let totalWeight = 0;
 
@@ -579,7 +579,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           Overall Rating Score =
         </Typography>
         {(() => {
-          const score = calculateOverallRating(personalQuarterlyObjectives);
+          const score = calculateOverallScore(personalQuarterlyObjectives);
           const ratingScale = getRatingScaleInfo(score);
 
           if (!score || !ratingScale) {

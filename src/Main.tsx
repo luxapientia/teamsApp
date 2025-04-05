@@ -37,7 +37,7 @@ function Main() {
         <MyPerformanceAssessment
           title='My Performance Assessment'
           icon={<Organization20Regular fontSize={iconSize} />}
-          tabs={['My Assessments']}
+          tabs={['My Assessments', 'Team Performances']}
           selectedTab={selectedTab}
         />
         <MyPerformanceAgreement
