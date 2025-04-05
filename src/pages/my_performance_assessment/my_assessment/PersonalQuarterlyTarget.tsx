@@ -19,7 +19,7 @@ import {
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget } from '@/types/personalPerformance';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus } from '../../../types/personalPerformance';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
@@ -78,7 +78,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
-      setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.isAssessmentDraft === false);
+      setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === 'Submitted');
     }
   }, [personalPerformance]);
 
@@ -129,7 +129,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (target.quarter === quarter) {
         return {
           ...target,
-          isAssessmentDraft: true,
+          assessmentStatus: AssessmentStatus.Draft,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -138,7 +138,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
         return {
           ...target,
-          isAssessmentDraft: true,
+          assessmentStatus: AssessmentStatus.Draft,
           isEditable: calculateTotalWeight() === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -162,7 +162,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (target.quarter === quarter) {
         return {
           ...target,
-          isAssessmentDraft: false,
+          assessmentStatus: AssessmentStatus.Submitted,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -171,7 +171,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
         return {
           ...target,
-          isAssessmentDraft: true,
+          assessmentStatus: AssessmentStatus.Submitted,
           isEditable: calculateTotalWeight() === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -231,7 +231,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (target.quarter === quarter) {
         return {
           ...target,
-          isAssessmentDraft: true,
+          assessmentStatus: AssessmentStatus.Draft,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
