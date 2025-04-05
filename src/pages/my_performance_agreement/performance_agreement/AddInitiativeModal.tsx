@@ -52,7 +52,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
 }) => {
   const [selectedPerspective, setSelectedPerspective] = useState<AnnualTargetPerspective | null>(null);
   const [selectedObjective, setSelectedObjective] = useState("");
-  const [expandedKPI, setExpandedKPI] = useState<number | null>(null);
+  const [expandedKPI, setExpandedKPI] = useState<number>(0);
   const [kpis, setKpis] = useState<QuarterlyTargetKPI[]>([{
     indicator: '',
     weight: 0,
@@ -87,10 +87,11 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
 
   const handleAddKPI = () => {
     setKpis([...kpis, { indicator: '', weight: 0, baseline: '', target: '', ratingScales: annualTarget.content.ratingScales || [], ratingScore: 0, actualAchieved: '', evidence: '', attachments: []  }]);
+    setExpandedKPI(kpis.length);
   };
 
   const handleToggleRatingScale = (index: number) => {
-    setExpandedKPI(expandedKPI === index ? null : index);
+    setExpandedKPI(expandedKPI === index ? 0 : index);
   };
 
   const handleDeleteKPI = (indexToDelete: number) => {
