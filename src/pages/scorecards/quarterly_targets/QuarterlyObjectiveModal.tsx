@@ -61,7 +61,7 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
     evidence: '',
     attachments: []
   }]);
-  const [expandedKPI, setExpandedKPI] = useState<number | null>(null);
+  const [expandedKPI, setExpandedKPI] = useState<number>(0);
   const [errors, setErrors] = useState<{
     perspective?: string;
     objective?: string;
@@ -216,10 +216,11 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
       evidence: '',
       attachments: []
     }]);
+    setExpandedKPI(kpis.length);
   };
 
   const handleToggleRatingScale = (index: number) => {
-    setExpandedKPI(expandedKPI === index ? null : index);
+    setExpandedKPI(expandedKPI === index ? 0 : index);
   };
 
   const handleRatingScaleChange = (kpiIndex: number, scaleIndex: number, field: 'min' | 'max', value: string) => {
