@@ -12,6 +12,7 @@ import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
 import MyPerformanceAgreement from './pages/my_performance_agreement';
 import MyPerformanceAssessment from './pages/my_performance_assessment';
+import Reports from './pages/reports';
 const iconSize = 24;
 
 function Main() {
@@ -34,6 +35,12 @@ function Main() {
             selectedTab={selectedTab}
           />
         )}
+        <Reports
+          title='Reports'
+          icon={<Organization20Regular fontSize={iconSize} />}
+          tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
+          selectedTab={selectedTab}
+        />
         <MyPerformanceAssessment
           title='My Performance Assessment'
           icon={<Organization20Regular fontSize={iconSize} />}
