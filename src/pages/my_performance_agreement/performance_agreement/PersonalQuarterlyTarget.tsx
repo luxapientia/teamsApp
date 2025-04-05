@@ -67,7 +67,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
-      setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.isDraft === false);
+      setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.isAgreementDraft === false);
     }
   }, [personalPerformance]);
 
@@ -122,7 +122,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (target.quarter === quarter) {
         return {
           ...target,
-          isDraft: true,
+          isAgreementDraft: true,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -131,7 +131,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
         return {
           ...target,
-          isDraft: true,
+          isAgreementDraft: true,
           isEditable: calculateTotalWeight() === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -163,7 +163,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (target.quarter === quarter) {
         return {
           ...target,
-          isDraft: false,
+          isAgreementDraft: false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -172,7 +172,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
         return {
           ...target,
-          isDraft: true,
+          isAgreementDraft: true,
           isEditable: calculateTotalWeight() === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -232,7 +232,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (target.quarter === quarter) {
         return {
           ...target,
-          isDraft: true,
+          isAgreementDraft: true,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
