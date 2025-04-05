@@ -58,7 +58,7 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
     target: '',
     ratingScales: annualTarget?.content.ratingScales || []
   }]);
-  const [expandedKPI, setExpandedKPI] = useState<number | null>(null);
+  const [expandedKPI, setExpandedKPI] = useState<number>(0);
   const [errors, setErrors] = useState<{
     perspective?: string;
     objective?: string;
@@ -204,10 +204,11 @@ const AddStrategicObjectiveModal: React.FC<AddStrategicObjectiveModalProps> = ({
       target: '',
       ratingScales: annualTarget?.content.ratingScales || []
     }]);
+    setExpandedKPI(kpis.length);
   };
 
   const handleToggleRatingScale = (index: number) => {
-    setExpandedKPI(expandedKPI === index ? null : index);
+    setExpandedKPI(expandedKPI === index ? 0 : index);
   };
 
   const handleRatingScaleChange = (kpiIndex: number, scaleIndex: number, field: 'min' | 'max', value: string) => {
