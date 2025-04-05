@@ -6,9 +6,9 @@
     "packageName": "com.microsoft.teams.extension",
     "developer": {
         "name": "Truong Pham",
-        "websiteUrl": "https://app.teamscorecards.online",
-        "privacyUrl": "https://app.teamscorecards.online/index.html#/privacy",
-        "termsOfUseUrl": "https://app.teamscorecards.online/index.html#/termsofuse"
+        "websiteUrl": "https://localhost:3002",
+        "privacyUrl": "https://localhost:3002/index.html#/privacy",
+        "termsOfUseUrl": "https://localhost:3002/index.html#/termsofuse"
     },
     "icons": {
         "color": "color.png",
@@ -28,8 +28,8 @@
         {
           "entityId": "index",
           "name": "Personal Tab",
-          "contentUrl": "https://app.teamscorecards.online", 
-          "websiteUrl": "https://app.teamscorecards.online", 
+          "contentUrl": "https://localhost:3002", 
+          "websiteUrl": "https://localhost:3002", 
           "scopes": ["personal"]
         }
       ],
@@ -38,12 +38,13 @@
         "messageTeamMembers"
     ],
     "validDomains": [
-        "app.teamscorecards.online",
+        "localhost:3002",
+        "localhost:3002",
         "login.microsoftonline.com",
         "graph.microsoft.com"
     ],
     "webApplicationInfo": {
         "id": "38681428-5b78-4e82-97ff-e168419e7611",
-        "resource": "api://app.teamscorecards.online/38681428-5b78-4e82-97ff-e168419e7611"
+        "resource": "api://localhost:3002/38681428-5b78-4e82-97ff-e168419e7611"
     }
 }
