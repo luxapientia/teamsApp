@@ -25,6 +25,18 @@ const router = express.Router();
 
 // const upload = multer({ storage });
 
+router.get('/personal-performance', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    console.log(userId);
+    const personalPerformance = await PersonalPerformance.findOne({  }) as PersonalPerformanceDocument;
+    return res.json(personalPerformance);
+  } catch (error) {
+    console.error('Personal performance error:', error);
+    return res.status(500).json({ error: 'Failed to get personal performance' });
+  }
+});
+
 router.get('/personal-performances', authenticateToken, async (_req: Request, res: Response) => {
   try {
     const annualTargetId = _req.query.annualTargetId as string;

@@ -16,6 +16,7 @@ import {
   IconButton,
   Stack,
 } from '@mui/material';
+import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
@@ -203,12 +204,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   // Add date validation function
   const isWithinPeriod = () => {
-    const assessmentPeriod = annualTarget.content.assessmentPeriod[quarter];
-    if (!assessmentPeriod) return false;
+    const contractingPeriod = annualTarget.content.contractingPeriod[quarter];
+    if (!contractingPeriod) return false;
 
     const today = new Date();
-    const startDate = new Date(assessmentPeriod.startDate);
-    const endDate = new Date(assessmentPeriod.endDate);
+    const startDate = new Date(contractingPeriod.startDate);
+    const endDate = new Date(contractingPeriod.endDate);
 
     return today >= startDate && today <= endDate;
   };
@@ -512,8 +513,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               {kpi.target}
                             </StyledTableCell>
                             <StyledTableCell align="center">
-                              <Button
-                                variant="outlined"
+                              <IconButton
                                 size="small"
                                 onClick={() => handleViewRatingScales(kpi)}
                                 sx={{
@@ -525,8 +525,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                   },
                                 }}
                               >
-                                View
-                              </Button>
+                                <DescriptionIcon />
+                              </IconButton>
                             </StyledTableCell>
                             {kpiIndex === 0 && (
                               <StyledTableCell align="center" rowSpan={initiative.KPIs.length}>
