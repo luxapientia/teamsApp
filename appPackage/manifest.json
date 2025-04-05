@@ -5,7 +5,7 @@
     "id": "af138b87-5e67-40bd-ad03-575faf285d97",
     "packageName": "com.microsoft.teams.extension",
     "developer": {
-        "name": "Teams App, Inc.",
+        "name": "Truong Pham",
         "websiteUrl": "https://app.teamscorecards.online",
         "privacyUrl": "https://app.teamscorecards.online/index.html#/privacy",
         "termsOfUseUrl": "https://app.teamscorecards.online/index.html#/termsofuse"
@@ -23,32 +23,24 @@
         "full": "A comprehensive Teams application for managing corporate scorecards, performance metrics, and team evaluations."
     },
     "accentColor": "#FFFFFF",
-    "bots": [],
     "composeExtensions": [],
-    "configurableTabs": [
-        {
-            "configurationUrl": "https://app.teamscorecards.online/index.html#/configure",
-            "canUpdateConfiguration": true,
-            "scopes": ["team"]
-        }
-    ],
     "staticTabs": [
         {
-            "entityId": "index",
-            "name": "Personal Tab",
-            "contentUrl": "https://app.teamscorecards.online/index.html#/tab",
-            "websiteUrl": "https://app.teamscorecards.online/index.html#/tab",
-            "scopes": [
-                "personal"
-            ]
+          "entityId": "index",
+          "name": "Personal Tab",
+          "contentUrl": "https://app.teamscorecards.online", 
+          "websiteUrl": "https://app.teamscorecards.online", 
+          "scopes": ["personal"]
         }
-    ],
+      ],
     "permissions": [
         "identity",
         "messageTeamMembers"
     ],
     "validDomains": [
-        "app.teamscorecards.online"
+        "app.teamscorecards.online",
+        "login.microsoftonline.com",
+        "graph.microsoft.com"
     ],
     "webApplicationInfo": {
         "id": "38681428-5b78-4e82-97ff-e168419e7611",
