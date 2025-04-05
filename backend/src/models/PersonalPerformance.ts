@@ -13,6 +13,7 @@ interface PersonalQuarterlyTarget {
   quarter: string;
   isEditable: boolean;
   isAgreementDraft: boolean;
+  isAssessmentDraft: boolean;
   supervisorId?: string;
   objectives: PersonalQuarterlyTargetObjective[];
 }
@@ -40,6 +41,11 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
       enum: ['Q1', 'Q2', 'Q3', 'Q4']
     },
     isAgreementDraft: {
+      type: Boolean,
+      required: true,
+      default: true,
+    },
+    isAssessmentDraft: {
       type: Boolean,
       required: true,
       default: true,

@@ -370,6 +370,37 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Box>
       </Box>
 
+      {/* Add total weight display */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          p: 2,
+          borderTop: '1px solid #E5E7EB'
+        }}
+      >
+        <Typography
+          sx={{
+            fontWeight: 500,
+            color: calculateTotalWeight() > 100 ? '#DC2626' : '#374151'
+          }}
+        >
+          Total Weight: {calculateTotalWeight()}%
+          {calculateTotalWeight() > 100 && (
+            <Typography
+              component="span"
+              sx={{
+                color: '#DC2626',
+                ml: 2,
+                fontSize: '0.875rem'
+              }}
+            >
+              (Total weight cannot exceed 100%)
+            </Typography>
+          )}
+        </Typography>
+      </Box>
+
       {/* Show helper text only when not submitted */}
       {!isSubmitted && !canSubmit() && (
         <Typography
@@ -558,36 +589,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           </Table>
         </TableContainer>
 
-        {/* Add total weight display */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            p: 2,
-            borderTop: '1px solid #E5E7EB'
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 500,
-              color: calculateTotalWeight() > 100 ? '#DC2626' : '#374151'
-            }}
-          >
-            Total Weight: {calculateTotalWeight()}%
-            {calculateTotalWeight() > 100 && (
-              <Typography
-                component="span"
-                sx={{
-                  color: '#DC2626',
-                  ml: 2,
-                  fontSize: '0.875rem'
-                }}
-              >
-                (Total weight cannot exceed 100%)
-              </Typography>
-            )}
-          </Typography>
-        </Box>
+
       </Paper>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>

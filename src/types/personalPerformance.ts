@@ -7,6 +7,7 @@ export interface PersonalQuarterlyTargetObjective extends QuarterlyTargetObjecti
 export interface PersonalQuarterlyTarget {
     quarter: string;
     isAgreementDraft: boolean;
+    isAssessmentDraft: boolean;
     isEditable: boolean;
     supervisorId?: string;
     objectives: PersonalQuarterlyTargetObjective[];

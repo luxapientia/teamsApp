@@ -26,6 +26,7 @@ import { updatePersonalPerformance } from '../../../store/slices/personalPerform
 import { RootState } from '../../../store';
 import { api } from '../../../services/api';
 import KPIModal from './KPIModal';
+import EvidenceModal from './EvidenceModal';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -68,12 +69,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedKPI, setSelectedKPI] = useState<{ kpi: QuarterlyTargetKPI, perspectiveId: number, objectiveName: string, initiativeName: string, kpiIndex: number } | null>(null);
+  const [evidenceModalData, setEvidenceModalData] = useState<{
+    evidence: string;
+    attachments: Array<{ name: string; url: string }>;
+  } | null>(null);
   const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
   useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
-      setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.isAgreementDraft === false);
+      setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.isAssessmentDraft === false);
     }
   }, [personalPerformance]);
 
@@ -82,13 +87,49 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     onSupervisorChange(event.target.value);
   };
 
+  // Add function to calculate overall rating score
+  const calculateOverallRating = (objectives: QuarterlyTargetObjective[]) => {
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    objectives.forEach(objective => {
+      objective.KPIs.forEach(kpi => {
+        if (kpi.ratingScore !== -1) {
+          totalWeightedScore += (kpi.ratingScore * kpi.weight);
+          totalWeight += kpi.weight;
+        }
+      });
+    });
+
+    if (totalWeight === 0) return null;
+
+    return Math.round(totalWeightedScore / totalWeight);
+  };
+
+  // Add function to get rating scale info
+  const getRatingScaleInfo = (score: number | null) => {
+    if (!score || !annualTarget) return null;
+
+    return annualTarget.content.ratingScales.find(
+      scale => scale.score === score
+    );
+  };
+
+  // Add total weight calculation function
+  const calculateTotalWeight = () => {
+    return personalQuarterlyObjectives.reduce((total, objective) => {
+      const totalWeight = objective.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0);
+      return total + totalWeight;
+    }, 0);
+  };
+
   const handleDraft = () => {
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
 
       if (target.quarter === quarter) {
         return {
           ...target,
-          isAgreementDraft: true,
+          isAssessmentDraft: true,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -97,7 +138,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
         return {
           ...target,
-          isAgreementDraft: true,
+          isAssessmentDraft: true,
           isEditable: calculateTotalWeight() === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -115,21 +156,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   };
 
-  // Add total weight calculation function
-  const calculateTotalWeight = () => {
-    return personalQuarterlyObjectives.reduce((total, objective) => {
-      const totalWeight = objective.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0);
-      return total + totalWeight;
-    }, 0);
-  };
-
   const handleSubmit = async () => {
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
 
       if (target.quarter === quarter) {
         return {
           ...target,
-          isAgreementDraft: false,
+          isAssessmentDraft: false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -138,7 +171,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
         return {
           ...target,
-          isAgreementDraft: true,
+          isAssessmentDraft: true,
           isEditable: calculateTotalWeight() === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -198,7 +231,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (target.quarter === quarter) {
         return {
           ...target,
-          isAgreementDraft: true,
+          isAssessmentDraft: true,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -226,9 +259,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         }
         return objective;
       })
-
-
-
       setPersonalQuarterlyObjectives(newPersonalQuarterlyObjectives);
       setSelectedKPI(null);
     }
@@ -331,6 +361,37 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             {isSubmitted ? 'Recall' : 'Submit'}
           </Button>
         </Box>
+      </Box>
+
+      {/* Add total weight display */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          p: 2,
+          borderTop: '1px solid #E5E7EB'
+        }}
+      >
+        <Typography
+          sx={{
+            fontWeight: 500,
+            color: calculateTotalWeight() > 100 ? '#DC2626' : '#374151'
+          }}
+        >
+          Total Weight: {calculateTotalWeight()}%
+          {calculateTotalWeight() > 100 && (
+            <Typography
+              component="span"
+              sx={{
+                color: '#DC2626',
+                ml: 2,
+                fontSize: '0.875rem'
+              }}
+            >
+              (Total weight cannot exceed 100%)
+            </Typography>
+          )}
+        </Typography>
       </Box>
 
       {/* Show helper text only when not submitted */}
@@ -448,17 +509,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             <StyledTableCell align="center">
                               {kpi.actualAchieved}
                             </StyledTableCell>
-                            <StyledTableCell align="center">
-                              {kpi.ratingScore}
+                            <StyledTableCell align="center" sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}>
+                              {
+                                kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore)) &&
+                                `${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.score} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min} - ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
+                              }
                             </StyledTableCell>
                             <StyledTableCell align="center">
                               {kpi.evidence && (
                                 <IconButton
                                   size="small"
-                                  // onClick={() => setEvidenceModalData({
-                                  //   evidence: kpi.evidence,
-                                  //   attachments: kpi.attachments
-                                  // })}
+                                  onClick={() => setEvidenceModalData({
+                                    evidence: kpi.evidence,
+                                    attachments: kpi.attachments
+                                  })}
                                   sx={{ color: '#6B7280' }}
                                 >
                                   <DescriptionIcon />
@@ -466,20 +530,29 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               )}
                             </StyledTableCell>
                             <StyledTableCell align="center">
-                              <AccessButton
-                                size="small"
-                                onClick={() => {
-                                  setSelectedKPI({
-                                    kpi: kpi,
-                                    kpiIndex: kpiIndex,
-                                    perspectiveId: perspectiveGroup.perspectiveId,
-                                    objectiveName: objectiveGroup.name,
-                                    initiativeName: initiative.initiativeName
-                                  });
-                                }}
-                              >
-                                Evaluate
-                              </AccessButton>
+                              {canEdit() ? (
+                                <AccessButton
+                                  size="small"
+                                  onClick={() => {
+                                    setSelectedKPI({
+                                      kpi: kpi,
+                                      kpiIndex: kpiIndex,
+                                      perspectiveId: perspectiveGroup.perspectiveId,
+                                      objectiveName: objectiveGroup.name,
+                                      initiativeName: initiative.initiativeName
+                                    });
+                                  }}
+                                >
+                                  Evaluate
+                                </AccessButton>
+                              ) : (
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: '#6B7280', fontStyle: 'italic' }}
+                                >
+                                  Not Editable
+                                </Typography>
+                              )}
                             </StyledTableCell>
                           </TableRow>
                         );
@@ -499,41 +572,44 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             </TableBody>
           </Table>
         </TableContainer>
-
-        {/* Add total weight display */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            p: 2,
-            borderTop: '1px solid #E5E7EB'
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 500,
-              color: calculateTotalWeight() > 100 ? '#DC2626' : '#374151'
-            }}
-          >
-            Total Weight: {calculateTotalWeight()}%
-            {calculateTotalWeight() > 100 && (
-              <Typography
-                component="span"
-                sx={{
-                  color: '#DC2626',
-                  ml: 2,
-                  fontSize: '0.875rem'
-                }}
-              >
-                (Total weight cannot exceed 100%)
-              </Typography>
-            )}
-          </Typography>
-        </Box>
       </Paper>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+        <Typography variant="body2" sx={{ color: '#6B7280', fontWeight: 500 }}>
+          Overall Rating Score =
+        </Typography>
+        {(() => {
+          const score = calculateOverallRating(personalQuarterlyObjectives);
+          const ratingScale = getRatingScaleInfo(score);
 
+          if (!score || !ratingScale) {
+            return (
+              <Typography variant="body2" sx={{
+                color: '#DC2626',
+                fontWeight: 600,
+                backgroundColor: '#E5E7EB',
+                px: 2,
+                py: 0.5,
+                borderRadius: 1
+              }}>
+                N/A
+              </Typography>
+            );
+          }
+
+          return (
+            <Typography variant="body2" sx={{
+              color: ratingScale.color,
+              fontWeight: 600,
+              backgroundColor: '#E5E7EB',
+              px: 2,
+              py: 0.5,
+              borderRadius: 1
+            }}>
+              {`${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`}
+            </Typography>
+          );
+        })()}
       </Box>
 
       {selectedKPI && (
@@ -544,6 +620,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           selectedKPI={selectedKPI.kpi}
           annualTargetId={personalPerformance?.annualTargetId || ''}
           quarter={quarter}
+        />
+      )}
+
+      {evidenceModalData && (
+        <EvidenceModal
+          open={!!evidenceModalData}
+          onClose={() => setEvidenceModalData(null)}
+          evidence={evidenceModalData.evidence}
+          attachments={evidenceModalData.attachments}
         />
       )}
     </Box >

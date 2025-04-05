@@ -40,6 +40,7 @@ router.get('/personal-performances', authenticateToken, async (_req: Request, re
           return {
             quarter,
             isAgreementDraft: true,
+            isAssessmentDraft: true,
             isEditable: quarter === 'Q1' ? true : false,
             supervisorId: '',
             objectives: []
