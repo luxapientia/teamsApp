@@ -9,6 +9,8 @@ import licenseRoutes from './routes/licenses';
 import { errorHandler } from './middleware/errorHandler';
 import scoreCardRoutes from './routes/score_card';
 import personalPerformanceRoutes from './routes/personal_performance';
+import notificationRoutes from './routes/notifications';
+
 const app = express();
 
 // Middleware
@@ -26,7 +28,7 @@ app.use('/api/super-users', superUserRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/score-card', scoreCardRoutes);
 app.use('/api/personal-performance', personalPerformanceRoutes);
-
+app.use('/api/notifications', notificationRoutes);
 // Connect to MongoDB
 mongoose.connect(config.mongoUri)
   .then(() => {

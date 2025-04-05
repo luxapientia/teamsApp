@@ -54,7 +54,7 @@ const ViewButton = styled(Button)({
   },
 });
 
-const PersonalPerformanceAgreement: React.FC = () => {
+const PerformanceAssessment: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showQuarterlyTargets, setShowQuarterlyTargets] = useState(false);
@@ -211,4 +211,4 @@ const PersonalPerformanceAgreement: React.FC = () => {
   );
 };
 
-export default PersonalPerformanceAgreement;
+export default PerformanceAssessment;

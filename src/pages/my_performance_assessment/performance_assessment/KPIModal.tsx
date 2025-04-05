@@ -31,6 +31,7 @@ interface KPIModalProps {
   annualTargetId: string;
   quarter: QuarterType;
   selectedKPI: QuarterlyTargetKPI;
+  onSave: (kpi: QuarterlyTargetKPI) => void;
 }
 
 interface FileToUpload {
@@ -44,6 +45,7 @@ const KPIModal: React.FC<KPIModalProps> = ({
   selectedKPI,
   annualTargetId,
   quarter,
+  onSave
 }) => {
   const dispatch = useAppDispatch();
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
@@ -92,82 +94,21 @@ const KPIModal: React.FC<KPIModalProps> = ({
     return isValid;
   };
 
-  const handleSubmit = async () => {
+  const handleSave = async () => {
     if (!validateForm()) {
       return;
     }
 
-    try {
-      const uploadedFiles = await Promise.all(
-        filesToUpload.map(async (fileData) => {
-          try {
-            const formData = new FormData();
-            formData.append('file', fileData.file);
-
-            const response = await api.post('/score-card/upload', formData, {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-              },
-            });
-
-            if (response.status === 200) {
-              return {
-                name: fileData.name,
-                url: response.data.data
-              };
-            } else {
-              return null;
-            }
-          } catch (error) {
-            console.error('Error uploading file:', error);
-            return null;
-          }
-        })
-      );
-
-      const existingAttachments = attachments.filter(
-        att => !filesToUpload.find(f => f.name === att.name)
-      );
-
-      const finalAttachments = [...existingAttachments, ...uploadedFiles];
-
-      const annualTarget = annualTargets.find(target => target._id === annualTargetId);
-      if (!annualTarget) {
-        return;
-      }
-      const updatedAnnualTarget = {
-        ...annualTarget,
-        content: {
-          ...annualTarget.content,
-          quarterlyTarget: {
-            ...annualTarget.content.quarterlyTarget,
-            quarterlyTargets: annualTarget.content.quarterlyTarget.quarterlyTargets.map(quarterlyTarget =>
-              quarterlyTarget.quarter === quarter
-                ? {
-                  ...quarterlyTarget,
-                  objectives: quarterlyTarget.objectives.map(objective => ({
-                    ...objective,
-                    KPIs: objective.KPIs.map(kpi =>
-                      kpi.indicator === selectedKPI.indicator
-                        ? { ...kpi, actualAchieved, evidence, ratingScore: Number(selectedRating), attachments: finalAttachments }
-                        : kpi
-                    ),
-                  })),
-                }
-                : quarterlyTarget
-            ),
-          },
-        },
-      };
-
-      if (updatedAnnualTarget) {
-        dispatch(updateAnnualTarget(updatedAnnualTarget as AnnualTarget));
-      }
-
-      onClose();
-    } catch (error) {
-      console.error('Error uploading files:', error);
+    const newKPI = {
+      ...selectedKPI,
+      actualAchieved,
+      evidence,
+      attachments,
+      ratingScore: selectedRating
     }
+
+    onSave(newKPI);
+
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -395,7 +336,7 @@ const KPIModal: React.FC<KPIModalProps> = ({
           </Button>
           <Button
             variant="contained"
-            onClick={handleSubmit}
+            onClick={handleSave}
             sx={{
               backgroundColor: '#6264A7',
               '&:hover': {
@@ -403,7 +344,7 @@ const KPIModal: React.FC<KPIModalProps> = ({
               }
             }}
           >
-            Submit
+            Save
           </Button>
         </Box>
       </Box>
