@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
@@ -16,9 +16,21 @@ import { ManagePage } from './pages/manage';
 import { BoardSplitRegular, GridRegular, PeopleTeamRegular } from '@fluentui/react-icons';
 import { ToastProvider } from './contexts/ToastContext';
 import Main from './Main';
-
+import { initializeTeams } from './utils/teamsUtils';
 
 const App: React.FC = () => {
+  useEffect(() => {
+    const initTeams = async () => {
+      try {
+        await initializeTeams();
+      } catch (error) {
+        console.error('Teams initialization failed:', error);
+      }
+    };
+
+    initTeams();
+  }, []);
+
   return (
     <Provider store={store}>
       <AuthProvider>
