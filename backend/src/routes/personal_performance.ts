@@ -39,7 +39,7 @@ router.get('/personal-performances', authenticateToken, async (_req: Request, re
         quarterlyTargets: ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => {
           return {
             quarter,
-            isDraft: true,
+            isAgreementDraft: true,
             isEditable: quarter === 'Q1' ? true : false,
             supervisorId: '',
             objectives: []
