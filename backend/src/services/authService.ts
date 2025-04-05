@@ -2,20 +2,9 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import * as dotenv from 'dotenv';
-import { superUserService } from './superUserService';
+import { UserProfile } from '../types';
 
 dotenv.config();
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  status: string;
-  tenantId: string;
-  organizationName?: string;
-}
 
 export class AuthService {
   async getLoginUrl(state?: string): Promise<string> {
@@ -33,113 +22,47 @@ export class AuthService {
     return `${authUrl}?${params.toString()}`;
   }
 
-  async handleCallback(code: string, redirect_uri?: string): Promise<{ token: string; user: UserProfile }> {
+  async handleCallback(code: string, redirectUri: string): Promise<{ token: string; user: UserProfile }> {
     try {
-      console.log('Starting callback handling with code:', code.substring(0, 10) + '...');
-      console.log('Using redirect URI:', redirect_uri || config.azure.redirectUri);
-      
-      // Get token from Azure AD
-      const tokenEndpoint = `https://login.microsoftonline.com/${config.azure.tenantId}/oauth2/v2.0/token`;
-      const tokenParams = new URLSearchParams({
-        client_id: config.azure.clientId!,
-        client_secret: config.azure.clientSecret!,
-        code,
-        grant_type: 'authorization_code',
-        redirect_uri: redirect_uri || config.azure.redirectUri,
-        scope: 'openid profile email User.Read Organization.Read.All'
-      });
+      const tokenResponse = await axios.post(
+        `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
+        {
+          client_id: process.env.AZURE_CLIENT_ID,
+          scope: 'openid profile email',
+          code,
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+          client_secret: process.env.AZURE_CLIENT_SECRET
+        }
+      );
 
-      console.log('Requesting token from Azure AD...');
-      const tokenResponse = await axios.post(tokenEndpoint, tokenParams.toString(), {
+      const accessToken = tokenResponse.data.access_token;
+      const userResponse = await axios.get('https://graph.microsoft.com/v1.0/me', {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          Authorization: `Bearer ${accessToken}`
         }
       });
 
-      console.log('Token received from Azure AD');
-      const { access_token } = tokenResponse.data;
-
-      // Get user profile from Microsoft Graph API
-      console.log('Fetching user profile from Microsoft Graph...');
-      const profileResponse = await axios.get('https://graph.microsoft.com/v1.0/me', {
-        headers: {
-          Authorization: `Bearer ${access_token}`
-        }
-      });
-
-      // Get organization info
-      console.log('Fetching organization info...');
-      const orgResponse = await axios.get('https://graph.microsoft.com/v1.0/organization', {
-        headers: {
-          Authorization: `Bearer ${access_token}`
-        }
-      });
-
-      const tenantId = orgResponse.data.value[0].id;
-      console.log('Organization info received, tenant ID:', tenantId);
-
-      // Check if organization is allowed
-      const isAllowed = await this.isOrganizationAllowed(tenantId);
-      if (!isAllowed) {
-        console.error('Organization not authorized:', tenantId);
-        throw new Error('Your organization is not authorized to use this application');
-      }
-
-      // Determine user role
-      console.log('Determining user role...');
-      const superUsers = await superUserService.getAll();
-      let isSuperUser = superUsers.some(su => su.email === profileResponse.data.userPrincipalName);
-
+      const userData = userResponse.data;
       const userProfile: UserProfile = {
-        id: profileResponse.data.id,
-        email: profileResponse.data.userPrincipalName,
-        firstName: profileResponse.data.givenName,
-        lastName: profileResponse.data.surname,
-        role: (process.env.APP_OWNER_EMAIL === profileResponse.data.userPrincipalName) ? 'Owner' : 
-              (isSuperUser ? 'SuperUser' : 'User'),
+        id: userData.id,
+        email: userData.mail || userData.userPrincipalName,
+        displayName: userData.displayName,
+        jobTitle: userData.jobTitle || '',
+        department: userData.department || '',
+        organization: userData.companyName || '',
+        roles: ['user'],
         status: 'active',
-        tenantId: tenantId,
-        organizationName: orgResponse.data.value[0].displayName
+        tenantId: userData.tenantId,
+        organizationName: userData.companyName || ''
       };
 
-      console.log('User profile created:', {
-        id: userProfile.id,
-        email: userProfile.email,
-        role: userProfile.role
-      });
-
-      // Create JWT token
-      const token = jwt.sign(userProfile, config.jwtSecret, { 
-        expiresIn: '1h',
-        audience: config.azure.clientId,
-        issuer: `https://login.microsoftonline.com/${tenantId}/v2.0`
-      });
-
-      console.log('JWT token created');
+      const token = await this.createAppToken(userProfile);
       return { token, user: userProfile };
-    } catch (error: any) {
-      console.error('Authentication error:', {
-        message: error.message,
-        response: error.response?.data,
-        config: error.config,
-        stack: error.stack
-      });
-      throw new Error(`Authentication failed: ${error.message}`);
+    } catch (error) {
+      console.error('Error in handleCallback:', error);
+      throw error;
     }
-  }
-
-  private async isOrganizationAllowed(tenantId: string): Promise<boolean> {
-    // If no allowed tenants are configured, allow all
-    if (!process.env.ALLOWED_TENANT_IDS) {
-      console.log('No tenant restrictions configured, allowing all organizations');
-      return true;
-    }
-
-    const allowedTenants = process.env.ALLOWED_TENANT_IDS.split(',').map(id => id.trim());
-    console.log('Checking if tenant is allowed:', tenantId);
-    console.log('Allowed tenants:', allowedTenants);
-    
-    return allowedTenants.includes(tenantId);
   }
 
   verifyToken(token: string): UserProfile | null {
@@ -167,6 +90,45 @@ export class AuthService {
     } catch (error) {
       throw new Error('Invalid token');
     }
+  }
+
+  async verifyTeamsToken(token: string): Promise<UserProfile | null> {
+    try {
+      const response = await axios.get('https://graph.microsoft.com/v1.0/me', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const userData = response.data;
+      return {
+        id: userData.id,
+        email: userData.mail || userData.userPrincipalName,
+        displayName: userData.displayName,
+        jobTitle: userData.jobTitle || '',
+        department: userData.department || '',
+        organization: userData.companyName || '',
+        roles: ['user'],
+        status: 'active',
+        tenantId: userData.tenantId,
+        organizationName: userData.companyName || ''
+      };
+    } catch (error) {
+      console.error('Error verifying Teams token:', error);
+      return null;
+    }
+  }
+
+  async createAppToken(userProfile: UserProfile): Promise<string> {
+    return jwt.sign(
+      { 
+        id: userProfile.id,
+        email: userProfile.email,
+        roles: userProfile.roles
+      },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '1h' }
+    );
   }
 }
 

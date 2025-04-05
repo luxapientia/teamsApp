@@ -22,20 +22,26 @@ router.post('/callback', async (req: Request, res: Response) => {
       headers: req.headers
     });
 
-    const { code, redirect_uri } = req.body;
+    const { code, token, redirect_uri } = req.body;
     
-    if (!code) {
-      console.error('No code provided in callback request');
-      return res.status(400).json({ error: 'Authorization code is required' });
+    // Handle Teams SSO token
+    if (token) {
+      const userProfile = await authService.verifyTeamsToken(token);
+      if (!userProfile) {
+        return res.status(401).json({ error: 'Invalid Teams token' });
+      }
+
+      const appToken = await authService.createAppToken(userProfile);
+      return res.json({ token: appToken, user: userProfile });
+    }
+    
+    // Handle standard login code
+    if (code) {
+      const result = await authService.handleCallback(code, redirect_uri);
+      return res.json(result);
     }
 
-    console.log('Processing callback with code:', code.substring(0, 10) + '...');
-    console.log('Redirect URI:', redirect_uri);
-
-    const result = await authService.handleCallback(code, redirect_uri);
-    console.log('Callback processed successfully');
-    
-    return res.json(result);
+    return res.status(400).json({ error: 'Either code or token is required' });
   } catch (error: any) {
     console.error('Callback error details:', {
       message: error.message,

@@ -29,6 +29,19 @@ export interface License extends BaseEntity {
   status: LicenseStatus;
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  displayName: string;
+  jobTitle?: string;
+  department?: string;
+  organization?: string;
+  roles: string[];
+  status?: 'active' | 'inactive';
+  tenantId?: string;
+  organizationName?: string;
+}
+
 // API Response types
 export interface ApiResponse<T> {
   data: T;
