@@ -4,7 +4,7 @@ import { AxiosError } from 'axios';
 import { PersonalPerformance } from '@/types';
 interface PersonalPerformanceState {
   personalPerformances: PersonalPerformance[];
-  teamPerformances: PersonalPerformance[];  
+  teamPerformances: PersonalPerformance[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
@@ -19,7 +19,7 @@ const initialState: PersonalPerformanceState = {
 // Async thunks
 export const fetchPersonalPerformances = createAsyncThunk(
   'personalPerformance/fetchPersonalPerformances',
-  async (payload: {annualTargetId: string, quarter: string}) => {
+  async (payload: { annualTargetId: string, quarter: string }) => {
     try {
       const response = await api.get(`/personal-performance/personal-performances`, {
         params: {
@@ -28,6 +28,27 @@ export const fetchPersonalPerformances = createAsyncThunk(
         }
       });
 
+      if (response.status === 200) {
+        return response.data.data as PersonalPerformance[];
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.log('error', error);
+      return [];
+    }
+  }
+);
+
+export const fetchTeamPerformances = createAsyncThunk(
+  'personalPerformance/fetchTeamPerformances',
+  async (annualTargetId: string) => {
+    try {
+      const response = await api.get(`/personal-performance/team-performances`, {
+        params: {
+          annualTargetId: annualTargetId
+        }
+      });
       if (response.status === 200) {
         return response.data.data as PersonalPerformance[];
       } else {
@@ -113,6 +134,13 @@ const personalPerformanceSlice = createSlice({
         state.status = 'failed';
         state.error = action.error.message || 'Failed to fetch targets';
       })
+      .addCase(fetchTeamPerformances.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchTeamPerformances.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.teamPerformances = action.payload;
+      })
       .addCase(createPersonalPerformance.fulfilled, (state, action) => {
         // if (action.payload) {
         //   state.personalPerformance.push(action.payload);
@@ -120,7 +148,7 @@ const personalPerformanceSlice = createSlice({
       })
       .addCase(updatePersonalPerformance.fulfilled, (state, action) => {
         if (action.payload) {
-          state.personalPerformances = state.personalPerformances.map(personalPerformance => 
+          state.personalPerformances = state.personalPerformances.map(personalPerformance =>
             personalPerformance._id === action.payload?._id ? action.payload : personalPerformance
           ) as PersonalPerformance[];
         }

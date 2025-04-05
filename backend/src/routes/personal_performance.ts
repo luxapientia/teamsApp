@@ -57,21 +57,16 @@ router.get('/personal-performances', authenticateToken, async (_req: Request, re
   }
 });
 
-// router.post('/create-annual-target', authenticateToken, async (req: Request, res: Response) => {
-//   try {
-//     const { annualTarget } = req.body;
-//     const existingAnnualTarget = await AnnualTarget.findOne({ name: annualTarget.name });
-//     if (existingAnnualTarget) {
-//       return res.status(400).json({ error: 'Annual target already exists' });
-//     }
-
-//     const newAnnualTarget = await AnnualTarget.create(annualTarget) as AnnualTargetDocument;
-//     return res.json(newAnnualTarget);
-//   } catch (error) {
-//     console.error('Create annual target error:', error);
-//     return res.status(500).json({ error: 'Failed to create annual target' });
-//   }
-// });
+router.get('/team-performances', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { annualTargetId } = req.query;
+    const teamPerformances = await PersonalPerformance.find({ annualTargetId }) as PersonalPerformanceDocument[];
+    return res.json(teamPerformances);
+  } catch (error) {
+    console.error('Team performances error:', error);
+    return res.status(500).json({ error: 'Failed to get team performances' });
+  }
+});
 
 router.put('/update-personal-performance/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
