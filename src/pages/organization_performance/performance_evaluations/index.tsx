@@ -109,7 +109,7 @@ const PerformanceEvaluations: React.FC = () => {
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [showTable, setShowTable] = useState(false);
-  const [selectedKPI, setSelectedKPI] = useState<{ kpi: QuarterlyTargetKPI; objectiveName: string; objectiveId: string; kpiIndex: number } | null>(null);
+  const [selectedKPI, setSelectedKPI] = useState< QuarterlyTargetKPI | null>(null);
   const [evidenceModalData, setEvidenceModalData] = useState<{
     evidence: string;
     attachments: Array<{ name: string; url: string }>;
@@ -190,13 +190,8 @@ const PerformanceEvaluations: React.FC = () => {
     return total;
   };
 
-  const handleAccess = (kpi: QuarterlyTargetKPI, objectiveName: string, objectiveId: string, kpiIndex: number) => {
-    setSelectedKPI({
-      kpi,
-      objectiveName,
-      objectiveId,
-      kpiIndex
-    });
+  const handleAccess = (kpi: QuarterlyTargetKPI) => {
+    setSelectedKPI(kpi);
   };
 
   const exportToExcel = (objectives: any[], annualTarget: any, quarter: string) => {
@@ -543,7 +538,7 @@ const PerformanceEvaluations: React.FC = () => {
                         <StyledTableCell align="center">
                           <AccessButton
                             size="small"
-                            onClick={() => handleAccess(kpi, objective.name, objective.perspectiveId?.toString() || '', kpiIndex)}
+                            onClick={() => handleAccess(kpi)}
                           >
                             Evaluate
                           </AccessButton>

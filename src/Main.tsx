@@ -11,7 +11,7 @@ import { useAuth } from './contexts/AuthContext';
 import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
 import MyPerformanceAgreement from './pages/my_performance_agreement';
-
+import MyPerformanceAssessment from './pages/my_performance_assessment';
 const iconSize = 24;
 
 function Main() {
@@ -34,6 +34,12 @@ function Main() {
             selectedTab={selectedTab}
           />
         )}
+        <MyPerformanceAssessment
+          title='My Performance Assessment'
+          icon={<Organization20Regular fontSize={iconSize} />}
+          tabs={['My Assessments']}
+          selectedTab={selectedTab}
+        />
         <MyPerformanceAgreement
           title='My Performance Agreement'
           icon={<Organization20Regular fontSize={iconSize} />}
@@ -58,12 +64,12 @@ function Main() {
           tabs={['Teams']}
           selectedTab={selectedTab}
         />
-        {/* <NotificationPage 
+        <NotificationPage 
           title='Notifications'
           icon={<Alert24Regular fontSize={iconSize} />}
           tabs={['Quarterly Targets', 'Performance Assessments']}
           selectedTab={selectedTab}
-        /> */}
+        />
       </Layout>
     </Provider>
   );

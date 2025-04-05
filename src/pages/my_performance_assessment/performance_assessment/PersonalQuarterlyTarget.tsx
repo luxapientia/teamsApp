@@ -14,21 +14,30 @@ import {
   MenuItem,
   SelectChangeEvent,
   IconButton,
-  Stack,
+  styled,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget } from '@/types/personalPerformance';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddInitiativeModal from './AddInitiativeModal';
-import RatingScalesModal from '../../../components/RatingScalesModal';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { RootState } from '../../../store';
 import { api } from '../../../services/api';
+import KPIModal from './KPIModal';
+
+const AccessButton = styled(Button)({
+  backgroundColor: '#0078D4',
+  color: 'white',
+  textTransform: 'none',
+  padding: '6px 16px',
+  minWidth: 'unset',
+  '&:hover': {
+    backgroundColor: '#106EBE',
+  },
+});
+
 interface Supervisor {
   id: string;
   name: string;
@@ -57,11 +66,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const dispatch = useAppDispatch();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
-  const [isAddInitiativeModalOpen, setIsAddInitiativeModalOpen] = useState(false);
-  const [editingObjective, setEditingObjective] = useState<PersonalQuarterlyTargetObjective | null>(null);
-  const [selectedRatingScales, setSelectedRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
+  const [selectedKPI, setSelectedKPI] = useState<{ kpi: QuarterlyTargetKPI, perspectiveId: number, objectiveName: string, initiativeName: string, kpiIndex: number } | null>(null);
   const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
   useEffect(() => {
     if (personalPerformance) {
@@ -74,46 +80,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const handleSupervisorChange = (event: SelectChangeEvent) => {
     setSelectedSupervisor(event.target.value);
     onSupervisorChange(event.target.value);
-  };
-
-  const handleEdit = (objective: PersonalQuarterlyTargetObjective) => {
-    setEditingObjective(objective);
-    setIsAddInitiativeModalOpen(true);
-  };
-
-  const handleInitiativeSave = (data: {
-    perspectiveId: number;
-    objectiveName: string;
-    initiative: string;
-    kpis: QuarterlyTargetKPI[];
-  }) => {
-    const newObjective: PersonalQuarterlyTargetObjective = {
-      perspectiveId: data.perspectiveId,
-      name: data.objectiveName,
-      initiativeName: data.initiative,
-      KPIs: data.kpis,
-    };
-
-    if (editingObjective) {
-      setPersonalQuarterlyObjectives(prevObjectives =>
-        prevObjectives.map(obj =>
-          (obj.name === editingObjective.name &&
-            obj.initiativeName === editingObjective.initiativeName &&
-            obj.perspectiveId === editingObjective.perspectiveId)
-            ? newObjective
-            : obj
-        )
-      );
-    } else {
-      setPersonalQuarterlyObjectives(prev => [...prev, newObjective]);
-    }
-
-    setEditingObjective(null);
-    setIsAddInitiativeModalOpen(false);
-  };
-
-  const handleViewRatingScales = (kpi: QuarterlyTargetKPI) => {
-    setSelectedRatingScales(kpi.ratingScales);
   };
 
   const handleDraft = () => {
@@ -249,6 +215,26 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     setIsSubmitted(false);
   };
 
+  const handleSave = (newKPI: QuarterlyTargetKPI) => {
+    if (selectedKPI) {
+      const newPersonalQuarterlyObjectives = personalQuarterlyObjectives.map(objective => {
+        if (objective.perspectiveId === selectedKPI.perspectiveId && objective.name === selectedKPI.objectiveName && objective.initiativeName === selectedKPI.initiativeName) {
+          return {
+            ...objective,
+            KPIs: objective.KPIs.map((kpi, kpiIndex) => kpiIndex === selectedKPI.kpiIndex ? newKPI : kpi)
+          }
+        }
+        return objective;
+      })
+
+
+
+      setPersonalQuarterlyObjectives(newPersonalQuarterlyObjectives);
+      setSelectedKPI(null);
+    }
+
+  };
+
   return (
     <Box>
       <Box sx={{
@@ -297,6 +283,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             value={selectedSupervisor}
             onChange={handleSupervisorChange}
             displayEmpty
+            disabled={true}
           >
             <MenuItem value="" disabled>
               <Typography color="textSecondary">Select Supervisor</Typography>
@@ -310,31 +297,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </FormControl>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        {canEdit() ? (
-          <Button
-            startIcon={<AddIcon />}
-            onClick={() => setIsAddInitiativeModalOpen(true)}
-            sx={{
-              color: '#6B7280',
-              '&:hover': {
-                backgroundColor: '#F9FAFB',
-              },
-            }}
-          >
-            Add Initiative
-          </Button>
-        ) : (
-          <Typography
-            variant="caption"
-            sx={{
-              color: '#6B7280',
-              fontStyle: 'italic'
-            }}
-          >
-            Not Editable
-          </Typography>
-        )}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="contained"
@@ -397,8 +360,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
-                <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
-                <StyledHeaderCell align="center">Actions</StyledHeaderCell>
+                <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
+                <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
+                <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
+                <StyledHeaderCell align="center">Access</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -481,64 +446,41 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               {kpi.target}
                             </StyledTableCell>
                             <StyledTableCell align="center">
-                              <Button
-                                variant="outlined"
+                              {kpi.actualAchieved}
+                            </StyledTableCell>
+                            <StyledTableCell align="center">
+                              {kpi.ratingScore}
+                            </StyledTableCell>
+                            <StyledTableCell align="center">
+                              {kpi.evidence && (
+                                <IconButton
+                                  size="small"
+                                  // onClick={() => setEvidenceModalData({
+                                  //   evidence: kpi.evidence,
+                                  //   attachments: kpi.attachments
+                                  // })}
+                                  sx={{ color: '#6B7280' }}
+                                >
+                                  <DescriptionIcon />
+                                </IconButton>
+                              )}
+                            </StyledTableCell>
+                            <StyledTableCell align="center">
+                              <AccessButton
                                 size="small"
-                                onClick={() => handleViewRatingScales(kpi)}
-                                sx={{
-                                  borderColor: '#E5E7EB',
-                                  color: '#374151',
-                                  '&:hover': {
-                                    borderColor: '#D1D5DB',
-                                    backgroundColor: '#F9FAFB',
-                                  },
+                                onClick={() => {
+                                  setSelectedKPI({
+                                    kpi: kpi,
+                                    kpiIndex: kpiIndex,
+                                    perspectiveId: perspectiveGroup.perspectiveId,
+                                    objectiveName: objectiveGroup.name,
+                                    initiativeName: initiative.initiativeName
+                                  });
                                 }}
                               >
-                                View
-                              </Button>
+                                Evaluate
+                              </AccessButton>
                             </StyledTableCell>
-                            {kpiIndex === 0 && (
-                              <StyledTableCell align="center" rowSpan={initiative.KPIs.length}>
-                                {canEdit() ? (
-                                  <Stack direction="row" spacing={1} justifyContent="center">
-                                    <IconButton
-                                      size="small"
-                                      sx={{ color: '#6B7280' }}
-                                      onClick={() => handleEdit(initiative)}
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      sx={{ color: '#6B7280' }}
-                                      onClick={() => {
-                                        if (window.confirm('Are you sure you want to delete this objective?')) {
-                                          setPersonalQuarterlyObjectives(prev =>
-                                            prev.filter(obj =>
-                                              !(obj.name === initiative.name &&
-                                                obj.initiativeName === initiative.initiativeName &&
-                                                obj.perspectiveId === initiative.perspectiveId)
-                                            )
-                                          );
-                                        }
-                                      }}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Stack>
-                                ) : (
-                                  <Typography
-                                    variant="caption"
-                                    sx={{
-                                      color: '#6B7280',
-                                      fontStyle: 'italic'
-                                    }}
-                                  >
-                                    Not Editable
-                                  </Typography>
-                                )}
-                              </StyledTableCell>
-                            )}
                           </TableRow>
                         );
 
@@ -594,25 +536,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
       </Box>
 
-      {isAddInitiativeModalOpen && (
-        <AddInitiativeModal
-          open={isAddInitiativeModalOpen}
-          onClose={() => {
-            setEditingObjective(null);
-            setIsAddInitiativeModalOpen(false);
-          }}
-          annualTarget={annualTarget}
-          onSave={handleInitiativeSave}
-          editingObjective={editingObjective}
-          personalQuarterlyObjectives={personalQuarterlyObjectives}
-        />
-      )}
-
-      {selectedRatingScales && (
-        <RatingScalesModal
-          open={!!selectedRatingScales}
-          onClose={() => setSelectedRatingScales(null)}
-          ratingScales={selectedRatingScales}
+      {selectedKPI && (
+        <KPIModal
+          open={!!selectedKPI}
+          onClose={() => setSelectedKPI(null)}
+          onSave={handleSave}
+          selectedKPI={selectedKPI.kpi}
+          annualTargetId={personalPerformance?.annualTargetId || ''}
+          quarter={quarter}
         />
       )}
     </Box >
