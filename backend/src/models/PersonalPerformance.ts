@@ -2,6 +2,18 @@ import { Schema, model, Document } from 'mongoose';
 import { QuarterlyTargetKPI } from './AnnualTarget';
 
 
+export enum AgreementStatus {
+  Draft = 'Draft',
+  Submitted = 'Submitted',
+  Approved = 'Approved'
+}
+
+export enum AssessmentStatus {
+  Draft = 'Draft',
+  Submitted = 'Submitted',
+  Approved = 'Approved'
+}
+
 interface PersonalQuarterlyTargetObjective {
   perspectiveId: number;
   name: string;
@@ -12,8 +24,8 @@ interface PersonalQuarterlyTargetObjective {
 interface PersonalQuarterlyTarget {
   quarter: string;
   isEditable: boolean;
-  isAgreementDraft: boolean;
-  isAssessmentDraft: boolean;
+  agreementStatus: AgreementStatus;
+  assessmentStatus: AssessmentStatus;
   supervisorId?: string;
   objectives: PersonalQuarterlyTargetObjective[];
 }
@@ -40,15 +52,17 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
       type: String,
       enum: ['Q1', 'Q2', 'Q3', 'Q4']
     },
-    isAgreementDraft: {
-      type: Boolean,
+    agreementStatus: {
+      type: String,
+      enum: ['Draft', 'Submitted', 'Approved'],
       required: true,
-      default: true,
+      default: 'Draft',
     },
-    isAssessmentDraft: {
-      type: Boolean,
+    assessmentStatus: {
+      type: String,
+      enum: ['Draft', 'Submitted', 'Approved'],
       required: true,
-      default: true,
+      default: 'Draft',
     },
     isEditable: {
       type: Boolean,
