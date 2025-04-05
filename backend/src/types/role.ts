@@ -6,7 +6,7 @@ export enum UserRole {
 
 export interface UserRoleAssignment {
   _id?: string;
-  userId: string;
+  MicrosoftId: string; //
   email: string;
   role: UserRole;
   status: 'active' | 'inactive';
@@ -15,7 +15,7 @@ export interface UserRoleAssignment {
 
 export interface RoleChangeLog {
   _id?: string;
-  userId: string;
+  MicrosoftId: string; //
   oldRole?: UserRole;
   newRole: UserRole;
   changedBy: string;
