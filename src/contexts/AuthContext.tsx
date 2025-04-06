@@ -74,8 +74,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Handling token...');
       const response = await api.post('/auth/callback', { token });
       const userData = response.data;
-      
-      localStorage.setItem('token', userData.token);
+      console.log('userData', userData);
+      localStorage.setItem('auth_token', userData.token);
       setUser(userData.user);
       setIsAuthenticated(true);
       navigate('/');
