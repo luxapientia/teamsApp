@@ -36,10 +36,10 @@ router.post('/callback', async (req: Request, res: Response) => {
         console.error('Teams token verification failed');
         return res.status(401).json({ error: 'Invalid Teams token' });
       } else {
-        console.log(userProfile, 'userProfile');
         const user = await roleService.getUser(userProfile.id);
         const role = await roleService.getRoleByEmail(userProfile.email);
-        console.log(role, 'role');
+        userProfile.role = role || UserRole.USER;
+        console.log(userProfile, 'userProfile');
         if (!user) {
           await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, role || UserRole.USER, userProfile.tenantId);
         } else {
@@ -77,32 +77,7 @@ router.post('/callback', async (req: Request, res: Response) => {
     if (code) {
       console.log('Processing standard login code...');
       const result = await authService.handleCallback(code, redirect_uri);
-      if (result.user) {
-        const user = await roleService.getUser(result.user.id);
-        const role = await roleService.getRoleByEmail(result.user.email);
-        console.log(role, 'role');
-        console.log(result.user, 'result.user');
-        if (!user) {
-          await roleService.createUser(
-            result.user.id,
-            result.user.email,
-            result.user.displayName,
-            role || UserRole.USER,
-            result.user.tenantId
-          );
-        } else {
-          await roleService.updateUser(
-            result.user.id,
-            {
-              MicrosoftId: result.user.id,
-              name: result.user.displayName,
-              email: result.user.email,
-              role: role || UserRole.USER,
-              tenantId: result.user.tenantId
-            }
-          );
-        }
-      }
+
       return res.json(result);
     }
 
