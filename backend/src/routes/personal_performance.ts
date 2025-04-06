@@ -1,6 +1,6 @@
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import PersonalPerformance, { PersonalPerformanceDocument, AgreementStatus, AssessmentStatus } from '../models/PersonalPerformance';
-import { authenticateToken } from '../middleware/auth';
+import { AuthenticatedRequest, authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -34,7 +34,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.get('/personal-performance', authenticateToken, async (req: Request, res: Response) => {
+router.get('/personal-performance', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { userId } = req.params;
     console.log(userId);
@@ -46,17 +46,18 @@ router.get('/personal-performance', authenticateToken, async (req: Request, res:
   }
 });
 
-router.get('/personal-performances', authenticateToken, async (_req: Request, res: Response) => {
+router.get('/personal-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const annualTargetId = _req.query.annualTargetId as string;
-    const quarter = _req.query.quarter as string;
+    const annualTargetId = req.query.annualTargetId as string;
+    const quarter = req.query.quarter as string;
     const personalPerformances = await PersonalPerformance.find({ annualTargetId }) as PersonalPerformanceDocument[];
 
     if(personalPerformances.length === 0) {
       const newPersonalPerformance = await PersonalPerformance.create({
         annualTargetId,
         quarter,
-        userId: annualTargetId,
+        userId: req.user?._id,
+        teamId: annualTargetId,
         quarterlyTargets: ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => {
           return {
             quarter,
@@ -78,7 +79,7 @@ router.get('/personal-performances', authenticateToken, async (_req: Request, re
   }
 });
 
-router.get('/team-performances', authenticateToken, async (req: Request, res: Response) => {
+router.get('/team-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId } = req.query;
     const teamPerformances = await PersonalPerformance.find({ annualTargetId }) as PersonalPerformanceDocument[];
@@ -89,7 +90,7 @@ router.get('/team-performances', authenticateToken, async (req: Request, res: Re
   }
 });
 
-router.put('/update-personal-performance/:id', authenticateToken, async (req: Request, res: Response) => {
+router.put('/update-personal-performance/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { personalPerformance } = req.body;
@@ -102,7 +103,7 @@ router.put('/update-personal-performance/:id', authenticateToken, async (req: Re
   }
 });
 
-router.post('/upload', authenticateToken, upload.single('file'), async (req: Request, res: Response) => {
+router.post('/upload', authenticateToken, upload.single('file'), async (req: AuthenticatedRequest, res: Response) => {
   console.log(req.file, '-------------------------');
   try {
     if (!req.file) {
@@ -122,7 +123,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req: Req
   }
 });
 
-router.delete('/delete-file', authenticateToken, async (req: Request, res: Response) => {
+router.delete('/delete-file', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { fileUrl } = req.body;
     const filePath = path.join(__dirname, '../../public/', fileUrl);
