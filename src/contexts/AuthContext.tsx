@@ -91,12 +91,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Auth callback response:', response.data.data);
       console.log('Auth callback response:', {
         status: response.status,
-        hasData: !!response.data,
-        hasToken: response.data?.token?.length > 0,
-        hasUser: !!response.data?.user
+        hasData: !!response.data.data,
+        hasToken: response.data.data?.token?.length > 0,
+        hasUser: !!response.data.data?.user
       });
 
-      const userData = response.data;
+      const userData = response.data.data;
       
       // Store the token first
       sessionStorage.setItem('auth_token', userData.token);
