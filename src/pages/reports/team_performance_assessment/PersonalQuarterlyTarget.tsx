@@ -54,22 +54,21 @@ interface PersonalQuarterlyTargetProps {
   onSupervisorChange?: (supervisorId: string) => void;
   onBack?: () => void;
   userId: string;
+  teamId: string;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
   onBack,
-  supervisors = [
-    { id: '1', name: 'John Doe' },
-    { id: '2', name: 'Jane Smith' },
-  ],
-  onSupervisorChange = () => { },
   userId = '',
+  teamId = ''
 }) => {
-  const dispatch = useAppDispatch();
+  const [selectedSupervisor, setSelectedSupervisor] = useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
+  const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, position: string, team: string, teamId: string }[]>([]);
+
   const [evidenceModalData, setEvidenceModalData] = useState<{
     evidence: string;
     attachments: Array<{ name: string; url: string }>;
@@ -77,19 +76,36 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   useEffect(() => {
     fetchPersonalPerformance();
+    fetchCompanyUsers();
   }, []);
 
   useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
+      setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
     }
   }, [personalPerformance]);
+
+  const fetchCompanyUsers = async () => {
+    try {
+      const response = await api.get('/report/company-users');
+      if (response.status === 200) {
+        setCompanyUsers(response.data.data);
+      } else {
+        setCompanyUsers([]);
+      }
+    } catch (error) {
+      setCompanyUsers([]);
+    }
+  }
 
   const fetchPersonalPerformance = async () => {
     try {
       const response = await api.get(`/personal-performance/personal-performance/`, {
         params: {
-          userId: userId
+          userId: userId,
+          annualTargetId: annualTarget._id,
+          teamId: teamId
         }
       });
 
@@ -204,7 +220,38 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Stack>
       </Box>
 
-      <Paper 
+      <Box sx={{ mb: 3 }}>
+        <FormControl
+          variant="outlined"
+          size="small"
+          sx={{
+            mt: 1,
+            minWidth: 200,
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': {
+                borderColor: '#E5E7EB',
+              },
+              '&:hover fieldset': {
+                borderColor: '#D1D5DB',
+              },
+            },
+          }}
+        >
+          <Select
+            value={selectedSupervisor}
+            displayEmpty
+            disabled={true}
+          >
+            {companyUsers.map((user) => (
+              <MenuItem key={user.id} value={user.id}>
+                {user.fullName}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+
+      <Paper
         className="performance-table"
         sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}
       >
