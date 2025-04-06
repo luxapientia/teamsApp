@@ -96,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('auth_token');
     setUser(null);
     setIsAuthenticated(false);
     navigate('/login');
