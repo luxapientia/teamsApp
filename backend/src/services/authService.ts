@@ -102,6 +102,8 @@ export class AuthService {
 
   async verifyTeamsToken(token: string): Promise<UserProfile | null> {
     try {
+      console.log('Starting Teams token verification...');
+      
       // First, exchange the Teams token for a Graph API token
       const tokenResponse = await axios.post(
         `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
@@ -120,8 +122,13 @@ export class AuthService {
         }
       );
 
+      if (!tokenResponse.data.access_token) {
+        console.error('No access token received from token exchange');
+        return null;
+      }
+
       const graphToken = tokenResponse.data.access_token;
-      console.log('Graph token received');
+      console.log('Graph token received successfully');
 
       // Now use the Graph token to get user profile
       const graphRes = await axios.get('https://graph.microsoft.com/v1.0/me', {
@@ -129,6 +136,11 @@ export class AuthService {
           Authorization: `Bearer ${graphToken}`
         }
       });
+
+      if (!graphRes.data) {
+        console.error('No user data received from Graph API');
+        return null;
+      }
 
       const userData = graphRes.data;
       console.log('User data from Graph:', userData);
@@ -147,10 +159,19 @@ export class AuthService {
         organizationName: userData.companyName || ''
       };
 
+      if (!userProfile.id || !userProfile.email) {
+        console.error('Invalid user profile: missing required fields', userProfile);
+        return null;
+      }
+
       console.log('Created user profile:', userProfile);
       return userProfile;
-    } catch (error) {
-      console.error('Error verifying Teams token:', error);
+    } catch (error: any) {
+      console.error('Error verifying Teams token:', {
+        message: error.message,
+        response: error.response?.data,
+        stack: error.stack
+      });
       return null;
     }
   }
