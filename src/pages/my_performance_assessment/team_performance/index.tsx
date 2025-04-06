@@ -22,7 +22,7 @@ import { RootState } from '../../../store';
 import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
-import { PersonalPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
+import { TeamPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -51,7 +51,7 @@ const ScoreBox = styled(Box)(({ theme }) => ({
   },
 }));
 
-const TeamPerformance: React.FC = () => {
+const TeamPerformances: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showTable, setShowTable] = useState(false);
@@ -148,7 +148,7 @@ const TeamPerformance: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {teamPerformances.map((performance: PersonalPerformance, index: number) => {
+              {teamPerformances.map((performance: TeamPerformance, index: number) => {
                 const quarterScores = performance.quarterlyTargets.map(quarter => {
                   return calculateQuarterScore(quarter.objectives)
                 });
@@ -160,9 +160,9 @@ const TeamPerformance: React.FC = () => {
 
                 return (
                   <TableRow key={performance._id}>
-                    <StyledTableCell>{"-----"}</StyledTableCell>
-                    <StyledTableCell>{"-----"}</StyledTableCell>
-                    <StyledTableCell>{"-----"}</StyledTableCell>
+                    <StyledTableCell>{performance.fullName}</StyledTableCell>
+                    <StyledTableCell>{performance.position}</StyledTableCell>
+                    <StyledTableCell>{performance.team}</StyledTableCell>
                     {quarterScores.map((score, idx) => {
                       const ratingScale = getRatingScaleInfo(score, annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
                       return (
@@ -194,4 +194,4 @@ const TeamPerformance: React.FC = () => {
   );
 };
 
-export default TeamPerformance;
+export default TeamPerformances;
