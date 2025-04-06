@@ -35,6 +35,7 @@ export interface PersonalPerformanceDocument extends Document {
   _id: string;
   teamId: string;
   userId: string;
+  tenantId: string;
   annualTargetId: string;
   quarterlyTargets: PersonalQuarterlyTarget[];
 }
@@ -49,6 +50,10 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
     type: String,
     required: true,
     ref: 'User',
+  },
+  tenantId: {
+    type: String,
+    required: true,
   },
   annualTargetId: {
     type: String,

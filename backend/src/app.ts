@@ -11,6 +11,7 @@ import scoreCardRoutes from './routes/score_card';
 import personalPerformanceRoutes from './routes/personal_performance';
 import notificationRoutes from './routes/notifications';
 import teamRoutes from './routes/teams';
+import reportRoutes from './routes/report';
 const app = express();
 
 // Middleware
@@ -33,6 +34,8 @@ app.use('/api/score-card', scoreCardRoutes);
 app.use('/api/personal-performance', personalPerformanceRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/teams', teamRoutes);
+app.use('/api/report', reportRoutes);
+
 
 // Connect to MongoDB
 mongoose.connect(config.mongoUri)

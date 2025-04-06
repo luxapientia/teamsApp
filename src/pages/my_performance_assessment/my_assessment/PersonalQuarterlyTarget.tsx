@@ -39,15 +39,9 @@ const AccessButton = styled(Button)({
   },
 });
 
-interface Supervisor {
-  id: string;
-  name: string;
-}
-
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
-  supervisors?: Supervisor[];
   onSupervisorChange?: (supervisorId: string) => void;
   onBack?: () => void;
   personalPerformance?: PersonalPerformance | null;
@@ -57,10 +51,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   annualTarget,
   quarter,
   onBack,
-  supervisors = [
-    { id: '1', name: 'John Doe' },
-    { id: '2', name: 'Jane Smith' },
-  ],
   onSupervisorChange = () => { },
   personalPerformance = null,
 }) => {
@@ -73,7 +63,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     evidence: string;
     attachments: Array<{ name: string; url: string }>;
   } | null>(null);
-  const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
+  const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
+
+  useEffect(() => {
+    fetchCompanyUsers();
+  }, []);
+
   useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
@@ -86,6 +81,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     setSelectedSupervisor(event.target.value);
     onSupervisorChange(event.target.value);
   };
+
+  const fetchCompanyUsers = async () => {
+    try {
+      const response = await api.get('/personal-performance/company-users');
+      if (response.status === 200) {
+        setCompanyUsers(response.data.data);
+      } else {
+        setCompanyUsers([]);
+      }
+    } catch (error) {
+      setCompanyUsers([]);
+    }
+  }
 
   // Add function to calculate overall rating score
   const calculateOverallScore = (objectives: QuarterlyTargetObjective[]) => {
@@ -318,9 +326,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             <MenuItem value="" disabled>
               <Typography color="textSecondary">Select Supervisor</Typography>
             </MenuItem>
-            {supervisors.map((supervisor) => (
-              <MenuItem key={supervisor.id} value={supervisor.id}>
-                {supervisor.name}
+            {companyUsers.map((user) => (
+              <MenuItem key={user.id} value={user.id}>
+                {user.name}
               </MenuItem>
             ))}
           </Select>
@@ -375,7 +383,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         <Typography
           sx={{
             fontWeight: 500,
-            color: calculateTotalWeight() > 100 ? '#DC2626' : '#374151'
+            color: calculateTotalWeight() === 100 ? '#059669' : '#DC2626'
           }}
         >
           Total Weight: {calculateTotalWeight()}%
