@@ -1,6 +1,6 @@
 {
-    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.15/MicrosoftTeams.schema.json",
-    "manifestVersion": "1.15",
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.16",
     "version": "1.0.0",
     "id": "af138b87-5e67-40bd-ad03-575faf285d97",
     "packageName": "com.microsoft.teams.extension",
@@ -11,8 +11,8 @@
         "termsOfUseUrl": "https://app.teamscorecards.online/index.html#/termsofuse"
     },
     "icons": {
-        "color": "Logo.png",
-        "outline": "Logo.png"
+        "color": "color.png",
+        "outline": "outline.png"
     },
     "name": {
         "short": "TeamScoreCards",
@@ -28,9 +28,9 @@
         {
             "entityId": "index",
             "name": "Personal Tab",
-            "contentUrl": "https://app.teamscorecards.online",
-            "websiteUrl": "https://app.teamscorecards.online",
-            "scopes": ["personal", "team"]
+            "contentUrl": "https://app.teamscorecards.online/index.html#/tab",
+            "websiteUrl": "https://app.teamscorecards.online/index.html#/tab",
+            "scopes": ["personal", "team", "groupchat"]
         }
     ],
     "permissions": [
