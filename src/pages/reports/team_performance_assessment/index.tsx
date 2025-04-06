@@ -27,6 +27,7 @@ import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { PDFDownloadLink, Document, Page, View, Text, StyleSheet, pdf } from '@react-pdf/renderer';
+import { api } from '../../../services/api';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -110,13 +111,28 @@ const TeamPerformanceAgreements: React.FC = () => {
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [showTable, setShowTable] = useState(false);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    { fullName: 'Nabot Uushona', position: 'Human Capital', team: 'Capital Director' },
-    { fullName: 'Helen Chin', position: 'Human Capital', team: 'Payroll Officer' },
-    { fullName: 'John Cyf', position: 'ICT', team: 'ICT Technician' },
-  ]);
-  const [selectedTeamMember, setSelectedTeamMember] = useState<TeamMember | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [selectedTeamId, setSelectedTeamId] = useState('');
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
+
+  const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, position: string, team: string, teamId: string }[]>([]);
+
+  useEffect(() => {
+    fetchCompanyUsers();
+  }, []);
+
+  const fetchCompanyUsers = async () => {
+    try {
+      const response = await api.get('/report/company-users');
+      if (response.status === 200) {
+        setCompanyUsers(response.data.data);
+      } else {
+        setCompanyUsers([]);
+      }
+    } catch (error) {
+      setCompanyUsers([]);
+    }
+  }
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -196,17 +212,19 @@ const TeamPerformanceAgreements: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {teamMembers.map((member, index) => (
+              {companyUsers.map((user, index) => (
                 <TableRow key={index}>
-                  <StyledTableCell>{member.fullName}</StyledTableCell>
-                  <StyledTableCell>{member.position}</StyledTableCell>
-                  <StyledTableCell>{member.team}</StyledTableCell>
+                  <StyledTableCell>{user.fullName}</StyledTableCell>
+                  <StyledTableCell>{user.position}</StyledTableCell>
+                  <StyledTableCell>{user.team}</StyledTableCell>
                   <StyledTableCell align="right">
                     <AccessButton
                       size="small"
                       onClick={() => {
                         setShowPersonalQuarterlyTarget(true);
                         setShowTable(false);
+                        setSelectedUserId(user.id);
+                        setSelectedTeamId(user.teamId);
                       }}
                     >
                       View
@@ -226,7 +244,8 @@ const TeamPerformanceAgreements: React.FC = () => {
             setShowPersonalQuarterlyTarget(false);
             setShowTable(true);
           }}
-          userId={selectedTeamMember?.fullName || ''}
+          userId={selectedUserId}
+          teamId={selectedTeamId}
         />
       )}
     </Box>
