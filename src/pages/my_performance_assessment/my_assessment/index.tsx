@@ -28,7 +28,6 @@ import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchPersonalPerformances } from '../../../store/slices/personalPerformanceSlice';
 import { StyledHeaderCell, StyledTableCell, StyledMenuItem, StyledListItemIcon } from '../../../components/StyledTableComponents';
 import { PersonalPerformance, PersonalQuarterlyTarget } from '../../../types';
-import AddIcon from '@mui/icons-material/Add';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 
 const StyledFormControl = styled(FormControl)({
@@ -61,12 +60,6 @@ const PerformanceAssessment: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
-  const [isEditable, setIsEditable] = useState(false);
-  const [supervisors] = useState([
-    { id: '1', name: 'John Doe' },
-    { id: '2', name: 'Jane Smith' },
-    // ... more supervisors
-  ]);
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets

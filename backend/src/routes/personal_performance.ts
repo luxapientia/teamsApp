@@ -63,7 +63,7 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
   try {
     const annualTargetId = req.query.annualTargetId as string;
     const quarter = req.query.quarter as string;
-    const personalPerformances = await PersonalPerformance.find({ annualTargetId }) as PersonalPerformanceDocument[];
+    const personalPerformances = await PersonalPerformance.find({ annualTargetId, userId: req.user?._id }) as PersonalPerformanceDocument[];
 
     if(personalPerformances.length === 0) {
       const newPersonalPerformance = await PersonalPerformance.create({
