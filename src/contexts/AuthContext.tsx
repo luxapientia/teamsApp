@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleToken = async (token: string) => {
     try {
       console.log('Handling token...');
-      const response = await api.post('/auth/callback', { token });
+      const response = await api.post('/api/auth/callback', { token });
       const userData = response.data;
       console.log('userData', userData);
       sessionStorage.setItem('auth_token', userData.token);
@@ -96,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('auth_token');
     setUser(null);
     setIsAuthenticated(false);
     navigate('/login');
