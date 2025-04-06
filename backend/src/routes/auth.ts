@@ -38,10 +38,18 @@ router.post('/callback', async (req: Request, res: Response) => {
       const appToken = await authService.createAppToken(userProfile);
       console.log('App token created successfully');
       
-      return res.json({ 
+      const response = { 
         token: appToken, 
         user: userProfile 
+      };
+      
+      console.log('Sending response:', {
+        hasToken: !!response.token,
+        hasUser: !!response.user,
+        userEmail: response.user.email
       });
+      
+      return res.json(response);
     }
     
     // Handle standard login code
