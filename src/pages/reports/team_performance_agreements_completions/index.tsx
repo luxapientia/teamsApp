@@ -21,7 +21,7 @@ import { RootState } from '../../../store';
 import { AnnualTarget } from '../../../types/annualCorporateScorecard';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
-import { PersonalPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
+import { TeamPerformance } from '../../../types';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
 
 const StyledFormControl = styled(FormControl)({
@@ -37,7 +37,7 @@ const StyledFormControl = styled(FormControl)({
   },
 });
 
-const TeamPerformance: React.FC = () => {
+const TeamPerformances: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [selectedQuarter, setSelectedQuarter] = useState('');
@@ -130,11 +130,11 @@ const TeamPerformance: React.FC = () => {
             </TableHead>
             <TableBody>
               {
-                teamPerformances.map((performance: PersonalPerformance) => (
+                teamPerformances.map((performance: TeamPerformance) => (
                   <TableRow key={performance._id}>
-                    <StyledTableCell>{'----'}</StyledTableCell>
-                    <StyledTableCell>{'----'}</StyledTableCell>
-                    <StyledTableCell>{'----'}</StyledTableCell>
+                    <StyledTableCell>{performance.fullName}</StyledTableCell>
+                    <StyledTableCell>{performance.position}</StyledTableCell>
+                    <StyledTableCell>{performance.team}</StyledTableCell>
                     <StyledTableCell>{performance.quarterlyTargets.find(quarter => quarter.quarter === selectedQuarter)?.agreementStatus}</StyledTableCell>
                     <StyledTableCell>{new Date().toLocaleString()}</StyledTableCell>
                   </TableRow>
@@ -148,4 +148,4 @@ const TeamPerformance: React.FC = () => {
   );
 };
 
-export default TeamPerformance;
+export default TeamPerformances;
