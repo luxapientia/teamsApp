@@ -95,41 +95,15 @@ export class AuthService {
 
   async verifyTeamsToken(token: string): Promise<UserProfile | null> {
     try {
-      // First, exchange the Teams token for a Graph API token
-      // const tokenResponse = await axios.post(
-      //   `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
-      //   {
-      //     client_id: process.env.AZURE_CLIENT_ID,
-      //     client_secret: process.env.AZURE_CLIENT_SECRET,
-      //     grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      //     assertion: token,
-      //     scope: 'https://graph.microsoft.com/.default',
-      //     requested_token_use: 'on_behalf_of'
-      //   }
-      // );
-
-      // console.log(tokenResponse.data, 'tokenResponse.data');
-
-      // const graphToken = tokenResponse.data.access_token;
-
       // Now use the Graph token to get user profile
       const graphRes = await fetch('https://graph.microsoft.com/v1.0/me', {
         headers: {
-          // Authorization: `Bearer ${graphToken}`
           Authorization: `Bearer ${token}`
         }
       });
 
-      // console.log(response.data, 'response.data');
       const userData: any = await graphRes.json();
 
-      // res.json({
-      //   name: profile.displayName,
-      //   email: profile.mail || profile.userPrincipalName,
-      //   jobTitle: profile.jobTitle,
-      //   id: profile.id
-      // });
-      // const userData = response.data;
       return {
         id: userData.id,
         email: userData.mail || userData.userPrincipalName,
