@@ -1,6 +1,7 @@
 import { UserRole, dUser } from '../types/role';
 import { UserModel } from '../models/role';
 import { ApiError } from '../utils/apiError';
+import { SuperUserModel } from '../models/superUser';
 
 
 export class RoleService {
@@ -73,6 +74,23 @@ export class RoleService {
   async getAllUsersWithTenantID(tenantId: string): Promise<dUser[]> {
 
     return UserModel.find({ tenantId });
+  }
+
+  async getRoleByEmail(email: string): Promise<UserRole | null> {
+    console.log(process.env.APP_OWNER_EMAIL, 'process.env.APP_OWNER_EMAIL');
+    if(email===process.env.APP_OWNER_EMAIL){
+      return UserRole.APP_OWNER;
+    }
+    const superUser = await SuperUserModel.findOne({ email });
+    if (superUser) {
+      return UserRole.SUPER_USER;
+    }
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return null;
+    } else {
+      return UserRole.USER;
+    }
   }
 }
 
