@@ -9,6 +9,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: any;
+  isTeams: boolean;
+  isTeamsInitialized: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -19,22 +21,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [isTeams, setIsTeams] = useState(false);
+  const [isTeamsInitialized, setIsTeamsInitialized] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const initializeAuth = async () => {
       console.log('Initializing auth...');
-      const isTeams = isInTeams();
-      console.log('Is running in Teams:', isTeams);
+      setIsLoading(true);
+      const teamsCheck = isInTeams();
+      console.log('Is running in Teams:', teamsCheck);
+      setIsTeams(teamsCheck);
 
-      if (isTeams) {
+      if (teamsCheck) {
         try {
           await initializeTeams();
-          console.log('Teams SDK initialized, attempting SSO...');
-          await handleTeamsSSO();
+          console.log('Teams SDK initialized');
+          setIsTeamsInitialized(true);
         } catch (error) {
           console.error('Teams initialization failed:', error);
+          setIsTeamsInitialized(false);
         }
+      } else {
+        setIsTeamsInitialized(true);
       }
       setIsLoading(false);
     };
@@ -52,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         failureCallback: (error: string) => {
           console.error('Teams SSO failed:', error);
+          setIsLoading(false);
         },
         resources: [`api://app.teamscorecards.online/${authConfig.clientId}`]
       };
@@ -59,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await microsoftTeams.authentication.getAuthToken(authTokenRequest);
     } catch (error) {
       console.error('Teams SSO error:', error);
-      handleStandardLogin();
+      setIsLoading(false);
     }
   };
 
@@ -71,23 +81,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleToken = async (token: string) => {
     try {
-      console.log('Handling token...');
-      const response = await api.post('/auth/callback', { token });
-      const { user, accessToken } = response.data;
+      console.log('Handling token:', {
+        tokenLength: token.length,
+        tokenPreview: `${token.substring(0, 10)}...`,
+        currentPath: window.location.pathname
+      });
       
-      localStorage.setItem('token', accessToken);
-      setUser(user);
+      const response = await api.post('/auth/callback', { token });
+      console.log('Auth callback response:', response.data.data);
+      console.log('Auth callback response:', {
+        status: response.status,
+        hasData: !!response.data.data,
+        hasToken: response.data.data?.token?.length > 0,
+        hasUser: !!response.data.data?.user
+      });
+
+      const userData = response.data.data;
+      
+      // Store the token first
+      sessionStorage.setItem('auth_token', userData.token);
+      console.log('Token stored in sessionStorage:', userData.token?.substring(0, 10) + '...');
+      
+      // Then update the state
+      setUser(userData.user);
       setIsAuthenticated(true);
-      navigate('/');
-    } catch (error) {
-      console.error('Token handling failed:', error);
-      handleStandardLogin();
+      setIsLoading(false);
+      
+      // Only navigate if we're not already on the home page
+      if (window.location.pathname !== '/') {
+        navigate('/');
+      }
+    } catch (error: any) {
+      console.error('Token handling failed:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      // Clear any potentially invalid token
+      sessionStorage.removeItem('auth_token');
+      setIsLoading(false);
+      throw error;
     }
   };
 
   const login = async () => {
     console.log('Login initiated...');
-    if (isInTeams()) {
+    setIsLoading(true);
+    if (isTeams && isTeamsInitialized) {
       console.log('Running in Teams, using Teams SSO...');
       await handleTeamsSSO();
     } else {
@@ -97,14 +137,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('auth_token');
     setUser(null);
     setIsAuthenticated(false);
+    setIsLoading(false);
     navigate('/login');
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, login, logout }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      isLoading, 
+      user, 
+      isTeams, 
+      isTeamsInitialized,
+      login, 
+      logout 
+    }}>
       {children}
     </AuthContext.Provider>
   );

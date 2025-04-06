@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { getAPIBaseURL } from './api';
+import { getAPIBaseURL, api } from './api';
 
 const API_URL = getAPIBaseURL() || 'http://localhost:3001/api';
 const TENANT_ID = process.env.REACT_APP_TENANT_ID;
@@ -27,7 +26,7 @@ class AuthService {
   async login(): Promise<void> {
     try {
       const redirectUri = `${window.location.origin}/auth/callback`;
-      const response = await axios.get(`${API_URL}/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}`);
+      const response = await api.get(`${API_URL}/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}`);
       window.location.href = response.data.url;
     } catch (error) {
       console.error('Login error:', error);
@@ -38,7 +37,7 @@ class AuthService {
   async handleCallback(code: string): Promise<void> {
     try {
       const redirectUri = `${window.location.origin}/auth/callback`;
-      const response = await axios.post<AuthResponse>(`${API_URL}/auth/callback`, {
+      const response = await api.post<AuthResponse>(`${API_URL}/auth/callback`, {
         code,
         redirect_uri: redirectUri
       });
@@ -56,7 +55,7 @@ class AuthService {
         throw new Error('No token found');
       }
 
-      const response = await axios.get<UserProfile>(`${API_URL}/auth/profile`, {
+      const response = await api.get<UserProfile>(`${API_URL}/auth/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -68,11 +67,11 @@ class AuthService {
   }
 
   setToken(token: string): void {
-    localStorage.setItem('token', token);
+    sessionStorage.setItem('auth_token', token);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return sessionStorage.getItem('auth_token');
   }
 
   isAuthenticated(): boolean {
@@ -91,39 +90,13 @@ class AuthService {
   logout(): void {
     const token = this.getToken();
     if (token) {
-      axios.post(`${API_URL}/auth/logout`, null, {
+      api.post(`${API_URL}/auth/logout`, null, {
         headers: { Authorization: `Bearer ${token}` }
       }).catch(console.error);
     }
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('auth_token');
     window.location.href = '/login';
-  }
-
-  setupAxiosInterceptors(): void {
-    axios.interceptors.request.use(
-      (config) => {
-        const token = this.getToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
-
-    axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          this.logout();
-        }
-        return Promise.reject(error);
-      }
-    );
   }
 }
 
-export const authService = new AuthService();
-authService.setupAxiosInterceptors(); 
+export const authService = new AuthService(); 

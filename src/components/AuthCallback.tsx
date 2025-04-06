@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-
+import { isInTeams } from '../utils/teamsUtils';
 export const AuthCallback: React.FC = () => {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
@@ -23,7 +23,7 @@ export const AuthCallback: React.FC = () => {
 
           if (response.ok) {
             const { token } = await response.json();
-            localStorage.setItem('auth_token', token);
+            sessionStorage.setItem('auth_token', token);
             window.location.href = '/';
           } else {
             console.error('Auth callback failed');

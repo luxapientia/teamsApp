@@ -35,7 +35,7 @@ export const initializeTeams = async (): Promise<void> => {
   if (isInTeams()) {
     console.log('Initializing Teams SDK...');
     try {
-      await microsoftTeams.initialize();
+      await microsoftTeams.app.initialize();
       console.log('Teams SDK initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Teams SDK:', error);

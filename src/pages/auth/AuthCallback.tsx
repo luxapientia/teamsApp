@@ -30,9 +30,9 @@ export const AuthCallback: React.FC = () => {
         console.log('Auth callback response received:', response.data ? 'success' : 'empty');
 
         if (response.data?.token) {
-          // Store token directly in localStorage first
-          localStorage.setItem('auth_token', response.data.token);
-          console.log('Token stored in localStorage, length:', response.data.token.length);
+          // Store token directly in sessionStorage first
+          sessionStorage.setItem('auth_token', response.data.token);
+          console.log('Token stored in sessionStorage, length:', response.data.token.length);
           
           // Dispatch Redux actions with correct action types
           dispatch({ 
@@ -52,7 +52,7 @@ export const AuthCallback: React.FC = () => {
           }
           
           // Get stored redirect location
-          const storedRedirect = localStorage.getItem('auth_redirect');
+          const storedRedirect = sessionStorage.getItem('auth_redirect');
           let redirectTo = '/'; // Default route
           
           if (storedRedirect) {
@@ -65,7 +65,7 @@ export const AuthCallback: React.FC = () => {
             }
           }
           
-          localStorage.removeItem('auth_redirect');
+          sessionStorage.removeItem('auth_redirect');
           
           // Debugging
           console.log('Navigating to:', redirectTo);
