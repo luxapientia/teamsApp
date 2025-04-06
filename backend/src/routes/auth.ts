@@ -38,8 +38,10 @@ router.post('/callback', async (req: Request, res: Response) => {
       } else {
         console.log(userProfile, 'userProfile');
         const user = await roleService.getUser(userProfile.id);
+        const role = await roleService.getRoleByEmail(userProfile.email);
+        console.log(role, 'role');
         if (!user) {
-          await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, UserRole.USER, userProfile.tenantId);
+          await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, role || UserRole.USER, userProfile.tenantId);
         } else {
           await roleService.updateUser(
             userProfile.id,
@@ -47,7 +49,7 @@ router.post('/callback', async (req: Request, res: Response) => {
               MicrosoftId: userProfile.id,
               name: userProfile.displayName,
               email: userProfile.email,
-              role: UserRole.USER,
+              role: role || UserRole.USER,
               tenantId: userProfile.tenantId
             }
           );
@@ -77,13 +79,15 @@ router.post('/callback', async (req: Request, res: Response) => {
       const result = await authService.handleCallback(code, redirect_uri);
       if (result.user) {
         const user = await roleService.getUser(result.user.id);
+        const role = await roleService.getRoleByEmail(result.user.email);
+        console.log(role, 'role');
         console.log(result.user, 'result.user');
         if (!user) {
           await roleService.createUser(
             result.user.id,
             result.user.email,
             result.user.displayName,
-            UserRole.USER,
+            role || UserRole.USER,
             result.user.tenantId
           );
         } else {
@@ -93,7 +97,7 @@ router.post('/callback', async (req: Request, res: Response) => {
               MicrosoftId: result.user.id,
               name: result.user.displayName,
               email: result.user.email,
-              role: UserRole.USER,
+              role: role || UserRole.USER,
               tenantId: result.user.tenantId
             }
           );
