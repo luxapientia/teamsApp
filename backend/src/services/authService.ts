@@ -68,8 +68,16 @@ export class AuthService {
 
   verifyToken(token: string): UserProfile | null {
     try {
-      return jwt.verify(token, config.jwtSecret) as UserProfile;
+      console.log('Verifying token...');
+      const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
+      console.log('Token decoded successfully:', {
+        id: decoded.id,
+        email: decoded.email,
+        roles: decoded.roles
+      });
+      return decoded;
     } catch (error) {
+      console.error('Token verification failed:', error);
       return null;
     }
   }
