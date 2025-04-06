@@ -89,15 +89,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const response = await api.post('/auth/callback', { token });
       const userData = response.data;
+      
+      if (!userData.token || !userData.user) {
+        throw new Error('Invalid response from auth callback');
+      }
+      
       console.log('Auth response:', {
         hasToken: !!userData.token,
-        tokenLength: userData.token?.length,
+        tokenLength: userData.token.length,
         user: userData.user
       });
       
+      // Store the token first
       sessionStorage.setItem('auth_token', userData.token);
-      console.log('Token stored in sessionStorage');
+      console.log('Token stored in sessionStorage:', userData.token.substring(0, 10) + '...');
       
+      // Then update the state
       setUser(userData.user);
       setIsAuthenticated(true);
       setIsLoading(false);
@@ -108,6 +115,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('Token handling failed:', error);
+      // Clear any potentially invalid token
+      sessionStorage.removeItem('auth_token');
       setIsLoading(false);
     }
   };

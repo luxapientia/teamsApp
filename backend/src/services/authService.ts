@@ -131,12 +131,27 @@ export class AuthService {
   }
 
   async createAppToken(userProfile: UserProfile): Promise<string> {
+    if (!userProfile.id || !userProfile.email) {
+      throw new Error('Invalid user profile: missing required fields');
+    }
+
+    const tokenPayload = {
+      id: userProfile.id,
+      email: userProfile.email,
+      displayName: userProfile.displayName || '',
+      jobTitle: userProfile.jobTitle || '',
+      department: userProfile.department || '',
+      organization: userProfile.organization || '',
+      roles: userProfile.roles || ['user'],
+      status: userProfile.status || 'active',
+      tenantId: userProfile.tenantId,
+      organizationName: userProfile.organizationName || ''
+    };
+
+    console.log('Creating app token with payload:', tokenPayload);
+    
     return jwt.sign(
-      { 
-        id: userProfile.id,
-        email: userProfile.email,
-        roles: userProfile.roles
-      },
+      tokenPayload,
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1h' }
     );
