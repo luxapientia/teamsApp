@@ -28,7 +28,7 @@ interface ApiResponse<T> {
 // Add auth token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
+    const token = sessionStorage.getItem('auth_token');
     console.log(`API Request to ${config.url}: Token ${token ? 'exists' : 'missing'}`);
     
     if (token) {
@@ -62,7 +62,7 @@ api.interceptors.response.use(
         console.error('Unauthorized request - check token validity');
         // Only clear token and redirect if it's an auth issue, not a missing token
         if (error.response.data?.message !== 'No token provided') {
-          localStorage.removeItem('auth_token');
+          sessionStorage.removeItem('auth_token');
           window.location.href = '/login';
         }
       }
