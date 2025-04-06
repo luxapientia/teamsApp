@@ -44,11 +44,16 @@ const TeamsTabContent: React.FC = () => {
 
   const handleAddMemberClick = () => {
     if (isInitialized) {
-      microsoftTeams.people.selectPeople().then((people) => {
-        console.log('Selected people:', people);
-      }).catch((error) => {
-        console.error('Error selecting people:', error);
-      });
+      microsoftTeams.people.selectPeople({
+        singleSelect: false,
+        openOrgWideSearchInChatOrChannel: true
+      } as microsoftTeams.people.PeoplePickerInputs)
+        .then((people) => {
+          console.log('Selected people:', people);
+        })
+        .catch((error) => {
+          console.error("Error selecting people:", error);
+        });
     } else {
       console.error("Teams SDK is not initialized");
     }
