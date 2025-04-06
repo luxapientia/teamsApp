@@ -1,5 +1,5 @@
 import { UserRole, dUser } from '../types/role';
-import { UserModel } from '../models/role';
+import User from '../models/User';
 import { ApiError } from '../utils/apiError';
 import { SuperUserModel } from '../models/superUser';
 
@@ -17,7 +17,7 @@ export class RoleService {
       throw new ApiError('Invalid role', 400);
     }
 
-    const existingUser = await UserModel.findOne({ MicrosoftId });
+    const existingUser = await User.findOne({ MicrosoftId });
     if (existingUser) {
       throw new ApiError('User already exists', 400);
     }
@@ -27,7 +27,7 @@ export class RoleService {
       throw new ApiError('Tenant ID is required for Super User role', 400);
     }
 
-    const user = await UserModel.create({
+    const user = await User.create({
       MicrosoftId,
       name,
       email,
@@ -39,7 +39,7 @@ export class RoleService {
   }
 
   async updateUser(microsoftId: string, user: dUser): Promise<dUser> {
-    const updatedUser = await UserModel.findOneAndUpdate({ MicrosoftId: microsoftId }, user, { new: true });
+    const updatedUser = await User.findOneAndUpdate({ MicrosoftId: microsoftId }, user, { new: true });
     if (!updatedUser) {
       throw new ApiError('User not found', 404);
     }
@@ -47,7 +47,7 @@ export class RoleService {
   }
 
   async getUser(MicrosoftId: string): Promise<dUser | null> {
-    const user = await UserModel.findOne({ MicrosoftId });
+    const user = await User.findOne({ MicrosoftId });
     if (!user) {
       return null;
     }
@@ -55,7 +55,7 @@ export class RoleService {
   }
 
   async getUserByEmail(email: string): Promise<dUser | null> {
-    const user = await UserModel.findOne({ email });
+    const user = await User.findOne({ email });
     if (!user) {
       return null;
     }
@@ -68,12 +68,12 @@ export class RoleService {
       throw new ApiError('Invalid role', 400);
     }
 
-    return UserModel.find({ role });
+    return User.find({ role });
   }
 
   async getAllUsersWithTenantID(tenantId: string): Promise<dUser[]> {
 
-    return UserModel.find({ tenantId });
+    return User.find({ tenantId });
   }
 
   async getRoleByEmail(email: string): Promise<UserRole | null> {
@@ -85,7 +85,7 @@ export class RoleService {
     if (superUser) {
       return UserRole.SUPER_USER;
     }
-    const user = await UserModel.findOne({ email });
+    const user = await User.findOne({ email });
     if (!user) {
       return null;
     } else {

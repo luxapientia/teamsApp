@@ -1,16 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
-import { UserProfile } from '../types';
-
+import User from '../models/User';
+import { dUser } from '../types/role';
 export interface AuthenticatedRequest extends Request {
-  user?: UserProfile;
+  user?: dUser;
 }
 
-export const authenticateToken = (
+export const authenticateToken = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -28,6 +28,8 @@ export const authenticateToken = (
     return;
   }
 
-  req.user = user;
+  const result = await User.findOne({ email: user.email }) as dUser;
+
+  req.user = result;
   next();
 }; 
