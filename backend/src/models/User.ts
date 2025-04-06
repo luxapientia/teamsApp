@@ -1,20 +1,14 @@
-import { Schema, model, Document } from 'mongoose';
+import mongoose from 'mongoose';
+import { UserRole, dUser } from '../types/role';
 
-export interface IUser extends Document {
-  microsoftId: string;
-  displayName: string;
-  email: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const userSchema = new Schema<IUser>({
-  microsoftId: {
+const userSchema = new mongoose.Schema<dUser>({
+  MicrosoftId: {
     type: String,
     required: true,
     unique: true,
+    index: true
   },
-  displayName: {
+  name: {
     type: String,
     required: true,
   },
@@ -22,9 +16,17 @@ const userSchema = new Schema<IUser>({
     type: String,
     required: true,
     unique: true,
+    index: true
   },
-}, {
-  timestamps: true,
+  role: {
+    type: String,
+    enum: Object.values(UserRole),
+    required: true
+  },
+  tenantId: {
+    type: String,
+    required: false,
+  }
 });
 
-export const User = model<IUser>('User', userSchema); 
+export default mongoose.model<dUser>('User', userSchema); 

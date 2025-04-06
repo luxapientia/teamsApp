@@ -28,17 +28,11 @@ import RatingScalesModal from '../../../components/RatingScalesModal';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
-import { RootState } from '../../../store';
 import { api } from '../../../services/api';
-interface Supervisor {
-  id: string;
-  name: string;
-}
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
-  supervisors?: Supervisor[];
   onSupervisorChange?: (supervisorId: string) => void;
   onBack?: () => void;
   personalPerformance?: PersonalPerformance | null;
@@ -48,10 +42,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   annualTarget,
   quarter,
   onBack,
-  supervisors = [
-    { id: '1', name: 'John Doe' },
-    { id: '2', name: 'Jane Smith' },
-  ],
   onSupervisorChange = () => { },
   personalPerformance = null,
 }) => {
@@ -62,8 +52,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [editingObjective, setEditingObjective] = useState<PersonalQuarterlyTargetObjective | null>(null);
   const [selectedRatingScales, setSelectedRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
 
-  const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
+  useEffect(() => {
+    fetchCompanyUsers();
+  }, []);
+
   useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
@@ -71,6 +65,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Submitted);
     }
   }, [personalPerformance]);
+
+  const fetchCompanyUsers = async () => {
+    try {
+      const response = await api.get('/personal-performance/company-users');
+      if (response.status === 200) {
+        setCompanyUsers(response.data.data);
+      } else {
+        setCompanyUsers([]);
+      }
+    } catch (error) {
+      setCompanyUsers([]);
+    }
+  }
 
   const handleSupervisorChange = (event: SelectChangeEvent) => {
     setSelectedSupervisor(event.target.value);
@@ -302,9 +309,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             <MenuItem value="" disabled>
               <Typography color="textSecondary">Select Supervisor</Typography>
             </MenuItem>
-            {supervisors.map((supervisor) => (
-              <MenuItem key={supervisor.id} value={supervisor.id}>
-                {supervisor.name}
+            {companyUsers.map((user) => (
+              <MenuItem key={user.id} value={user.id}>
+                {user.name}
               </MenuItem>
             ))}
           </Select>
@@ -324,7 +331,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             }
           }}
         >
-          Back
+          Add Initiative
         </Button>
         ) : (
           <Typography
