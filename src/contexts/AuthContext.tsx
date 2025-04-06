@@ -24,14 +24,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       console.log('Initializing auth...');
+      setIsLoading(true);
       const isTeams = isInTeams();
       console.log('Is running in Teams:', isTeams);
 
       if (isTeams) {
         try {
           await initializeTeams();
-          console.log('Teams SDK initialized, attempting SSO...');
-          await handleTeamsSSO();
+          console.log('Teams SDK initialized');
         } catch (error) {
           console.error('Teams initialization failed:', error);
         }
@@ -52,13 +52,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         failureCallback: (error: string) => {
           console.error('Teams SSO failed:', error);
+          setIsLoading(false);
         },
         resources: [`api://app.teamscorecards.online/${authConfig.clientId}`]
       };
+      console.log('authTokenRequest', authTokenRequest.resources);
       await microsoftTeams.authentication.getAuthToken(authTokenRequest);
     } catch (error) {
       console.error('Teams SSO error:', error);
-      handleStandardLogin();
+      setIsLoading(false);
     }
   };
 
@@ -80,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       navigate('/');
     } catch (error) {
       console.error('Token handling failed:', error);
-      handleStandardLogin();
+      setIsLoading(false);
     }
   };
 
