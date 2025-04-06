@@ -15,6 +15,7 @@ export interface Company extends BaseEntity {
   name: string;
   status: Status;
   createdOn: string;
+  tenantId: string;
 }
 
 export interface SuperUser extends BaseEntity {
