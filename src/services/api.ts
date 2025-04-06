@@ -32,12 +32,18 @@ api.interceptors.request.use(
       return config;
     } else {
       const token = sessionStorage.getItem('auth_token');
-      console.log(`API Request to ${config.url}: Token ${token ? 'exists' : 'missing'}`);
+      console.log('API Request Details:', {
+        url: config.url,
+        tokenExists: !!token,
+        tokenLength: token?.length,
+        tokenPreview: token ? `${token.substring(0, 10)}...` : 'none',
+        currentHeaders: config.headers
+      });
       
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log('Authorization header set:', config.headers.Authorization);
       } else {
-        // For debugging only - avoid this in production
         console.warn(`No auth token available for request to: ${config.url}`);
       }
       
@@ -45,6 +51,7 @@ api.interceptors.request.use(
     }
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
