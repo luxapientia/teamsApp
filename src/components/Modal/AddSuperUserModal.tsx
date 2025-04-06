@@ -66,8 +66,6 @@ export const SuperUserModal: React.FC<AddSuperUserModalProps> = ({
       return;
     }
 
-    console.log('Submitting form data:', formData);
-    
     try {
       await onSubmit(formData);
       onClose();

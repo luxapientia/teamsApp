@@ -1,12 +1,6 @@
 import * as microsoftTeams from "@microsoft/teams-js";
 
 export const isInTeams = (): boolean => {
-  console.log('Checking if running in Teams...');
-  console.log('Window parent:', window.parent);
-  console.log('Window self:', window.self);
-  console.log('Is parent different:', window.parent !== window.self);
-  console.log('Current URL:', window.location.href);
-  
   // Check if we're in Teams by looking for specific Teams context
   const isTeams = (
     // Check if we're in an iframe
@@ -25,7 +19,6 @@ export const isInTeams = (): boolean => {
     window.location.href.includes('teams.microsoft.com/_#/l/')
   );
   
-  console.log('Is Teams URL:', isTeams);
   console.log('Is running in Teams:', isTeams);
   
   return isTeams;
