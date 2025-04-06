@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Store the token first
       sessionStorage.setItem('auth_token', userData.token);
-      console.log('Token stored in sessionStorage:', userData.token.substring(0, 10) + '...');
+      console.log('Token stored in sessionStorage:', userData.token?.substring(0, 10) + '...');
       
       // Then update the state
       setUser(userData.user);
