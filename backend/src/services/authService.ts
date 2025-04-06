@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import * as dotenv from 'dotenv';
 import { UserProfile } from '../types';
+import { roleService } from './roleService';
+import { UserRole } from '../types/role';
 
 dotenv.config();
 
@@ -71,16 +73,41 @@ export class AuthService {
         jobTitle: userData.jobTitle || '',
         department: userData.department || '',
         organization: userData.companyName || '',
-        roles: ['user'],
+        role: UserRole.USER,
         status: 'active',
         tenantId: tenantId, // Use the tenant ID from the access token
         organizationName: userData.companyName || ''
       };
 
+      if (userProfile) {
+        const user = await roleService.getUser(userProfile.id);
+        const role = await roleService.getRoleByEmail(userProfile.email);
+        userProfile.role = role || UserRole.USER;
+        if (!user) {
+          await roleService.createUser(
+            userProfile.id,
+            userProfile.email,
+            userProfile.displayName,
+            role || UserRole.USER,
+            userProfile.tenantId
+          );
+        } else {
+          await roleService.updateUser(
+            userProfile.id,
+            {
+              MicrosoftId: userProfile.id,
+              name: userProfile.displayName,
+              email: userProfile.email,
+              role: role || UserRole.USER,
+              tenantId: userProfile.tenantId
+            }
+          );
+        }
+      }
       console.log('Creating app token for user:', userProfile.email);
       const token = await this.createAppToken(userProfile);
       console.log('App token created successfully');
-      
+
       return { token, user: userProfile };
     } catch (error: any) {
       console.error('Error in handleCallback:', {
@@ -99,7 +126,7 @@ export class AuthService {
       console.log('Token decoded successfully:', {
         id: decoded.id,
         email: decoded.email,
-        roles: decoded.roles
+        role: decoded.role
       });
       return decoded;
     } catch (error) {
@@ -189,7 +216,7 @@ export class AuthService {
         jobTitle: userData.jobTitle || '',
         department: userData.department || '',
         organization: userData.companyName || '',
-        roles: ['user'],
+        role: UserRole.USER,
         status: 'active',
         tenantId: tenantId, // Use the tenant ID from the Teams token
         organizationName: userData.companyName || ''
@@ -224,7 +251,7 @@ export class AuthService {
       jobTitle: userProfile.jobTitle || '',
       department: userProfile.department || '',
       organization: userProfile.organization || '',
-      roles: userProfile.roles || ['user'],
+      role: userProfile.role || UserRole.USER,
       status: userProfile.status || 'active',
       tenantId: userProfile.tenantId,
       organizationName: userProfile.organizationName || ''
