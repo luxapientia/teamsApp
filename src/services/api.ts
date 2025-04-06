@@ -9,10 +9,14 @@ export const getAPIBaseURL = () => {
   
   // In development, try common ports
   const defaultPort = 3001;
-  return `http://localhost:${defaultPort}/api`;
+  const isDevelopment = window.location.hostname === 'localhost';
+  return isDevelopment 
+    ? `http://localhost:${defaultPort}/api`
+    : 'https://app.teamscorecards.online/api';
 };
 
 const API_BASE_URL = getAPIBaseURL();
+console.log('Using API base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
