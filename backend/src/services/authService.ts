@@ -104,8 +104,8 @@ export class AuthService {
     try {
       console.log('Starting Teams token verification...');
       
-      // Verify and decode the Teams token
-      const decodedToken = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+      // Decode the Teams token to get the tenant ID
+      const decodedToken = jwt.decode(token) as any;
       if (!decodedToken?.tid) {
         console.error('No tenant ID found in Teams token');
         return null;
@@ -115,7 +115,7 @@ export class AuthService {
       
       // First, exchange the Teams token for a Graph API token
       const tokenResponse = await axios.post(
-        `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, // Use the tenant ID from the token
+        `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
         new URLSearchParams({
           client_id: process.env.AZURE_CLIENT_ID!,
           client_secret: process.env.AZURE_CLIENT_SECRET!,
