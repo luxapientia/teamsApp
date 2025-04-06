@@ -3,7 +3,6 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import * as dotenv from 'dotenv';
 import { UserProfile } from '../types';
-import fetch from 'node-fetch';
 
 dotenv.config();
 
