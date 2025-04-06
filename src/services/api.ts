@@ -28,17 +28,21 @@ interface ApiResponse<T> {
 // Add auth token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('auth_token');
-    console.log(`API Request to ${config.url}: Token ${token ? 'exists' : 'missing'}`);
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if(config.url === '/api/auth/callback') {
+      return config;
     } else {
-      // For debugging only - avoid this in production
-      console.warn(`No auth token available for request to: ${config.url}`);
+      const token = sessionStorage.getItem('auth_token');
+      console.log(`API Request to ${config.url}: Token ${token ? 'exists' : 'missing'}`);
+      
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        // For debugging only - avoid this in production
+        console.warn(`No auth token available for request to: ${config.url}`);
+      }
+      
+      return config;
     }
-    
-    return config;
   },
   (error) => {
     return Promise.reject(error);
