@@ -26,17 +26,31 @@
     "composeExtensions": [],
     "staticTabs": [
         {
-          "entityId": "index",
-          "name": "Personal Tab",
-          "contentUrl": "https://app.teamscorecards.online", 
-          "websiteUrl": "https://app.teamscorecards.online", 
-          "scopes": ["personal"]
+            "entityId": "index",
+            "name": "Personal Tab",
+            "contentUrl": "https://app.teamscorecards.online",
+            "websiteUrl": "https://app.teamscorecards.online",
+            "scopes": ["personal", "team"]
         }
-      ],
+    ],
     "permissions": [
         "identity",
         "messageTeamMembers"
     ],
+    "authorization": {
+        "permissions": {
+            "resourceSpecific": [
+                {
+                    "name": "People.Read",
+                    "type": "Delegated"
+                },
+                {
+                    "name": "People.Read.All",
+                    "type": "Delegated"
+                }
+            ]
+        }
+    },
     "validDomains": [
         "app.teamscorecards.online",
         "login.microsoftonline.com",
