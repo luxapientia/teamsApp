@@ -99,13 +99,46 @@ const KPIModal: React.FC<KPIModalProps> = ({
       return;
     }
 
+    const uploadedFiles = await Promise.all(
+      filesToUpload.map(async (fileData) => {
+        try {
+          const formData = new FormData();
+          formData.append('file', fileData.file);
+
+          const response = await api.post('/score-card/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          if (response.status === 200) {
+            return {
+              name: fileData.name,
+              url: response.data.data
+            };
+          } else {
+            return null;
+          }
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          return null;
+        }
+      })
+    );
+
+    const existingAttachments = attachments.filter(
+      att => !filesToUpload.find(f => f.name === att.name)
+    );
+
+    const finalAttachments = [...existingAttachments, ...uploadedFiles];
+
     const newKPI = {
       ...selectedKPI,
       actualAchieved,
       evidence,
-      attachments,
+      attachments: finalAttachments,
       ratingScore: selectedRating
-    }
+    } as QuarterlyTargetKPI;
 
     onSave(newKPI);
 
@@ -114,57 +147,27 @@ const KPIModal: React.FC<KPIModalProps> = ({
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files) {
-      const newAttachments: { name: string, url: string }[] = [];
-      try {
-        await Promise.all(Array.from(files).map(async (file) => {
-          const formData = new FormData();
-          formData.append('file', file);
-          const response = await api.post('/personal_performance/upload', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
-          console.log(response);
-          newAttachments.push({
-            name: file.name,
-            url: response.data.data
-          });
-        }));
-        setAttachments([...attachments, ...newAttachments]);
-      } catch (error) {
-        console.error('File upload error:', error);
+      const newFiles: FileToUpload[] = [];
+      const newAttachments = [...attachments];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        newFiles.push({
+          file,
+          name: file.name
+        });
+        newAttachments.push({
+          name: file.name,
+          url: URL.createObjectURL(file)
+        });
       }
 
-      // const newFiles: FileToUpload[] = [];
-      // const newAttachments = [...attachments];
+      console.log(newFiles, '-------------------------');
 
-      // for (let i = 0; i < files.length; i++) {
-      //   const file = files[i];
-      //   newFiles.push({
-      //     file,
-      //     name: file.name
-      //   });
-      //   newAttachments.push({
-      //     name: file.name,
-      //     url: URL.createObjectURL(file)
-      //   });
-      // }
-
-      // setFilesToUpload(prev => [...prev, ...newFiles]);
-      // setAttachments(newAttachments);
+      setFilesToUpload(prev => [...prev, ...newFiles]);
+      setAttachments(newAttachments);
     }
   };
-
-  const handleDeleteFile = async (index: number) => {
-    const fileUrl = attachments[index].url;
-    try {
-      await api.delete('/personal_performance/delete-file', { data: { fileUrl } });
-      const newAttachments = attachments.filter((_, i) => i !== index);
-      setAttachments(newAttachments);
-    } catch (error) {
-      console.error('Delete file error:', error);
-    }
-  }
 
   return (
     <Dialog
@@ -314,7 +317,10 @@ const KPIModal: React.FC<KPIModalProps> = ({
                         backgroundColor: '#FEE2E2',
                       }
                     }}
-                    onClick={() => handleDeleteFile(index)}
+                    onClick={() => {
+                      const newAttachments = attachments.filter((_, i) => i !== index);
+                      setAttachments(newAttachments);
+                    }}
                   >
                     <DeleteIcon fontSize="small" />
                   </IconButton>
