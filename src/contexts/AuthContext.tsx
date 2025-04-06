@@ -88,6 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       const response = await api.post('/auth/callback', { token });
+      console.log('Auth callback response:', response.data);
       console.log('Auth callback response:', {
         status: response.status,
         hasData: !!response.data,
