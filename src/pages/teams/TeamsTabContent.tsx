@@ -42,20 +42,24 @@ const TeamsTabContent: React.FC = () => {
     }, 0);
   };
 
-  const handleAddMemberClick = () => {
-    if (isInitialized) {
-      microsoftTeams.people.selectPeople({
-        singleSelect: false,
-        openOrgWideSearchInChatOrChannel: true
-      } as microsoftTeams.people.PeoplePickerInputs)
-        .then((people) => {
-          console.log('Selected people:', people);
-        })
-        .catch((error) => {
-          console.error("Error selecting people:", error);
-        });
-    } else {
-      console.error("Teams SDK is not initialized");
+  const handleAddMemberClick = async () => {
+    if (!isInitialized) {
+      console.error('Teams SDK not initialized');
+      return;
+    }
+
+    try {
+      const config = {
+        title: "Select Team Members",
+        setSelected: [],
+        openOrgWideSearchInChatOrChannel: true,
+        singleSelect: false
+      };
+      const people = await microsoftTeams.people.selectPeople(config);
+      console.log('Selected people:', people);
+      // Handle selected people here
+    } catch (error) {
+      console.error('Error selecting people:', error);
     }
   };
 
