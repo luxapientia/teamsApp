@@ -23,28 +23,6 @@ import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective } from 
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
 import { PersonalPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
-const StyledFormControl = styled(FormControl)({
-  backgroundColor: '#fff',
-  borderRadius: '8px',
-  '& .MuiOutlinedInput-root': {
-    '& fieldset': {
-      borderColor: '#E5E7EB',
-    },
-    '&:hover fieldset': {
-      borderColor: '#D1D5DB',
-    },
-  },
-});
-
-const ViewButton = styled(Button)({
-  backgroundColor: '#0078D4',
-  color: 'white',
-  textTransform: 'none',
-  padding: '6px 16px',
-  '&:hover': {
-    backgroundColor: '#106EBE',
-  },
-});
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
