@@ -9,10 +9,14 @@ export const getAPIBaseURL = () => {
   
   // In development, try common ports
   const defaultPort = 3001;
-  return `http://localhost:${defaultPort}/api`;
+  const isDevelopment = window.location.hostname === 'localhost';
+  return isDevelopment 
+    ? `http://localhost:${defaultPort}/api`
+    : 'https://app.teamscorecards.online/api';
 };
 
 const API_BASE_URL = getAPIBaseURL();
+console.log('Using API base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -28,19 +32,30 @@ interface ApiResponse<T> {
 // Add auth token to requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
-    console.log(`API Request to ${config.url}: Token ${token ? 'exists' : 'missing'}`);
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if(config.url === '/auth/callback') {
+      return config;
     } else {
-      // For debugging only - avoid this in production
-      console.warn(`No auth token available for request to: ${config.url}`);
+      const token = sessionStorage.getItem('auth_token');
+      console.log('API Request Details:', {
+        url: config.url,
+        tokenExists: !!token,
+        tokenLength: token?.length,
+        tokenPreview: token ? `${token.substring(0, 10)}...` : 'none',
+        currentHeaders: config.headers
+      });
+      
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+        console.log('Authorization header set:', config.headers.Authorization);
+      } else {
+        console.warn(`No auth token available for request to: ${config.url}`);
+      }
+      
+      return config;
     }
-    
-    return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -62,7 +77,7 @@ api.interceptors.response.use(
         console.error('Unauthorized request - check token validity');
         // Only clear token and redirect if it's an auth issue, not a missing token
         if (error.response.data?.message !== 'No token provided') {
-          localStorage.removeItem('auth_token');
+          sessionStorage.removeItem('auth_token');
           window.location.href = '/login';
         }
       }
