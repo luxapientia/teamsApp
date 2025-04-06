@@ -20,7 +20,6 @@ export const authenticateToken = (
     return;
   }
 
-  console.log('Token received:', token.substring(0, 10) + '...');
   
   const user = authService.verifyToken(token);
   if (!user) {
@@ -29,7 +28,6 @@ export const authenticateToken = (
     return;
   }
 
-  console.log('Token verified successfully for user:', user);
   req.user = user;
   next();
 }; 
