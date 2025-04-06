@@ -97,15 +97,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const userData = response.data;
       
-      if (!userData?.token || !userData?.user) {
-        console.error('Invalid response data:', {
-          hasToken: !!userData?.token,
-          hasUser: !!userData?.user,
-          data: userData
-        });
-        throw new Error('Invalid response from auth callback');
-      }
-      
       // Store the token first
       sessionStorage.setItem('auth_token', userData.token);
       console.log('Token stored in sessionStorage:', userData.token.substring(0, 10) + '...');
