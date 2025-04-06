@@ -121,13 +121,12 @@ export class AuthService {
 
   verifyToken(token: string): UserProfile | null {
     try {
-      console.log('Verifying token...');
       const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
-      console.log('Token decoded successfully:', {
-        id: decoded.id,
-        email: decoded.email,
-        role: decoded.role
-      });
+      // console.log('Token decoded successfully:', {
+      //   id: decoded.id,
+      //   email: decoded.email,
+      //   role: decoded.role
+      // });
       return decoded;
     } catch (error) {
       console.error('Token verification failed:', error);
