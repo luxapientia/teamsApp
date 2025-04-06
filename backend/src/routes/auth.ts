@@ -30,8 +30,9 @@ router.post('/callback', async (req: Request, res: Response) => {
       if (!userProfile) {
         return res.status(401).json({ error: 'Invalid Teams token' });
       }
-
+      console.log('User profile:', userProfile);
       const appToken = await authService.createAppToken(userProfile);
+      console.log('App token:', appToken);
       return res.json({ token: appToken, user: userProfile });
     }
     

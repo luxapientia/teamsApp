@@ -81,11 +81,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleToken = async (token: string) => {
     try {
-      console.log('Handling token...');
+      console.log('Handling token:', {
+        tokenLength: token.length,
+        tokenPreview: `${token.substring(0, 10)}...`,
+        currentPath: window.location.pathname
+      });
+      
       const response = await api.post('/auth/callback', { token });
       const userData = response.data;
-      console.log('userData', userData);
+      console.log('Auth response:', {
+        hasToken: !!userData.token,
+        tokenLength: userData.token?.length,
+        user: userData.user
+      });
+      
       sessionStorage.setItem('auth_token', userData.token);
+      console.log('Token stored in sessionStorage');
+      
       setUser(userData.user);
       setIsAuthenticated(true);
       setIsLoading(false);
