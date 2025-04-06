@@ -1,22 +1,11 @@
-import React, { useEffect } from 'react';
-import { useLocation, Navigate } from 'react-router-dom';
+import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { isInTeams } from '../../utils/teamsUtils';
 
 export const Login: React.FC = () => {
   const { login, isAuthenticated } = useAuth();
-  const location = useLocation();
-  const [isTeams, setIsTeams] = React.useState(false);
-
-  useEffect(() => {
-    console.log('Login component mounted');
-    const checkTeams = () => {
-      const inTeams = isInTeams();
-      console.log('Teams check result:', inTeams);
-      setIsTeams(inTeams);
-    };
-    checkTeams();
-  }, []);
+  const isTeams = isInTeams();
 
   if (isAuthenticated) {
     console.log('User is already authenticated, redirecting to home');
