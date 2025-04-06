@@ -88,7 +88,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionStorage.setItem('auth_token', userData.token);
       setUser(userData.user);
       setIsAuthenticated(true);
-      navigate('/');
+      setIsLoading(false);
+      
+      // Only navigate if we're not already on the home page
+      if (window.location.pathname !== '/') {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Token handling failed:', error);
       setIsLoading(false);
@@ -111,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionStorage.removeItem('auth_token');
     setUser(null);
     setIsAuthenticated(false);
+    setIsLoading(false);
     navigate('/login');
   };
 
