@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 
-const teamSchema = new mongoose.Schema({
+export interface TeamDocument extends mongoose.Document {
+  name: string;
+  tenantId: string;
+  members: string[];
+  createdAt: Date;
+}
+const teamSchema = new mongoose.Schema<TeamDocument>({
   name: {
     type: String,
     required: true,
