@@ -33,15 +33,22 @@ interface PersonalQuarterlyTarget {
 
 export interface PersonalPerformanceDocument extends Document {
   _id: string;
+  teamId: string;
   userId: string;
   annualTargetId: string;
   quarterlyTargets: PersonalQuarterlyTarget[];
 }
 
 const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
+  teamId: {
+    type: String,
+    required: true,
+    ref: 'Team',
+  },
   userId: {
     type: String,
     required: true,
+    ref: 'User',
   },
   annualTargetId: {
     type: String,
