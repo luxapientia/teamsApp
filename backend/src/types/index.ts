@@ -36,7 +36,7 @@ export interface UserProfile {
   jobTitle?: string;
   department?: string;
   organization?: string;
-  roles: string[];
+  role: string;
   status?: 'active' | 'inactive';
   tenantId?: string;
   organizationName?: string;
