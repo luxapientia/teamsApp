@@ -11,12 +11,12 @@
         "termsOfUseUrl": "https://app.teamscorecards.online/index.html#/termsofuse"
     },
     "icons": {
-        "color": "color.png",
-        "outline": "outline.png"
+        "color": "Logo.png",
+        "outline": "Logo.png"
     },
     "name": {
-        "short": "TeamsScoreCards",
-        "full": "TeamsScoreCards - Performance Management System"
+        "short": "TeamScoreCards",
+        "full": "TeamScoreCards - Performance Management System"
     },
     "description": {
         "short": "Teams app for managing corporate scorecards and performance",
