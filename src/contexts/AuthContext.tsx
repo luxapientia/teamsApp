@@ -9,6 +9,8 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: any;
+  isTeams: boolean;
+  isTeamsInitialized: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -19,22 +21,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [isTeams, setIsTeams] = useState(false);
+  const [isTeamsInitialized, setIsTeamsInitialized] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const initializeAuth = async () => {
       console.log('Initializing auth...');
       setIsLoading(true);
-      const isTeams = isInTeams();
-      console.log('Is running in Teams:', isTeams);
+      const teamsCheck = isInTeams();
+      console.log('Is running in Teams:', teamsCheck);
+      setIsTeams(teamsCheck);
 
-      if (isTeams) {
+      if (teamsCheck) {
         try {
           await initializeTeams();
           console.log('Teams SDK initialized');
+          setIsTeamsInitialized(true);
         } catch (error) {
           console.error('Teams initialization failed:', error);
+          setIsTeamsInitialized(false);
         }
+      } else {
+        setIsTeamsInitialized(true);
       }
       setIsLoading(false);
     };
@@ -88,7 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async () => {
     console.log('Login initiated...');
-    if (isInTeams()) {
+    setIsLoading(true);
+    if (isTeams && isTeamsInitialized) {
       console.log('Running in Teams, using Teams SSO...');
       await handleTeamsSSO();
     } else {
@@ -105,7 +115,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, login, logout }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      isLoading, 
+      user, 
+      isTeams, 
+      isTeamsInitialized,
+      login, 
+      logout 
+    }}>
       {children}
     </AuthContext.Provider>
   );
