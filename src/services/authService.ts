@@ -68,7 +68,7 @@ class AuthService {
   }
 
   setToken(token: string): void {
-    sessionStorage.setItem('token', token);
+    sessionStorage.setItem('auth_token', token);
   }
 
   getToken(): string | null {
@@ -95,7 +95,7 @@ class AuthService {
         headers: { Authorization: `Bearer ${token}` }
       }).catch(console.error);
     }
-    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('auth_token');
     window.location.href = '/login';
   }
 
