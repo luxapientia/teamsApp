@@ -158,7 +158,7 @@ const KPIModal: React.FC<KPIModalProps> = ({
   const handleDeleteFile = async (index: number) => {
     const fileUrl = attachments[index].url;
     try {
-      await api.delete('/personal_performance/delete-file', { data: { fileUrl } });
+      // await api.delete('/personal_performance/delete-file', { data: { fileUrl } });
       const newAttachments = attachments.filter((_, i) => i !== index);
       setAttachments(newAttachments);
     } catch (error) {
