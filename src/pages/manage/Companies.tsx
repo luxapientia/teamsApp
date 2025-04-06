@@ -42,9 +42,15 @@ const Companies: React.FC = () => {
       key: 'name',
       header: 'Name',
       sortable: true,
-      width: 'w-[60%]',
+      width: 'w-[45%]',
     },
-
+    {
+      key: 'tenantId',
+      header: 'Tenant ID',
+      sortable: true,
+      width: 'w-[15%]',
+      render: (company) => company.tenantId,
+    },
     {
       key: 'createdOn',
       header: 'Created On',
