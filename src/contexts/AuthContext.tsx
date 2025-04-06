@@ -1,118 +1,110 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+import { useNavigate } from 'react-router-dom';
+import { isInTeams, initializeTeams } from '../utils/teamsUtils';
+import * as microsoftTeams from '@microsoft/teams-js';
+import { authConfig } from '../config/authConfig';
+import { api } from '../services/api';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: any | null;
-  token: string | null;
+  user: any;
   login: () => Promise<void>;
   logout: () => Promise<void>;
-  setIsAuthenticated: (value: boolean) => void;
-  setUser: (user: any) => void;
 }
 
-export const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  isLoading: true,
-  user: null,
-  token: null,
-  login: async () => {},
-  logout: async () => {},
-  setIsAuthenticated: () => {},
-  setUser: () => {}
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
-  const location = useLocation();
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      console.log('Initializing auth...');
+      const isTeams = isInTeams();
+      console.log('Is running in Teams:', isTeams);
+
+      if (isTeams) {
+        try {
+          await initializeTeams();
+          console.log('Teams SDK initialized, attempting SSO...');
+          await handleTeamsSSO();
+        } catch (error) {
+          console.error('Teams initialization failed:', error);
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initializeAuth();
+  }, []);
+
+  const handleTeamsSSO = async () => {
+    try {
+      console.log('Starting Teams SSO process...');
+      const authTokenRequest = {
+        successCallback: (token: string) => {
+          console.log('Teams SSO token received');
+          handleToken(token);
+        },
+        failureCallback: (error: string) => {
+          console.error('Teams SSO failed:', error);
+        },
+        resources: [`api://app.teamscorecards.online/${authConfig.clientId}`]
+      };
+      console.log('authTokenRequest', authTokenRequest.resources);
+      await microsoftTeams.authentication.getAuthToken(authTokenRequest);
+    } catch (error) {
+      console.error('Teams SSO error:', error);
+      handleStandardLogin();
+    }
+  };
+
+  const handleStandardLogin = () => {
+    console.log('Starting standard Azure AD login...');
+    const loginUrl = authConfig.getLoginUrl();
+    window.location.href = loginUrl;
+  };
+
+  const handleToken = async (token: string) => {
+    try {
+      console.log('Handling token...');
+      const response = await api.post('/auth/callback', { token });
+      const { user, accessToken } = response.data;
+      
+      localStorage.setItem('token', accessToken);
+      setUser(user);
+      setIsAuthenticated(true);
+      navigate('/');
+    } catch (error) {
+      console.error('Token handling failed:', error);
+      handleStandardLogin();
+    }
+  };
 
   const login = async () => {
-    try {
-      const redirectUri = `${window.location.origin}/auth/callback`;
-      const response = await axios.get(`${API_URL}/api/auth/login`, {
-        params: {
-          redirect_uri: redirectUri
-        }
-      });
-      
-      if (response.data?.url) {
-        window.location.href = response.data.url;
-      } else {
-        throw new Error('Invalid login response');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+    console.log('Login initiated...');
+    if (isInTeams()) {
+      console.log('Running in Teams, using Teams SSO...');
+      await handleTeamsSSO();
+    } else {
+      console.log('Not in Teams, using standard login...');
+      handleStandardLogin();
     }
   };
 
   const logout = async () => {
-    try {
-      setUser(null);
-      setIsAuthenticated(false);
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    localStorage.removeItem('token');
+    setUser(null);
+    setIsAuthenticated(false);
+    navigate('/login');
   };
 
-  // Check authentication status on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const storedToken = localStorage.getItem('auth_token');
-        if (!storedToken) {
-          setIsLoading(false);
-          return;
-        }
-
-        const response = await axios.get(`${API_URL}/api/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${storedToken}`
-          }
-        });
-
-        if (response.data) {
-          setUser(response.data);
-          setToken(storedToken);
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        localStorage.removeItem('auth_token');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
   return (
-    <AuthContext.Provider 
-      value={{ 
-        isAuthenticated, 
-        isLoading,
-        user, 
-        token,
-        login, 
-        logout,
-        setIsAuthenticated,
-        setUser
-      }}
-    >
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -120,7 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
