@@ -88,17 +88,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       
       const response = await api.post('/auth/callback', { token });
+      console.log('Auth callback response:', {
+        status: response.status,
+        hasData: !!response.data,
+        hasToken: response.data?.token?.length > 0,
+        hasUser: !!response.data?.user
+      });
+
       const userData = response.data;
       
-      if (!userData.token || !userData.user) {
+      if (!userData?.token || !userData?.user) {
+        console.error('Invalid response data:', {
+          hasToken: !!userData?.token,
+          hasUser: !!userData?.user,
+          data: userData
+        });
         throw new Error('Invalid response from auth callback');
       }
-      
-      console.log('Auth response:', {
-        hasToken: !!userData.token,
-        tokenLength: userData.token.length,
-        user: userData.user
-      });
       
       // Store the token first
       sessionStorage.setItem('auth_token', userData.token);
@@ -113,11 +119,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (window.location.pathname !== '/') {
         navigate('/');
       }
-    } catch (error) {
-      console.error('Token handling failed:', error);
+    } catch (error: any) {
+      console.error('Token handling failed:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       // Clear any potentially invalid token
       sessionStorage.removeItem('auth_token');
       setIsLoading(false);
+      throw error;
     }
   };
 
