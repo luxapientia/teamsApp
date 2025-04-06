@@ -55,7 +55,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         resources: [`api://app.teamscorecards.online/${authConfig.clientId}`]
       };
-      console.log('authTokenRequest', authTokenRequest.resources);
       await microsoftTeams.authentication.getAuthToken(authTokenRequest);
     } catch (error) {
       console.error('Teams SSO error:', error);
@@ -75,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await api.post('/auth/callback', { token });
       const userData = response.data;
       console.log('userData', userData);
-      localStorage.setItem('auth_token', userData.token);
+      sessionStorage.setItem('auth_token', userData.token);
       setUser(userData.user);
       setIsAuthenticated(true);
       navigate('/');
@@ -97,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     setUser(null);
     setIsAuthenticated(false);
     navigate('/login');
