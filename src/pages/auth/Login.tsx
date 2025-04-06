@@ -6,6 +6,7 @@ export const Login: React.FC = () => {
   const { login, isAuthenticated, isTeams, isTeamsInitialized, isLoading } = useAuth();
   const location = useLocation();
 
+  console.log('Login page rendered, isAuthenticated:', isAuthenticated);
   if (isAuthenticated) {
     console.log('User is already authenticated, redirecting to home');
     return <Navigate to="/" replace />;

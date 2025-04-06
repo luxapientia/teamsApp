@@ -24,26 +24,70 @@ export class AuthService {
 
   async handleCallback(code: string, redirectUri: string): Promise<{ token: string; user: UserProfile }> {
     try {
+      console.log('Starting token exchange with code:', code.substring(0, 10) + '...');
+      console.log('Using redirect URI:', redirectUri);
+      
+      const tokenEndpoint = `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`;
+      const params = new URLSearchParams({
+        client_id: process.env.AZURE_CLIENT_ID!,
+        scope: 'openid profile email User.Read',
+        code,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+        client_secret: process.env.AZURE_CLIENT_SECRET!
+      });
+
+      console.log('Making token request to:', tokenEndpoint);
       const tokenResponse = await axios.post(
-        `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
+        tokenEndpoint,
+        params,
         {
-          client_id: process.env.AZURE_CLIENT_ID,
-          scope: 'openid profile email',
-          code,
-          redirect_uri: redirectUri,
-          grant_type: 'authorization_code',
-          client_secret: process.env.AZURE_CLIENT_SECRET
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          }
         }
       );
 
+      if (!tokenResponse.data.access_token) {
+        console.error('No access token in response:', tokenResponse.data);
+        throw new Error('No access token received from Microsoft');
+      }
+
+      console.log('Token exchange successful');
       const accessToken = tokenResponse.data.access_token;
+      
+      // Decode the access token to get the tenant ID
+      const decodedToken = jwt.decode(accessToken) as any;
+      if (!decodedToken) {
+        console.error('Failed to decode access token');
+        throw new Error('Failed to decode access token');
+      }
+
+      const tenantId = decodedToken.tid;
+      console.log('Tenant ID from access token:', tenantId);
+
+      if (!tenantId) {
+        console.error('No tenant ID found in access token');
+        throw new Error('No tenant ID found in access token');
+      }
+
+      // Get user profile from Microsoft Graph
+      console.log('Fetching user profile from Graph API');
       const userResponse = await axios.get('https://graph.microsoft.com/v1.0/me', {
         headers: {
           Authorization: `Bearer ${accessToken}`
         }
       });
 
+      if (!userResponse.data) {
+        console.error('No user data received from Graph API');
+        throw new Error('No user data received from Graph API');
+      }
+
+      console.log('User data retrieved from Graph API');
       const userData = userResponse.data;
+      
+      // Create user profile
       const userProfile: UserProfile = {
         id: userData.id,
         email: userData.mail || userData.userPrincipalName,
@@ -53,14 +97,26 @@ export class AuthService {
         organization: userData.companyName || '',
         roles: ['user'],
         status: 'active',
-        tenantId: userData.tenantId,
+        tenantId: tenantId,
         organizationName: userData.companyName || ''
       };
 
+      if (!userProfile.id || !userProfile.email) {
+        console.error('Invalid user profile: missing required fields', userProfile);
+        throw new Error('Invalid user profile: missing required fields');
+      }
+
+      console.log('Creating app token for user:', userProfile.email);
       const token = await this.createAppToken(userProfile);
+      console.log('App token created successfully');
+      
       return { token, user: userProfile };
-    } catch (error) {
-      console.error('Error in handleCallback:', error);
+    } catch (error: any) {
+      console.error('Error in handleCallback:', {
+        message: error.message,
+        response: error.response?.data,
+        stack: error.stack
+      });
       throw error;
     }
   }
