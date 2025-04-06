@@ -2,16 +2,13 @@ import React, { useState, useEffect } from 'react';
 import {
   Box,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   Button,
-  styled,
   SelectChangeEvent,
   Typography,
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableRow,
   Paper,
@@ -19,59 +16,11 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
+import { AnnualTarget } from '../../../types/annualCorporateScorecard';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
 import { PersonalPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
-const StyledFormControl = styled(FormControl)({
-  backgroundColor: '#fff',
-  borderRadius: '8px',
-  '& .MuiOutlinedInput-root': {
-    '& fieldset': {
-      borderColor: '#E5E7EB',
-    },
-    '&:hover fieldset': {
-      borderColor: '#D1D5DB',
-    },
-  },
-});
-
-const ViewButton = styled(Button)({
-  backgroundColor: '#0078D4',
-  color: 'white',
-  textTransform: 'none',
-  padding: '6px 16px',
-  '&:hover': {
-    backgroundColor: '#106EBE',
-  },
-});
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  borderBottom: '1px solid #E5E7EB',
-  padding: '16px',
-  color: '#374151',
-  backgroundColor: 'white',
-}));
-
-const StyledHeaderCell = styled(TableCell)(({ theme }) => ({
-  borderBottom: '1px solid #E5E7EB',
-  padding: '16px',
-  color: '#6B7280',
-  fontWeight: 500,
-  backgroundColor: '#F9FAFB',
-}));
-
-const ScoreBox = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: '24px 16px',
-  flex: 1,
-  borderRight: '1px solid #E5E7EB',
-  '&:last-child': {
-    borderRight: 'none',
-  },
-}));
+import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
 
 const TeamPerformance: React.FC = () => {
   const dispatch = useAppDispatch();
