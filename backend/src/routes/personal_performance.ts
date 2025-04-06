@@ -4,6 +4,8 @@ import { AuthenticatedRequest, authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import User from '../models/User';
+
 const router = express.Router();
 
 // Configure multer for file storage
@@ -33,6 +35,17 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
+router.get('/company-users', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const companyUsers = await User.find({ tenantId: req.user?.tenantId })
+    return res.json(companyUsers.map(user => ({ id: user._id, name: user.name })));
+  } catch (error) {
+    console.error('Company users error:', error);
+    return res.status(500).json({ error: 'Failed to get company users' });
+  }
+});
+
 
 router.get('/personal-performance', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
