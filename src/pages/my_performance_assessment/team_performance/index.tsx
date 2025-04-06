@@ -22,29 +22,7 @@ import { RootState } from '../../../store';
 import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
-import { PersonalPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
-const StyledFormControl = styled(FormControl)({
-  backgroundColor: '#fff',
-  borderRadius: '8px',
-  '& .MuiOutlinedInput-root': {
-    '& fieldset': {
-      borderColor: '#E5E7EB',
-    },
-    '&:hover fieldset': {
-      borderColor: '#D1D5DB',
-    },
-  },
-});
-
-const ViewButton = styled(Button)({
-  backgroundColor: '#0078D4',
-  color: 'white',
-  textTransform: 'none',
-  padding: '6px 16px',
-  '&:hover': {
-    backgroundColor: '#106EBE',
-  },
-});
+import { TeamPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -61,19 +39,20 @@ const StyledHeaderCell = styled(TableCell)(({ theme }) => ({
   backgroundColor: '#F9FAFB',
 }));
 
-const ScoreBox = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: '24px 16px',
-  flex: 1,
-  borderRight: '1px solid #E5E7EB',
-  '&:last-child': {
-    borderRight: 'none',
+const StyledFormControl = styled(FormControl)({
+  backgroundColor: '#fff',
+  borderRadius: '8px',
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': {
+      borderColor: '#E5E7EB',
+    },
+    '&:hover fieldset': {
+      borderColor: '#D1D5DB',
+    },
   },
-}));
+});
 
-const TeamPerformance: React.FC = () => {
+const TeamPerformances: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showTable, setShowTable] = useState(false);
@@ -125,21 +104,20 @@ const TeamPerformance: React.FC = () => {
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <FormControl fullWidth>
+        <StyledFormControl fullWidth>
           <Select
             value={selectedAnnualTargetId}
             onChange={handleScorecardChange}
             displayEmpty
             sx={{ backgroundColor: '#fff' }}
           >
-            <MenuItem value="" disabled>Select Annual Corporate Scorecard</MenuItem>
             {annualTargets.map((target) => (
               <MenuItem key={target._id} value={target._id}>
                 {target.name}
               </MenuItem>
             ))}
           </Select>
-        </FormControl>
+        </StyledFormControl>
 
         <Button
           variant="contained"
@@ -170,7 +148,7 @@ const TeamPerformance: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {teamPerformances.map((performance: PersonalPerformance, index: number) => {
+              {teamPerformances.map((performance: TeamPerformance, index: number) => {
                 const quarterScores = performance.quarterlyTargets.map(quarter => {
                   return calculateQuarterScore(quarter.objectives)
                 });
@@ -182,9 +160,9 @@ const TeamPerformance: React.FC = () => {
 
                 return (
                   <TableRow key={performance._id}>
-                    <StyledTableCell>{"-----"}</StyledTableCell>
-                    <StyledTableCell>{"-----"}</StyledTableCell>
-                    <StyledTableCell>{"-----"}</StyledTableCell>
+                    <StyledTableCell>{performance.fullName}</StyledTableCell>
+                    <StyledTableCell>{performance.position}</StyledTableCell>
+                    <StyledTableCell>{performance.team}</StyledTableCell>
                     {quarterScores.map((score, idx) => {
                       const ratingScale = getRatingScaleInfo(score, annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
                       return (
@@ -216,4 +194,4 @@ const TeamPerformance: React.FC = () => {
   );
 };
 
-export default TeamPerformance;
+export default TeamPerformances;

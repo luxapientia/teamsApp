@@ -21,222 +21,35 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget } from '@/types/personalPerformance';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import RatingScalesModal from '../../../components/RatingScalesModal';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
-import { RootState } from '../../../store';
 import { api } from '../../../services/api';
-import { PDFDownloadLink, Document, Page, View, Text, StyleSheet } from '@react-pdf/renderer';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-interface Supervisor {
-    id: string;
-    name: string;
-}
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
     quarter: QuarterType;
-    supervisors?: Supervisor[];
-    onSupervisorChange?: (supervisorId: string) => void;
     onBack?: () => void;
-    userId?: string;
+    userId: string;
+    teamId: string;
 }
-
-// Add PDF styles
-const styles = StyleSheet.create({
-    page: {
-        padding: 30,
-    },
-    title: {
-        fontSize: 16,
-        marginBottom: 20,
-        fontWeight: 'bold',
-    },
-    table: {
-        display: 'flex',
-        flexDirection: 'column',
-        width: 'auto',
-        borderStyle: 'solid',
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-    },
-    tableRow: {
-        flexDirection: 'row',
-    },
-    tableHeader: {
-        backgroundColor: '#F9FAFB',
-        color: '#6B7280',
-        padding: 5,
-        fontWeight: 'bold',
-        fontSize: 10,
-    },
-    tableCell: {
-        padding: 5,
-        fontSize: 9,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
-    },
-});
-
-// Update PDF Document component
-const PDFDocument = ({
-    annualTarget,
-    quarter,
-    objectives
-}: {
-    annualTarget: AnnualTarget;
-    quarter: QuarterType;
-    objectives: PersonalQuarterlyTargetObjective[];
-}) => {
-    // Group objectives like in the table
-    const groups = objectives.reduce((acc, obj) => {
-        const perspectiveKey = `${obj.perspectiveId}`;
-        const objectiveKey = `${obj.perspectiveId}-${obj.name}`;
-
-        if (!acc[perspectiveKey]) {
-            acc[perspectiveKey] = {
-                perspectiveId: obj.perspectiveId,
-                perspectiveName: annualTarget.content.perspectives.find(p => p.index === obj.perspectiveId)?.name,
-                objectives: {}
-            };
-        }
-
-        if (!acc[perspectiveKey].objectives[objectiveKey]) {
-            acc[perspectiveKey].objectives[objectiveKey] = {
-                name: obj.name,
-                initiatives: []
-            };
-        }
-
-        acc[perspectiveKey].objectives[objectiveKey].initiatives.push(obj);
-        return acc;
-    }, {} as Record<string, {
-        perspectiveId: number;
-        perspectiveName: string | undefined;
-        objectives: Record<string, {
-            name: string;
-            initiatives: PersonalQuarterlyTargetObjective[];
-        }>;
-    }>);
-
-    // Calculate row spans
-    const tableRows: Array<{
-        perspectiveName?: string;
-        objectiveName?: string;
-        initiativeName?: string;
-        kpi: QuarterlyTargetKPI;
-        rowSpans: {
-            perspective: number;
-            objective: number;
-            initiative: number;
-        };
-    }> = [];
-
-    Object.values(groups).forEach(perspectiveGroup => {
-        const perspectiveRows = Object.values(perspectiveGroup.objectives).reduce(
-            (sum, obj) => sum + obj.initiatives.reduce(
-                (kpiSum, initiative) => kpiSum + initiative.KPIs.length, 0
-            ), 0
-        );
-
-        Object.values(perspectiveGroup.objectives).forEach(objectiveGroup => {
-            const objectiveRows = objectiveGroup.initiatives.reduce(
-                (sum, initiative) => sum + initiative.KPIs.length, 0
-            );
-
-            objectiveGroup.initiatives.forEach(initiative => {
-                initiative.KPIs.forEach((kpi, kpiIndex) => {
-                    tableRows.push({
-                        perspectiveName: kpiIndex === 0 ? perspectiveGroup.perspectiveName : undefined,
-                        objectiveName: kpiIndex === 0 ? objectiveGroup.name : undefined,
-                        initiativeName: kpiIndex === 0 ? initiative.initiativeName : undefined,
-                        kpi,
-                        rowSpans: {
-                            perspective: perspectiveRows,
-                            objective: objectiveRows,
-                            initiative: initiative.KPIs.length
-                        }
-                    });
-                });
-            });
-        });
-    });
-
-    return (
-        <Document>
-            <Page size="A4" orientation="landscape" style={styles.page}>
-                <Text style={styles.title}>{`${annualTarget.name}, ${quarter}`}</Text>
-                <View style={styles.table}>
-                    {/* Table Headers */}
-                    <View style={styles.tableRow}>
-                        <Text style={[styles.tableHeader, { width: '15%' }]}>Perspective</Text>
-                        <Text style={[styles.tableHeader, { width: '15%' }]}>Strategic Objective</Text>
-                        <Text style={[styles.tableHeader, { width: '15%' }]}>Initiative</Text>
-                        <Text style={[styles.tableHeader, { width: '10%' }]}>Weight %</Text>
-                        <Text style={[styles.tableHeader, { width: '15%' }]}>KPI</Text>
-                        <Text style={[styles.tableHeader, { width: '10%' }]}>Baseline</Text>
-                        <Text style={[styles.tableHeader, { width: '10%' }]}>Target</Text>
-                        <Text style={[styles.tableHeader, { width: '10%' }]}>Rating Scale</Text>
-                    </View>
-
-                    {/* Table Data */}
-                    {tableRows.map((row, index) => (
-                        <View style={styles.tableRow} key={index}>
-                            <Text style={[styles.tableCell, { width: '15%', minHeight: 20 }]}>
-                                {row.perspectiveName || ''}
-                            </Text>
-                            <Text style={[styles.tableCell, { width: '15%' }]}>
-                                {row.objectiveName || ''}
-                            </Text>
-                            <Text style={[styles.tableCell, { width: '15%' }]}>
-                                {row.initiativeName || ''}
-                            </Text>
-                            <Text style={[styles.tableCell, { width: '10%' }]}>
-                                {row.kpi.weight}%
-                            </Text>
-                            <Text style={[styles.tableCell, { width: '15%' }]}>
-                                {row.kpi.indicator}
-                            </Text>
-                            <Text style={[styles.tableCell, { width: '10%' }]}>
-                                {row.kpi.baseline}
-                            </Text>
-                            <Text style={[styles.tableCell, { width: '10%' }]}>
-                                {row.kpi.target}
-                            </Text>
-                            <Text style={[styles.tableCell, { width: '10%' }]}>
-                                {row.kpi.ratingScore || '-'}
-                            </Text>
-                        </View>
-                    ))}
-                </View>
-            </Page>
-        </Document>
-    );
-};
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
     annualTarget,
     quarter,
     onBack,
-    supervisors = [
-        { id: '1', name: 'John Doe' },
-        { id: '2', name: 'Jane Smith' },
-    ],
-    onSupervisorChange = () => { },
-    userId = '',
+    userId,
+    teamId
 }) => {
-    const dispatch = useAppDispatch();
     const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
     const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
     const [personalPerformance, setPersonalPerformance] = React.useState<PersonalPerformance | null>(null);
     const [selectedRatingScales, setSelectedRatingScales] = React.useState<AnnualTargetRatingScale[] | null>(null);
+    const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, position: string, team: string, teamId: string }[]>([]);
 
     useEffect(() => {
         fetchPersonalPerformance();
+        fetchCompanyUsers();
     }, []);
 
     useEffect(() => {
@@ -246,11 +59,27 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         }
     }, [personalPerformance]);
 
+
+    const fetchCompanyUsers = async () => {
+        try {
+            const response = await api.get('/report/company-users');
+            if (response.status === 200) {
+                setCompanyUsers(response.data.data);
+            } else {
+                setCompanyUsers([]);
+            }
+        } catch (error) {
+            setCompanyUsers([]);
+        }
+    }
+
     const fetchPersonalPerformance = async () => {
         try {
             const response = await api.get(`/personal-performance/personal-performance/`, {
                 params: {
-                    userId: userId
+                    userId: userId,
+                    annualTargetId: annualTarget._id,
+                    teamId: teamId
                 }
             });
 
@@ -365,13 +194,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     <Select
                         value={selectedSupervisor}
                         displayEmpty
+                        disabled={true}
                     >
-                        <MenuItem value="" disabled>
-                            <Typography color="textSecondary">Select Supervisor</Typography>
-                        </MenuItem>
-                        {supervisors.map((supervisor) => (
-                            <MenuItem key={supervisor.id} value={supervisor.id}>
-                                {supervisor.name}
+                        {companyUsers.map((user) => (
+                            <MenuItem key={user.id} value={user.id}>
+                                {user.fullName}
                             </MenuItem>
                         ))}
                     </Select>

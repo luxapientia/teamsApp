@@ -391,7 +391,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         <Typography
           sx={{
             fontWeight: 500,
-            color: calculateTotalWeight() > 100 ? '#DC2626' : '#374151'
+            color: calculateTotalWeight() === 100 ? '#059669' : '#DC2626'
           }}
         >
           Total Weight: {calculateTotalWeight()}%

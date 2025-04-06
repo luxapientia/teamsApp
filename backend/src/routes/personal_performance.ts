@@ -49,9 +49,8 @@ router.get('/company-users', authenticateToken, async (req: AuthenticatedRequest
 
 router.get('/personal-performance', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId } = req.params;
-    console.log(userId);
-    const personalPerformance = await PersonalPerformance.findOne({  }) as PersonalPerformanceDocument;
+    const { userId, annualTargetId } = req.query;
+    const personalPerformance = await PersonalPerformance.findOne({ userId, annualTargetId }) as PersonalPerformanceDocument;
     return res.json(personalPerformance);
   } catch (error) {
     console.error('Personal performance error:', error);
@@ -63,7 +62,7 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
   try {
     const annualTargetId = req.query.annualTargetId as string;
     const quarter = req.query.quarter as string;
-    const personalPerformances = await PersonalPerformance.find({ annualTargetId }) as PersonalPerformanceDocument[];
+    const personalPerformances = await PersonalPerformance.find({ annualTargetId, userId: req.user?._id }) as PersonalPerformanceDocument[];
 
     if(personalPerformances.length === 0) {
       const newPersonalPerformance = await PersonalPerformance.create({
@@ -95,7 +94,20 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
 router.get('/team-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId } = req.query;
-    const teamPerformances = await PersonalPerformance.find({ annualTargetId }) as PersonalPerformanceDocument[];
+    const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId }).populate('userId') as any[];
+    const isTeamOwner = true;
+
+    const teamPerformances: any[] = [];
+    allPersonalPerformances.forEach(performance => {
+      if(performance.quarterlyTargets[0].supervisorId === req.user?._id) {
+        teamPerformances.push({...performance._doc, fullName: performance.userId.name, position: 'position', team: 'team'});
+      } else {
+        if(isTeamOwner) {
+          teamPerformances.push({...performance._doc, fullName: performance.userId.name, position: 'position', team: 'team'});
+        }
+      }
+    });
+
     return res.json(teamPerformances);
   } catch (error) {
     console.error('Team performances error:', error);

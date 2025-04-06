@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { api } from '../../services/api';
 import { AxiosError } from 'axios';
-import { PersonalPerformance } from '@/types';
+import { PersonalPerformance, TeamPerformance } from '@/types';
 interface PersonalPerformanceState {
   personalPerformances: PersonalPerformance[];
-  teamPerformances: PersonalPerformance[];
+  teamPerformances: TeamPerformance[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
@@ -50,7 +50,7 @@ export const fetchTeamPerformances = createAsyncThunk(
         }
       });
       if (response.status === 200) {
-        return response.data.data as PersonalPerformance[];
+        return response.data.data as TeamPerformance[];
       } else {
         return [];
       }
