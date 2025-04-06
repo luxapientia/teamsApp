@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import AnnualTarget, { AnnualTargetDocument } from '../models/AnnualTarget';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -45,7 +45,7 @@ router.get('/annual-targets', authenticateToken, async (_req: Request, res: Resp
   }
 });
 
-router.post('/create-annual-target', authenticateToken, async (req: Request, res: Response) => {
+router.post('/create-annual-target', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTarget } = req.body;
     const existingAnnualTarget = await AnnualTarget.findOne({ name: annualTarget.name });
@@ -53,7 +53,7 @@ router.post('/create-annual-target', authenticateToken, async (req: Request, res
       return res.status(400).json({ error: 'Annual target already exists' });
     }
 
-    const newAnnualTarget = await AnnualTarget.create(annualTarget) as AnnualTargetDocument;
+    const newAnnualTarget = await AnnualTarget.create({ ...annualTarget, tenantId: req.user?.tenantId }) as AnnualTargetDocument;
     return res.json(newAnnualTarget);
   } catch (error) {
     console.error('Create annual target error:', error);
@@ -61,7 +61,7 @@ router.post('/create-annual-target', authenticateToken, async (req: Request, res
   }
 });
 
-router.put('/update-annual-target/:id', authenticateToken, async (req: Request, res: Response) => {
+router.put('/update-annual-target/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { annualTarget } = req.body;
@@ -74,7 +74,7 @@ router.put('/update-annual-target/:id', authenticateToken, async (req: Request, 
   }
 });
 
-router.delete('/delete-annual-target/:id', authenticateToken, async (req: Request, res: Response) => {
+router.delete('/delete-annual-target/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     await AnnualTarget.findByIdAndDelete(id);
@@ -85,7 +85,7 @@ router.delete('/delete-annual-target/:id', authenticateToken, async (req: Reques
   }
 });
 
-router.put('/update-quarterly-target/:id', authenticateToken, async (req: Request, res: Response) => {
+router.put('/update-quarterly-target/:id', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { quarterlyTarget } = req.body;
@@ -98,7 +98,7 @@ router.put('/update-quarterly-target/:id', authenticateToken, async (req: Reques
   }
 });
 
-router.post('/upload', authenticateToken, upload.single('file'), async (req: Request, res: Response) => {
+router.post('/upload', authenticateToken, upload.single('file'), async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
