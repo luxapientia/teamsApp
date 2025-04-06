@@ -1,113 +1,78 @@
-import { UserRole, UserRoleAssignment } from '../types/role';
-import { UserRoleModel } from '../models/role';
+import { UserRole, dUser } from '../types/role';
+import { UserModel } from '../models/role';
 import { ApiError } from '../utils/apiError';
 
-type UserStatus = 'active' | 'inactive';
 
 export class RoleService {
-  async createUserRole(
-    userId: string,
+  async createUser(
+    MicrosoftId: string,
+    name: string,
     email: string,
     role: UserRole,
-    companyId?: string
-  ): Promise<UserRoleAssignment> {
+    tenantId?: string
+  ): Promise<dUser> {
     // Validate role
     if (!Object.values(UserRole).includes(role)) {
       throw new ApiError('Invalid role', 400);
     }
 
-    // Check if user already has a role
-    const existingRole = await UserRoleModel.findOne({ userId });
-    if (existingRole) {
-      throw new ApiError('User already has a role assigned', 400);
+    const existingUser = await UserModel.findOne({ MicrosoftId });
+    if (existingUser) {
+      throw new ApiError('User already exists', 400);
     }
 
-    // Validate company ID for Super User
-    if (role === UserRole.SUPER_USER && !companyId) {
-      throw new ApiError('Company ID is required for Super User role', 400);
+    // Validate tenant ID for Super User
+    if (role === UserRole.SUPER_USER && !tenantId) {
+      throw new ApiError('Tenant ID is required for Super User role', 400);
     }
 
-    // Create new role assignment
-    const roleAssignment = await UserRoleModel.create({
-      userId,
+    const user = await UserModel.create({
+      MicrosoftId,
+      name,
       email,
       role,
-      status: 'active' as UserStatus,
-      ...(companyId && role === UserRole.SUPER_USER ? { companyId } : {})
+      ...(tenantId && role === UserRole.SUPER_USER ? { tenantId } : {})
     });
 
-    return roleAssignment;
+    return user;
   }
 
-  async getUserRole(userId: string): Promise<UserRole | null> {
-    const userRole = await UserRoleModel.findOne({ userId });
-    if (!userRole) {
+  async updateUser(microsoftId: string, user: dUser): Promise<dUser> {
+    const updatedUser = await UserModel.findOneAndUpdate({ MicrosoftId: microsoftId }, user, { new: true });
+    if (!updatedUser) {
+      throw new ApiError('User not found', 404);
+    }
+    return updatedUser;
+  }
+
+  async getUser(MicrosoftId: string): Promise<dUser | null> {
+    const user = await UserModel.findOne({ MicrosoftId });
+    if (!user) {
       return null;
     }
-    return userRole.role;
+    return user;
   }
 
-  async getUserRoleByEmail(email: string): Promise<UserRole | null> {
-    const userRole = await UserRoleModel.findOne({ email });
-    if (!userRole) {
+  async getUserByEmail(email: string): Promise<dUser | null> {
+    const user = await UserModel.findOne({ email });
+    if (!user) {
       return null;
     }
-    return userRole.role;
+    return user;
   }
 
-  async updateUserStatus(
-    userId: string, 
-    status: UserStatus
-  ): Promise<UserRoleAssignment> {
-    // Validate status
-    if (!['active', 'inactive'].includes(status)) {
-      throw new ApiError('Invalid status value', 400);
-    }
-
-    const userRole = await UserRoleModel.findOneAndUpdate(
-      { userId },
-      { status },
-      { new: true }
-    );
-
-    if (!userRole) {
-      throw new ApiError('User role not found', 404);
-    }
-
-    return userRole;
-  }
-
-  async getAllUsersWithRole(role: UserRole): Promise<UserRoleAssignment[]> {
+  async getAllUsersWithRole(role: UserRole): Promise<dUser[]> {
     // Validate role
     if (!Object.values(UserRole).includes(role)) {
       throw new ApiError('Invalid role', 400);
     }
 
-    return UserRoleModel.find({ role }).populate('companyId', 'name');
+    return UserModel.find({ role });
   }
 
-  async validateRoleAssignment(
-    assignerRole: UserRole,
-    targetRole: UserRole
-  ): Promise<boolean> {
-    // Validate roles
-    if (!Object.values(UserRole).includes(assignerRole) || 
-        !Object.values(UserRole).includes(targetRole)) {
-      throw new ApiError('Invalid role value', 400);
-    }
+  async getAllUsersWithTenantID(tenantId: string): Promise<dUser[]> {
 
-    // APP_OWNER can assign any role
-    if (assignerRole === UserRole.APP_OWNER) {
-      return true;
-    }
-
-    // SUPER_USER can only assign USER role
-    if (assignerRole === UserRole.SUPER_USER && targetRole === UserRole.USER) {
-      return true;
-    }
-
-    // All other combinations are invalid
-    return false;
+    return UserModel.find({ tenantId });
   }
 }
 

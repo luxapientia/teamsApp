@@ -1,7 +1,7 @@
 import express from 'express';
 import { roleService } from '../services/roleService';
 import { authenticateToken } from '../middleware/auth';
-import { requireRole, requireSameCompanyOrHigherRole } from '../middleware/roleAuth';
+import { requireRole } from '../middleware/roleAuth';
 import type { AuthenticatedRequest } from '../middleware/roleAuth';
 import { UserRole } from '../types/role';
 import { ApiError } from '../utils/apiError';
@@ -10,13 +10,12 @@ const router = express.Router();
 
 // Get user's role
 router.get(
-  '/user/:userId',
+  '/user/:microsoftId',
   authenticateToken,
   requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),
-  requireSameCompanyOrHigherRole,
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const role = await roleService.getUserRole(req.params.userId);
+      const role = await roleService.getUser(req.params.microsoftId);
       res.json({
         status: 'success',
         data: { role }
@@ -31,14 +30,12 @@ router.get(
 router.post(
   '/create',
   authenticateToken,
-  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),
-  requireSameCompanyOrHigherRole,
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { userId, email, role, companyId } = req.body;
+      const { MicrosoftId, email, name, role, tenantId } = req.body;
 
       // Validate required fields
-      if (!userId || !email || !role) {
+      if (!MicrosoftId || !email || !role) {
         throw new ApiError('Missing required fields', 400);
       }
 
@@ -47,31 +44,22 @@ router.post(
         throw new ApiError('Invalid role value', 400);
       }
 
-      const assigner = req.user;
-      if (!assigner) {
+      const user = req.user;
+      if (!user) {
         throw new ApiError('User not authenticated', 401);
       }
 
-      // Validate role assignment permissions
-      const canAssign = await roleService.validateRoleAssignment(
-        assigner.role as UserRole,
-        role as UserRole
-      );
-
-      if (!canAssign) {
-        throw new ApiError('Insufficient permissions to assign this role', 403);
-      }
-
-      const result = await roleService.createUserRole(
-        userId,
+      const result = await roleService.createUser(
+        MicrosoftId,
+        name,
         email,
         role as UserRole,
-        companyId
+        tenantId
       );
 
       res.json({
         status: 'success',
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -79,32 +67,21 @@ router.post(
   }
 );
 
-// Update user status
-router.patch(
+// Update user
+router.put(
   '/status/:userId',
   authenticateToken,
   requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),
-  requireSameCompanyOrHigherRole,
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const { status } = req.body;
       const { userId } = req.params;
+      const { microsoftId, name, email, role, tenantId } = req.body;
 
       // Validate userId
       if (!userId) {
         throw new ApiError('User ID is required', 400);
       }
-
-      // Validate status
-      if (!status || !['active', 'inactive'].includes(status)) {
-        throw new ApiError('Invalid status value', 400);
-      }
-
-      const result = await roleService.updateUserStatus(
-        userId,
-        status as 'active' | 'inactive'
-      );
-
+      const result = await roleService.updateUser(microsoftId, { MicrosoftId: microsoftId, name, email, role, tenantId });
       res.json({
         status: 'success',
         data: result
@@ -139,5 +116,25 @@ router.get(
     }
   }
 );
+
+// Get all users with specific tenantId
+router.get(
+  '/users/tenant/:tenantId',
+  authenticateToken,
+  requireRole([UserRole.APP_OWNER]),  
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { tenantId } = req.params;
+      const users = await roleService.getAllUsersWithTenantID(tenantId);
+      res.json({
+        status: 'success',
+        data: users
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);  
+
 
 export default router; 

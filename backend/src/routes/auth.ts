@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express';
 import { authService } from '../services/authService';
 import { authenticateToken } from '../middleware/auth';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { roleService } from '../services/roleService';
+import { UserRole } from '../types/role';
 
 const router = express.Router();
 
@@ -33,6 +35,12 @@ router.post('/callback', async (req: Request, res: Response) => {
       if (!userProfile) {
         console.error('Teams token verification failed');
         return res.status(401).json({ error: 'Invalid Teams token' });
+      } else {
+        console.log(userProfile, 'userProfile');
+        const user = await roleService.getUser(userProfile.id);
+        if (!user) {
+          await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, UserRole.USER, userProfile.tenantId);
+        }
       }
 
       const appToken = await authService.createAppToken(userProfile);
@@ -56,6 +64,18 @@ router.post('/callback', async (req: Request, res: Response) => {
     if (code) {
       console.log('Processing standard login code...');
       const result = await authService.handleCallback(code, redirect_uri);
+      if (result.user) {
+        const user = await roleService.getUser(result.user.id);
+        if (!user) {
+          await roleService.createUser(
+            result.user.id,
+            result.user.email,
+            result.user.displayName,
+            UserRole.USER,
+            result.user.tenantId
+          );
+        }
+      }
       return res.json(result);
     }
 
