@@ -314,17 +314,18 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
         {canEdit() ? (
           <Button
-            startIcon={<AddIcon />}
             onClick={() => setIsAddInitiativeModalOpen(true)}
-            sx={{
-              color: '#6B7280',
-              '&:hover': {
-                backgroundColor: '#F9FAFB',
-              },
-            }}
-          >
-            Add Initiative
-          </Button>
+          variant="outlined"
+          color="primary"
+          sx={{
+            minWidth: '100px',
+            '&:hover': {
+              backgroundColor: 'rgba(25, 118, 210, 0.04)'
+            }
+          }}
+        >
+          Back
+        </Button>
         ) : (
           <Typography
             variant="caption"

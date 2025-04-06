@@ -103,6 +103,7 @@ router.put('/update-personal-performance/:id', authenticateToken, async (req: Re
 });
 
 router.post('/upload', authenticateToken, upload.single('file'), async (req: Request, res: Response) => {
+  console.log(req.file, '-------------------------');
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
