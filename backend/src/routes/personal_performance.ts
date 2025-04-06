@@ -49,9 +49,8 @@ router.get('/company-users', authenticateToken, async (req: AuthenticatedRequest
 
 router.get('/personal-performance', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { userId } = req.params;
-    console.log(userId);
-    const personalPerformance = await PersonalPerformance.findOne({  }) as PersonalPerformanceDocument;
+    const { userId, annualTargetId } = req.query;
+    const personalPerformance = await PersonalPerformance.findOne({ userId, annualTargetId }) as PersonalPerformanceDocument;
     return res.json(personalPerformance);
   } catch (error) {
     console.error('Personal performance error:', error);
@@ -109,7 +108,6 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
       }
     });
 
-    console.log(teamPerformances, '-------------------------');
     return res.json(teamPerformances);
   } catch (error) {
     console.error('Team performances error:', error);
