@@ -4,21 +4,11 @@ export enum UserRole {
   USER = 'User'
 }
 
-export interface UserRoleAssignment {
+export interface dUser {
   _id?: string;
-  MicrosoftId: string; //
+  MicrosoftId: string; // Microsoft ID
+  name: string;
   email: string;
   role: UserRole;
-  status: 'active' | 'inactive';
-  companyId?: string; // Optional, used for SUPER_USER role
+  tenantId?: string; // Optional, used for SUPER_USER role
 }
-
-export interface RoleChangeLog {
-  _id?: string;
-  MicrosoftId: string; //
-  oldRole?: UserRole;
-  newRole: UserRole;
-  changedBy: string;
-  changedAt: Date;
-  reason?: string;
-} 
