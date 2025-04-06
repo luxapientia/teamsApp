@@ -324,7 +324,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             }
           }}
         >
-          Back
+          Add Initiative
         </Button>
         ) : (
           <Typography
