@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import * as dotenv from 'dotenv';
 import { UserProfile } from '../types';
+import fetch from 'node-fetch';
 
 dotenv.config();
 
@@ -112,16 +113,23 @@ export class AuthService {
       // const graphToken = tokenResponse.data.access_token;
 
       // Now use the Graph token to get user profile
-      const response = await axios.get('https://graph.microsoft.com/v1.0/me', {
+      const graphRes = await fetch('https://graph.microsoft.com/v1.0/me', {
         headers: {
           // Authorization: `Bearer ${graphToken}`
           Authorization: `Bearer ${token}`
         }
       });
 
-      console.log(response.data, 'response.data');
+      // console.log(response.data, 'response.data');
+      const userData: any = await graphRes.json();
 
-      const userData = response.data;
+      // res.json({
+      //   name: profile.displayName,
+      //   email: profile.mail || profile.userPrincipalName,
+      //   jobTitle: profile.jobTitle,
+      //   id: profile.id
+      // });
+      // const userData = response.data;
       return {
         id: userData.id,
         email: userData.mail || userData.userPrincipalName,
