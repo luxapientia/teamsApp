@@ -13,6 +13,9 @@ interface AuthContextType {
   isTeamsInitialized: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  setIsAuthenticated: (value: boolean) => void;
+  setUser: (user: any) => void;
+  setIsLoading: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -152,7 +155,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isTeams, 
       isTeamsInitialized,
       login, 
-      logout 
+      logout,
+      setIsAuthenticated,
+      setUser,
+      setIsLoading
     }}>
       {children}
     </AuthContext.Provider>
