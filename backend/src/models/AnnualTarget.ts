@@ -113,6 +113,7 @@ export interface QuarterlyTargetKPI {
 
 export interface AnnualTargetDocument extends Document {
   _id: string;
+  tenantId: string;
   name: string;
   startDate: string;
   endDate: string;
@@ -121,6 +122,10 @@ export interface AnnualTargetDocument extends Document {
 }
 
 const annualTargetSchema = new Schema<AnnualTargetDocument>({
+  tenantId: {
+    type: String,
+    required: true
+  },
   name: {
     type: String,
     required: true,
