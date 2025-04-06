@@ -10,9 +10,8 @@ export const AuthCallback: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { setIsAuthenticated, setUser } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { setIsAuthenticated, setUser } = useAuth();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -24,8 +23,6 @@ export const AuthCallback: React.FC = () => {
 
       try {
         setIsProcessing(true);
-        setError(null);
-        
         const params = new URLSearchParams(location.search);
         const code = params.get('code');
         
@@ -48,16 +45,20 @@ export const AuthCallback: React.FC = () => {
         });
 
         if (!response.data?.token) {
+          console.error('No token received from server');
           throw new Error('No token received from server');
         }
 
         // Store token in sessionStorage
         sessionStorage.setItem('auth_token', response.data.token);
-        console.log('Token stored in sessionStorage');
+        console.log('Token stored in sessionStorage', 'standard login');
         
         // Update auth context
-        setUser(response.data.user);
-        setIsAuthenticated(true);
+        if (response.data.user) {
+          console.log('User data received:', response.data.user.email);
+          setUser(response.data.user);
+          setIsAuthenticated(true);
+        }
         
         // Dispatch Redux actions
         dispatch({ 
@@ -66,7 +67,6 @@ export const AuthCallback: React.FC = () => {
         });
         
         if (response.data.user) {
-          console.log('User data received:', response.data.user.email);
           dispatch({ 
             type: 'auth/setAuth', 
             payload: {
@@ -76,30 +76,14 @@ export const AuthCallback: React.FC = () => {
           });
         }
 
-        // Get stored redirect location or default to home
-        const storedRedirect = sessionStorage.getItem('auth_redirect');
-        let redirectTo = '/';
-        
-        if (storedRedirect) {
-          try {
-            const redirectLocation = JSON.parse(storedRedirect);
-            redirectTo = redirectLocation.pathname || '/';
-            console.log('Found stored redirect path:', redirectTo);
-          } catch (e) {
-            console.error('Failed to parse stored redirect location:', e);
-          }
-          sessionStorage.removeItem('auth_redirect');
-        }
-        
-        console.log('Navigating to:', redirectTo);
-        navigate(redirectTo, { replace: true });
+        // Use React Router's navigate
+        navigate('/', { replace: true });
       } catch (error: any) {
         console.error('Authentication callback error:', {
           message: error.message,
           response: error.response?.data,
           stack: error.stack
         });
-        setError(error.response?.data?.error || error.message || 'Authentication failed');
         navigate('/login', { replace: true });
       } finally {
         setIsProcessing(false);
@@ -113,11 +97,7 @@ export const AuthCallback: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <h2 className="text-2xl font-semibold mb-4">Authenticating...</h2>
-        {error ? (
-          <p className="text-red-600">Error: {error}</p>
-        ) : (
-          <p className="text-gray-600">Please wait while we complete your sign-in.</p>
-        )}
+        <p className="text-gray-600">Please wait while we complete your sign-in.</p>
       </div>
     </div>
   );

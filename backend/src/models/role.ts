@@ -1,12 +1,16 @@
 import mongoose from 'mongoose';
-import { UserRole, UserRoleAssignment } from '../types/role';
+import { UserRole, dUser } from '../types/role';
 
-const userRoleSchema = new mongoose.Schema<UserRoleAssignment>({
+const userSchema = new mongoose.Schema<dUser>({
   MicrosoftId: {
     type: String,
     required: true,
     unique: true,
     index: true
+  },
+  name: {
+    type: String,
+    required: true,
   },
   email: {
     type: String,
@@ -17,30 +21,12 @@ const userRoleSchema = new mongoose.Schema<UserRoleAssignment>({
   role: {
     type: String,
     enum: Object.values(UserRole),
-    required: true,
-    immutable: true // This makes the role field unchangeable after creation
-  },
-  status: {
-    type: String,
-    enum: ['active', 'inactive'],
-    default: 'active',
     required: true
   },
-  companyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Company',
+  tenantId: {
+    type: String,
     required: false,
-    immutable: true // Company association is also permanent
   }
 });
 
-// Middleware to prevent role changes
-userRoleSchema.pre('save', function(next) {
-  if (!this.isNew && this.isModified('role')) {
-    const err = new Error('Role cannot be modified once set');
-    return next(err);
-  }
-  next();
-});
-
-export const UserRoleModel = mongoose.model<UserRoleAssignment>('UserRole', userRoleSchema); 
+export const UserModel = mongoose.model<dUser>('User', userSchema); 
