@@ -72,7 +72,7 @@ class AuthService {
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem('auth_token');
   }
 
   isAuthenticated(): boolean {
