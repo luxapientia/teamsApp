@@ -40,6 +40,17 @@ router.post('/callback', async (req: Request, res: Response) => {
         const user = await roleService.getUser(userProfile.id);
         if (!user) {
           await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, UserRole.USER, userProfile.tenantId);
+        } else {
+          await roleService.updateUser(
+            userProfile.id,
+            {
+              MicrosoftId: userProfile.id,
+              name: userProfile.displayName,
+              email: userProfile.email,
+              role: UserRole.USER,
+              tenantId: userProfile.tenantId
+            }
+          );
         }
       }
 
@@ -66,6 +77,7 @@ router.post('/callback', async (req: Request, res: Response) => {
       const result = await authService.handleCallback(code, redirect_uri);
       if (result.user) {
         const user = await roleService.getUser(result.user.id);
+        console.log(result.user, 'result.user');
         if (!user) {
           await roleService.createUser(
             result.user.id,
@@ -73,6 +85,17 @@ router.post('/callback', async (req: Request, res: Response) => {
             result.user.displayName,
             UserRole.USER,
             result.user.tenantId
+          );
+        } else {
+          await roleService.updateUser(
+            result.user.id,
+            {
+              MicrosoftId: result.user.id,
+              name: result.user.displayName,
+              email: result.user.email,
+              role: UserRole.USER,
+              tenantId: result.user.tenantId
+            }
           );
         }
       }

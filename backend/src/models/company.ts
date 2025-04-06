@@ -16,6 +16,12 @@ const companySchema = new mongoose.Schema({
   createdOn: {
     type: Date,
     default: Date.now
+  },
+  tenantId: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
   }
 });
 

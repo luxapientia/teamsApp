@@ -19,6 +19,7 @@ export const CompanyModal: React.FC<CompanyModalProps> = ({ isOpen, onClose, onS
     name: '',
     status: 'active' as Status,
     createdOn: new Date().toISOString(),
+    tenantId: '',
   });
 
   useEffect(() => {
@@ -27,12 +28,14 @@ export const CompanyModal: React.FC<CompanyModalProps> = ({ isOpen, onClose, onS
         name: company.name,
         status: company.status,
         createdOn: company.createdOn,
+        tenantId: company.tenantId,
       });
     } else {
       setFormData({
         name: '',
         status: 'active',
         createdOn: new Date().toISOString(),
+        tenantId: '',
       });
     }
   }, [company, mode]);
@@ -58,6 +61,13 @@ export const CompanyModal: React.FC<CompanyModalProps> = ({ isOpen, onClose, onS
           label="Company Name"
           value={formData.name}
           onChange={handleChange('name')}
+          required
+        />
+        <FormInput
+          id="company-tenant-id"
+          label="Tenant ID"
+          value={formData.tenantId}
+          onChange={handleChange('tenantId')}
           required
         />
         <FormSelect
