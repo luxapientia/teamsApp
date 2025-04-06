@@ -1,22 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { isInTeams } from '../../utils/teamsUtils';
 
 export const Login: React.FC = () => {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, isTeams, isTeamsInitialized, isLoading } = useAuth();
   const location = useLocation();
-  const [isTeams, setIsTeams] = React.useState(false);
-
-  useEffect(() => {
-    console.log('Login component mounted');
-    const checkTeams = () => {
-      const inTeams = isInTeams();
-      console.log('Teams check result:', inTeams);
-      setIsTeams(inTeams);
-    };
-    checkTeams();
-  }, []);
 
   if (isAuthenticated) {
     console.log('User is already authenticated, redirecting to home');
@@ -32,7 +20,7 @@ export const Login: React.FC = () => {
     }
   };
 
-  console.log('Rendering login page, isTeams:', isTeams);
+  console.log('Rendering login page, isTeams:', isTeams, 'isTeamsInitialized:', isTeamsInitialized);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -50,9 +38,14 @@ export const Login: React.FC = () => {
         <div className="mt-8 space-y-6">
           <button
             onClick={handleLogin}
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            disabled={isLoading || (isTeams && !isTeamsInitialized)}
+            className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+              isLoading || (isTeams && !isTeamsInitialized)
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+            }`}
           >
-            {isTeams ? 'Sign in with Teams' : 'Sign in with Microsoft'}
+            {isLoading ? 'Loading...' : (isTeams ? 'Sign in with Teams' : 'Sign in with Microsoft')}
           </button>
         </div>
       </div>
