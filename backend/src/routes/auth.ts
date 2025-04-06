@@ -26,22 +26,32 @@ router.post('/callback', async (req: Request, res: Response) => {
     
     // Handle Teams SSO token
     if (token) {
+      console.log('Processing Teams SSO token...');
       const userProfile = await authService.verifyTeamsToken(token);
+      console.log('Teams token verification result:', userProfile);
+      
       if (!userProfile) {
+        console.error('Teams token verification failed');
         return res.status(401).json({ error: 'Invalid Teams token' });
       }
-      console.log('User profile:', userProfile);
+
       const appToken = await authService.createAppToken(userProfile);
-      console.log('App token:', appToken);
-      return res.json({ token: appToken, user: userProfile });
+      console.log('App token created successfully');
+      
+      return res.json({ 
+        token: appToken, 
+        user: userProfile 
+      });
     }
     
     // Handle standard login code
     if (code) {
+      console.log('Processing standard login code...');
       const result = await authService.handleCallback(code, redirect_uri);
       return res.json(result);
     }
 
+    console.error('No token or code provided in request');
     return res.status(400).json({ error: 'Either code or token is required' });
   } catch (error: any) {
     console.error('Callback error details:', {
@@ -49,11 +59,7 @@ router.post('/callback', async (req: Request, res: Response) => {
       response: error.response?.data,
       stack: error.stack
     });
-    return res.status(500).json({ 
-      error: 'Authentication failed', 
-      details: error.message,
-      ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-    });
+    return res.status(500).json({ error: 'Authentication failed' });
   }
 });
 
