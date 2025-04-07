@@ -4,7 +4,7 @@ import { config } from '../config';
 import * as dotenv from 'dotenv';
 import { UserProfile } from '../types';
 import { roleService } from './roleService';
-import { UserRole } from '../types/role';
+import { UserRole } from '../types/user';
 
 dotenv.config();
 

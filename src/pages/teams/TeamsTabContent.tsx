@@ -6,7 +6,7 @@ import { RootState } from '../../store';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import * as microsoftTeams from "@microsoft/teams-js";
-import { api } from '@/services/api';
+import { api } from '../../services/api';
 
 enum ViewStatus {
   TEAM_LIST = 'TEAM_LIST',

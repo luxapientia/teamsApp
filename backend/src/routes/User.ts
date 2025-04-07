@@ -3,7 +3,7 @@ import { roleService } from '../services/roleService';
 import { authenticateToken } from '../middleware/auth';
 import { requireRole } from '../middleware/roleAuth';
 import type { AuthenticatedRequest } from '../middleware/roleAuth';
-import { UserRole } from '../types/role';
+import { UserRole } from '../types/user';
 import { ApiError } from '../utils/apiError';
 
 const router = express.Router();
