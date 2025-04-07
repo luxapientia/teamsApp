@@ -32,7 +32,8 @@ export class RoleService {
       name,
       email,
       role,
-      ...(tenantId && role === UserRole.SUPER_USER ? { tenantId } : {})
+      ...(tenantId && role === UserRole.SUPER_USER ? { tenantId } : {}),
+      ...(teamId && role === UserRole.SUPER_USER ? { teamId } : {})
     });
 
     return user;
@@ -91,6 +92,22 @@ export class RoleService {
     } else {
       return UserRole.USER;
     }
+  }
+
+  async getTeamIdByEmail(email: string): Promise<ObjectId | null> {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return null;
+    }
+    return user.teamId as ObjectId | null;
+  }
+
+  async addUsersToTeam(teamId: ObjectId, userIds: ObjectId[]): Promise<void> {
+    await User.findByIdAndUpdate(teamId, { $addToSet: { users: { $each: userIds } } });
+  }
+
+  async removeUsersFromTeam(teamId: ObjectId, userIds: ObjectId[]): Promise<void> {
+    await User.findByIdAndUpdate(teamId, { $pull: { users: { $in: userIds } } });
   }
 }
 
