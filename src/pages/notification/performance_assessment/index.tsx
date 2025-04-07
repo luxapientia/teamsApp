@@ -34,12 +34,12 @@ const ViewButton = styled(Button)({
   },
 });
 
-const QuarterlyNotification: React.FC = () => {
+const PerformanceAssessmentNotification: React.FC = () => {
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Mock data - replace with actual data from your API
-  const notifications = useAppSelector((state: RootState) => state.notification.notifications.filter((notification) => notification.type === 'agreement'));  
+  const notifications = useAppSelector((state: RootState) => state.notification.notifications.filter((notification) => notification.type === 'assessment'));  
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
 
   const handleView = (notification: NotificationItem) => {
@@ -119,4 +119,4 @@ const QuarterlyNotification: React.FC = () => {
   );
 };
 
-export default QuarterlyNotification; 
+export default PerformanceAssessmentNotification; 

@@ -180,7 +180,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
         return {
           ...target,
-          agreementStatus: AgreementStatus.Submitted,
+          agreementStatus: AgreementStatus.Draft,
           isEditable: calculateTotalWeight() === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives

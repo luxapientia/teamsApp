@@ -22,6 +22,7 @@ export const fetchNotifications = createAsyncThunk(
       const response = await api.get(`/notifications/notifications`); 
 
       if (response.status === 200) {
+        console.log('response.data.data', response.data.data);
         return response.data.data as Notification[];
       } else {
         return [];

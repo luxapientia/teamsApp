@@ -103,17 +103,10 @@ export class AuthService {
           );
         }
       }
-      console.log('Creating app token for user:', userProfile.email);
       const token = await this.createAppToken(userProfile);
-      console.log('App token created successfully');
 
       return { token, user: userProfile };
     } catch (error: any) {
-      console.error('Error in handleCallback:', {
-        message: error.message,
-        response: error.response?.data,
-        stack: error.stack
-      });
       throw error;
     }
   }
@@ -250,7 +243,6 @@ export class AuthService {
       organizationName: userProfile.organizationName || ''
     };
 
-    console.log('Creating app token with payload:', tokenPayload);
     
     return jwt.sign(
       tokenPayload,
