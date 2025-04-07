@@ -29,33 +29,32 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { api } from '../../../services/api';
+import { Notification } from '@/types';
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
-  onSupervisorChange?: (supervisorId: string) => void;
   onBack?: () => void;
-  personalPerformance?: PersonalPerformance | null;
+  notification?: Notification | null;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
   onBack,
-  onSupervisorChange = () => { },
-  personalPerformance = null,
+  notification = null,
 }) => {
   const dispatch = useAppDispatch();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
-  const [isAddInitiativeModalOpen, setIsAddInitiativeModalOpen] = useState(false);
-  const [editingObjective, setEditingObjective] = useState<PersonalQuarterlyTargetObjective | null>(null);
   const [selectedRatingScales, setSelectedRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
+  const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
 
   useEffect(() => {
     fetchCompanyUsers();
+    fetchPersonalPerformance();
   }, []);
 
   useEffect(() => {
@@ -79,81 +78,28 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   }
 
-  const handleSupervisorChange = (event: SelectChangeEvent) => {
-    setSelectedSupervisor(event.target.value);
-    onSupervisorChange(event.target.value);
-  };
-
-  const handleEdit = (objective: PersonalQuarterlyTargetObjective) => {
-    setEditingObjective(objective);
-    setIsAddInitiativeModalOpen(true);
-  };
-
-  const handleInitiativeSave = (data: {
-    perspectiveId: number;
-    objectiveName: string;
-    initiative: string;
-    kpis: QuarterlyTargetKPI[];
-  }) => {
-    const newObjective: PersonalQuarterlyTargetObjective = {
-      perspectiveId: data.perspectiveId,
-      name: data.objectiveName,
-      initiativeName: data.initiative,
-      KPIs: data.kpis,
-    };
-
-    if (editingObjective) {
-      setPersonalQuarterlyObjectives(prevObjectives =>
-        prevObjectives.map(obj =>
-          (obj.name === editingObjective.name &&
-            obj.initiativeName === editingObjective.initiativeName &&
-            obj.perspectiveId === editingObjective.perspectiveId)
-            ? newObjective
-            : obj
-        )
-      );
-    } else {
-      setPersonalQuarterlyObjectives(prev => [...prev, newObjective]);
+  const fetchPersonalPerformance = async () => {
+    try {
+      const response = await api.get(`/notifications/personal-performance/${notification?._id}`);
+      if (response.status === 200) {
+        setPersonalPerformance(response.data.data);
+      } else {
+        setPersonalPerformance(null);
+      }
+    } catch (error) {
+      console.error('Error fetching personal performance:', error);
     }
-
-    setEditingObjective(null);
-    setIsAddInitiativeModalOpen(false);
-  };
+  }
 
   const handleViewRatingScales = (kpi: QuarterlyTargetKPI) => {
     setSelectedRatingScales(kpi.ratingScales);
   };
 
-  const handleDraft = () => {
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+  const handleApprove = () => {
 
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          agreementStatus: AgreementStatus.Draft,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
+  };
 
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
-        return {
-          ...target,
-          agreementStatus: AgreementStatus.Draft,
-          isEditable: calculateTotalWeight() === 100 ? true : false,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-
-      }
-      return target;
-    });
-
-    dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
+  const handleSendBack = () => {
 
   };
 
@@ -164,110 +110,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       return total + totalWeight;
     }, 0);
   };
-
-  const handleSubmit = async () => {
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          agreementStatus: AgreementStatus.Submitted,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
-        return {
-          ...target,
-          agreementStatus: AgreementStatus.Draft,
-          isEditable: calculateTotalWeight() === 100 ? true : false,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      return target;
-    });
-
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
-    try {
-      await api.post('/notifications/agreement/submit', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter
-      });
-    } catch (error) {
-      console.error('Error submitting quarterly target:', error);
-    }
-
-    setIsSubmitted(true);
-  }
-
-  // Add recall handler
-  const handleRecall = async () => {
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          agreementStatus: AgreementStatus.Draft,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-      return target;
-    });
-
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
-    try {
-      await api.post('/notifications/agreement/recall', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter
-      });
-    } catch (error) {
-      console.error('Error recalling quarterly target:', error);
-    }
-
-    setIsSubmitted(false);
-  };
-
-  // Add date validation function
-  const isWithinPeriod = () => {
-    const contractingPeriod = annualTarget.content.contractingPeriod[quarter];
-    if (!contractingPeriod) return false;
-
-    const today = new Date();
-    const startDate = new Date(contractingPeriod.startDate);
-    const endDate = new Date(contractingPeriod.endDate);
-
-    return today >= startDate && today <= endDate;
-  };
-
-  // Update canEdit function to also check submission status
-  const canEdit = () => {
-    const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
-    return isWithinPeriod() &&
-      quarterlyTarget?.isEditable !== false &&
-      !isSubmitted;
-  };
-
-  // Add validation function for submit button
-  const canSubmit = () => {
-    return selectedSupervisor !== '' && calculateTotalWeight() === 100;
-  };
-
-
 
   return (
     <Box>
@@ -296,82 +138,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
 
-      <Box sx={{ mb: 3 }}>
-        <FormControl
-          variant="outlined"
-          size="small"
-          sx={{
-            mt: 1,
-            minWidth: 200,
-            '& .MuiOutlinedInput-root': {
-              '& fieldset': {
-                borderColor: '#E5E7EB',
-              },
-              '&:hover fieldset': {
-                borderColor: '#D1D5DB',
-              },
-            },
-          }}
-        >
-          <Select
-            value={selectedSupervisor}
-            onChange={handleSupervisorChange}
-            displayEmpty
-            disabled={!canEdit()}
-          >
-            <MenuItem value="" disabled>
-              <Typography color="textSecondary">Select Supervisor</Typography>
-            </MenuItem>
-            {companyUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        {canEdit() ? (
-          <Button
-            onClick={() => setIsAddInitiativeModalOpen(true)}
-            variant="outlined"
-            color="primary"
-            sx={{
-              minWidth: '100px',
-              '&:hover': {
-                backgroundColor: 'rgba(25, 118, 210, 0.04)'
-              }
-            }}
-          >
-            Add Initiative
-          </Button>
-        ) : (
-          <Typography
-            variant="caption"
-            sx={{
-              color: '#6B7280',
-              fontStyle: 'italic'
-            }}
-          >
-            Not Editable
-          </Typography>
-        )}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
-              '&:hover': {
-                backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
-              },
-              cursor: isSubmitted ? 'default' : 'pointer'
-            }}
-            disabled={!canEdit()}
-            onClick={() => handleDraft()}
-          >
-            {isSubmitted ? 'Submitted' : 'Draft'}
-          </Button>
           <Button
             variant="contained"
             sx={{
@@ -384,11 +152,26 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 color: '#9CA3AF'
               }
             }}
-            onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-            disabled={isSubmitted ? false : !canSubmit()}
+            // disabled={!isSubmitted && !canSubmit()}
+            onClick={handleApprove}
           >
-            {isSubmitted ? 'Recall' : 'Submit'}
+            Approve
           </Button>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
+              '&:hover': {
+                backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
+              },
+              cursor: isSubmitted ? 'default' : 'pointer'
+            }}
+            // disabled={isSubmitted}
+            onClick={handleSendBack}
+          >
+            Send Back
+          </Button>
+
         </Box>
       </Box>
 
@@ -423,21 +206,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Typography>
       </Box>
 
-      {/* Show helper text only when not submitted */}
-      {!isSubmitted && !canSubmit() && (
-        <Typography
-          variant="caption"
-          sx={{
-            color: '#DC2626',
-            display: 'block',
-            mt: 1,
-            textAlign: 'right'
-          }}
-        >
-          {!selectedSupervisor ? 'Please select a supervisor' : 'Total weight must be 100%'}
-        </Typography>
-      )}
-
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
         <TableContainer>
           <Table>
@@ -451,7 +219,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
-                <StyledHeaderCell align="center">Actions</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -549,48 +316,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 <DescriptionIcon />
                               </IconButton>
                             </StyledTableCell>
-                            {kpiIndex === 0 && (
-                              <StyledTableCell align="center" rowSpan={initiative.KPIs.length}>
-                                {canEdit() ? (
-                                  <Stack direction="row" spacing={1} justifyContent="center">
-                                    <IconButton
-                                      size="small"
-                                      sx={{ color: '#6B7280' }}
-                                      onClick={() => handleEdit(initiative)}
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      sx={{ color: '#6B7280' }}
-                                      onClick={() => {
-                                        if (window.confirm('Are you sure you want to delete this objective?')) {
-                                          setPersonalQuarterlyObjectives(prev =>
-                                            prev.filter(obj =>
-                                              !(obj.name === initiative.name &&
-                                                obj.initiativeName === initiative.initiativeName &&
-                                                obj.perspectiveId === initiative.perspectiveId)
-                                            )
-                                          );
-                                        }
-                                      }}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Stack>
-                                ) : (
-                                  <Typography
-                                    variant="caption"
-                                    sx={{
-                                      color: '#6B7280',
-                                      fontStyle: 'italic'
-                                    }}
-                                  >
-                                    Not Editable
-                                  </Typography>
-                                )}
-                              </StyledTableCell>
-                            )}
                           </TableRow>
                         );
 
@@ -616,20 +341,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
 
       </Box>
-
-      {isAddInitiativeModalOpen && (
-        <AddInitiativeModal
-          open={isAddInitiativeModalOpen}
-          onClose={() => {
-            setEditingObjective(null);
-            setIsAddInitiativeModalOpen(false);
-          }}
-          annualTarget={annualTarget}
-          onSave={handleInitiativeSave}
-          editingObjective={editingObjective}
-          personalQuarterlyObjectives={personalQuarterlyObjectives}
-        />
-      )}
 
       {selectedRatingScales && (
         <RatingScalesModal

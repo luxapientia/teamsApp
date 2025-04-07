@@ -456,57 +456,79 @@ const PerformanceEvaluations: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {getQuarterlyObjectives().map((objective) => (
-                  objective.KPIs.map((kpi, kpiIndex) => (
-                    <TableRow key={`${objective.name}-${kpiIndex}`}>
-                      {kpiIndex === 0 && (
-                        <>
-                          <StyledTableCell rowSpan={objective.KPIs.length}>
-                            {selectedAnnualTarget?.content.perspectives.find(p => p.index === objective.perspectiveId)?.name}
+                {(() => {
+                  let currentPerspective = '';
+                  let perspectiveRowSpan = 0;
+                  
+                  // First pass to calculate rowspans
+                  const perspectiveSpans = getQuarterlyObjectives().reduce((acc, objective) => {
+                    const perspectiveName = selectedAnnualTarget?.content.perspectives.find(p => p.index === objective.perspectiveId)?.name || '';
+                    acc[perspectiveName] = (acc[perspectiveName] || 0) + objective.KPIs.length;
+                    return acc;
+                  }, {} as Record<string, number>);
+
+                  return getQuarterlyObjectives().map((objective) => (
+                    objective.KPIs.map((kpi, kpiIndex) => {
+                      const perspectiveName = selectedAnnualTarget?.content.perspectives.find(p => p.index === objective.perspectiveId)?.name || '';
+                      const row = (
+                        <TableRow key={`${objective.name}-${kpiIndex}`}>
+                          {/* Show perspective only for first KPI in the perspective */}
+                          {perspectiveName !== currentPerspective && (
+                            <StyledTableCell rowSpan={perspectiveSpans[perspectiveName]}>
+                              {perspectiveName}
+                            </StyledTableCell>
+                          )}
+                          {kpiIndex === 0 && (
+                            <StyledTableCell rowSpan={objective.KPIs.length}>
+                              {objective.name}
+                            </StyledTableCell>
+                          )}
+                          <StyledTableCell align="center">{kpi.weight}</StyledTableCell>
+                          <StyledTableCell>{kpi.indicator}</StyledTableCell>
+                          <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
+                          <StyledTableCell align="center">{kpi.target}</StyledTableCell>
+                          <StyledTableCell align="center">{kpi.actualAchieved}</StyledTableCell>
+                          <StyledTableCell align="center" sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}>
+                            {
+                              kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore)) &&
+                              `${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.score} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min} - ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
+                            }
                           </StyledTableCell>
-                          <StyledTableCell rowSpan={objective.KPIs.length}>
-                            {objective.name}
+                          <StyledTableCell align="center">
+                            {kpi.evidence && (
+                              <IconButton
+                                size="small"
+                                onClick={() => setEvidenceModalData({
+                                  evidence: kpi.evidence,
+                                  attachments: kpi.attachments
+                                })}
+                                sx={{ color: '#6B7280' }}
+                              >
+                                <DescriptionIcon />
+                              </IconButton>
+                            )}
                           </StyledTableCell>
-                        </>
-                      )}
-                      <StyledTableCell align="center">{kpi.weight}</StyledTableCell>
-                      <StyledTableCell>{kpi.indicator}</StyledTableCell>
-                      <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
-                      <StyledTableCell align="center">{kpi.target}</StyledTableCell>
-                      <StyledTableCell align="center">{kpi.actualAchieved}</StyledTableCell>
-                      <StyledTableCell align="center" sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}>
-                        {
-                          kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore)) &&
-                          `${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.score} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min} - ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
-                        }
-                      </StyledTableCell>
-                      <StyledTableCell align="center">
-                        {kpi.evidence && (
-                          <IconButton
-                            size="small"
-                            onClick={() => setEvidenceModalData({
-                              evidence: kpi.evidence,
-                              attachments: kpi.attachments
-                            })}
-                            sx={{ color: '#6B7280' }}
-                          >
-                            <DescriptionIcon />
-                          </IconButton>
-                        )}
-                      </StyledTableCell>
-                      {editable && (
-                        <StyledTableCell align="center">
-                          <AccessButton
-                            size="small"
-                            onClick={() => handleAccess(kpi)}
-                          >
-                            Evaluate
-                          </AccessButton>
-                        </StyledTableCell>
-                      )}
-                    </TableRow>
-                  ))
-                ))}
+                          {editable && (
+                            <StyledTableCell align="center">
+                              <AccessButton
+                                size="small"
+                                onClick={() => handleAccess(kpi)}
+                              >
+                                Evaluate
+                              </AccessButton>
+                            </StyledTableCell>
+                          )}
+                        </TableRow>
+                      );
+
+                      if (perspectiveName !== currentPerspective) {
+                        currentPerspective = perspectiveName;
+                      }
+
+                      return row;
+                    })
+                  )).flat();
+                })()}
               </TableBody>
             </Table>
           </Paper>

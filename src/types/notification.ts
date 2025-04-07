@@ -1,3 +1,5 @@
+import { QuarterType } from "./annualCorporateScorecard";
+
 export interface Notification {
     _id: string;
     type: 'agreement' | 'assessment';
@@ -7,7 +9,7 @@ export interface Notification {
         team: string;
     };
     annualTargetId: string;
-    quarter: number;
+    quarter: QuarterType;
     isRead: boolean;
     updatedAt: string;
 }

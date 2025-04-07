@@ -86,7 +86,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
   };
 
   const handleAddKPI = () => {
-    setKpis([...kpis, { indicator: '', weight: 0, baseline: '', target: '', ratingScales: annualTarget.content.ratingScales || [], ratingScore: 0, actualAchieved: '', evidence: '', attachments: [] }]);
+    setKpis([...kpis, { indicator: '', weight: 0, baseline: '', target: '', ratingScales: annualTarget.content.ratingScales || [], ratingScore: 0, actualAchieved: '', evidence: '', attachments: []  }]);
     setExpandedKPI(kpis.length);
   };
 
@@ -104,18 +104,18 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
     if (!initiative) return false;
     if (kpis.length === 0) return false;
 
-    return kpis.every(kpi =>
-      kpi.indicator &&
-      kpi.weight > 0 &&
-      kpi.baseline &&
+    return kpis.every(kpi => 
+      kpi.indicator && 
+      kpi.weight > 0 && 
+      kpi.baseline && 
       kpi.target
     );
   };
 
   const validateDuplicate = (perspectiveId: number, objectiveName: string, initiativeName: string) => {
-    const exists = personalQuarterlyObjectives.some(obj =>
-      obj.perspectiveId === perspectiveId &&
-      obj.name === objectiveName &&
+    const exists = personalQuarterlyObjectives.some(obj => 
+      obj.perspectiveId === perspectiveId && 
+      obj.name === objectiveName && 
       obj.initiativeName === initiativeName
     );
     return exists;
@@ -123,10 +123,10 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
 
   const validateTotalWeight = (newWeight: number): boolean => {
     const currentTotalWeight = personalQuarterlyObjectives.reduce((total, obj) => {
-      if (editingObjective &&
-        obj.name === editingObjective.name &&
-        obj.initiativeName === editingObjective.initiativeName &&
-        obj.perspectiveId === editingObjective.perspectiveId) {
+      if (editingObjective && 
+          obj.name === editingObjective.name && 
+          obj.initiativeName === editingObjective.initiativeName && 
+          obj.perspectiveId === editingObjective.perspectiveId) {
         return total;
       }
       const totalWeight = obj.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0);
@@ -156,8 +156,9 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
 
     const newWeight = kpis[0].weight;
     if (!validateTotalWeight(newWeight)) {
-      setError(`Total weight cannot exceed 100%. Current total weight would be ${personalQuarterlyObjectives.reduce((total, obj) => total + obj.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0), 0) + newWeight
-        }%`);
+      setError(`Total weight cannot exceed 100%. Current total weight would be ${
+        personalQuarterlyObjectives.reduce((total, obj) => total + obj.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0), 0) + newWeight
+      }%`);
       return;
     }
 
@@ -167,7 +168,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
       initiative,
       kpis
     });
-
+    
     onClose();
   };
 
@@ -189,8 +190,8 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
         </Box>
 
         {error && (
-          <Alert
-            severity="error"
+          <Alert 
+            severity="error" 
             sx={{ mb: 3 }}
             onClose={() => setError(null)}
           >
@@ -391,18 +392,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
                                       value={scale.min}
                                       variant="standard"
                                       sx={{ width: '80px' }}
-                                      onChange={(e) => {
-                                        const newKpis = [...kpis];
-                                        newKpis[index] = {
-                                          ...newKpis[index],
-                                          ratingScales: newKpis[index].ratingScales.map((scale, idx) =>
-                                            idx === scaleIndex
-                                              ? { ...scale, min: e.target.value }
-                                              : scale
-                                          )
-                                        };
-                                        setKpis(newKpis);
-                                      }}
+                                      InputProps={{ readOnly: true }}
                                     />
                                   </TableCell>
                                   <TableCell align="center">
@@ -410,18 +400,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
                                       value={scale.max}
                                       variant="standard"
                                       sx={{ width: '80px' }}
-                                      onChange={(e) => {
-                                        const newKpis = [...kpis];
-                                        newKpis[index] = {
-                                          ...newKpis[index],
-                                          ratingScales: newKpis[index].ratingScales.map((scale, idx) =>
-                                            idx === scaleIndex
-                                              ? { ...scale, max: e.target.value }
-                                              : scale
-                                          )
-                                        };
-                                        setKpis(newKpis);
-                                      }}
+                                      InputProps={{ readOnly: true }}
                                     />
                                   </TableCell>
                                 </TableRow>
