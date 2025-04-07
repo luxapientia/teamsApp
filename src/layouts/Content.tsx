@@ -1,138 +1,148 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
   Container,
   Typography,
-  Tabs,
-  Tab,
-  Button,
+  Menu,
+  MenuItem,
+  IconButton,
   styled,
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-
-// Custom styled components for the tabs
-const StyledTabs = styled(Tabs)({
-  minHeight: '40px',
-  '& .MuiTabs-flexContainer': {
-    gap: '12px', // Consistent spacing between tabs
-  },
-  '& .MuiTabs-indicator': {
-    display: 'none',
-  },
-});
-
-const StyledTab = styled(Tab)(({ theme }) => ({
-  minHeight: '40px',
-  padding: '8px 20px', // Slightly more horizontal padding
-  borderRadius: '20px',
-  textTransform: 'none',
-  fontSize: '14px',
-  fontWeight: 500,
-  transition: 'all 0.2s ease-in-out',
-  border: '1px solid transparent',
-  
-  '&.Mui-selected': {
-    color: '#fff',
-    backgroundColor: '#0078D4',
-    boxShadow: '0 2px 4px rgba(79, 70, 229, 0.1)',
-  },
-  
-  '&:not(.Mui-selected)': {
-    backgroundColor: '#fff',
-    color: '#374151',
-    border: '1px solid #E5E7EB',
-    '&:hover': {
-      backgroundColor: '#F9FAFB',
-      borderColor: '#D1D5DB',
-      color: '#111827',
-    },
-  },
-  
-  '&:active': {
-    transform: 'scale(0.98)',
-  },
-}));
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 
 interface ContentProps {
   title: string;
   tabs: string[];
   icon: React.ReactNode;
   children: React.ReactNode;
-  selectedTabChanger: (tab: string) => void;
-  selectedTab?: string;
+  selectedTab: string;
+  onTabChange: (tab: string) => void;
 }
+
+const TabContainer = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+  borderBottom: '1px solid #E5E7EB',
+  backgroundColor: '#fff',
+  overflowX: 'hidden',
+});
+
+const TabButton = styled('button')<{ selected?: boolean }>(({ selected }) => ({
+  padding: '8px 20px',
+  whiteSpace: 'nowrap',
+  backgroundColor: selected ? '#0078D4' : 'transparent',
+  color: selected ? '#fff' : '#374151',
+  border: selected ? 'none' : '1px solid #E5E7EB',
+  borderRadius: '20px',
+  margin: '0 4px',
+  cursor: 'pointer',
+  transition: 'all 0.2s',
+  '&:hover': {
+    backgroundColor: selected ? '#0078D4' : '#F9FAFB',
+  },
+}));
 
 const Content: React.FC<ContentProps> = ({
   title,
   tabs,
   icon,
   children,
-  selectedTabChanger,
-  selectedTab: propSelectedTab
+  selectedTab,
+  onTabChange,
 }) => {
-  const [selectedTab, setSelectedTab] = useState<string>(propSelectedTab || tabs[0]);
+  const [visibleTabs, setVisibleTabs] = useState<string[]>([]);
+  const [overflowTabs, setOverflowTabs] = useState<string[]>([]);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (propSelectedTab) {
-      setSelectedTab(propSelectedTab);
-    }
-  }, [propSelectedTab]);
+    const calculateVisibleTabs = () => {
+      if (!containerRef.current) return;
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
-    setSelectedTab(newValue);
-    selectedTabChanger(newValue);
+      const container = containerRef.current;
+      const containerWidth = container.offsetWidth;
+      let totalWidth = 0;
+      const visible: string[] = [];
+      const overflow: string[] = [];
+
+      // Calculate which tabs fit
+      tabs.forEach((tab) => {
+        // Approximate width calculation (adjust these values as needed)
+        const tabWidth = tab.length * 10 + 40; // characters * avg char width + padding
+        if (totalWidth + tabWidth < containerWidth - 60) { // 60px for overflow menu
+          totalWidth += tabWidth;
+          visible.push(tab);
+        } else {
+          overflow.push(tab);
+        }
+      });
+
+      setVisibleTabs(visible);
+      setOverflowTabs(overflow);
+    };
+
+    calculateVisibleTabs();
+    window.addEventListener('resize', calculateVisibleTabs);
+    return () => window.removeEventListener('resize', calculateVisibleTabs);
+  }, [tabs]);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleTabSelect = (tab: string) => {
+    onTabChange(tab);
+    handleMenuClose();
   };
 
   return (
-    <Box
-      component="main"
-      sx={{
-        flexGrow: 1,
-        height: '100vh',
-        overflow: 'auto',
-        backgroundColor: '#f5f5f5',
-        padding: '20px',
-      }}
-    >
+    <Box component="main" sx={{ flexGrow: 1, height: '100vh', overflow: 'auto', bgcolor: '#f5f5f5', p: 3 }}>
       <Container maxWidth="xl">
-        {/* Header with title */}
         <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
           {icon}
-          <Typography variant="h5" component="h1">
-            {title}
-          </Typography>
+          <Typography variant="h5">{title}</Typography>
         </Box>
 
-        {/* Tabs and New button section */}
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          mb: 3
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <StyledTabs
-              value={selectedTab}
-              onChange={handleTabChange}
-              sx={{
-                backgroundColor: 'transparent',
-              }}
+        <TabContainer ref={containerRef} sx={{bgcolor: '#f5f5f5'}}>
+          {visibleTabs.map((tab) => (
+            <TabButton
+              key={tab}
+              selected={selectedTab === tab}
+              onClick={() => onTabChange(tab)}
             >
-              {tabs.map((tab, index) => (
-                <StyledTab 
-                  key={index} 
-                  label={tab} 
-                  value={tab}
-                  disableRipple // Removes the ripple effect for cleaner interaction
-                />
-              ))}
-            </StyledTabs>
-          </Box>
-        </Box>
+              {tab}
+            </TabButton>
+          ))}
+          
+          {overflowTabs.length > 0 && (
+            <>
+              <IconButton onClick={handleMenuClick} size="small">
+                <MoreHorizIcon />
+              </IconButton>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+              >
+                {overflowTabs.map((tab) => (
+                  <MenuItem
+                    key={tab}
+                    onClick={() => handleTabSelect(tab)}
+                    selected={selectedTab === tab}
+                  >
+                    {tab}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          )}
+        </TabContainer>
 
-        {/* Content section */}
-        {children}
-        
+        <Box sx={{ mt: 3 }}>{children}</Box>
       </Container>
     </Box>
   );
