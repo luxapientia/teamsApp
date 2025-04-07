@@ -8,12 +8,12 @@ export const useSocket = (event: SocketEvent, callback: (data: any) => void) => 
     return () => unsubscribe();
   }, [event, callback]);
 
-  const emit = useCallback((data: any) => {
-    socketService.emit(event, data);
-  }, [event]);
-
   return {
-    emit,
+    emit: useCallback((data: any) => {
+      socketService.emit(event, data);
+    }, [event]),
+    subscribe: socketService.subscribe.bind(socketService),
+    unsubscribe: socketService.unsubscribe.bind(socketService),
     isConnected: socketService.isConnected(),
     connectionStatus: socketService.getConnectionStatus()
   };

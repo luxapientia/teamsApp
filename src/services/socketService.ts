@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { SocketEvent, SocketMessage } from '../types/socket';
-
+import { authService } from './authService';
 class SocketService {
   private socket: Socket | null = null;
   private reconnectAttempts = 0;
@@ -34,11 +34,17 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('Socket connected successfully');
-      this.reconnectAttempts = 0;
-      if (this.reconnectInterval) {
-        clearInterval(this.reconnectInterval);
-        this.reconnectInterval = null;
+      if (authService.isAuthenticated()) {
+        console.log('Socket connected successfully------');
+        this.reconnectAttempts = 0;
+        if (this.reconnectInterval) {
+          clearInterval(this.reconnectInterval);
+          this.reconnectInterval = null;
+        }
+
+        this.socket.emit('authenticate', authService.getToken());
+      } else {
+        this.handleDisconnect();
       }
     });
 
@@ -146,6 +152,10 @@ class SocketService {
       this.reconnectAttempts++;
       this.reconnect();
     }, this.reconnectDelay);
+  }
+
+  public unsubscribe(event: string): void {
+    this.listeners.get(event)?.clear();
   }
 }
 
