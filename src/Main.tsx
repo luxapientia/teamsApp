@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Layout from './layouts/Layout';
 import './styles/globals.css';
 import AnnualCorporateScorecard from './pages/scorecards';
