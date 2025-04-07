@@ -1,8 +1,8 @@
-import { UserRole, dUser } from '../types/role';
+import { UserRole, dUser } from '../types/user';
 import User from '../models/User';
 import { ApiError } from '../utils/apiError';
 import { SuperUserModel } from '../models/superUser';
-
+import { ObjectId } from 'mongodb';
 
 export class RoleService {
   async createUser(
@@ -10,7 +10,8 @@ export class RoleService {
     name: string,
     email: string,
     role: UserRole,
-    tenantId?: string
+    tenantId?: string,
+    teamId?: string
   ): Promise<dUser> {
     // Validate role
     if (!Object.values(UserRole).includes(role)) {
@@ -32,7 +33,8 @@ export class RoleService {
       name,
       email,
       role,
-      ...(tenantId && role === UserRole.SUPER_USER ? { tenantId } : {})
+      ...(tenantId && role === UserRole.SUPER_USER ? { tenantId } : {}),
+      ...(teamId && role === UserRole.SUPER_USER ? { teamId } : {})
     });
 
     return user;
@@ -91,6 +93,22 @@ export class RoleService {
     } else {
       return UserRole.USER;
     }
+  }
+
+  async getTeamIdByEmail(email: string): Promise<ObjectId | null> {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return null;
+    }
+    return user.teamId as ObjectId | null;
+  }
+
+  async addUsersToTeam(teamId: ObjectId, userIds: ObjectId[]): Promise<void> {
+    await User.findByIdAndUpdate(teamId, { $addToSet: { users: { $each: userIds } } });
+  }
+
+  async removeUsersFromTeam(teamId: ObjectId, userIds: ObjectId[]): Promise<void> {
+    await User.findByIdAndUpdate(teamId, { $pull: { users: { $in: userIds } } });
   }
 }
 

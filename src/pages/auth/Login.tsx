@@ -6,14 +6,11 @@ export const Login: React.FC = () => {
   const { login, isAuthenticated, isTeams, isTeamsInitialized, isLoading } = useAuth();
   const location = useLocation();
 
-  console.log('Login page rendered, isAuthenticated:', isAuthenticated);
   if (isAuthenticated) {
-    console.log('User is already authenticated, redirecting to home');
     return <Navigate to="/" replace />;
   }
 
   const handleLogin = async () => {
-    console.log('Login button clicked');
     try {
       await login();
     } catch (error) {
@@ -21,7 +18,6 @@ export const Login: React.FC = () => {
     }
   };
 
-  console.log('Rendering login page, isTeams:', isTeams, 'isTeamsInitialized:', isTeamsInitialized);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
