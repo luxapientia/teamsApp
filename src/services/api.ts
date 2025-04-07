@@ -16,7 +16,6 @@ export const getAPIBaseURL = () => {
 };
 
 const API_BASE_URL = getAPIBaseURL();
-console.log('Using API base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -36,13 +35,6 @@ api.interceptors.request.use(
       return config;
     } else {
       const token = sessionStorage.getItem('auth_token');
-      console.log('API Request Details:', {
-        url: config.url,
-        tokenExists: !!token,
-        tokenLength: token?.length,
-        tokenPreview: token ? `${token.substring(0, 10)}...` : 'none',
-        currentHeaders: config.headers
-      });
       
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;

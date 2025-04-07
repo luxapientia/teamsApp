@@ -1,10 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 import { SocketEvent, SocketMessage } from '../types/socket';
-
+import { authService } from './authService';
 class SocketService {
   private socket: Socket | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
+  private reconnectInterval: NodeJS.Timeout | null = null;
+  private reconnectDelay = 3000; // 3 seconds
   private messageQueue: SocketMessage[] = [];
   private listeners: Map<string, Set<(data: any) => void>> = new Map();
 
@@ -32,22 +34,28 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('Socket connected successfully');
-      this.reconnectAttempts = 0;
+      if (authService.isAuthenticated()) {
+        console.log('Socket connected successfully------');
+        this.reconnectAttempts = 0;
+        if (this.reconnectInterval) {
+          clearInterval(this.reconnectInterval);
+          this.reconnectInterval = null;
+        }
+
+        this.socket.emit('authenticate', authService.getToken());
+      } else {
+        this.handleDisconnect();
+      }
     });
 
     this.socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error);
-      this.reconnectAttempts++;
-
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error('Max reconnection attempts reached');
-        this.disconnect();
-      }
+      this.handleDisconnect();
     });
 
     this.socket.on('disconnect', () => {
       console.log('Socket disconnected');
+      this.handleDisconnect();
     });
 
     // Handle incoming messages
@@ -104,6 +112,10 @@ class SocketService {
   }
 
   public disconnect(): void {
+    if (this.reconnectInterval) {
+      clearInterval(this.reconnectInterval);
+      this.reconnectInterval = null;
+    }
     this.socket?.disconnect();
     this.socket = null;
     this.listeners.clear();
@@ -122,6 +134,28 @@ class SocketService {
     if (!this.socket) return 'disconnected';
     if (this.socket.connected) return 'connected';
     return 'connecting';
+  }
+
+  private handleDisconnect(): void {
+    if (this.reconnectInterval) return; // Already trying to reconnect
+
+    this.reconnectInterval = setInterval(() => {
+      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        if (this.reconnectInterval) {
+          clearInterval(this.reconnectInterval);
+          this.reconnectInterval = null;
+        }
+        return;
+      }
+
+      console.log(`Attempting to reconnect... (${this.reconnectAttempts + 1}/${this.maxReconnectAttempts})`);
+      this.reconnectAttempts++;
+      this.reconnect();
+    }, this.reconnectDelay);
+  }
+
+  public unsubscribe(event: string): void {
+    this.listeners.get(event)?.clear();
   }
 }
 

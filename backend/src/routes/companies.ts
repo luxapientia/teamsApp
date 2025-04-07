@@ -8,21 +8,13 @@ const router = express.Router();
 // Get all companies
 router.get('/', authenticateToken, async (_req: Request, res: Response) => {
   try {
-    console.log('Fetching companies...');
     const companies = await companyService.getAll();
-    console.log(`Successfully retrieved ${companies.length} companies`);
     return res.json({ 
       data: companies,
       status: 200,
       message: 'Companies retrieved successfully'
     } as ApiResponse<typeof companies>);
   } catch (error) {
-    console.error('Detailed error in fetching companies:', {
-      error,
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
     return res.status(500).json({ 
       data: null,
       status: 500,
