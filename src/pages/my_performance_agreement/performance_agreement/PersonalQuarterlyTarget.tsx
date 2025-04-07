@@ -305,6 +305,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             value={selectedSupervisor}
             onChange={handleSupervisorChange}
             displayEmpty
+            disabled={!canEdit()}
           >
             <MenuItem value="" disabled>
               <Typography color="textSecondary">Select Supervisor</Typography>
@@ -354,7 +355,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               },
               cursor: isSubmitted ? 'default' : 'pointer'
             }}
-            disabled={isSubmitted}
+            disabled={!canEdit()}
             onClick={() => handleDraft()}
           >
             {isSubmitted ? 'Submitted' : 'Draft'}
@@ -372,7 +373,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               }
             }}
             onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-            disabled={!isSubmitted && !canSubmit()}
+            disabled={isSubmitted ? false : !canSubmit()}
           >
             {isSubmitted ? 'Recall' : 'Submit'}
           </Button>
