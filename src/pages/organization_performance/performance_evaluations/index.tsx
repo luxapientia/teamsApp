@@ -458,8 +458,6 @@ const PerformanceEvaluations: React.FC = () => {
               <TableBody>
                 {(() => {
                   let currentPerspective = '';
-                  let perspectiveRowSpan = 0;
-                  
                   // First pass to calculate rowspans
                   const perspectiveSpans = getQuarterlyObjectives().reduce((acc, objective) => {
                     const perspectiveName = selectedAnnualTarget?.content.perspectives.find(p => p.index === objective.perspectiveId)?.name || '';
