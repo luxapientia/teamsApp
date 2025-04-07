@@ -30,28 +30,28 @@ const App: React.FC = () => {
   return (
     <Provider store={store}>
       <AuthProvider>
-        <SocketProvider>
-          <ToastProvider>
-            <Routes>
-              {/* Public routes */}
-              <Route path="/consent" element={<ConsentPage />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/auth-end" element={<AuthCallback />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/unauthorized" element={<Unauthorized />} />
-              
-              {/* Protected routes */}
-              <Route 
-                path="/" 
-                element={
-                  <ProtectedRoute>
+        <ToastProvider>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/consent" element={<ConsentPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth-end" element={<AuthCallback />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <SocketProvider>
                     <Main />
-                  </ProtectedRoute>
-                } 
-              />
-            </Routes>
-          </ToastProvider>
-        </SocketProvider>
+                  </SocketProvider>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </ToastProvider>
       </AuthProvider>
     </Provider>
   );
