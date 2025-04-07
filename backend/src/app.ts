@@ -12,6 +12,9 @@ import personalPerformanceRoutes from './routes/personal_performance';
 import notificationRoutes from './routes/notifications';
 import teamRoutes from './routes/teams';
 import reportRoutes from './routes/report';
+import { authenticateToken } from './middleware/auth';
+import { checkLicenseStatus } from './middleware/licenseCheck';
+
 const app = express();
 
 // Middleware
@@ -25,16 +28,19 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static('public'));
 
-// Routes
+// Public routes (no license check)
 app.use('/api/auth', authRoutes);
-app.use('/api/companies', companyRoutes);
-app.use('/api/super-users', superUserRoutes);
-app.use('/api/licenses', licenseRoutes);
-app.use('/api/score-card', scoreCardRoutes);
-app.use('/api/personal-performance', personalPerformanceRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/teams', teamRoutes);
-app.use('/api/report', reportRoutes);
+
+// Protected routes with license check
+// Apply both authentication and license check middleware
+app.use('/api/companies', authenticateToken, checkLicenseStatus, companyRoutes);
+app.use('/api/super-users', authenticateToken, checkLicenseStatus, superUserRoutes);
+app.use('/api/licenses', authenticateToken, checkLicenseStatus, licenseRoutes);
+app.use('/api/score-card', authenticateToken, checkLicenseStatus, scoreCardRoutes);
+app.use('/api/personal-performance', authenticateToken, checkLicenseStatus, personalPerformanceRoutes);
+app.use('/api/notifications', authenticateToken, checkLicenseStatus, notificationRoutes);
+app.use('/api/teams', authenticateToken, checkLicenseStatus, teamRoutes);
+app.use('/api/report', authenticateToken, checkLicenseStatus, reportRoutes);
 
 
 // Connect to MongoDB
