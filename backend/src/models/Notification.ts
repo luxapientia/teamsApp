@@ -14,14 +14,17 @@ const notificationSchema = new Schema<NotificationDocument>({
   senderId: {
     type: String,
     required: true,
+    ref: 'User',
   },
   recipientId: {
     type: String,
     required: true,
+    ref: 'User',
   },
   annualTargetId: {
     type: String,
     required: true,
+    ref: 'AnnualTarget',
   },
   quarter: {
     type: String,
