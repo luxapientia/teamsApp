@@ -11,14 +11,48 @@ interface AuthContextType {
   user: any;
   isTeams: boolean;
   isTeamsInitialized: boolean;
+  hasLicenseError: boolean;
+  licenseStatus: string | null;
   login: () => Promise<void>;
   logout: () => Promise<void>;
   setIsAuthenticated: (value: boolean) => void;
   setUser: (user: any) => void;
   setIsLoading: (value: boolean) => void;
+  setHasLicenseError: (value: boolean) => void;
+  setLicenseStatus: (status: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Setup API interceptor for license errors
+const setupApiInterceptors = (
+  setHasLicenseError: (value: boolean) => void,
+  setLicenseStatus: (status: string | null) => void,
+  navigate: (path: string) => void
+) => {
+  // Add a response interceptor
+  api.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    (error) => {
+      if (error.response) {
+        // Handle license errors (403 responses with licenseError flag)
+        if (
+          error.response.status === 403 &&
+          error.response.data &&
+          error.response.data.licenseError
+        ) {
+          setHasLicenseError(true);
+          setLicenseStatus(error.response.data.licenseStatus || null);
+          navigate('/license-error');
+          return Promise.reject(error);
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -26,7 +60,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<any>(null);
   const [isTeams, setIsTeams] = useState(false);
   const [isTeamsInitialized, setIsTeamsInitialized] = useState(false);
+  const [hasLicenseError, setHasLicenseError] = useState(false);
+  const [licenseStatus, setLicenseStatus] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Setup API interceptors for license errors
+  useEffect(() => {
+    setupApiInterceptors(setHasLicenseError, setLicenseStatus, navigate);
+  }, [navigate]);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -94,6 +135,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Then update the state
       setUser(userData.user);
       setIsAuthenticated(true);
+      setHasLicenseError(false); // Reset license error state
+      setLicenseStatus(null);     // Reset license status
       setIsLoading(false);
       
       // Only navigate if we're not already on the home page
@@ -106,6 +149,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         response: error.response?.data,
         status: error.response?.status
       });
+
+      // Check for license errors
+      if (
+        error.response && 
+        error.response.status === 403 && 
+        error.response.data && 
+        error.response.data.licenseError
+      ) {
+        setHasLicenseError(true);
+        setLicenseStatus(error.response.data.licenseStatus || null);
+        navigate('/license-error');
+      }
+
       // Clear any potentially invalid token
       sessionStorage.removeItem('auth_token');
       setIsLoading(false);
@@ -129,6 +185,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionStorage.removeItem('auth_token');
     setUser(null);
     setIsAuthenticated(false);
+    setHasLicenseError(false);
+    setLicenseStatus(null);
     setIsLoading(false);
     navigate('/login');
   };
@@ -140,11 +198,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, 
       isTeams, 
       isTeamsInitialized,
+      hasLicenseError,
+      licenseStatus,
       login, 
       logout,
       setIsAuthenticated,
       setUser,
-      setIsLoading
+      setIsLoading,
+      setHasLicenseError,
+      setLicenseStatus
     }}>
       {children}
     </AuthContext.Provider>
