@@ -15,14 +15,9 @@ import { styled } from '@mui/material/styles';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-
-interface NotificationItem {
-  fullName: string;
-  team: string;
-  annualCorporateScorecard: string;
-  action: string;
-  dateTime: string;
-}
+import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
+import { Notification, QuarterType, AnnualTarget } from '@/types';
+import { api } from '../../../services/api';
 
 const ViewButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -35,22 +30,24 @@ const ViewButton = styled(Button)({
 });
 
 const QuarterlyNotification: React.FC = () => {
-  const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [showTable, setShowTable] = useState(true);
 
   // Mock data - replace with actual data from your API
   const notifications = useAppSelector((state: RootState) => state.notification.notifications.filter((notification) => notification.type === 'agreement'));  
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
 
-  const handleView = (notification: NotificationItem) => {
+  const handleView = (notification: Notification) => {
     setSelectedNotification(notification);
-    setIsModalOpen(true);
+    setShowTable(false);
+    api.post(`/notifications/read/${notification._id}`);
   };
 
   return (
     <Box sx={{ p: 3 }}>
-      <TableContainer component={Paper} variant="outlined">
-        <Table>
+      {showTable && (
+        <TableContainer component={Paper} variant="outlined">
+          <Table>
           <TableHead>
             <TableRow>
               <TableCell>Full Name</TableCell>
@@ -72,46 +69,26 @@ const QuarterlyNotification: React.FC = () => {
                 <TableCell align="right">
                   <ViewButton
                     variant="contained"
-                    // onClick={() => handleView(notification)}
+                    onClick={() => handleView(notification)}
                   >
                     View
                   </ViewButton>
                 </TableCell>
               </TableRow>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       {selectedNotification && (
-        <ScorecardViewModal
-          open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          scorecardData={{
-            employeeName: selectedNotification.fullName,
-            department: selectedNotification.team,
-            period: `${selectedNotification.annualCorporateScorecard}, Q1`,
-            supervisor: "Helen Chin",
-            data: [
-              {
-                perspective: "Financial Perspective",
-                strategicObjective: "Increase sales",
-                initiative: "Develop new products",
-                weightPercentage: 10,
-                kpi: "% of revenue from existing products",
-                baseline: 5,
-                target: 10
-              },
-              {
-                perspective: "Financial Perspective",
-                strategicObjective: "Increase sales",
-                initiative: "Develop new products",
-                weightPercentage: 5,
-                kpi: "% of revenue from new products",
-                baseline: 5,
-                target: 10
-              }
-            ]
+        <PersonalQuarterlyTargetContent
+          notification={selectedNotification}
+          annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+          quarter={selectedNotification.quarter}
+          onBack={() => {
+            setSelectedNotification(null);
+            setShowTable(true);
           }}
         />
       )}

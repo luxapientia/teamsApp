@@ -5,6 +5,7 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import { socketService } from '../server';
 import { SocketEvent } from '../types/socket';
 import User from '../models/User';
+import PersonalPerformance from '../models/PersonalPerformance';
 // import multer from 'multer';
 // import fs from 'fs';
 
@@ -152,6 +153,54 @@ router.get('/notifications', authenticateToken, async (req: AuthenticatedRequest
     return res.status(500).json({ error: 'Failed to get notifications' });
   }
 });
+
+router.get('/personal-performance/:notificationId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { notificationId } = req.params;
+    const notification = await Notification.findById(notificationId);
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    const personalPerformance = await PersonalPerformance.findOne({
+      annualTargetId: notification.annualTargetId,
+      userId: notification.senderId
+    });
+
+    return res.json(personalPerformance);
+  } catch (error) {
+    console.error('Error getting personal performance:', error);
+    return res.status(500).json({ error: 'Failed to get personal performance' });
+  }
+});
+
+router.post('/read/:notificationId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { notificationId } = req.params;
+    const notification = await Notification.findById(notificationId);
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    await Notification.updateOne({ _id: notificationId }, { $set: { isRead: true } });
+
+    socketService.emitToUser(req.user?.MicrosoftId as string, SocketEvent.NOTIFICATION, {
+      type: notification.type,
+      senderId: notification.senderId,
+      recipientId: notification.recipientId,
+      annualTargetId: notification.annualTargetId,
+      quarter: notification.quarter,
+      isRead: true
+    });
+    return res.status(200).json({ message: 'Notification read successfully' });
+  } catch (error) {
+    console.error('Error reading notification:', error);
+    return res.status(500).json({ error: 'Failed to read notification' });
+  }
+});
+
 
 
 
