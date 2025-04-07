@@ -37,13 +37,6 @@ export const AuthCallback: React.FC = () => {
           redirect_uri: `${window.location.origin}/auth/callback`
         });
 
-        console.log('Auth callback response:', {
-          status: response.status,
-          hasData: !!response.data,
-          hasToken: !!response.data?.token,
-          hasUser: !!response.data?.user
-        });
-
         if (!response.data?.token) {
           console.error('No token received from server');
           throw new Error('No token received from server');
@@ -55,7 +48,6 @@ export const AuthCallback: React.FC = () => {
         
         // Update auth context
         if (response.data.user) {
-          console.log('User data received:', response.data.user.email);
           setUser(response.data.user);
           setIsAuthenticated(true);
         }

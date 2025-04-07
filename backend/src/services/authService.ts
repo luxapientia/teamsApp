@@ -4,7 +4,7 @@ import { config } from '../config';
 import * as dotenv from 'dotenv';
 import { UserProfile } from '../types';
 import { roleService } from './roleService';
-import { UserRole } from '../types/role';
+import { UserRole } from '../types/user';
 
 dotenv.config();
 
@@ -26,7 +26,6 @@ export class AuthService {
 
   async handleCallback(code: string, redirectUri: string): Promise<{ token: string; user: UserProfile }> {
     try {
-      console.log('Starting token exchange with code:', code.substring(0, 10) + '...');
       const tokenResponse = await axios.post(
         `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
         new URLSearchParams({
@@ -46,7 +45,7 @@ export class AuthService {
 
       console.log('Token exchange successful');
       const accessToken = tokenResponse.data.access_token;
-      console.log('Access token received', accessToken);
+      console.log('Access token received');
 
       // Decode the access token to get the tenant ID
       const decodedToken = jwt.decode(accessToken) as any;
@@ -122,11 +121,6 @@ export class AuthService {
   verifyToken(token: string): UserProfile | null {
     try {
       const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
-      // console.log('Token decoded successfully:', {
-      //   id: decoded.id,
-      //   email: decoded.email,
-      //   role: decoded.role
-      // });
       return decoded;
     } catch (error) {
       console.error('Token verification failed:', error);

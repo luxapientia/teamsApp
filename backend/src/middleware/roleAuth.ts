@@ -1,11 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserRole } from '../types/role';
+import { UserRole } from '../types/user';
 import { UserProfile } from '../types';
 import { ApiError } from '../utils/apiError';
-
-// Extend UserProfile to include companyId
-interface ExtendedUserProfile extends UserProfile {
-  role?: string;
+// Extend UserProfile to include role
+interface ExtendedUserProfile extends Omit<UserProfile, 'role'> {
+  role: string;
 }
 
 // Update AuthenticatedRequest to use ExtendedUserProfile and export it

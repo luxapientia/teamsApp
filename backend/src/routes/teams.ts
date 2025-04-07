@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import Team from '../models/Team';
+import { roleService } from '../services/roleService';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -70,9 +72,9 @@ router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
 router.post('/:teamId/members', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { teamId } = req.params;
-    const { userId } = req.body;
+    const { userIds } = req.body;
 
-    if (!userId) {
+    if (!userIds) {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
@@ -82,15 +84,11 @@ router.post('/:teamId/members', authenticateToken, async (req: Request, res: Res
       return res.status(404).json({ error: 'Team not found' });
     }
 
-    // Prevent duplicate members
-    if (team.members.includes(userId)) {
-      return res.status(400).json({ error: 'User is already a member of this team' });
-    }
+    // Convert string IDs to ObjectId
+    const teamIdAsObjectId = new mongoose.Types.ObjectId(teamId);
+    await roleService.addUsersToTeam(teamIdAsObjectId, userIds);
 
-    team.members.push(userId);
-    await team.save();
-
-    return res.json({ message: 'Member added successfully', team });
+    return res.json({ message: 'Member added successfully' });
   } catch (error) {
     console.error('Add member error:', error);
     return res.status(500).json({ error: 'Failed to add member to team' });

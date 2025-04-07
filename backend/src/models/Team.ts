@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 export interface TeamDocument extends mongoose.Document {
   name: string;
   tenantId: string;
-  members: string[];
   createdAt: Date;
 }
 const teamSchema = new mongoose.Schema<TeamDocument>({
@@ -17,7 +16,6 @@ const teamSchema = new mongoose.Schema<TeamDocument>({
     type: String,
     required: true
   },
-  members: [String],
   createdAt: {
     type: Date,
     default: Date.now

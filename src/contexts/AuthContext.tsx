@@ -33,7 +33,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Initializing auth...');
       setIsLoading(true);
       const teamsCheck = isInTeams();
-      console.log('Is running in Teams:', teamsCheck);
       setIsTeams(teamsCheck);
 
       if (teamsCheck) {
@@ -84,26 +83,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleToken = async (token: string) => {
     try {
-      console.log('Handling token:', {
-        tokenLength: token.length,
-        tokenPreview: `${token.substring(0, 10)}...`,
-        currentPath: window.location.pathname
-      });
       
       const response = await api.post('/auth/callback', { token });
-      console.log('Auth callback response:', response.data.data);
-      console.log('Auth callback response:', {
-        status: response.status,
-        hasData: !!response.data.data,
-        hasToken: response.data.data?.token?.length > 0,
-        hasUser: !!response.data.data?.user
-      });
 
       const userData = response.data.data;
       
       // Store the token first
       sessionStorage.setItem('auth_token', userData.token);
-      console.log('Token stored in sessionStorage:', userData.token?.substring(0, 10) + '...');
       
       // Then update the state
       setUser(userData.user);

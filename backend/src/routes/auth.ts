@@ -3,7 +3,7 @@ import { authService } from '../services/authService';
 import { authenticateToken } from '../middleware/auth';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { roleService } from '../services/roleService';
-import { UserRole } from '../types/role';
+import { UserRole } from '../types/user';
 
 const router = express.Router();
 
@@ -19,18 +19,12 @@ router.get('/login', async (_req: Request, res: Response) => {
 
 router.post('/callback', async (req: Request, res: Response) => {
   try {
-    console.log('Received callback request:', {
-      body: req.body,
-      headers: req.headers
-    });
-
     const { code, token, redirect_uri } = req.body;
     
     // Handle Teams SSO token
     if (token) {
       console.log('Processing Teams SSO token...');
       const userProfile = await authService.verifyTeamsToken(token);
-      console.log('Teams token verification result:', userProfile);
       
       if (!userProfile) {
         console.error('Teams token verification failed');
@@ -39,7 +33,6 @@ router.post('/callback', async (req: Request, res: Response) => {
         const user = await roleService.getUser(userProfile.id);
         const role = await roleService.getRoleByEmail(userProfile.email);
         userProfile.role = role || UserRole.USER;
-        console.log(userProfile, 'userProfile');
         if (!user) {
           await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, role || UserRole.USER, userProfile.tenantId);
         } else {
@@ -64,12 +57,6 @@ router.post('/callback', async (req: Request, res: Response) => {
         user: userProfile 
       };
       
-      console.log('Sending response:', {
-        hasToken: !!response.token,
-        hasUser: !!response.user,
-        userEmail: response.user.email
-      });
-      
       return res.json(response);
     }
     
@@ -84,11 +71,6 @@ router.post('/callback', async (req: Request, res: Response) => {
     console.error('No token or code provided in request');
     return res.status(400).json({ error: 'Either code or token is required' });
   } catch (error: any) {
-    console.error('Callback error details:', {
-      message: error.message,
-      response: error.response?.data,
-      stack: error.stack
-    });
     return res.status(500).json({ error: 'Authentication failed' });
   }
 });

@@ -35,7 +35,6 @@ const SuperUsers: React.FC = () => {
           superUserAPI.getAll(),
           companyAPI.getAll()
         ]);
-        console.log('Super Users Response:', superUsersResponse.data.data);
         setSuperUsers(superUsersResponse.data.data);
         setCompanies(companiesResponse.data.data);
       } catch (error) {
