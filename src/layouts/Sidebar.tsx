@@ -30,7 +30,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       }`}
     >
       <div className="h-16 flex items-center justify-between px-4 border-b">
-        {isOpen && <h1 className="text-ms-blue font-semibold">Teams Scorecards</h1>}
         <button
           className="p-1 rounded-full hover:bg-gray-100 focus:outline-none"
           onClick={onToggle}
