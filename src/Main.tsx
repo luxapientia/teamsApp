@@ -13,15 +13,22 @@ import NotificationPage from './pages/notification';
 import MyPerformanceAgreement from './pages/my_performance_agreement';
 import MyPerformanceAssessment from './pages/my_performance_assessment';
 import Reports from './pages/reports';
+import { fetchNotifications } from './store/slices/notificationSlice';
+import { useAppDispatch } from './hooks/useAppDispatch';
 const iconSize = 24;
 
 function Main() {
   const [selectedTab, setSelectedTab] = useState('');
   const { user } = useAuth();
+  const dispatch = useAppDispatch();
   const isAppOwner = user?.email === 'admin@siliconsoftwaresolutions.onmicrosoft.com';
   const selectedTabChanger = (tab: string) => {
     setSelectedTab(tab);
   }
+
+  useEffect(() => {
+    dispatch(fetchNotifications());
+  }, []);
 
   return (
     <Provider store={store}>
@@ -61,7 +68,7 @@ function Main() {
         />
         <AnnualCorporateScorecard
           title="Annual Corporate Scorecard"
-          icon={<Globe24Regular  fontSize={iconSize} />}
+          icon={<Globe24Regular fontSize={iconSize} />}
           tabs={['Quarterly Targets', 'Annual Targets']}
           selectedTab={selectedTab}
         />
@@ -71,7 +78,7 @@ function Main() {
           tabs={['Teams']}
           selectedTab={selectedTab}
         />
-        <NotificationPage 
+        <NotificationPage
           title='Notifications'
           icon={<Alert24Regular fontSize={iconSize} />}
           tabs={['Quarterly Targets', 'Performance Assessments']}

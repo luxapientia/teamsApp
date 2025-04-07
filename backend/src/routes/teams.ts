@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth';
-import { Team } from '../models/Team';
+import Team from '../models/Team';
 
 const router = express.Router();
 

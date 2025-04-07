@@ -1,6 +1,7 @@
 export * from './annualCorporateScorecard';
 export * from './page';
 export * from './personalPerformance';
+export * from './notification';
 
 export type BaseEntity = {
   _id: string;
