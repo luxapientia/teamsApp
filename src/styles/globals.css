@@ -64,4 +64,23 @@
   .card {
     @apply bg-white rounded-md shadow-ms p-4;
   }
+}
+
+/* Add spinner animation */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-left-color: #6264a7;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 } 

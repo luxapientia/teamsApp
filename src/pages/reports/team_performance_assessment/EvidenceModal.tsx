@@ -89,7 +89,7 @@ const EvidenceModal: React.FC<EvidenceModalProps> = ({
                     {attachment.name}
                   </Typography>
                   <FileLink 
-                    href={`${process.env.BACKEND_URL || 'http://localhost:3001'}${attachment.url}`}
+                    href={`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}${attachment.url}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

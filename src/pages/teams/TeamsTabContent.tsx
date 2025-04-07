@@ -7,6 +7,7 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import * as microsoftTeams from "@microsoft/teams-js";
 import { api } from '../../services/api';
+import PeoplePickerModal, { Person } from '../../components/PeoplePickerModal';
 
 enum ViewStatus {
   TEAM_LIST = 'TEAM_LIST',
@@ -25,6 +26,7 @@ const TeamsTabContent: React.FC = () => {
   const [newTeamName, setNewTeamName] = useState<string>('');
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isTeams, setIsTeams] = useState<boolean>(false);
+  const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleViewClick = (teamId: string) => {
@@ -44,27 +46,21 @@ const TeamsTabContent: React.FC = () => {
     }, 0);
   };
 
-  const handleAddMemberClick = async () => {
-    if (!isInitialized) {
-      console.error('Teams SDK not initialized');
-      return;
-    }
+  const handleAddMemberClick = () => {
+    // Always use our custom picker
+    setIsPickerOpen(true);
+  };
 
+  const handlePeopleSelected = async (people: Person[]) => {
+    console.log('Selected people:', people);
     try {
-      const config = {
-        title: "Select Team Members",
-        setSelected: [],
-        openOrgWideSearchInChatOrChannel: true,
-        singleSelect: false
-      };
-      const people = await microsoftTeams.people.selectPeople(config);
-      console.log('Selected people:', people);
-      // Handle selected people here
       await api.post(`/teams/${selectedTeamId}/members`, {
-        userIds: people.map((person: any) => person.objectId)
+        userIds: people.map(person => person.objectId)
       });
+      // Refresh the teams list after adding members
+      dispatch(fetchTeams(tenantId));
     } catch (error) {
-      console.error('Error selecting people:', error);
+      console.error('Error adding team members:', error);
     }
   };
 
@@ -113,15 +109,15 @@ const TeamsTabContent: React.FC = () => {
   useEffect(() => {
     dispatch(fetchTeams(tenantId));
     
-    if (microsoftTeams.app) {
-      setIsTeams(true);
-      microsoftTeams.app.initialize().then(() => {
-        console.log("Teams SDK initialized");
-        setIsInitialized(true);
-      }).catch((error) => {
-        console.error("Teams SDK initialization failed", error);
-      });
-    }
+    // if (microsoftTeams.app) {
+    //   setIsTeams(true);
+    //   microsoftTeams.app.initialize().then(() => {
+    //     console.log("Teams SDK initialized");
+    //     setIsInitialized(true);
+    //   }).catch((error) => {
+    //     console.error("Teams SDK initialization failed", error);
+    //   });
+    // }
   }, []);
 
   if (isTeams && !isInitialized) {
@@ -279,6 +275,15 @@ const TeamsTabContent: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* Custom People Picker Modal */}
+      <PeoplePickerModal
+        open={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        onSelectPeople={handlePeopleSelected}
+        title="Select Team Members"
+        multiSelect={true}
+      />
     </Box>
   );
 };
