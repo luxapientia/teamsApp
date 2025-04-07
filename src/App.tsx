@@ -6,7 +6,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import './styles/globals.css';
 import { ToastProvider } from './contexts/ToastContext';
-import Main from './Main';
 import { initializeTeams } from './utils/teamsUtils';
 import { SocketProvider } from './contexts/SocketContext';
 
@@ -15,11 +14,12 @@ const ConsentPage = lazy(() => import('./components/ConsentPage').then(module =>
 const AuthCallback = lazy(() => import('./pages/auth/AuthCallback').then(module => ({ default: module.AuthCallback })));
 const Login = lazy(() => import('./pages/auth/Login').then(module => ({ default: module.Login })));
 const Unauthorized = lazy(() => import('./pages/auth/Unauthorized').then(module => ({ default: module.Unauthorized })));
+const Main = lazy(() => import('./Main'));
 
 // Loading component
-const LoadingComponent = () => (
+const LoadingSpinner = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-    Loading...
+    <div className="spinner"></div>
   </div>
 );
 
@@ -41,7 +41,7 @@ const App: React.FC = () => {
       <AuthProvider>
         <SocketProvider>
           <ToastProvider>
-            <Suspense fallback={<LoadingComponent />}>
+            <Suspense fallback={<LoadingSpinner />}>
               <Routes>
                 {/* Public routes */}
                 <Route path="/consent" element={<ConsentPage />} />
@@ -50,7 +50,7 @@ const App: React.FC = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/unauthorized" element={<Unauthorized />} />
                 
-                {/* Protected routes - Main component remains non-lazy */}
+                {/* Protected routes */}
                 <Route 
                   path="/" 
                   element={
