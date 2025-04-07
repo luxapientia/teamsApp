@@ -2,7 +2,6 @@ import express, { Response } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import Notification from '../models/Notification';
 import { AuthenticatedRequest } from '../middleware/auth';
-import Team, { TeamDocument } from '../models/Team';
 // import multer from 'multer';
 // import fs from 'fs';
 
@@ -37,6 +36,8 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
         quarter,
         isRead: false
       });
+
+      
     } catch (error) {
       console.error('Error creating notification:', error);
       return res.status(500).json({ error: 'Failed to create notification' });
@@ -102,7 +103,7 @@ router.get('/notifications', authenticateToken, async (req: AuthenticatedRequest
         type: notification.type,
         sender: {
           _id: notification.senderId._id,
-          fullName: notification.senderId.fullName,
+          fullName: notification.senderId.name,
           team: "Team 1"
         },
         annualTargetId: notification.annualTargetId,

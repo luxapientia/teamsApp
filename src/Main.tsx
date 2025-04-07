@@ -15,6 +15,7 @@ import MyPerformanceAssessment from './pages/my_performance_assessment';
 import Reports from './pages/reports';
 import { fetchNotifications } from './store/slices/notificationSlice';
 import { useAppDispatch } from './hooks/useAppDispatch';
+import { fetchAnnualTargets } from './store/slices/scorecardSlice';
 const iconSize = 24;
 
 function Main() {
@@ -28,6 +29,7 @@ function Main() {
 
   useEffect(() => {
     dispatch(fetchNotifications());
+    dispatch(fetchAnnualTargets());
   }, []);
 
   return (

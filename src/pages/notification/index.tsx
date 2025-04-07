@@ -6,6 +6,7 @@ import QuarterlyTargetNotification from './quarterly_target';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { createAnnualTarget, updateAnnualTarget, deleteAnnualTarget, fetchAnnualTargets } from '../../store/slices/scorecardSlice';
 import AddIcon from '@mui/icons-material/Add';
+import PerformanceAssessmentNotification from './performance_assessment';
 const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
   const dispatch = useAppDispatch();
 
@@ -18,8 +19,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
       {selectedTab === "Quarterly Targets" ? (
         <QuarterlyTargetNotification />
       ) : (
-        // <OrganizationPerformances />
-        "hello"
+        <PerformanceAssessmentNotification />
       )}
     </Box>
   );
