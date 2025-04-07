@@ -6,6 +6,9 @@ import {
   GridRegular
 } from '@fluentui/react-icons';
 import { PageProps } from '../types';
+import { useAppSelector } from '../hooks/useAppSelector';
+import { RootState } from '../store';
+import { Badge } from '@mui/material';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,6 +25,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onPageChange,
   pagePropsList
 }) => {
+
+  const unReadNotifications = useAppSelector((state: RootState) => state.notification.notifications.filter((notification) => notification.isRead === false));
 
   return (
     <aside
@@ -50,7 +55,23 @@ const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => onPageChange(pageProps.title)}
               >
                 <span className="inline-flex items-center justify-center w-6 h-6">
-                  {pageProps.icon}
+                  {pageProps.title === 'Notifications' ? (
+                    <Badge 
+                      badgeContent={unReadNotifications.length} 
+                      color="error"
+                      sx={{
+                        '& .MuiBadge-badge': {
+                          fontSize: '0.6rem',
+                          height: '16px',
+                          minWidth: '16px'
+                        }
+                      }}
+                    >
+                      {pageProps.icon}
+                    </Badge>
+                  ) : (
+                    pageProps.icon
+                  )}
                 </span>
                 {isOpen && <span className="ml-3">{pageProps.title}</span>}
               </button>

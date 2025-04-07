@@ -17,7 +17,8 @@ import {
   styled,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
-import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
+import { AnnualTarget, QuarterType, QuarterlyTargetObjective, QuarterlyTargetKPI } from '@/types';
+import { Notification } from '@/types';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus } from '../../../types/personalPerformance';
 import { useAppSelector } from '../../../hooks/useAppSelector';
@@ -25,7 +26,6 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { RootState } from '../../../store';
 import { api } from '../../../services/api';
-import KPIModal from './KPIModal';
 import EvidenceModal from './EvidenceModal';
 
 const AccessButton = styled(Button)({
@@ -42,31 +42,31 @@ const AccessButton = styled(Button)({
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
-  onSupervisorChange?: (supervisorId: string) => void;
   onBack?: () => void;
-  personalPerformance?: PersonalPerformance | null;
+  notification?: Notification | null;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
   onBack,
-  onSupervisorChange = () => { },
-  personalPerformance = null,
+  notification = null,
 }) => {
   const dispatch = useAppDispatch();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [selectedKPI, setSelectedKPI] = useState<{ kpi: QuarterlyTargetKPI, perspectiveId: number, objectiveName: string, initiativeName: string, kpiIndex: number } | null>(null);
   const [evidenceModalData, setEvidenceModalData] = useState<{
     evidence: string;
     attachments: Array<{ name: string; url: string }>;
   } | null>(null);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
+  const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
+
 
   useEffect(() => {
     fetchCompanyUsers();
+    fetchPersonalPerformance();
   }, []);
 
   useEffect(() => {
@@ -76,11 +76,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === 'Submitted');
     }
   }, [personalPerformance]);
-
-  const handleSupervisorChange = (event: SelectChangeEvent) => {
-    setSelectedSupervisor(event.target.value);
-    onSupervisorChange(event.target.value);
-  };
 
   const fetchCompanyUsers = async () => {
     try {
@@ -92,6 +87,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       }
     } catch (error) {
       setCompanyUsers([]);
+    }
+  }
+
+  const fetchPersonalPerformance = async () => {
+    try {
+      const response = await api.get(`/notifications/personal-performance/${notification?._id}`);
+      if (response.status === 200) {
+        setPersonalPerformance(response.data.data);
+      } else {
+        setPersonalPerformance(null);
+      }
+    } catch (error) {
+      console.error('Error fetching personal performance:', error);
     }
   }
 
@@ -131,157 +139,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }, 0);
   };
 
-  const handleDraft = () => {
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Draft,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Draft,
-          isEditable: calculateTotalWeight() === 100 ? true : false,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-
-      }
-      return target;
-    });
-
-    dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
+  const handleApprove = () => {
 
   };
 
-  const handleSubmit = async () => {
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Submitted,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Draft,
-          isEditable: calculateTotalWeight() === 100 ? true : false,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      return target;
-    });
-
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
-    try {
-      await api.post('/notifications/assessment/submit', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter
-      });
-    } catch (error) {
-      console.error('Error submitting quarterly target:', error);
-    }
-
-    setIsSubmitted(true);
-  }
-
-  // Add recall handler
-  const handleRecall = async () => {
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Draft,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-      return target;
-    });
-
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
-    try {
-      await api.post('/notifications/assessment/recall', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter
-      });
-    } catch (error) {
-      console.error('Error recalling quarterly target:', error);
-    }
-
-    setIsSubmitted(false);
-  };
-
-  // Add date validation function
-  const isWithinPeriod = () => {
-    const assessmentPeriod = annualTarget.content.assessmentPeriod[quarter];
-    if (!assessmentPeriod) return false;
-
-    const today = new Date();
-    const startDate = new Date(assessmentPeriod.startDate);
-    const endDate = new Date(assessmentPeriod.endDate);
-
-    return today >= startDate && today <= endDate;
-  };
-
-  // Update canEdit function to also check submission status
-  const canEdit = () => {
-    const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
-    return isWithinPeriod() &&
-      quarterlyTarget?.isEditable !== false &&
-      !isSubmitted;
-  };
-
-  // Add validation function for submit button
-  const canSubmit = () => {
-    return selectedSupervisor !== '' && calculateTotalWeight() === 100;
-  };
-
-
-
-  const handleSave = (newKPI: QuarterlyTargetKPI) => {
-    if (selectedKPI) {
-      const newPersonalQuarterlyObjectives = personalQuarterlyObjectives.map(objective => {
-        if (objective.perspectiveId === selectedKPI.perspectiveId && objective.name === selectedKPI.objectiveName && objective.initiativeName === selectedKPI.initiativeName) {
-          return {
-            ...objective,
-            KPIs: objective.KPIs.map((kpi, kpiIndex) => kpiIndex === selectedKPI.kpiIndex ? newKPI : kpi)
-          }
-        }
-        return objective;
-      })
-      setPersonalQuarterlyObjectives(newPersonalQuarterlyObjectives);
-      setSelectedKPI(null);
-    }
+  const handleSendBack = () => {
 
   };
 
@@ -312,57 +174,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
 
-      <Box sx={{ mb: 3 }}>
-        <FormControl
-          variant="outlined"
-          size="small"
-          sx={{
-            mt: 1,
-            minWidth: 200,
-            '& .MuiOutlinedInput-root': {
-              '& fieldset': {
-                borderColor: '#E5E7EB',
-              },
-              '&:hover fieldset': {
-                borderColor: '#D1D5DB',
-              },
-            },
-          }}
-        >
-          <Select
-            value={selectedSupervisor}
-            onChange={handleSupervisorChange}
-            displayEmpty
-            disabled={true}
-          >
-            <MenuItem value="" disabled>
-              <Typography color="textSecondary">Select Supervisor</Typography>
-            </MenuItem>
-            {companyUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
-
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
-              '&:hover': {
-                backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
-              },
-              cursor: isSubmitted ? 'default' : 'pointer'
-            }}
-            disabled={isSubmitted}
-            onClick={() => handleDraft()}
-          >
-            {isSubmitted ? 'Submitted' : 'Draft'}
-          </Button>
           <Button
             variant="contained"
             sx={{
@@ -375,11 +188,26 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 color: '#9CA3AF'
               }
             }}
-            onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-            disabled={!isSubmitted && !canSubmit()}
+            // disabled={!isSubmitted && !canSubmit()}
+            onClick={handleApprove}
           >
-            {isSubmitted ? 'Recall' : 'Submit'}
+            Approve
           </Button>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
+              '&:hover': {
+                backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
+              },
+              cursor: isSubmitted ? 'default' : 'pointer'
+            }}
+            // disabled={isSubmitted}
+            onClick={handleSendBack}
+          >
+            Send Back
+          </Button>
+
         </Box>
       </Box>
 
@@ -414,21 +242,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Typography>
       </Box>
 
-      {/* Show helper text only when not submitted */}
-      {!isSubmitted && !canSubmit() && (
-        <Typography
-          variant="caption"
-          sx={{
-            color: '#DC2626',
-            display: 'block',
-            mt: 1,
-            textAlign: 'right'
-          }}
-        >
-          {!selectedSupervisor ? 'Please select a supervisor' : 'Total weight must be 100%'}
-        </Typography>
-      )}
-
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
         <TableContainer>
           <Table>
@@ -444,7 +257,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                 <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
                 <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
-                <StyledHeaderCell align="center">Access</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -549,31 +361,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 </IconButton>
                               )}
                             </StyledTableCell>
-                            <StyledTableCell align="center">
-                              {canEdit() ? (
-                                <AccessButton
-                                  size="small"
-                                  onClick={() => {
-                                    setSelectedKPI({
-                                      kpi: kpi,
-                                      kpiIndex: kpiIndex,
-                                      perspectiveId: perspectiveGroup.perspectiveId,
-                                      objectiveName: objectiveGroup.name,
-                                      initiativeName: initiative.initiativeName
-                                    });
-                                  }}
-                                >
-                                  Evaluate
-                                </AccessButton>
-                              ) : (
-                                <Typography
-                                  variant="caption"
-                                  sx={{ color: '#6B7280', fontStyle: 'italic' }}
-                                >
-                                  Not Editable
-                                </Typography>
-                              )}
-                            </StyledTableCell>
                           </TableRow>
                         );
 
@@ -631,17 +418,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           );
         })()}
       </Box>
-
-      {selectedKPI && (
-        <KPIModal
-          open={!!selectedKPI}
-          onClose={() => setSelectedKPI(null)}
-          onSave={handleSave}
-          selectedKPI={selectedKPI.kpi}
-          annualTargetId={personalPerformance?.annualTargetId || ''}
-          quarter={quarter}
-        />
-      )}
 
       {evidenceModalData && (
         <EvidenceModal

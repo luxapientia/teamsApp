@@ -42,7 +42,7 @@ class SocketService {
           this.reconnectInterval = null;
         }
 
-        this.socket.emit('authenticate', authService.getToken());
+        this.socket?.emit('authenticate', authService.getToken());
       } else {
         this.handleDisconnect();
       }

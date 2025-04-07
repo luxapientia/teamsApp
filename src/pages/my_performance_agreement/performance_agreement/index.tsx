@@ -164,10 +164,10 @@ const PersonalPerformanceAgreement: React.FC = () => {
                   <TableRow key={index}>
                     <StyledTableCell>{selectedAnnualTarget?.name}</StyledTableCell>
                     <StyledTableCell>
-                    {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.startDate}
+                    {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.startDate}
                   </StyledTableCell>
                   <StyledTableCell>
-                    {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.endDate}
+                    {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.endDate}
                   </StyledTableCell>
                   <StyledTableCell>{selectedAnnualTarget?.status}</StyledTableCell>
                   <StyledTableCell>{'team'}</StyledTableCell>
