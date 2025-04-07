@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, hasLicenseError } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -16,6 +16,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (hasLicenseError) {
+    return <Navigate to="/license-error" replace />;
   }
 
   return <>{children}</>;
