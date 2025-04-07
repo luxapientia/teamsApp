@@ -174,73 +174,40 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
 
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between' }}>
-        <FormControl
-          variant="outlined"
-          size="small"
-          sx={{
-            mt: 1,
-            minWidth: 200,
-            '& .MuiOutlinedInput-root': {
-              '& fieldset': {
-                borderColor: '#E5E7EB',
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: isSubmitted ? '#EF4444' : '#059669',
+              '&:hover': {
+                backgroundColor: isSubmitted ? '#DC2626' : '#047857'
               },
-              '&:hover fieldset': {
-                borderColor: '#D1D5DB',
-              },
-            },
-          }}
-        >
-          <Select
-            value={selectedSupervisor}
-            displayEmpty
-            disabled={true}
+              '&.Mui-disabled': {
+                backgroundColor: '#E5E7EB',
+                color: '#9CA3AF'
+              }
+            }}
+            // disabled={!isSubmitted && !canSubmit()}
+            onClick={handleApprove}
           >
-            <MenuItem value="" disabled>
-              <Typography color="textSecondary">Select Supervisor</Typography>
-            </MenuItem>
-            {companyUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: isSubmitted ? '#EF4444' : '#059669',
-                '&:hover': {
-                  backgroundColor: isSubmitted ? '#DC2626' : '#047857'
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: '#E5E7EB',
-                  color: '#9CA3AF'
-                }
-              }}
-              // disabled={!isSubmitted && !canSubmit()}
-              onClick={handleApprove}
-            >
-              Approve
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
-                '&:hover': {
-                  backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
-                },
-                cursor: isSubmitted ? 'default' : 'pointer'
-              }}
-              // disabled={isSubmitted}
-              onClick={handleSendBack}
-            >
-              Send Back
-            </Button>
+            Approve
+          </Button>
+          <Button
+            variant="contained"
+            sx={{
+              backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
+              '&:hover': {
+                backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
+              },
+              cursor: isSubmitted ? 'default' : 'pointer'
+            }}
+            // disabled={isSubmitted}
+            onClick={handleSendBack}
+          >
+            Send Back
+          </Button>
 
-          </Box>
         </Box>
       </Box>
 

@@ -8,7 +8,8 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Button
+  Button,
+  Chip
 } from '@mui/material';
 import ScorecardViewModal from '../ScorecardViewModal';
 import { styled } from '@mui/material/styles';
@@ -69,7 +70,22 @@ const PerformanceAssessmentNotification: React.FC = () => {
             <TableBody>
               {notifications.map((notification, index) => (
                 <TableRow key={index}>
-                  <TableCell>{notification.sender.fullName}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {notification.sender.fullName}
+                      {!notification.isRead && (
+                        <Chip
+                          label="New"
+                          size="small"
+                          color="error"
+                          sx={{
+                            height: '20px',
+                            fontSize: '0.75rem'
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </TableCell>
                   <TableCell>{notification.sender.team}</TableCell>
                   <TableCell>{annualTargets.find((target) => target._id === notification.annualTargetId)?.name}</TableCell>
                   <TableCell>{notification.quarter}</TableCell>
