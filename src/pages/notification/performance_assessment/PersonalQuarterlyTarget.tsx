@@ -179,9 +179,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           <Button
             variant="contained"
             sx={{
-              backgroundColor: isSubmitted ? '#EF4444' : '#059669',
+              backgroundColor: '#059669',
               '&:hover': {
-                backgroundColor: isSubmitted ? '#DC2626' : '#047857'
+                backgroundColor: '#047857'
               },
               '&.Mui-disabled': {
                 backgroundColor: '#E5E7EB',
@@ -196,11 +196,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           <Button
             variant="contained"
             sx={{
-              backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
+              backgroundColor: '#F59E0B',
               '&:hover': {
-                backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
+                backgroundColor: '#D97706'
               },
-              cursor: isSubmitted ? 'default' : 'pointer'
+              cursor: 'pointer'
             }}
             // disabled={isSubmitted}
             onClick={handleSendBack}
