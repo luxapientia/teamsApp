@@ -208,6 +208,39 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     setIsSubmitted(true);
   }
 
+  // Add recall handler
+  const handleRecall = async () => {
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          assessmentStatus: AssessmentStatus.Draft,
+          supervisorId: selectedSupervisor,
+          objectives: personalQuarterlyObjectives
+        }
+      }
+      return target;
+    });
+
+    await dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
+
+    try {
+      await api.post('/notifications/assessment/recall', {
+        recipientId: selectedSupervisor,
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarter: quarter
+      });
+    } catch (error) {
+      console.error('Error recalling quarterly target:', error);
+    }
+
+    setIsSubmitted(false);
+  };
+
   // Add date validation function
   const isWithinPeriod = () => {
     const assessmentPeriod = annualTarget.content.assessmentPeriod[quarter];
@@ -233,28 +266,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     return selectedSupervisor !== '' && calculateTotalWeight() === 100;
   };
 
-  // Add recall handler
-  const handleRecall = async () => {
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Draft,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-      return target;
-    });
 
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
-    setIsSubmitted(false);
-  };
 
   const handleSave = (newKPI: QuarterlyTargetKPI) => {
     if (selectedKPI) {
