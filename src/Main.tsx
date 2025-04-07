@@ -40,7 +40,6 @@ function Main() {
 
     // Subscribe to notification events
     subscribe(SocketEvent.NOTIFICATION, (data) => {
-      console.log(data, '----------');
       dispatch(fetchNotifications());
     });
 

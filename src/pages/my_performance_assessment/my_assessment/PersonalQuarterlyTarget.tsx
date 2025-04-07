@@ -64,7 +64,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     attachments: Array<{ name: string; url: string }>;
   } | null>(null);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
-
+  const [isApproved, setIsApproved] = useState(false);
   useEffect(() => {
     fetchCompanyUsers();
   }, []);
@@ -74,6 +74,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
       setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === 'Submitted');
+      setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === 'Approved');
     }
   }, [personalPerformance]);
 
@@ -260,12 +261,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
     return isWithinPeriod() &&
       quarterlyTarget?.isEditable !== false &&
-      !isSubmitted;
+      !isSubmitted && !isApproved;
   };
 
   // Add validation function for submit button
   const canSubmit = () => {
-    return selectedSupervisor !== '' && calculateTotalWeight() === 100;
+    return selectedSupervisor !== '' && calculateTotalWeight() === 100 && !isApproved;
   };
 
 
@@ -350,39 +351,48 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
-              '&:hover': {
-                backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
-              },
-              cursor: isSubmitted ? 'default' : 'pointer'
-            }}
-            disabled={isSubmitted}
-            onClick={() => handleDraft()}
+        {isApproved ? (
+          <Typography
+            variant="caption"
+            sx={{ color: '#059669' }}
           >
-            {isSubmitted ? 'Submitted' : 'Draft'}
-          </Button>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: isSubmitted ? '#EF4444' : '#059669',
-              '&:hover': {
-                backgroundColor: isSubmitted ? '#DC2626' : '#047857'
-              },
-              '&.Mui-disabled': {
-                backgroundColor: '#E5E7EB',
-                color: '#9CA3AF'
-              }
-            }}
-            onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-            disabled={!isSubmitted && !canSubmit()}
-          >
-            {isSubmitted ? 'Recall' : 'Submit'}
-          </Button>
-        </Box>
+            Approved
+          </Typography>
+        ) : (
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
+                '&:hover': {
+                  backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
+                },
+                cursor: isSubmitted ? 'default' : 'pointer'
+              }}
+              disabled={isSubmitted}
+              onClick={() => handleDraft()}
+            >
+              {isSubmitted ? 'Submitted' : 'Draft'}
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: isSubmitted ? '#EF4444' : '#059669',
+                '&:hover': {
+                  backgroundColor: isSubmitted ? '#DC2626' : '#047857'
+                },
+                '&.Mui-disabled': {
+                  backgroundColor: '#E5E7EB',
+                  color: '#9CA3AF'
+                }
+              }}
+              onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
+              disabled={!isSubmitted && !canSubmit()}
+            >
+              {isSubmitted ? 'Recall' : 'Submit'}
+            </Button>
+          </Box>
+        )}
       </Box>
 
       {/* Add total weight display */}
