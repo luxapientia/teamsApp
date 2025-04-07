@@ -48,15 +48,13 @@
   "scripts": {
     "dev:teamsfx": "env-cmd --silent -f .localConfigs npm run start",
     "start": "react-scripts start",
-    "build": "GENERATE_SOURCEMAP=false react-scripts build",
-    "build:analyze": "ANALYZE=true npm run build",
-    "test": "react-scripts test",
+    "build": "react-scripts build",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "eject": "react-scripts eject",
     "lint": "eslint src/**/*.{ts,tsx} --max-warnings=0",
     "lint:fix": "eslint src/**/*.{ts,tsx} --fix",
     "type-check": "tsc --noEmit",
-    "check": "npm run lint && npm run type-check",
-    "serve": "serve -s build"
+    "check": "npm run lint && npm run type-check"
   },
   "eslintConfig": {
     "extends": [
