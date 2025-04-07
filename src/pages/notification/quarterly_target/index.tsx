@@ -39,10 +39,10 @@ const QuarterlyNotification: React.FC = () => {
   const notifications = useAppSelector((state: RootState) => state.notification.notifications.filter((notification) => notification.type === 'agreement'));  
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
 
-  const handleView = (notification: Notification) => {
+  const handleView = async (notification: Notification) => {
     setSelectedNotification(notification);
     setShowTable(false);
-    api.post(`/notifications/read/${notification._id}`);
+    await api.post(`/notifications/read/${notification._id}`);
   };
 
   return (
