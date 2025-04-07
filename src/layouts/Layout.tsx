@@ -73,7 +73,7 @@ const Layout: React.FC<LayoutProps> = (props) => {
         title={activePage.props.title}
         tabs={activePage.props.tabs}
         icon={activePage.props.icon}
-        selectedTabChanger={props.selectedTabChanger}
+        onTabChange={props.selectedTabChanger}
         selectedTab={activePage.props.selectedTab || activePage.props.tabs[0] || ''}
       >
         {activePage}
