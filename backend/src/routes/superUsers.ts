@@ -27,7 +27,6 @@ router.get('/', authenticateToken, async (_req: Request, res: Response) => {
 // Create super user
 router.post('/', authenticateToken, async (req: Request, res: Response) => {
   try {
-    console.log('Creating super user with data:', req.body);
     const superUser = await superUserService.create(req.body);
     return res.status(201).json({ 
       data: superUser,
