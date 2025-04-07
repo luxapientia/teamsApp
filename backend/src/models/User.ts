@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { UserRole, dUser } from '../types/role';
+import { UserRole, dUser } from '../types/user';
 
 const userSchema = new mongoose.Schema<dUser>({
   MicrosoftId: {
@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema<dUser>({
   },
   tenantId: {
     type: String,
+    required: false,
+  },
+  teamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
     required: false,
   }
 });

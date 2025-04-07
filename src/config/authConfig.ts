@@ -5,7 +5,7 @@ export const authConfig = {
   scopes: ['User.Read', 'openid', 'profile', 'email'],
   teamsResource: 'api://app.teamscorecards.online/38681428-5b78-4e82-97ff-e168419e7611',
   
-  getLoginUrl: (isTeams: boolean = false) => {
+  getLoginUrl: (isTeams = false) => {
     const params = new URLSearchParams({
       client_id: authConfig.clientId,
       response_type: 'code',

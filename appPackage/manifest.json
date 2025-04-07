@@ -1,6 +1,6 @@
 {
-    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.15/MicrosoftTeams.schema.json",
-    "manifestVersion": "1.15",
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.16",
     "version": "1.0.0",
     "id": "af138b87-5e67-40bd-ad03-575faf285d97",
     "packageName": "com.microsoft.teams.extension",
@@ -15,8 +15,8 @@
         "outline": "outline.png"
     },
     "name": {
-        "short": "TeamsScoreCards",
-        "full": "TeamsScoreCards - Performance Management System"
+        "short": "TeamScoreCards",
+        "full": "TeamScoreCards - Performance Management System"
     },
     "description": {
         "short": "Teams app for managing corporate scorecards and performance",

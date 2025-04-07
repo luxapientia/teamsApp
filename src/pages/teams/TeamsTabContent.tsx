@@ -6,23 +6,25 @@ import { RootState } from '../../store';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import * as microsoftTeams from "@microsoft/teams-js";
+import { api } from '../../services/api';
 
 enum ViewStatus {
   TEAM_LIST = 'TEAM_LIST',
   TEAM_ADDING = 'TEAM_ADDING',
   MEMBER_LIST = 'MEMBER_LIST',
   MEMBER_ADDING = 'MEMBER_ADDING',
-};
+}
 
 const tenantId = '987eaa8d-6b2d-4a86-9b2e-8af581ec8056';
 
 const TeamsTabContent: React.FC = () => {
   const dispatch = useAppDispatch();
-  const teams = useAppSelector((state: RootState) => state.teams);
+  const teams = useAppSelector((state: RootState) => state.teams || []);
   const [status, setStatus] = useState<ViewStatus>(ViewStatus.TEAM_LIST);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [newTeamName, setNewTeamName] = useState<string>('');
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [isTeams, setIsTeams] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleViewClick = (teamId: string) => {
@@ -42,15 +44,27 @@ const TeamsTabContent: React.FC = () => {
     }, 0);
   };
 
-  const handleAddMemberClick = () => {
-    if (isInitialized) {
-      microsoftTeams.people.selectPeople().then((people) => {
-        console.log('Selected people:', people);
-      }).catch((error) => {
-        console.error('Error selecting people:', error);
+  const handleAddMemberClick = async () => {
+    if (!isInitialized) {
+      console.error('Teams SDK not initialized');
+      return;
+    }
+
+    try {
+      const config = {
+        title: "Select Team Members",
+        setSelected: [],
+        openOrgWideSearchInChatOrChannel: true,
+        singleSelect: false
+      };
+      const people = await microsoftTeams.people.selectPeople(config);
+      console.log('Selected people:', people);
+      // Handle selected people here
+      await api.post(`/teams/${selectedTeamId}/members`, {
+        userIds: people.map((person: any) => person.objectId)
       });
-    } else {
-      console.error("Teams SDK is not initialized");
+    } catch (error) {
+      console.error('Error selecting people:', error);
     }
   };
 
@@ -93,21 +107,26 @@ const TeamsTabContent: React.FC = () => {
       });
   };
 
+  const selectedTeam = teams.find(team => team._id === selectedTeamId);
+  const teamMembers = selectedTeam?.members || [];
+
   useEffect(() => {
     dispatch(fetchTeams(tenantId));
-    console.log("Checking Teams SDK...");
+    
     if (microsoftTeams.app) {
-      console.log("Teams SDK is available");
+      setIsTeams(true);
       microsoftTeams.app.initialize().then(() => {
         console.log("Teams SDK initialized");
         setIsInitialized(true);
       }).catch((error) => {
         console.error("Teams SDK initialization failed", error);
       });
-    } else {
-      console.warn("Not running inside Microsoft Teams");
     }
   }, []);
+
+  if (isTeams && !isInitialized) {
+    return <Box>Loading...</Box>;
+  }
 
   return (
     <Box>
@@ -230,7 +249,7 @@ const TeamsTabContent: React.FC = () => {
                   >
                     View
                   </Button>
-                  {team.members.length === 0 && (
+                  {(!team.members || team.members.length === 0) && (
                     <Button
                       variant="outlined"
                       color="error"
@@ -249,7 +268,7 @@ const TeamsTabContent: React.FC = () => {
               </TableRow>
             ))}
 
-            {status === ViewStatus.MEMBER_LIST && teams.find(team => team._id === selectedTeamId)?.members.map(member => (
+            {status === ViewStatus.MEMBER_LIST && teamMembers.map(member => (
               <TableRow key={member.name}>
                 <TableCell>{member.name}</TableCell>
                 <TableCell>{member.title}</TableCell>
