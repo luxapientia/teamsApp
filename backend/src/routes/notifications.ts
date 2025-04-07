@@ -14,40 +14,28 @@ const router = express.Router();
 router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { recipientId, annualTargetId, quarter } = req.body;
+    const recipientUser = await User.findById(recipientId);
 
-    try {
-      const existingNotification = await Notification.findOne({
-        senderId: req.user?._id,
-        recipientId,
-        annualTargetId,
-        quarter,
-        type: 'agreement'
-      });
+    if (!recipientUser) {
+      return res.status(404).json({ error: 'Recipient user not found' });
+    }
 
-      const recipientUser = await User.findById(recipientId);
-
-      if (!recipientUser) {
-        return res.status(404).json({ error: 'Recipient user not found' });
-      }
-
-      socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {
-        type: 'agreement',
-        senderId: req.user?._id,
-        recipientId,
-        annualTargetId,
-        quarter,
-        isRead: false
-      });
+    const existingNotification = await Notification.findOne({
+      senderId: req.user?._id,
+      recipientId,
+      annualTargetId,
+      quarter,
+      type: 'agreement'
+    });
 
 
-      if (existingNotification) {
-        await Notification.updateOne(
-          { _id: existingNotification._id },
-          { $set: { isRead: false } }
-        );
-        return res.status(200).json({ message: 'Notification already exists' });
-      }
 
+    if (existingNotification) {
+      await Notification.updateOne(
+        { _id: existingNotification._id },
+        { $set: { isRead: false } }
+      );
+    } else {
       await Notification.create({
         type: 'agreement',
         senderId: req.user?._id,
@@ -56,11 +44,8 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
         quarter,
         isRead: false
       });
-
-    } catch (error) {
-      console.error('Error creating notification:', error);
-      return res.status(500).json({ error: 'Failed to create notification' });
     }
+    socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
 
     return res.status(200).json({ message: 'Notification created successfully' });
   } catch (error) {
@@ -69,42 +54,60 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
   }
 });
 
+router.post('/agreement/recall', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { recipientId, annualTargetId, quarter } = req.body;
+
+    const recipientUser = await User.findById(recipientId);
+
+    if (!recipientUser) {
+      return res.status(404).json({ error: 'Recipient user not found' });
+    }
+
+    const existingNotification = await Notification.findOne({
+      senderId: req.user?._id,
+      recipientId,
+      annualTargetId,
+      quarter,
+      type: 'agreement'
+    });
+
+    if (existingNotification) {
+      await Notification.deleteOne({ _id: existingNotification._id });
+    }
+    socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
+
+    return res.status(200).json({ message: 'Notification deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    return res.status(500).json({ error: 'Failed to delete notification' });
+  }
+});
+
 router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { recipientId, annualTargetId, quarter } = req.body;
 
-    try {
-      const recipientUser = await User.findById(recipientId);
+    const recipientUser = await User.findById(recipientId);
 
-      if (!recipientUser) {
-        return res.status(404).json({ error: 'Recipient user not found' });
-      }
+    if (!recipientUser) {
+      return res.status(404).json({ error: 'Recipient user not found' });
+    }
 
-      socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {
-        type: 'agreement',
-        senderId: req.user?._id,
-        recipientId,
-        annualTargetId,
-        quarter,
-        isRead: false
-      });
-      
-      const existingNotification = await Notification.findOne({
-        senderId: req.user?._id,
-        recipientId,
-        annualTargetId,
-        quarter,
-        type: 'assessment'
-      });
+    const existingNotification = await Notification.findOne({
+      senderId: req.user?._id,
+      recipientId,
+      annualTargetId,
+      quarter,
+      type: 'assessment'
+    });
 
-      if (existingNotification) {
-        await Notification.updateOne(
-          { _id: existingNotification._id },
-          { $set: { isRead: false } }
-        );
-        return res.status(200).json({ message: 'Notification already exists' });
-      }
-
+    if (existingNotification) {
+      await Notification.updateOne(
+        { _id: existingNotification._id },
+        { $set: { isRead: false } }
+      );
+    } else {
       await Notification.create({
         type: 'assessment',
         senderId: req.user?._id,
@@ -113,15 +116,43 @@ router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRe
         quarter,
         isRead: false
       });
-    } catch (error) {
-      console.error('Error creating notification:', error);
-      return res.status(500).json({ error: 'Failed to create notification' });
     }
 
+    socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
     return res.status(200).json({ message: 'Notification created successfully' });
   } catch (error) {
     console.error('Error creating notification:', error);
     return res.status(500).json({ error: 'Failed to create notification' });
+  }
+});
+
+router.post('/assessment/recall', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { recipientId, annualTargetId, quarter } = req.body;
+
+    const recipientUser = await User.findById(recipientId);
+
+    if (!recipientUser) {
+      return res.status(404).json({ error: 'Recipient user not found' });
+    }
+
+    const existingNotification = await Notification.findOne({
+      senderId: req.user?._id,
+      recipientId,
+      annualTargetId,
+      quarter,
+      type: 'assessment'
+    });
+
+    if (existingNotification) {
+      await Notification.deleteOne({ _id: existingNotification._id });
+    }
+    socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
+
+    return res.status(200).json({ message: 'Notification deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    return res.status(500).json({ error: 'Failed to delete notification' });
   }
 });
 
