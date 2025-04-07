@@ -1,6 +1,6 @@
 export enum SocketEvent {
-  PERFORMANCE_AGREEMENT_UPDATE = 'performance_agreement_update',
-  ASSESSMENT_UPDATE = 'assessment_update',
+  AGREEMENT_UPDATE = 'performance_agreement',
+  ASSESSMENT_UPDATE = 'performance_assessment',
   NOTIFICATION = 'notification'
 }
 

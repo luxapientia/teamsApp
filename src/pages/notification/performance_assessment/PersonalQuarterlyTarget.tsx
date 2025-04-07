@@ -163,7 +163,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           onBack?.();
         }
       } catch (error) {
-        console.error('Error approving notification:', error);
+        console.error('Error send back notification:', error);
       }
     }
   };
