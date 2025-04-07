@@ -13,7 +13,7 @@ enum ViewStatus {
   TEAM_ADDING = 'TEAM_ADDING',
   MEMBER_LIST = 'MEMBER_LIST',
   MEMBER_ADDING = 'MEMBER_ADDING',
-};
+}
 
 const tenantId = '987eaa8d-6b2d-4a86-9b2e-8af581ec8056';
 

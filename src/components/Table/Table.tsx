@@ -82,8 +82,8 @@ export function Table<T extends Record<string, any>>({ columns, data, onEdit, on
     if (!column) return data;
 
     return [...data].sort((a, b) => {
-      let aValue = column.sortValue ? column.sortValue(a) : a[sortConfig.key as keyof T];
-      let bValue = column.sortValue ? column.sortValue(b) : b[sortConfig.key as keyof T];
+      const aValue = column.sortValue ? column.sortValue(a) : a[sortConfig.key as keyof T];
+      const bValue = column.sortValue ? column.sortValue(b) : b[sortConfig.key as keyof T];
       
       const result = compareValues(aValue, bValue);
       return sortConfig.direction === 'asc' ? result : -result;
