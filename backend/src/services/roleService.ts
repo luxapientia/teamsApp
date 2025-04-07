@@ -1,8 +1,8 @@
-import { UserRole, dUser } from '../types/role';
+import { UserRole, dUser } from '../types/user';
 import User from '../models/User';
 import { ApiError } from '../utils/apiError';
 import { SuperUserModel } from '../models/superUser';
-
+import { ObjectId } from 'mongodb';
 
 export class RoleService {
   async createUser(
@@ -10,7 +10,8 @@ export class RoleService {
     name: string,
     email: string,
     role: UserRole,
-    tenantId?: string
+    tenantId?: string,
+    teamId?: string
   ): Promise<dUser> {
     // Validate role
     if (!Object.values(UserRole).includes(role)) {

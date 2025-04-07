@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { UserRole } from '../types/role';
+import { UserRole } from '../types/user';
 import { UserProfile } from '../types';
 import { ApiError } from '../utils/apiError';
 // Extend UserProfile to include role

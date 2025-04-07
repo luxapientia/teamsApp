@@ -3,7 +3,7 @@ import { authService } from '../services/authService';
 import { authenticateToken } from '../middleware/auth';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { roleService } from '../services/roleService';
-import { UserRole } from '../types/role';
+import { UserRole } from '../types/user';
 
 const router = express.Router();
 

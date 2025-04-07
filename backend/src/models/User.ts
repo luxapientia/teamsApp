@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { UserRole, dUser } from '../types/role';
+import { UserRole, dUser } from '../types/user';
 
 const userSchema = new mongoose.Schema<dUser>({
   MicrosoftId: {
