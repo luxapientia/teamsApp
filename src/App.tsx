@@ -39,30 +39,30 @@ const App: React.FC = () => {
   return (
     <Provider store={store}>
       <AuthProvider>
-        <SocketProvider>
-          <ToastProvider>
-            <Suspense fallback={<LoadingComponent />}>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/consent" element={<ConsentPage />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
-                <Route path="/auth-end" element={<AuthCallback />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/unauthorized" element={<Unauthorized />} />
-                
-                {/* Protected routes - Main component remains non-lazy */}
-                <Route 
-                  path="/" 
-                  element={
-                    <ProtectedRoute>
+        <ToastProvider>
+          <Suspense fallback={<LoadingComponent />}>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/consent" element={<ConsentPage />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/auth-end" element={<AuthCallback />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
+
+              {/* Protected routes - Main component remains non-lazy */}
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <SocketProvider>
                       <Main />
-                    </ProtectedRoute>
-                  } 
-                />
-              </Routes>
-            </Suspense>
-          </ToastProvider>
-        </SocketProvider>
+                    </SocketProvider>
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Suspense>
+        </ToastProvider>
       </AuthProvider>
     </Provider>
   );
