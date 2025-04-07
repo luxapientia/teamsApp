@@ -197,7 +197,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }));
 
     try {
-      await api.post('/notifications/quarterly-target/submit', {
+      await api.post('/notifications/agreement/submit', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarter: quarter
