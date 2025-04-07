@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth';
-import { Team } from '../models/Team';
+import Team from '../models/Team';
 import { roleService } from '../services/roleService';
 import mongoose from 'mongoose';
 
