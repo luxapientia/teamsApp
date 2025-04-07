@@ -1,17 +1,34 @@
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <link
-      rel="stylesheet"
-      href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css"
-    />
-    <title>Microsoft Teams Tab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Teams Scorecards Application" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    
+    <!-- Preload critical fonts -->
+    <link rel="preload" href="%PUBLIC_URL%/fonts/SegoeUI-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    
+    <!-- Preload critical CSS -->
+    <link rel="preload" href="%PUBLIC_URL%/critical.css" as="style" />
+    <link rel="stylesheet" href="%PUBLIC_URL%/critical.css" />
+    
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>Teams Scorecards</title>
   </head>
-
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <!-- Deferred non-critical scripts -->
+    <script type="text/javascript">
+      // Defer loading of non-critical resources
+      function loadDeferred() {
+        // Add any deferred script loading here
+      }
+      // Execute after page load
+      window.addEventListener('load', loadDeferred);
+    </script>
   </body>
 </html>
