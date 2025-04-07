@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { recipientId, annualTargetId, quarter } = req.body;
+    const { recipientId, annualTargetId, quarter, personalPerformanceId } = req.body;
     const recipientUser = await User.findById(recipientId);
 
     if (!recipientUser) {
@@ -25,7 +25,8 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
       recipientId,
       annualTargetId,
       quarter,
-      type: 'agreement'
+      type: 'agreement',
+      personalPerformanceId
     });
 
 
@@ -42,7 +43,8 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
         recipientId,
         annualTargetId,
         quarter,
-        isRead: false
+        isRead: false,
+        personalPerformanceId
       });
     }
     socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
@@ -56,7 +58,7 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
 
 router.post('/agreement/recall', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { recipientId, annualTargetId, quarter } = req.body;
+    const { recipientId, annualTargetId, quarter, personalPerformanceId } = req.body;
 
     const recipientUser = await User.findById(recipientId);
 
@@ -69,7 +71,8 @@ router.post('/agreement/recall', authenticateToken, async (req: AuthenticatedReq
       recipientId,
       annualTargetId,
       quarter,
-      type: 'agreement'
+      type: 'agreement',
+      personalPerformanceId
     });
 
     if (existingNotification) {
@@ -86,7 +89,7 @@ router.post('/agreement/recall', authenticateToken, async (req: AuthenticatedReq
 
 router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { recipientId, annualTargetId, quarter } = req.body;
+    const { recipientId, annualTargetId, quarter, personalPerformanceId } = req.body;
 
     const recipientUser = await User.findById(recipientId);
 
@@ -99,7 +102,8 @@ router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRe
       recipientId,
       annualTargetId,
       quarter,
-      type: 'assessment'
+      type: 'assessment',
+      personalPerformanceId
     });
 
     if (existingNotification) {
@@ -114,7 +118,8 @@ router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRe
         recipientId,
         annualTargetId,
         quarter,
-        isRead: false
+        isRead: false,
+        personalPerformanceId
       });
     }
 
@@ -128,7 +133,7 @@ router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRe
 
 router.post('/assessment/recall', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { recipientId, annualTargetId, quarter } = req.body;
+    const { recipientId, annualTargetId, quarter, personalPerformanceId } = req.body;
 
     const recipientUser = await User.findById(recipientId);
 
@@ -141,7 +146,8 @@ router.post('/assessment/recall', authenticateToken, async (req: AuthenticatedRe
       recipientId,
       annualTargetId,
       quarter,
-      type: 'assessment'
+      type: 'assessment',
+      personalPerformanceId
     });
 
     if (existingNotification) {
@@ -229,6 +235,24 @@ router.post('/read/:notificationId', authenticateToken, async (req: Authenticate
   } catch (error) {
     console.error('Error reading notification:', error);
     return res.status(500).json({ error: 'Failed to read notification' });
+  }
+});
+
+router.post('/agreement/approve/:notificationId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { notificationId } = req.params;
+    const notification = await Notification.findById(notificationId);
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+
+
+    return res.status(200).json({ message: 'Notification approved successfully' });
+  } catch (error) {
+    console.error('Error approving notification:', error);
+    return res.status(500).json({ error: 'Failed to approve notification' });
   }
 });
 

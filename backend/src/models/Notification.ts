@@ -5,6 +5,7 @@ export interface NotificationDocument extends Document {
   senderId: string;
   recipientId: string;
   annualTargetId: string;
+  personalPerformanceId: string;
   quarter: string;
   isRead: boolean;
   type: string;
@@ -25,6 +26,11 @@ const notificationSchema = new Schema<NotificationDocument>({
     type: String,
     required: true,
     ref: 'AnnualTarget',
+  },
+  personalPerformanceId: {
+    type: String,
+    required: true,
+    ref: 'PersonalPerformance',
   },
   quarter: {
     type: String,

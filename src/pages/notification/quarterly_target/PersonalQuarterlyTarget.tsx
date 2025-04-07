@@ -30,7 +30,7 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { api } from '../../../services/api';
 import { Notification } from '@/types';
-
+import { fetchNotifications } from '../../../store/slices/notificationSlice';
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
@@ -95,12 +95,32 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     setSelectedRatingScales(kpi.ratingScales);
   };
 
-  const handleApprove = () => {
-
+  const handleApprove = async () => {
+    if (notification) {
+      try {
+        const response = await api.post(`/notifications/agreement/approve/${notification._id}`);
+        if (response.status === 200) {
+          dispatch(fetchNotifications());
+          onBack?.();
+        }
+      } catch (error) {
+        console.error('Error approving notification:', error);
+      }
+    }
   };
 
-  const handleSendBack = () => {
-
+  const handleSendBack = async () => {
+    if (notification) {
+      try {
+        const response = await api.post(`/notifications/agreement/send-back/${notification._id}`);
+        if (response.status === 200) {
+          dispatch(fetchNotifications());
+          onBack?.();
+        }
+      } catch (error) {
+        console.error('Error approving notification:', error);
+      }
+    }
   };
 
   // Add total weight calculation function
