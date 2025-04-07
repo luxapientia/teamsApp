@@ -16,6 +16,8 @@ import Reports from './pages/reports';
 import { fetchNotifications } from './store/slices/notificationSlice';
 import { useAppDispatch } from './hooks/useAppDispatch';
 import { fetchAnnualTargets } from './store/slices/scorecardSlice';
+import { useSocket } from './hooks/useSocket';
+import { SocketEvent } from './types/socket';
 const iconSize = 24;
 
 function Main() {
@@ -27,10 +29,26 @@ function Main() {
     setSelectedTab(tab);
   }
 
+  // Add socket subscription
+  const { subscribe, unsubscribe } = useSocket(SocketEvent.NOTIFICATION, (data) => {
+    dispatch(fetchNotifications());
+  });
+
   useEffect(() => {
     dispatch(fetchNotifications());
     dispatch(fetchAnnualTargets());
-  }, []);
+
+    // Subscribe to notification events
+    subscribe(SocketEvent.NOTIFICATION, (data) => {
+      console.log(data, '----------');
+      dispatch(fetchNotifications());
+    });
+
+    // Cleanup subscription
+    return () => {
+      unsubscribe(SocketEvent.NOTIFICATION);
+    };
+  }, [dispatch, subscribe, unsubscribe]);
 
   return (
     <Provider store={store}>
