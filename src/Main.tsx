@@ -51,61 +51,59 @@ function Main() {
   }, [dispatch, subscribe, unsubscribe]);
 
   return (
-    <Provider store={store}>
-      <Layout selectedTabChanger={selectedTabChanger}>
-        {/* <AdminPanel /> */}
-        {isAppOwner && (
-          <ManagePage
-            title="Manage Companies"
-            icon={<GridRegular fontSize={iconSize} />}
-            tabs={['Companies', 'Companies Super Users', 'Companies Licenses']}
-            selectedTab={selectedTab}
-          />
-        )}
-        <Reports
-          title='Reports'
-          icon={<DocumentText24Regular fontSize={iconSize} />}
-          tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
+    <Layout selectedTabChanger={selectedTabChanger}>
+      {/* <AdminPanel /> */}
+      {isAppOwner && (
+        <ManagePage
+          title="Manage Companies"
+          icon={<GridRegular fontSize={iconSize} />}
+          tabs={['Companies', 'Companies Super Users', 'Companies Licenses']}
           selectedTab={selectedTab}
         />
-        <MyPerformanceAssessment
-          title='My Performance Assessment'
-          icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-          tabs={['My Assessments', 'Team Performances']}
-          selectedTab={selectedTab}
-        />
-        <MyPerformanceAgreement
-          title='My Performance Agreement'
-          icon={<Handshake24Regular fontSize={iconSize} />}
-          tabs={['My Quarterly Targets']}
-          selectedTab={selectedTab}
-        />
-        <OrganizationPerformance
-          title='Organization Performance'
-          icon={<DataTrending24Regular fontSize={iconSize} />}
-          tabs={['Performance Evaluations', 'Organization Performance']}
-          selectedTab={selectedTab}
-        />
-        <AnnualCorporateScorecard
-          title="Annual Corporate Scorecard"
-          icon={<Globe24Regular fontSize={iconSize} />}
-          tabs={['Quarterly Targets', 'Annual Targets']}
-          selectedTab={selectedTab}
-        />
-        <Teams
-          title='Teams'
-          icon={<PeopleTeam24Regular fontSize={iconSize} />}
-          tabs={['Teams']}
-          selectedTab={selectedTab}
-        />
-        <NotificationPage
-          title='Notifications'
-          icon={<Alert24Regular fontSize={iconSize} />}
-          tabs={['Quarterly Targets', 'Performance Assessments']}
-          selectedTab={selectedTab}
-        />
-      </Layout>
-    </Provider>
+      )}
+      <Reports
+        title='Reports'
+        icon={<DocumentText24Regular fontSize={iconSize} />}
+        tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
+        selectedTab={selectedTab}
+      />
+      <MyPerformanceAssessment
+        title='My Performance Assessment'
+        icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
+        tabs={['My Assessments', 'Team Performances']}
+        selectedTab={selectedTab}
+      />
+      <MyPerformanceAgreement
+        title='My Performance Agreement'
+        icon={<Handshake24Regular fontSize={iconSize} />}
+        tabs={['My Quarterly Targets']}
+        selectedTab={selectedTab}
+      />
+      <OrganizationPerformance
+        title='Organization Performance'
+        icon={<DataTrending24Regular fontSize={iconSize} />}
+        tabs={['Performance Evaluations', 'Organization Performance']}
+        selectedTab={selectedTab}
+      />
+      <AnnualCorporateScorecard
+        title="Annual Corporate Scorecard"
+        icon={<Globe24Regular fontSize={iconSize} />}
+        tabs={['Quarterly Targets', 'Annual Targets']}
+        selectedTab={selectedTab}
+      />
+      <Teams
+        title='Teams'
+        icon={<PeopleTeam24Regular fontSize={iconSize} />}
+        tabs={['Teams']}
+        selectedTab={selectedTab}
+      />
+      <NotificationPage
+        title='Notifications'
+        icon={<Alert24Regular fontSize={iconSize} />}
+        tabs={['Quarterly Targets', 'Performance Assessments']}
+        selectedTab={selectedTab}
+      />
+    </Layout>
   );
 }
 
