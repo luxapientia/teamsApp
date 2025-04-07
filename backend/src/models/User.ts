@@ -26,6 +26,11 @@ const userSchema = new mongoose.Schema<dUser>({
   tenantId: {
     type: String,
     required: false,
+  },
+  teamId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Team',
+    required: false,
   }
 });
 

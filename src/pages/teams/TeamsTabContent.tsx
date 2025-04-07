@@ -6,6 +6,7 @@ import { RootState } from '../../store';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import * as microsoftTeams from "@microsoft/teams-js";
+import { api } from '@/services/api';
 
 enum ViewStatus {
   TEAM_LIST = 'TEAM_LIST',
@@ -58,6 +59,9 @@ const TeamsTabContent: React.FC = () => {
       const people = await microsoftTeams.people.selectPeople(config);
       console.log('Selected people:', people);
       // Handle selected people here
+      await api.post(`/teams/${selectedTeamId}/members`, {
+        userIds: people.map((person: any) => person.objectId)
+      });
     } catch (error) {
       console.error('Error selecting people:', error);
     }
