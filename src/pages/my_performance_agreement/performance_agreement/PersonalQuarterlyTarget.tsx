@@ -200,7 +200,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       await api.post('/notifications/agreement/submit', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter
+        quarter: quarter,
+        personalPerformanceId: personalPerformance?._id || ''
       });
     } catch (error) {
       console.error('Error submitting quarterly target:', error);
@@ -233,7 +234,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       await api.post('/notifications/agreement/recall', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter
+        quarter: quarter,
+        personalPerformanceId: personalPerformance?._id || ''
       });
     } catch (error) {
       console.error('Error recalling quarterly target:', error);

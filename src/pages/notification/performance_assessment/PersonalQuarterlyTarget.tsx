@@ -27,6 +27,7 @@ import { updatePersonalPerformance } from '../../../store/slices/personalPerform
 import { RootState } from '../../../store';
 import { api } from '../../../services/api';
 import EvidenceModal from './EvidenceModal';
+import { fetchNotifications } from '../../../store/slices/notificationSlice';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -139,12 +140,32 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }, 0);
   };
 
-  const handleApprove = () => {
-
+  const handleApprove = async () => {
+    if (notification) {
+      try {
+        const response = await api.post(`/notifications/approve/${notification._id}`);
+        if (response.status === 200) {
+          dispatch(fetchNotifications());
+          onBack?.();
+        }
+      } catch (error) {
+        console.error('Error approving notification:', error);
+      }
+    }
   };
 
-  const handleSendBack = () => {
-
+  const handleSendBack = async () => {
+    if (notification) {
+      try {
+        const response = await api.post(`/notifications/send-back/${notification._id}`);
+        if (response.status === 200) {
+          dispatch(fetchNotifications());
+          onBack?.();
+        }
+      } catch (error) {
+        console.error('Error approving notification:', error);
+      }
+    }
   };
 
   return (
