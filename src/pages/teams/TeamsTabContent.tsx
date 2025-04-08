@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField } from '@mui/material';
+import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { createTeam, deleteTeam, fetchTeams } from '../../store/slices/teamsSlice';
 import { RootState } from '../../store';
@@ -9,6 +9,7 @@ import * as microsoftTeams from "@microsoft/teams-js";
 import { api } from '../../services/api';
 import PeoplePickerModal, { Person } from '../../components/PeoplePickerModal';
 import { useAuth } from '../../contexts/AuthContext';
+import { StyledHeaderCell, StyledTableCell, ViewButton } from '../../components/StyledTableComponents';
 
 enum ViewStatus {
   TEAM_LIST = 'TEAM_LIST',
@@ -28,6 +29,7 @@ const TeamsTabContent: React.FC = () => {
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
   const [isTeams, setIsTeams] = useState<boolean>(false);
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleViewClick = (teamId: string) => {
@@ -52,14 +54,28 @@ const TeamsTabContent: React.FC = () => {
     setIsPickerOpen(true);
   };
 
+  const fetchTeamMembers = async () => {
+    if (selectedTeamId) {
+      try {
+        const response = await api.get(`/users/team/${selectedTeamId}`);
+        setTeamMembers(response.data.data);
+        console.log('teamMembers', teamMembers);
+      } catch (error) {
+        console.error('Error fetching team members:', error);
+      }
+    }
+  };
+
   const handlePeopleSelected = async (people: Person[]) => {
     console.log('Selected people:', people);
+    console.log('Selected team ID:', selectedTeamId);
     try {
       await api.post(`/teams/${selectedTeamId}/members`, {
         userIds: people.map(person => person.MicrosoftId)
       });
       // Refresh the teams list after adding members
       dispatch(fetchTeams(tenantId));
+      fetchTeamMembers();
     } catch (error) {
       console.error('Error adding team members:', error);
     }
@@ -104,22 +120,10 @@ const TeamsTabContent: React.FC = () => {
       });
   };
 
-  const selectedTeam = teams.find(team => team._id === selectedTeamId);
-  const teamMembers = selectedTeam?.members || [];
-
   useEffect(() => {
     dispatch(fetchTeams(tenantId));
-    
-    // if (microsoftTeams.app) {
-    //   setIsTeams(true);
-    //   microsoftTeams.app.initialize().then(() => {
-    //     console.log("Teams SDK initialized");
-    //     setIsInitialized(true);
-    //   }).catch((error) => {
-    //     console.error("Teams SDK initialization failed", error);
-    //   });
-    // }
-  }, []);
+    fetchTeamMembers();
+  }, [selectedTeamId]);
 
   if (isTeams && !isInitialized) {
     return <Box>Loading...</Box>;
@@ -160,6 +164,7 @@ const TeamsTabContent: React.FC = () => {
               borderColor: '#D1D5DB',
               backgroundColor: '#F9FAFB',
             },
+            mb: 2
           }}
         >
           Add Team
@@ -179,98 +184,105 @@ const TeamsTabContent: React.FC = () => {
               borderColor: '#D1D5DB',
               backgroundColor: '#F9FAFB',
             },
+            mb: 2
           }}
         >
           Add Member
         </Button>
       }
 
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 1, border: '1px solid #E5E7EB' }}>
         <Table>
           <TableHead>
-            {status.includes('TEAM') ? (
+            {status === ViewStatus.TEAM_LIST || status === ViewStatus.TEAM_ADDING ? (
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <StyledHeaderCell>Name</StyledHeaderCell>
+                <StyledHeaderCell align="center">Actions</StyledHeaderCell>
               </TableRow>
             ) : (
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Title</TableCell>
-                <TableCell>Location</TableCell>
-                <TableCell>Role</TableCell>
+                <StyledHeaderCell>Name</StyledHeaderCell>
+                <StyledHeaderCell>Title</StyledHeaderCell>
+                <StyledHeaderCell>Location</StyledHeaderCell>
+                <StyledHeaderCell>Role</StyledHeaderCell>
               </TableRow>
             )}
           </TableHead>
           <TableBody>
             {status === ViewStatus.TEAM_ADDING && (
               <TableRow>
-                <TableCell>
-                  <TextField
-                    inputRef={inputRef}
-                    value={newTeamName}
-                    onChange={handleNewTeamNameChange}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Enter team name"
-                    fullWidth
-                    variant="standard"
-                  />
-                </TableCell>
-                <TableCell align="center">
-                  <Button
-                    variant="contained"
-                    onClick={handleAddNewTeam}
-                    sx={{
-                      fontSize: '0.75rem',
-                      padding: '4px 12px',
-                      minWidth: 'auto',
-                    }}>
-                    Add
-                  </Button>
-                </TableCell>
+                <StyledTableCell colSpan={2}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <TextField
+                      inputRef={inputRef}
+                      value={newTeamName}
+                      onChange={handleNewTeamNameChange}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Enter team name"
+                      fullWidth
+                      variant="standard"
+                      sx={{ mr: 2 }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleAddNewTeam}
+                      sx={{
+                        fontSize: '0.75rem',
+                        padding: '4px 12px',
+                        minWidth: 'auto',
+                        backgroundColor: '#0078D4',
+                        '&:hover': {
+                          backgroundColor: '#106EBE',
+                        },
+                      }}>
+                      Add
+                    </Button>
+                  </Box>
+                </StyledTableCell>
               </TableRow>
             )}
 
-            {status.includes('TEAM') && teams.map(team => (
-              <TableRow key={team._id}>
-                <TableCell>{team.name}</TableCell>
-                <TableCell align="center">
-                  <Button
-                    variant="outlined"
-                    onClick={() => handleViewClick(team._id)}
-                    sx={{
-                      fontSize: '0.75rem',
-                      padding: '4px 8px',
-                      minWidth: 'auto',
-                    }}
-                  >
-                    View
-                  </Button>
-                  {(!team.members || team.members.length === 0) && (
+            {(status === ViewStatus.TEAM_LIST || status === ViewStatus.TEAM_ADDING) && teams.map(team => (
+              <TableRow key={team._id} hover>
+                <StyledTableCell>{team.name}</StyledTableCell>
+                <StyledTableCell align="center">
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                     <Button
                       variant="outlined"
-                      color="error"
-                      onClick={() => handleDeleteTeam(team._id)}
+                      onClick={() => handleViewClick(team._id)}
                       sx={{
                         fontSize: '0.75rem',
                         padding: '4px 8px',
                         minWidth: 'auto',
-                        marginLeft: '8px',
                       }}
                     >
-                      Delete
+                      View
                     </Button>
-                  )}
-                </TableCell>
+                    {(!team.members || team.members.length === 0) && (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleDeleteTeam(team._id)}
+                        sx={{
+                          fontSize: '0.75rem',
+                          padding: '4px 8px',
+                          minWidth: 'auto',
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </Box>
+                </StyledTableCell>
               </TableRow>
             ))}
 
-            {status === ViewStatus.MEMBER_LIST && teamMembers.map(member => (
-              <TableRow key={member.name}>
-                <TableCell>{member.name}</TableCell>
-                <TableCell>{member.title}</TableCell>
-                <TableCell>{member.location}</TableCell>
-                <TableCell>{member.role}</TableCell>
+            {status === ViewStatus.MEMBER_LIST && teamMembers.map((member, index) => (
+              <TableRow key={index} hover>
+                <StyledTableCell>{member.name}</StyledTableCell>
+                <StyledTableCell>{member.title}</StyledTableCell>
+                <StyledTableCell>{member.location}</StyledTableCell>
+                <StyledTableCell>{member.role}</StyledTableCell>
               </TableRow>
             ))}
           </TableBody>
