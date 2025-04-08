@@ -26,6 +26,36 @@ router.get('/', authenticateToken, async (_req: Request, res: Response) => {
 // Create company
 router.post('/', authenticateToken, async (req: Request, res: Response) => {
   try {
+    // Validate tenant ID format
+    const tenantId = req.body.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({ 
+        data: null,
+        status: 400,
+        message: 'Tenant ID is required'
+      } as ApiResponse<null>);
+    }
+
+    // UUID validation regex
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(tenantId)) {
+      return res.status(400).json({ 
+        data: null,
+        status: 400,
+        message: 'Tenant ID must be a valid UUID format'
+      } as ApiResponse<null>);
+    }
+
+    // Check if the tenant ID is already in use
+    const isTenantIdUnique = await companyService.isTenantIdUnique(tenantId);
+    if (!isTenantIdUnique) {
+      return res.status(400).json({ 
+        data: null,
+        status: 400,
+        message: 'Tenant ID is already in use by another company'
+      } as ApiResponse<null>);
+    }
+
     const companyData = {
       ...req.body,
       createdOn: new Date().toISOString()
@@ -42,11 +72,20 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
     
     // Handle duplicate key error
     if (error.code === 11000) {
-      return res.status(400).json({ 
-        data: null,
-        status: 400,
-        message: 'Company name already exists'
-      } as ApiResponse<null>);
+      // Check if error is on tenantId or name
+      if (error.keyPattern?.tenantId) {
+        return res.status(400).json({ 
+          data: null,
+          status: 400,
+          message: 'Tenant ID already exists'
+        } as ApiResponse<null>);
+      } else {
+        return res.status(400).json({ 
+          data: null,
+          status: 400,
+          message: 'Company name already exists'
+        } as ApiResponse<null>);
+      }
     }
 
     return res.status(500).json({ 
@@ -61,16 +100,45 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const company = await companyService.update(id, req.body);
     
-    if (!company) {
+    // Check if company exists
+    const existingCompany = await companyService.getById(id);
+    if (!existingCompany) {
       return res.status(404).json({ 
         data: null,
         status: 404,
         message: 'Company not found'
       } as ApiResponse<null>);
     }
-
+    
+    // Validate tenant ID format if it's being updated
+    if (req.body.tenantId) {
+      const tenantId = req.body.tenantId;
+      // UUID validation regex
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(tenantId)) {
+        return res.status(400).json({ 
+          data: null,
+          status: 400,
+          message: 'Tenant ID must be a valid UUID format'
+        } as ApiResponse<null>);
+      }
+      
+      // Check if the tenant ID is already in use by another company
+      if (tenantId !== existingCompany.tenantId) {
+        const isTenantIdUnique = await companyService.isTenantIdUnique(tenantId, id);
+        if (!isTenantIdUnique) {
+          return res.status(400).json({ 
+            data: null,
+            status: 400,
+            message: 'Tenant ID is already in use by another company'
+          } as ApiResponse<null>);
+        }
+      }
+    }
+    
+    const company = await companyService.update(id, req.body);
+    
     return res.json({ 
       data: company,
       status: 200,
@@ -81,11 +149,20 @@ router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
     
     // Handle duplicate key error
     if (error.code === 11000) {
-      return res.status(400).json({ 
-        data: null,
-        status: 400,
-        message: 'Company name already exists'
-      } as ApiResponse<null>);
+      // Check if error is on tenantId or name
+      if (error.keyPattern?.tenantId) {
+        return res.status(400).json({ 
+          data: null,
+          status: 400,
+          message: 'Tenant ID already exists'
+        } as ApiResponse<null>);
+      } else {
+        return res.status(400).json({ 
+          data: null,
+          status: 400,
+          message: 'Company name already exists'
+        } as ApiResponse<null>);
+      }
     }
 
     return res.status(500).json({ 

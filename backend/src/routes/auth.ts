@@ -24,40 +24,61 @@ router.post('/callback', async (req: Request, res: Response) => {
     // Handle Teams SSO token
     if (token) {
       console.log('Processing Teams SSO token...');
-      const userProfile = await authService.verifyTeamsToken(token);
-      
-      if (!userProfile) {
-        console.error('Teams token verification failed');
-        return res.status(401).json({ error: 'Invalid Teams token' });
-      } else {
-        const user = await roleService.getUser(userProfile.id);
-        const role = await roleService.getRoleByEmail(userProfile.email);
-        userProfile.role = role || UserRole.USER;
-        if (!user) {
-          await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, role || UserRole.USER, userProfile.tenantId);
+      try {
+        const userProfile = await authService.verifyTeamsToken(token);
+        
+        if (!userProfile) {
+          console.error('Teams token verification failed');
+          return res.status(401).json({ error: 'Invalid Teams token' });
         } else {
-          await roleService.updateUser(
-            userProfile.id,
-            {
-              MicrosoftId: userProfile.id,
-              name: userProfile.displayName,
-              email: userProfile.email,
-              role: role || UserRole.USER,
-              tenantId: userProfile.tenantId
-            }
-          );
+          const user = await roleService.getUser(userProfile.id);
+          const role = await roleService.getRoleByEmail(userProfile.email);
+          userProfile.role = role || UserRole.USER;
+          if (!user) {
+            await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, role || UserRole.USER, userProfile.tenantId);
+          } else {
+            await roleService.updateUser(
+              userProfile.id,
+              {
+                MicrosoftId: userProfile.id,
+                name: userProfile.displayName,
+                email: userProfile.email,
+                role: role || UserRole.USER,
+                tenantId: userProfile.tenantId
+              }
+            );
+          }
         }
-      }
 
-      const appToken = await authService.createAppToken(userProfile);
-      console.log('App token created successfully');
-      
-      const response = { 
-        token: appToken, 
-        user: userProfile 
-      };
-      
-      return res.json(response);
+        const appToken = await authService.createAppToken(userProfile);
+        console.log('App token created successfully');
+        
+        const response = { 
+          token: appToken, 
+          user: userProfile 
+        };
+        
+        return res.json(response);
+      } catch (error: any) {
+        // Check if this is a consent required error
+        if (error.consentRequired && error.tenantId) {
+          // Generate and return a consent URL
+          const consentUrl = await authService.getTeamsConsentUrl(
+            error.tenantId,
+            redirect_uri || `${req.protocol}://${req.get('host')}/api/auth/consent-callback`
+          );
+          
+          return res.status(403).json({
+            error: 'consent_required',
+            consentUrl,
+            message: 'Admin consent is required for this application',
+            tenantId: error.tenantId
+          });
+        }
+        
+        console.error('Teams token verification failed with error:', error);
+        return res.status(401).json({ error: 'Token verification failed' });
+      }
     }
     
     // Handle standard login code
@@ -71,6 +92,7 @@ router.post('/callback', async (req: Request, res: Response) => {
     console.error('No token or code provided in request');
     return res.status(400).json({ error: 'Either code or token is required' });
   } catch (error: any) {
+    console.error('Authentication error:', error.message);
     return res.status(500).json({ error: 'Authentication failed' });
   }
 });
@@ -143,6 +165,28 @@ router.get('/verify', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Token verification error:', error);
     return res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// Add a route to handle admin consent callback
+router.get('/consent-callback', async (req: Request, res: Response) => {
+  try {
+    const { admin_consent, tenant } = req.query;
+    
+    // Check if consent was granted
+    if (admin_consent === 'True') {
+      console.log(`Admin consent granted for tenant ${tenant}`);
+      // You could store this information in your database if needed
+      
+      // Redirect to the app with a success message
+      return res.redirect(`${process.env.FRONTEND_URL}/auth/consent-success?tenant=${tenant}`);
+    } else {
+      console.error(`Admin consent denied for tenant ${tenant}`);
+      return res.redirect(`${process.env.FRONTEND_URL}/auth/consent-error?tenant=${tenant}`);
+    }
+  } catch (error) {
+    console.error('Error in consent callback:', error);
+    return res.status(500).json({ error: 'Failed to process consent callback' });
   }
 });
 

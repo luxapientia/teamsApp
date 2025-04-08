@@ -7,6 +7,22 @@ export class CompanyService {
     return CompanyModel.find().sort({ createdOn: -1 });
   }
 
+  async findByTenantId(tenantId: string): Promise<Company | null> {
+    return CompanyModel.findOne({ tenantId });
+  }
+
+  async isTenantIdUnique(tenantId: string, excludeCompanyId?: string): Promise<boolean> {
+    const query: any = { tenantId };
+    
+    // If updating an existing company, exclude it from the uniqueness check
+    if (excludeCompanyId) {
+      query._id = { $ne: excludeCompanyId };
+    }
+    
+    const existingCompany = await CompanyModel.findOne(query);
+    return !existingCompany;
+  }
+
   async create(data: Omit<Company, '_id' | '__v'>): Promise<Company> {
     const company = await new CompanyModel(data).save();
     // Create blank license for the new company
