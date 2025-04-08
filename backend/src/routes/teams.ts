@@ -113,4 +113,29 @@ router.delete('/:teamId', authenticateToken, async (req: Request, res: Response)
   }
 });
 
+// Remove a member from a team
+router.delete('/:teamId/members/:memberId', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { teamId, memberId } = req.params;
+
+    if (!teamId || !memberId) {
+      return res.status(400).json({ error: 'Team ID and Member ID are required' });
+    }
+
+    const team = await Team.findById(teamId);
+
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    // Remove user from the team
+    await roleService.removeUserFromTeam(teamId, memberId);
+
+    return res.json({ message: 'Member removed successfully' });
+  } catch (error) {
+    console.error('Remove member error:', error);
+    return res.status(500).json({ error: 'Failed to remove member from team' });
+  }
+});
+
 export default router;

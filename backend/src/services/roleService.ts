@@ -120,6 +120,13 @@ export class RoleService {
       );
     }
   }
+
+  async removeUserFromTeam(teamId: string, userId: string): Promise<void> {
+    await User.findOneAndUpdate(
+      { MicrosoftId: userId, teamId: teamId },
+      { $set: { teamId: null } }
+    );
+  }
 }
 
 export const roleService = new RoleService(); 
