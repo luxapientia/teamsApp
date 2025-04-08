@@ -10,7 +10,7 @@ const router = express.Router();
 
 // Get user's role
 router.get(
-  '/user/:microsoftId',
+  '/:microsoftId',
   authenticateToken,
   requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),
   async (req: AuthenticatedRequest, res, next) => {
@@ -94,7 +94,7 @@ router.put(
 
 // Get all users with specific role
 router.get(
-  '/users/:role',
+  '/:role',
   authenticateToken,
   requireRole([UserRole.APP_OWNER]),
   async (req: AuthenticatedRequest, res, next) => {
@@ -119,9 +119,9 @@ router.get(
 
 // Get all users with specific tenantId
 router.get(
-  '/users/tenant/:tenantId',
+  '/tenant/:tenantId',
   authenticateToken,
-  requireRole([UserRole.APP_OWNER]),  
+  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),  
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { tenantId } = req.params;
