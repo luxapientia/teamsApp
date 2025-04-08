@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField, IconButton, Tooltip, Chip, ClickAwayListener } from '@mui/material';
+import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField, IconButton, Tooltip, Chip, ClickAwayListener, useTheme, useMediaQuery } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
@@ -30,6 +30,8 @@ const TeamsTabContent: React.FC = () => {
   const [newTeamName, setNewTeamName] = useState<string>('');
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
   // Check if user has admin/super user privileges
   const canManageTeams = user?.role === 'AppOwner' || user?.role === 'SuperUser';
@@ -160,13 +162,22 @@ const TeamsTabContent: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ height: '48px', mb: 2 }}>
+      {/* Action Buttons Section - Made responsive */}
+      <Box sx={{ 
+        mb: 2,
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: 2,
+        '& .MuiButton-root': {
+          width: { xs: '100%', sm: 'auto' }
+        }
+      }}>
         {(status !== ViewStatus.TEAM_LIST && status !== ViewStatus.TEAM_ADDING) && (
           <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            height: '100%'
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 2,
+            width: '100%'
           }}>
             {status === ViewStatus.MEMBER_LIST && canManageTeams && (
               <Button
@@ -176,9 +187,6 @@ const TeamsTabContent: React.FC = () => {
                 sx={{
                   textTransform: 'none',
                   backgroundColor: '#0078D4',
-                  color: 'white',
-                  borderRadius: '4px',
-                  padding: '6px 16px',
                   '&:hover': {
                     backgroundColor: '#106EBE',
                   }
@@ -197,8 +205,7 @@ const TeamsTabContent: React.FC = () => {
                 '&:hover': {
                   borderColor: '#B91C1C',
                   backgroundColor: 'rgba(220, 38, 38, 0.04)',
-                },
-                marginLeft: status === ViewStatus.MEMBER_LIST ? 0 : 'auto'
+                }
               }}
             >
               Back
@@ -214,9 +221,6 @@ const TeamsTabContent: React.FC = () => {
             sx={{
               textTransform: 'none',
               backgroundColor: '#0078D4',
-              color: 'white',
-              borderRadius: '4px',
-              padding: '6px 16px',
               '&:hover': {
                 backgroundColor: '#106EBE',
               }
@@ -227,20 +231,43 @@ const TeamsTabContent: React.FC = () => {
         )}
       </Box>
 
-      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 1, border: '1px solid #E5E7EB' }}>
+      {/* Table Section - Made responsive */}
+      <TableContainer 
+        component={Paper} 
+        variant="outlined" 
+        sx={{ 
+          borderRadius: 1, 
+          border: '1px solid #E5E7EB',
+          overflowX: 'auto',
+          '& .MuiTable-root': {
+            minWidth: {
+              xs: status === ViewStatus.MEMBER_LIST ? '800px' : '500px',
+              sm: '100%'
+            }
+          },
+          '& .MuiTableCell-root': {
+            px: { xs: 1, sm: 2 },
+            py: 1.5,
+            whiteSpace: 'nowrap'
+          },
+          '& .MuiTableCell-head': {
+            backgroundColor: '#F9FAFB',
+          }
+        }}
+      >
         <Table>
           <TableHead>
             {status === ViewStatus.TEAM_LIST || status === ViewStatus.TEAM_ADDING ? (
               <TableRow>
-                <StyledHeaderCell>Name</StyledHeaderCell>
-                <StyledHeaderCell align="center">Actions</StyledHeaderCell>
+                <StyledHeaderCell width={isMobile ? "60%" : "70%"}>Name</StyledHeaderCell>
+                <StyledHeaderCell width={isMobile ? "40%" : "30%"} align="center">Actions</StyledHeaderCell>
               </TableRow>
             ) : (
               <TableRow>
-                <StyledHeaderCell>Name</StyledHeaderCell>
-                <StyledHeaderCell>Email</StyledHeaderCell>
-                <StyledHeaderCell>Role</StyledHeaderCell>
-                {canManageTeams && <StyledHeaderCell align="center">Actions</StyledHeaderCell>}
+                <StyledHeaderCell width={isMobile ? "25%" : "30%"}>Name</StyledHeaderCell>
+                <StyledHeaderCell width={isMobile ? "35%" : "35%"}>Email</StyledHeaderCell>
+                <StyledHeaderCell width={isMobile ? "25%" : "20%"}>Role</StyledHeaderCell>
+                {canManageTeams && <StyledHeaderCell width={isMobile ? "15%" : "15%"} align="center">Actions</StyledHeaderCell>}
               </TableRow>
             )}
           </TableHead>

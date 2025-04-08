@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactElement } from 'react';
-import { Box } from '@mui/material';
+import { Box, useTheme, useMediaQuery } from '@mui/material';
 import Sidebar from './Sidebar';
 import Content from './Content';
 import { PageProps } from '../types';
@@ -19,24 +19,30 @@ interface PageElement extends ReactElement {
 }
 
 const Layout: React.FC<LayoutProps> = (props) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
+  const [activePageTitle, setActivePageTitle] = useState('');
+
   const pages = React.Children.toArray(props.children) as PageElement[];
-  const pagePropsList: PageProps[] = pages.map((page) => {
-    return {
-      title: page.props.title,
-      icon: page.props.icon || null,
-      tabs: page.props.tabs,
-      selectedTab: page.props.selectedTab || page.props.tabs[0] || ''
-    }
-  });
+  const pagePropsList: PageProps[] = pages.map((page) => ({
+    title: page.props.title,
+    icon: page.props.icon || null,
+    tabs: page.props.tabs,
+    selectedTab: page.props.selectedTab || page.props.tabs[0] || ''
+  }));
 
   useEffect(() => {
     if (pagePropsList.length > 0 && pagePropsList[0].tabs.length > 0) {
       props.selectedTabChanger(pagePropsList[0].tabs[0]);
     }
+    setActivePageTitle(pagePropsList[0]?.title || '');
   }, []);
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activePageTitle, setActivePageTitle] = useState(pagePropsList[0]?.title || '');
+  // Handle sidebar state on screen resize
+  useEffect(() => {
+    setIsSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   const handlePageChange = (title: string) => {
     setActivePageTitle(title);
@@ -53,18 +59,28 @@ const Layout: React.FC<LayoutProps> = (props) => {
   const renderContent = () => {
     if (pagePropsList.length === 0) {
       return (
-        <div className="flex items-center justify-center h-screen">
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: '100%' 
+        }}>
           <p className="text-gray-500">No content available</p>
-        </div>
+        </Box>
       );
     }
 
     const activePage = pages.find((page) => page.props.title === activePageTitle);
     if (!activePage) {
       return (
-        <div className="flex items-center justify-center h-screen">
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: '100%' 
+        }}>
           <p className="text-gray-500">Page not found</p>
-        </div>
+        </Box>
       );
     }
 
@@ -82,7 +98,12 @@ const Layout: React.FC<LayoutProps> = (props) => {
   };
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ 
+      display: 'flex',
+      height: '100vh',
+      overflow: 'hidden',
+      bgcolor: '#F9FAFB'
+    }}>
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={toggleSidebar}
@@ -90,13 +111,26 @@ const Layout: React.FC<LayoutProps> = (props) => {
         onPageChange={handlePageChange}
         pagePropsList={pagePropsList}
       />
-      <main 
-        className={`flex-1 transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? 'ml-80' : 'ml-16'
-        }`}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          transition: theme.transitions.create('margin', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
+          marginLeft: isSidebarOpen ? '310px' : '64px',
+          height: '100vh',
+          overflow: 'auto',
+          position: 'relative',
+          '@media (max-width: 600px)': {
+            marginLeft: isSidebarOpen ? '0' : '64px',
+            width: '100%',
+          },
+        }}
       >
         {renderContent()}
-      </main>
+      </Box>
     </Box>
   );
 };

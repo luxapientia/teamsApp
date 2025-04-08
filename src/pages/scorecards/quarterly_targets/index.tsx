@@ -17,6 +17,7 @@ import {
   Paper,
   Stack,
   IconButton,
+  TableContainer,
 } from '@mui/material';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -113,12 +114,12 @@ const QuarterlyTargetTable: React.FC = () => {
 
   const getQuarterlyObjectives = () => {
     if (!selectedAnnualTarget || !selectedQuarter) return [];
-    
+
     const quarterData = selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets
       .find(q => q.quarter === selectedQuarter);
 
     if (!quarterData?.objectives) return [];
-    
+
     return [...quarterData.objectives].sort((a, b) => a.perspectiveId - b.perspectiveId);
   };
 
@@ -164,8 +165,20 @@ const QuarterlyTargetTable: React.FC = () => {
 
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <StyledFormControl fullWidth>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        gap: { xs: 2, sm: 2 },
+        mb: 3,
+        '& .MuiFormControl-root': {
+          minWidth: { xs: '100%', sm: 200 }
+        }
+      }}>
+        <StyledFormControl 
+          sx={{ 
+            flex: { xs: 1, sm: 2 }
+          }}
+        >
           <InputLabel>Annual Corporate Scorecard</InputLabel>
           <Select
             value={selectedAnnualTargetId}
@@ -180,7 +193,11 @@ const QuarterlyTargetTable: React.FC = () => {
           </Select>
         </StyledFormControl>
 
-        <StyledFormControl sx={{ minWidth: 200 }}>
+        <StyledFormControl 
+          sx={{ 
+            flex: { xs: 1, sm: 1 }
+          }}
+        >
           <InputLabel>Quarter</InputLabel>
           <Select
             value={selectedQuarter}
@@ -199,6 +216,11 @@ const QuarterlyTargetTable: React.FC = () => {
           variant="contained"
           disabled={!selectedAnnualTargetId || !selectedQuarter}
           onClick={handleView}
+          sx={{
+            height: { xs: '40px', sm: '56px' },
+            alignSelf: { xs: 'stretch', sm: 'flex-start' },
+            whiteSpace: 'nowrap'
+          }}
         >
           View
         </ViewButton>
@@ -211,6 +233,7 @@ const QuarterlyTargetTable: React.FC = () => {
           </Typography>
 
           <Box sx={{ mb: 4 }}>
+            <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
@@ -227,157 +250,158 @@ const QuarterlyTargetTable: React.FC = () => {
                   <StyledTableCell>{selectedAnnualTarget.endDate}</StyledTableCell>
                   <StyledTableCell>{selectedAnnualTarget.status}</StyledTableCell>
                 </TableRow>
-              </TableBody>
-            </Table>
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Box>
 
-          <Box 
-            sx={{ 
-              display: 'flex', 
+          <Box
+            sx={{
+              display: 'flex',
               justifyContent: 'flex-end',
               alignItems: 'center',
               gap: 1,
               mb: 2
             }}
           >
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 color: '#6B7280',
-                fontWeight: 500 
+                fontWeight: 500
               }}
             >
               Total Weight:
             </Typography>
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 color: calculateTotalWeight(getQuarterlyObjectives()) === 100 ? '#059669' : '#DC2626',
-                fontWeight: 600 
+                fontWeight: 600
               }}
             >
               {calculateTotalWeight(getQuarterlyObjectives())}%
             </Typography>
           </Box>
 
-          <Stack spacing={2}>
-            <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+          <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+            <TableContainer>
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <StyledHeaderCell>Perspective</StyledHeaderCell>
-                    <StyledHeaderCell>Strategic Objective</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Weight %</StyledHeaderCell>
-                    <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Target</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Actions</StyledHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {(() => {
-                    // Group objectives by perspectiveId
-                    const groupedObjectives = getQuarterlyObjectives().reduce((acc, objective) => {
-                      const perspectiveId = objective.perspectiveId;
-                      if (!acc[perspectiveId]) {
-                        acc[perspectiveId] = [];
-                      }
-                      acc[perspectiveId].push(objective);
-                      return acc;
-                    }, {} as Record<number, QuarterlyTargetObjective[]>);
+                  <StyledHeaderCell>Perspective</StyledHeaderCell>
+                  <StyledHeaderCell>Strategic Objective</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Weight %</StyledHeaderCell>
+                  <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Target</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Actions</StyledHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {(() => {
+                  // Group objectives by perspectiveId
+                  const groupedObjectives = getQuarterlyObjectives().reduce((acc, objective) => {
+                    const perspectiveId = objective.perspectiveId;
+                    if (!acc[perspectiveId]) {
+                      acc[perspectiveId] = [];
+                    }
+                    acc[perspectiveId].push(objective);
+                    return acc;
+                  }, {} as Record<number, QuarterlyTargetObjective[]>);
 
-                    // Render grouped objectives
-                    return Object.entries(groupedObjectives).map(([perspectiveId, objectives]) => {
-                      const totalKPIs = objectives.reduce((total, obj) => total + obj.KPIs.length, 0);
-                      const perspectiveName = selectedAnnualTarget?.content.perspectives.find(p => p.index === Number(perspectiveId))?.name;
+                  // Render grouped objectives
+                  return Object.entries(groupedObjectives).map(([perspectiveId, objectives]) => {
+                    const totalKPIs = objectives.reduce((total, obj) => total + obj.KPIs.length, 0);
+                    const perspectiveName = selectedAnnualTarget?.content.perspectives.find(p => p.index === Number(perspectiveId))?.name;
 
-                      return objectives.map((objective, objIndex) => 
-                        objective.KPIs.map((kpi, kpiIndex) => (
-                          <TableRow key={`${objective.name}-${kpiIndex}`}>
-                            {objIndex === 0 && kpiIndex === 0 && (
-                              <StyledTableCell rowSpan={totalKPIs}>
-                                {perspectiveName}
-                              </StyledTableCell>
-                            )}
-                            {kpiIndex === 0 && (
-                              <StyledTableCell rowSpan={objective.KPIs.length}>
-                                {objective.name}
-                              </StyledTableCell>
-                            )}
-                            <StyledTableCell align="center">{kpi.weight}</StyledTableCell>
-                            <StyledTableCell>{kpi.indicator}</StyledTableCell>
-                            <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
-                            <StyledTableCell align="center">{kpi.target}</StyledTableCell>
-                            <StyledTableCell align="center">
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={() => setSelectedKPIRatingScales(kpi.ratingScales)}
-                                sx={{
-                                  borderColor: '#E5E7EB',
-                                  color: '#374151',
-                                  '&:hover': {
-                                    borderColor: '#D1D5DB',
-                                    backgroundColor: '#F9FAFB',
-                                  },
-                                }}
-                              >
-                                View
-                              </Button>
+                    return objectives.map((objective, objIndex) =>
+                      objective.KPIs.map((kpi, kpiIndex) => (
+                        <TableRow key={`${objective.name}-${kpiIndex}`}>
+                          {objIndex === 0 && kpiIndex === 0 && (
+                            <StyledTableCell rowSpan={totalKPIs}>
+                              {perspectiveName}
                             </StyledTableCell>
-                            {kpiIndex === 0 && (
-                              <StyledTableCell align="center" rowSpan={objective.KPIs.length}>
-                                {selectedAnnualTarget.content.quarterlyTarget.editable && (
-                                  <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                    <IconButton
-                                      size="small"
-                                      sx={{ color: '#6B7280' }}
-                                      onClick={() => handleEdit(objective)}
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                    <IconButton
-                                      size="small"
-                                      sx={{ color: '#6B7280' }}
-                                      onClick={() => handleDelete(objective.name)}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Stack>
-                                )}
-                              </StyledTableCell>
-                            )}
-                          </TableRow>
-                        ))
-                      ).flat();
-                    });
-                  })()}
-                </TableBody>
-              </Table>
-            </Paper>
-            
-            {selectedAnnualTarget.content.quarterlyTarget.editable && (
-              <Button
-                startIcon={<AddIcon />}
-                onClick={() => setIsModalOpen(true)}
-                sx={{
-                  alignSelf: 'flex-start',
-                  p: 2,
-                  border: '1px dashed #E5E7EB',
-                  borderRadius: '8px',
-                  width: '100%',
-                  '&:hover': {
-                    backgroundColor: '#F9FAFB',
-                    borderColor: '#6264A7',
-                    color: '#6264A7',
-                  },
-                }}
-              >
-                Add new
-              </Button>
-            )}
-          </Stack>
+                          )}
+                          {kpiIndex === 0 && (
+                            <StyledTableCell rowSpan={objective.KPIs.length}>
+                              {objective.name}
+                            </StyledTableCell>
+                          )}
+                          <StyledTableCell align="center">{kpi.weight}</StyledTableCell>
+                          <StyledTableCell>{kpi.indicator}</StyledTableCell>
+                          <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
+                          <StyledTableCell align="center">{kpi.target}</StyledTableCell>
+                          <StyledTableCell align="center">
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => setSelectedKPIRatingScales(kpi.ratingScales)}
+                              sx={{
+                                borderColor: '#E5E7EB',
+                                color: '#374151',
+                                '&:hover': {
+                                  borderColor: '#D1D5DB',
+                                  backgroundColor: '#F9FAFB',
+                                },
+                              }}
+                            >
+                              View
+                            </Button>
+                          </StyledTableCell>
+                          {kpiIndex === 0 && (
+                            <StyledTableCell align="center" rowSpan={objective.KPIs.length}>
+                              {selectedAnnualTarget.content.quarterlyTarget.editable && (
+                                <Stack direction="row" spacing={1} justifyContent="flex-end">
+                                  <IconButton
+                                    size="small"
+                                    sx={{ color: '#6B7280' }}
+                                    onClick={() => handleEdit(objective)}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                  <IconButton
+                                    size="small"
+                                    sx={{ color: '#6B7280' }}
+                                    onClick={() => handleDelete(objective.name)}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Stack>
+                              )}
+                            </StyledTableCell>
+                          )}
+                        </TableRow>
+                      ))
+                    ).flat();
+                  });
+                })()}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          </Paper>
+
+          {selectedAnnualTarget.content.quarterlyTarget.editable && (
+            <Button
+              startIcon={<AddIcon />}
+              onClick={() => setIsModalOpen(true)}
+              sx={{
+                alignSelf: 'flex-start',
+                p: 2,
+                border: '1px dashed #E5E7EB',
+                borderRadius: '8px',
+                width: '100%',
+                '&:hover': {
+                  backgroundColor: '#F9FAFB',
+                  borderColor: '#6264A7',
+                  color: '#6264A7',
+                },
+              }}
+            >
+              Add new
+            </Button>
+          )}
 
           <QuarterlyObjectiveModal
             open={isModalOpen}
