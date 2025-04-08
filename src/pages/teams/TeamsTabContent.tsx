@@ -24,7 +24,7 @@ const TeamsTabContent: React.FC = () => {
   const dispatch = useAppDispatch();
   const { teams, teamMembers, loading } = useAppSelector((state: RootState) => state.teams);
   const { user } = useAuth();
-  const tenantId = user?.tenantId || '987eaa8d-6b2d-4a86-9b2e-8af581ec8056';
+  const tenantId = user?.tenantId;
   const [status, setStatus] = useState<ViewStatus>(ViewStatus.TEAM_LIST);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [newTeamName, setNewTeamName] = useState<string>('');
