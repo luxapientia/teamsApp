@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField, IconButton } from '@mui/material';
+import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField, IconButton, Tooltip, Chip } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import { createTeam, deleteTeam, fetchTeams, fetchAllTeamMembers } from '../../store/slices/teamsSlice';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import { createTeam, deleteTeam, fetchTeams, fetchAllTeamMembers, fetchTeamOwner, setTeamOwner } from '../../store/slices/teamsSlice';
 import { RootState } from '../../store';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
@@ -32,11 +33,16 @@ const TeamsTabContent: React.FC = () => {
   
   // Get the members for the currently selected team
   const currentTeamMembers = selectedTeamId ? (teamMembers[selectedTeamId] || []) : [];
+  
+  // Get the current team object
+  const currentTeam = teams.find(team => team._id === selectedTeamId);
 
   const handleViewClick = (teamId: string) => {
     console.log('handleViewClick', teamId);
     setStatus(ViewStatus.MEMBER_LIST);
     setSelectedTeamId(teamId);
+    // Fetch the team owner when viewing team members
+    dispatch(fetchTeamOwner(teamId));
   };
 
   const handleBackClick = () => {
@@ -116,6 +122,22 @@ const TeamsTabContent: React.FC = () => {
     } catch (error) {
       console.error('Error removing team member:', error);
     }
+  };
+
+  // Handle setting a user as team owner
+  const handleSetTeamOwner = async (memberId: string) => {
+    try {
+      await dispatch(setTeamOwner({ teamId: selectedTeamId, userId: memberId }));
+      // Refresh the team data after setting owner
+      dispatch(fetchTeamOwner(selectedTeamId));
+    } catch (error) {
+      console.error('Error setting team owner:', error);
+    }
+  };
+
+  // Check if a member is the team owner
+  const isTeamOwner = (memberId: string) => {
+    return currentTeam?.owner?.MicrosoftId === memberId;
   };
 
   // Fetch teams and all team members when component mounts or tenantId changes
@@ -278,18 +300,46 @@ const TeamsTabContent: React.FC = () => {
 
             {status === ViewStatus.MEMBER_LIST && currentTeamMembers.map((member, index) => (
               <TableRow key={index} hover>
-                <StyledTableCell>{member.name}</StyledTableCell>
+                <StyledTableCell>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {member.name}
+                    {isTeamOwner(member.MicrosoftId) && (
+                      <Chip 
+                        label="Owner"
+                        size="small"
+                        color="primary"
+                        sx={{ 
+                          height: '20px',
+                          fontSize: '0.75rem'
+                        }}
+                      />
+                    )}
+                  </Box>
+                </StyledTableCell>
                 <StyledTableCell>{member.email}</StyledTableCell>
                 <StyledTableCell>{member.role}</StyledTableCell>
                 <StyledTableCell align="center">
-                  <IconButton
-                    color="error"
-                    onClick={() => handleRemoveMember(member.MicrosoftId)}
-                    size="small"
-                    title="Remove member"
-                  >
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
+                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                    {!isTeamOwner(member.MicrosoftId) && (
+                      <Tooltip title="Set as Team Owner">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleSetTeamOwner(member.MicrosoftId)}
+                          size="small"
+                        >
+                          <AdminPanelSettingsIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    <IconButton
+                      color="error"
+                      onClick={() => handleRemoveMember(member.MicrosoftId)}
+                      size="small"
+                      title="Remove member"
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </StyledTableCell>
               </TableRow>
             ))}

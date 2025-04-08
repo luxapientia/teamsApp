@@ -107,6 +107,50 @@ export const deleteTeam = createAsyncThunk(
   }
 );
 
+// Add these new action creators for team owner operations
+export const fetchTeamOwner = createAsyncThunk(
+  'teams/fetchTeamOwner',
+  async (teamId: string) => {
+    try {
+      const response = await api.get(`/teams/${teamId}/owner`);
+      if (response.status === 200) {
+        return { 
+          teamId,
+          owner: response.data.data 
+        };
+      } else {
+        return { teamId, owner: null };
+      }
+    } catch (error) {
+      console.error('Error fetching team owner:', error);
+      return { teamId, owner: null };
+    }
+  }
+);
+
+export const setTeamOwner = createAsyncThunk(
+  'teams/setTeamOwner',
+  async ({ teamId, userId }: { teamId: string, userId: string }) => {
+    try {
+      const response = await api.put(`/teams/${teamId}/owner/${userId}`);
+      if (response.status === 200) {
+        // After setting the owner, fetch their details
+        const ownerResponse = await api.get(`/teams/${teamId}/owner`);
+        if (ownerResponse.status === 200) {
+          return { 
+            teamId, 
+            owner: ownerResponse.data.data 
+          };
+        }
+      }
+      return { teamId, owner: null };
+    } catch (error) {
+      console.error('Error setting team owner:', error);
+      return { teamId, owner: null };
+    }
+  }
+);
+
 const teamsSlice = createSlice({
   name: 'teams',
   initialState,
@@ -148,6 +192,25 @@ const teamsSlice = createSlice({
       // Clean up members for the deleted team
       if (state.teamMembers[action.payload]) {
         delete state.teamMembers[action.payload];
+      }
+    });
+    
+    // Add team owner cases
+    builder.addCase(fetchTeamOwner.fulfilled, (state, action) => {
+      const { teamId, owner } = action.payload;
+      // Find the team and update its owner
+      const team = state.teams.find(t => t._id === teamId);
+      if (team) {
+        team.owner = owner;
+      }
+    });
+    
+    builder.addCase(setTeamOwner.fulfilled, (state, action) => {
+      const { teamId, owner } = action.payload;
+      // Find the team and update its owner
+      const team = state.teams.find(t => t._id === teamId);
+      if (team) {
+        team.owner = owner;
       }
     });
   },
