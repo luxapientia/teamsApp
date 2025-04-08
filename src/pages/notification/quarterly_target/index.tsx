@@ -38,12 +38,16 @@ const QuarterlyNotification: React.FC = () => {
   // Mock data - replace with actual data from your API
   const notifications = useAppSelector((state: RootState) => state.notification.notifications.filter((notification) => notification.type === 'agreement'));  
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
+  const teams = useAppSelector((state: RootState) => state.teams.teams);
 
   const handleView = async (notification: Notification) => {
     setSelectedNotification(notification);
     setShowTable(false);
     await api.post(`/notifications/read/${notification._id}`);
   };
+
+  console.log('teams', teams);
+  console.log('notifications', notifications);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -79,7 +83,7 @@ const QuarterlyNotification: React.FC = () => {
                       )}
                     </Box>
                   </TableCell>
-                  <TableCell>{notification.sender.team}</TableCell>
+                  <TableCell>{teams.find((team) => team._id === notification.sender.teamId)?.name}</TableCell>
                   <TableCell>{annualTargets.find((target) => target._id === notification.annualTargetId)?.name}</TableCell>
                   <TableCell>{notification.quarter}</TableCell>
                   <TableCell>{new Date(notification.updatedAt).toLocaleString()}</TableCell>

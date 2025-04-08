@@ -73,6 +73,13 @@ const PerformanceAssessment: React.FC = () => {
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
 
+  const teams = useAppSelector((state: RootState) =>
+    state.teams.teams
+  );
+
+  console.log('teams', teams);
+  console.log('personalPerformances', personalPerformances);
+
   useEffect(() => {
     dispatch(fetchAnnualTargets());
   }, [dispatch]);
@@ -163,7 +170,7 @@ const PerformanceAssessment: React.FC = () => {
                     {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.endDate}
                   </StyledTableCell>
                   <StyledTableCell>{selectedAnnualTarget?.status}</StyledTableCell>
-                  <StyledTableCell>{'team'}</StyledTableCell>
+                  <StyledTableCell>{teams.find(team => team._id === personalPerformance.teamId)?.name}</StyledTableCell>
                   <StyledTableCell align="center">
                     <ViewButton
                       size="small"
