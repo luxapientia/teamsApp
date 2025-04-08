@@ -17,25 +17,11 @@ import {
   Box
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import PersonIcon from '@mui/icons-material/Person';
-
-// Mock data for people
-const mockPeople = [
-  { objectId: '1', displayName: 'John Doe', jobTitle: 'Software Engineer', department: 'Engineering', email: 'john.doe@example.com' },
-  { objectId: '2', displayName: 'Jane Smith', jobTitle: 'Product Manager', department: 'Product', email: 'jane.smith@example.com' },
-  { objectId: '3', displayName: 'Robert Johnson', jobTitle: 'UX Designer', department: 'Design', email: 'robert.johnson@example.com' },
-  { objectId: '4', displayName: 'Emily Davis', jobTitle: 'Marketing Specialist', department: 'Marketing', email: 'emily.davis@example.com' },
-  { objectId: '5', displayName: 'Michael Wilson', jobTitle: 'Data Scientist', department: 'Analytics', email: 'michael.wilson@example.com' },
-  { objectId: '6', displayName: 'Sarah Brown', jobTitle: 'HR Manager', department: 'Human Resources', email: 'sarah.brown@example.com' },
-  { objectId: '7', displayName: 'David Miller', jobTitle: 'DevOps Engineer', department: 'Engineering', email: 'david.miller@example.com' },
-  { objectId: '8', displayName: 'Lisa Taylor', jobTitle: 'Sales Representative', department: 'Sales', email: 'lisa.taylor@example.com' },
-];
+import { api } from '../services/api';
 
 export interface Person {
-  objectId: string;
+  MicrosoftId: string;
   displayName: string;
-  jobTitle?: string;
-  department?: string;
   email?: string;
 }
 
@@ -43,6 +29,7 @@ interface PeoplePickerModalProps {
   open: boolean;
   onClose: () => void;
   onSelectPeople: (people: Person[]) => void;
+  tenantId: string;
   title?: string;
   multiSelect?: boolean;
 }
@@ -50,25 +37,49 @@ interface PeoplePickerModalProps {
 const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
   open,
   onClose,
+  tenantId,
   onSelectPeople,
   title = 'Select People',
   multiSelect = true
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPeople, setSelectedPeople] = useState<Person[]>([]);
-  const [filteredPeople, setFilteredPeople] = useState<Person[]>(mockPeople);
+  const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+
+  useEffect(() => {
+    const fetchPeople = async () => {
+      try {
+        const response = await api.get(`/users/tenant/${tenantId}`);
+        const tempUsers = response.data.data.map((user: any) => ({
+          MicrosoftId: user.MicrosoftId,
+          displayName: user.name,
+          email: user.email
+        }));
+        setPeople(tempUsers);
+        setFilteredPeople(tempUsers);
+        console.log('response', response);
+      } catch (error) {
+        console.error('Error fetching people:', error);
+        setPeople([]);
+        setFilteredPeople([]);
+      }
+    };
+    
+    if (tenantId) {
+      fetchPeople();
+    }
+  }, [tenantId]);
 
   useEffect(() => {
     if (searchQuery) {
-      const filtered = mockPeople.filter(person => 
+      const filtered = people.filter(person => 
         person.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (person.jobTitle && person.jobTitle.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (person.department && person.department.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (person.email && person.email.toLowerCase().includes(searchQuery.toLowerCase()))
       );
       setFilteredPeople(filtered);
     } else {
-      setFilteredPeople(mockPeople);
+      setFilteredPeople(people);
     }
   }, [searchQuery]);
 
@@ -78,9 +89,9 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
 
   const handleTogglePerson = (person: Person) => {
     if (multiSelect) {
-      const isSelected = selectedPeople.some(p => p.objectId === person.objectId);
+      const isSelected = selectedPeople.some(p => p.MicrosoftId === person.MicrosoftId);
       if (isSelected) {
-        setSelectedPeople(selectedPeople.filter(p => p.objectId !== person.objectId));
+        setSelectedPeople(selectedPeople.filter(p => p.MicrosoftId !== person.MicrosoftId));
       } else {
         setSelectedPeople([...selectedPeople, person]);
       }
@@ -145,10 +156,10 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         ) : (
           <List sx={{ padding: 0 }}>
             {filteredPeople.map((person) => {
-              const isSelected = selectedPeople.some(p => p.objectId === person.objectId);
+              const isSelected = selectedPeople.some(p => p.MicrosoftId === person.MicrosoftId);
               return (
                 <ListItem 
-                  key={person.objectId} 
+                  key={person.MicrosoftId} 
                   component="button"
                   onClick={() => handleTogglePerson(person)}
                   sx={{
@@ -174,7 +185,7 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
                     secondary={
                       <React.Fragment>
                         <Typography variant="body2" color="textSecondary" component="span">
-                          {person.jobTitle}{person.jobTitle && person.department ? ' · ' : ''}{person.department}
+                          {person.email}
                         </Typography>
                       </React.Fragment>
                     }

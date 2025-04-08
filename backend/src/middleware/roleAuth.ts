@@ -17,7 +17,7 @@ export interface AuthenticatedRequest extends Request {
  * @param allowedRoles Array of roles that are allowed to access the route
  */
 export const requireRole = (allowedRoles: UserRole[]) => {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  return (req: AuthenticatedRequest, _res: Response, next: NextFunction): void => {
     const user = req.user;
 
     if (!user) {
@@ -26,47 +26,36 @@ export const requireRole = (allowedRoles: UserRole[]) => {
     }
 
     // Convert string role to UserRole enum
-    const userRole = user.role as keyof typeof UserRole;
-    if (!userRole || !UserRole[userRole]) {
-      next(ApiError.forbidden('Invalid user role'));
-      return;
+    // Handle both 'AppOwner' string values and UserRole.APP_OWNER enum values
+    let userRoleEnum: UserRole;
+    
+    if (typeof user.role === 'string') {
+      // Check if the role string is a direct match with enum values
+      if (Object.values(UserRole).includes(user.role as UserRole)) {
+        userRoleEnum = user.role as UserRole;
+      } else {
+        // Otherwise, try to match by property name (APP_OWNER vs 'AppOwner')
+        const roleKey = Object.keys(UserRole).find(
+          key => UserRole[key as keyof typeof UserRole] === user.role
+        ) as keyof typeof UserRole | undefined;
+        
+        if (!roleKey) {
+          next(ApiError.forbidden('Invalid user role'));
+          return;
+        }
+        
+        userRoleEnum = UserRole[roleKey];
+      }
+    } else {
+      userRoleEnum = user.role;
     }
-
+    
     // Check if user's role is in allowed roles
-    if (!allowedRoles.includes(UserRole[userRole])) {
+    if (!allowedRoles.includes(userRoleEnum)) {
       next(ApiError.forbidden('Insufficient permissions'));
-      return;
-    }
-
-    // Check user status
-    if (user.status !== 'active') {
-      next(ApiError.forbidden('User account is inactive'));
       return;
     }
 
     next();
   };
 };
-
-/**
- * Middleware to ensure user is active
- */
-export const requireActiveStatus = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-): void => {
-  const user = req.user;
-
-  if (!user) {
-    next(ApiError.unauthorized('User not authenticated'));
-    return;
-  }
-
-  if (user.role === UserRole.SUPER_USER && user.status !== 'active') {
-    next(ApiError.forbidden('User account is inactive'));
-    return;
-  }
-
-  next();
-}; 

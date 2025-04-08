@@ -8,6 +8,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import * as microsoftTeams from "@microsoft/teams-js";
 import { api } from '../../services/api';
 import PeoplePickerModal, { Person } from '../../components/PeoplePickerModal';
+import { useAuth } from '../../contexts/AuthContext';
 
 enum ViewStatus {
   TEAM_LIST = 'TEAM_LIST',
@@ -16,11 +17,11 @@ enum ViewStatus {
   MEMBER_ADDING = 'MEMBER_ADDING',
 }
 
-const tenantId = '987eaa8d-6b2d-4a86-9b2e-8af581ec8056';
-
 const TeamsTabContent: React.FC = () => {
   const dispatch = useAppDispatch();
   const teams = useAppSelector((state: RootState) => state.teams || []);
+  const { user } = useAuth();
+  const tenantId = user?.tenantId || '987eaa8d-6b2d-4a86-9b2e-8af581ec8056';
   const [status, setStatus] = useState<ViewStatus>(ViewStatus.TEAM_LIST);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [newTeamName, setNewTeamName] = useState<string>('');
@@ -55,7 +56,7 @@ const TeamsTabContent: React.FC = () => {
     console.log('Selected people:', people);
     try {
       await api.post(`/teams/${selectedTeamId}/members`, {
-        userIds: people.map(person => person.objectId)
+        userIds: people.map(person => person.MicrosoftId)
       });
       // Refresh the teams list after adding members
       dispatch(fetchTeams(tenantId));
@@ -283,6 +284,7 @@ const TeamsTabContent: React.FC = () => {
         onSelectPeople={handlePeopleSelected}
         title="Select Team Members"
         multiSelect={true}
+        tenantId={tenantId}
       />
     </Box>
   );
