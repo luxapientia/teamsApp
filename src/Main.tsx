@@ -51,19 +51,10 @@ function Main() {
 
   return (
     <Layout selectedTabChanger={selectedTabChanger}>
-      {/* <AdminPanel /> */}
-      {isAppOwner && (
-        <ManagePage
-          title="Manage Companies"
-          icon={<GridRegular fontSize={iconSize} />}
-          tabs={['Companies', 'Companies Super Users', 'Companies Licenses']}
-          selectedTab={selectedTab}
-        />
-      )}
-      <Reports
-        title='Reports'
-        icon={<DocumentText24Regular fontSize={iconSize} />}
-        tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
+      <NotificationPage
+        title='Notifications'
+        icon={<Alert24Regular fontSize={iconSize} />}
+        tabs={['Quarterly Targets', 'Performance Assessments']}
         selectedTab={selectedTab}
       />
       <MyPerformanceAssessment
@@ -90,18 +81,27 @@ function Main() {
         tabs={['Quarterly Targets', 'Annual Targets']}
         selectedTab={selectedTab}
       />
+      <Reports
+        title='Reports'
+        icon={<DocumentText24Regular fontSize={iconSize} />}
+        tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
+        selectedTab={selectedTab}
+      />
       <Teams
         title='Teams'
         icon={<PeopleTeam24Regular fontSize={iconSize} />}
         tabs={['Teams']}
         selectedTab={selectedTab}
       />
-      <NotificationPage
-        title='Notifications'
-        icon={<Alert24Regular fontSize={iconSize} />}
-        tabs={['Quarterly Targets', 'Performance Assessments']}
-        selectedTab={selectedTab}
-      />
+      {/* <AdminPanel /> */}
+      {isAppOwner && (
+        <ManagePage
+          title="Manage Companies"
+          icon={<GridRegular fontSize={iconSize} />}
+          tabs={['Companies', 'Companies Super Users', 'Companies Licenses']}
+          selectedTab={selectedTab}
+        />
+      )}
     </Layout>
   );
 }
