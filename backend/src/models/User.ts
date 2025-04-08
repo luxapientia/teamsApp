@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema<dUser>({
   teamId: {
     type: String,
     required: false,
+    ref: 'Team'
   }
 });
 

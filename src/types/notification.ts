@@ -6,7 +6,7 @@ export interface Notification {
     sender: {
         _id: string;
         fullName: string;
-        team: string;
+        teamId: string;
     };
     annualTargetId: string;
     quarter: QuarterType;
