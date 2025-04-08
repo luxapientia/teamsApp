@@ -3,6 +3,7 @@ import User from '../models/User';
 import { ApiError } from '../utils/apiError';
 import { SuperUserModel } from '../models/superUser';
 import { ObjectId } from 'mongodb';
+import mongoose from 'mongoose';
 
 export class RoleService {
   async createUser(
@@ -103,12 +104,45 @@ export class RoleService {
     return user.teamId as ObjectId | null;
   }
 
-  async addUsersToTeam(teamId: ObjectId, userIds: ObjectId[]): Promise<void> {
-    await User.findByIdAndUpdate(teamId, { $addToSet: { users: { $each: userIds } } });
+  async addUsersToTeam(teamId: string, userIds: string[]): Promise<void> {
+    for (const userId of userIds) {
+      await User.findOneAndUpdate(
+        { MicrosoftId: userId }, 
+        { $set: { teamId: teamId } }
+      );
+    }
   }
 
-  async removeUsersFromTeam(teamId: ObjectId, userIds: ObjectId[]): Promise<void> {
-    await User.findByIdAndUpdate(teamId, { $pull: { users: { $in: userIds } } });
+  async removeUsersFromTeam(userIds: string[]): Promise<void> {
+    for (const userId of userIds) {
+      await User.findOneAndUpdate(
+        { MicrosoftId: userId },
+        { $set: { teamId: null } }
+      );
+    }
+  }
+
+  async removeUserFromTeam(teamId: string, userId: string): Promise<void> {
+    await User.findOneAndUpdate(
+      { MicrosoftId: userId, teamId: teamId },
+      { $set: { teamId: null } }
+    );
+  }
+
+  // Set a user as the owner of a team
+  async setTeamOwner(teamId: string, ownerId: string): Promise<void> {
+    const Team = mongoose.model('Team');
+    await Team.findByIdAndUpdate(
+      teamId,
+      { $set: { owner: ownerId } }
+    );
+  }
+  
+  // Check if a user is the owner of a team
+  async isTeamOwner(teamId: string, userId: string): Promise<boolean> {
+    const Team = mongoose.model('Team');
+    const team = await Team.findById(teamId);
+    return team?.owner === userId;
   }
 }
 
