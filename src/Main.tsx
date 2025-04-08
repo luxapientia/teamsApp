@@ -5,8 +5,6 @@ import AnnualCorporateScorecard from './pages/scorecards';
 import Teams from './pages/teams';
 import { ManagePage } from './pages/manage';
 import { GridRegular, Alert24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular } from '@fluentui/react-icons';
-import { Provider } from 'react-redux';
-import { store } from './store';
 import { useAuth } from './contexts/AuthContext';
 import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
@@ -18,6 +16,7 @@ import { useAppDispatch } from './hooks/useAppDispatch';
 import { fetchAnnualTargets } from './store/slices/scorecardSlice';
 import { useSocket } from './hooks/useSocket';
 import { SocketEvent } from './types/socket';
+import { fetchTeams } from './store/slices/teamsSlice';
 const iconSize = 24;
 
 function Main() {
@@ -37,7 +36,7 @@ function Main() {
   useEffect(() => {
     dispatch(fetchNotifications());
     dispatch(fetchAnnualTargets());
-
+    dispatch(fetchTeams(user?.tenantId));
     // Subscribe to notification events
     subscribe(SocketEvent.NOTIFICATION, (data) => {
       dispatch(fetchNotifications());
