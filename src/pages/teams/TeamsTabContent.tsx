@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField, IconButton, Tooltip, Chip } from '@mui/material';
+import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField, IconButton, Tooltip, Chip, ClickAwayListener } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
@@ -140,6 +140,11 @@ const TeamsTabContent: React.FC = () => {
     return currentTeam?.owner?.MicrosoftId === memberId;
   };
 
+  const handleCancelAddTeam = () => {
+    setStatus(ViewStatus.TEAM_LIST);
+    setNewTeamName('');
+  };
+
   // Fetch teams and all team members when component mounts or tenantId changes
   useEffect(() => {
     dispatch(fetchTeams(tenantId));
@@ -152,65 +157,72 @@ const TeamsTabContent: React.FC = () => {
 
   return (
     <Box>
-      {status !== ViewStatus.TEAM_LIST &&
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ height: '48px', mb: 2 }}>
+        {(status !== ViewStatus.TEAM_LIST && status !== ViewStatus.TEAM_ADDING) && (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            height: '100%'
+          }}>
+            {status === ViewStatus.MEMBER_LIST && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleAddMemberClick}
+                sx={{
+                  textTransform: 'none',
+                  backgroundColor: '#0078D4',
+                  color: 'white',
+                  borderRadius: '4px',
+                  padding: '6px 16px',
+                  '&:hover': {
+                    backgroundColor: '#106EBE',
+                  }
+                }}
+              >
+                Add Member
+              </Button>
+            )}
+            <Button
+              variant="outlined"
+              onClick={handleBackClick}
+              sx={{
+                textTransform: 'none',
+                borderColor: '#DC2626',
+                color: '#DC2626',
+                '&:hover': {
+                  borderColor: '#B91C1C',
+                  backgroundColor: 'rgba(220, 38, 38, 0.04)',
+                },
+                marginLeft: status === ViewStatus.MEMBER_LIST ? 0 : 'auto'
+              }}
+            >
+              Back
+            </Button>
+          </Box>
+        )}
+
+        {status === ViewStatus.TEAM_LIST && (
           <Button
-            variant="outlined"
-            onClick={handleBackClick}
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAddTeamClick}
             sx={{
               textTransform: 'none',
-              borderColor: '#E5E7EB',
-              color: '#374151',
+              backgroundColor: '#0078D4',
+              color: 'white',
+              borderRadius: '4px',
+              padding: '6px 16px',
               '&:hover': {
-                borderColor: '#D1D5DB',
-                backgroundColor: '#F9FAFB',
-              },
+                backgroundColor: '#106EBE',
+              }
             }}
           >
-            Back
+            Add Team
           </Button>
-        </Box>
-      }
-
-      {status === ViewStatus.TEAM_LIST &&
-        <Button
-          variant="text"
-          startIcon={<AddIcon />}
-          onClick={handleAddTeamClick}
-          sx={{
-            textTransform: 'none',
-            borderColor: '#E5E7EB',
-            color: '#374151',
-            '&:hover': {
-              borderColor: '#D1D5DB',
-              backgroundColor: '#F9FAFB',
-            },
-            mb: 2
-          }}
-        >
-          Add Team
-        </Button>
-      }
-
-      {status === ViewStatus.MEMBER_LIST &&
-        <Button
-          variant="text"
-          startIcon={<AddIcon />}
-          onClick={handleAddMemberClick}
-          sx={{
-            textTransform: 'none',
-            borderColor: '#E5E7EB',
-            color: '#374151',
-            '&:hover': {
-              borderColor: '#D1D5DB',
-              backgroundColor: '#F9FAFB',
-            },
-            mb: 2
-          }}
-        >
-          Add Member
-        </Button>
-      }
+        )}
+      </Box>
 
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 1, border: '1px solid #E5E7EB' }}>
         <Table>
@@ -231,9 +243,9 @@ const TeamsTabContent: React.FC = () => {
           </TableHead>
           <TableBody>
             {status === ViewStatus.TEAM_ADDING && (
-              <TableRow>
-                <StyledTableCell colSpan={2}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <ClickAwayListener onClickAway={handleCancelAddTeam}>
+                <TableRow>
+                  <StyledTableCell>
                     <TextField
                       inputRef={inputRef}
                       value={newTeamName}
@@ -242,25 +254,43 @@ const TeamsTabContent: React.FC = () => {
                       placeholder="Enter team name"
                       fullWidth
                       variant="standard"
-                      sx={{ mr: 2 }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          handleCancelAddTeam();
+                        }
+                      }}
                     />
-                    <Button
-                      variant="contained"
-                      onClick={handleAddNewTeam}
-                      sx={{
-                        fontSize: '0.75rem',
-                        padding: '4px 12px',
-                        minWidth: 'auto',
-                        backgroundColor: '#0078D4',
-                        '&:hover': {
-                          backgroundColor: '#106EBE',
-                        },
-                      }}>
-                      Add
-                    </Button>
-                  </Box>
-                </StyledTableCell>
-              </TableRow>
+                  </StyledTableCell>
+                  <StyledTableCell align="center">
+                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                      <Button
+                        variant="contained"
+                        onClick={handleAddNewTeam}
+                        sx={{
+                          fontSize: '0.75rem',
+                          padding: '4px 12px',
+                          minWidth: 'auto',
+                          backgroundColor: '#0078D4',
+                          '&:hover': {
+                            backgroundColor: '#106EBE',
+                          }
+                        }}>
+                        Add
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={handleCancelAddTeam}
+                        sx={{
+                          fontSize: '0.75rem',
+                          padding: '4px 12px',
+                          minWidth: 'auto',
+                        }}>
+                        Cancel
+                      </Button>
+                    </Box>
+                  </StyledTableCell>
+                </TableRow>
+              </ClickAwayListener>
             )}
 
             {(status === ViewStatus.TEAM_LIST || status === ViewStatus.TEAM_ADDING) && teams.map(team => (
