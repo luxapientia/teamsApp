@@ -69,7 +69,7 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
         annualTargetId,
         quarter,
         userId: req.user?._id,
-        teamId: req.user?.teamId,
+        teamId: req.user?.teamId || '',
         tenantId: req.user?.tenantId,
         quarterlyTargets: ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => {
           return {
