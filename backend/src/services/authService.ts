@@ -113,7 +113,18 @@ export class AuthService {
 
   verifyToken(token: string): UserProfile | null {
     try {
+      // Verify the JWT token using the secret
       const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
+      
+      // Ensure the token has the necessary fields
+      if (!decoded.id || !decoded.email) {
+        console.error('Token missing required fields:', decoded);
+        return null;
+      }
+      
+      // Check if token has expired - not needed as jwt.verify already checks this
+      // but we could add custom expiration logic here if needed
+      
       return decoded;
     } catch (error) {
       console.error('Token verification failed:', error);

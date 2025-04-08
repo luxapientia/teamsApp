@@ -76,6 +76,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const teamsCheck = isInTeams();
       setIsTeams(teamsCheck);
 
+      // Check for existing token in sessionStorage
+      const existingToken = sessionStorage.getItem('auth_token');
+      
+      if (existingToken) {
+        console.log('Found existing token in session storage');
+        try {
+          // Validate the token with the server
+          const response = await api.get('/auth/verify');
+          const userData = response.data.data;
+          
+          // Token is valid, update auth state
+          setUser(userData.user);
+          setIsAuthenticated(true);
+          console.log('Session restored from token');
+        } catch (error) {
+          console.error('Error validating existing token:', error);
+          // Token validation failed, clear it
+          sessionStorage.removeItem('auth_token');
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      }
+
       if (teamsCheck) {
         try {
           await initializeTeams();
