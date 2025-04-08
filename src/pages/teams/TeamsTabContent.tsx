@@ -31,6 +31,9 @@ const TeamsTabContent: React.FC = () => {
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
+  // Check if user has admin/super user privileges
+  const canManageTeams = user?.role === 'AppOwner' || user?.role === 'SuperUser';
+  
   // Get the members for the currently selected team
   const currentTeamMembers = selectedTeamId ? (teamMembers[selectedTeamId] || []) : [];
   
@@ -165,11 +168,11 @@ const TeamsTabContent: React.FC = () => {
             alignItems: 'center',
             height: '100%'
           }}>
-            {status === ViewStatus.MEMBER_LIST && (
+            {status === ViewStatus.MEMBER_LIST && canManageTeams && (
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={handleAddMemberClick}
+                onClick={() => setIsPickerOpen(true)}
                 sx={{
                   textTransform: 'none',
                   backgroundColor: '#0078D4',
@@ -203,11 +206,11 @@ const TeamsTabContent: React.FC = () => {
           </Box>
         )}
 
-        {status === ViewStatus.TEAM_LIST && (
+        {status === ViewStatus.TEAM_LIST && canManageTeams && (
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={handleAddTeamClick}
+            onClick={() => setStatus(ViewStatus.TEAM_ADDING)}
             sx={{
               textTransform: 'none',
               backgroundColor: '#0078D4',
@@ -237,12 +240,12 @@ const TeamsTabContent: React.FC = () => {
                 <StyledHeaderCell>Name</StyledHeaderCell>
                 <StyledHeaderCell>Email</StyledHeaderCell>
                 <StyledHeaderCell>Role</StyledHeaderCell>
-                <StyledHeaderCell align="center">Actions</StyledHeaderCell>
+                {canManageTeams && <StyledHeaderCell align="center">Actions</StyledHeaderCell>}
               </TableRow>
             )}
           </TableHead>
           <TableBody>
-            {status === ViewStatus.TEAM_ADDING && (
+            {status === ViewStatus.TEAM_ADDING && canManageTeams && (
               <ClickAwayListener onClickAway={handleCancelAddTeam}>
                 <TableRow>
                   <StyledTableCell>
@@ -309,7 +312,7 @@ const TeamsTabContent: React.FC = () => {
                     >
                       View
                     </Button>
-                    {(!teamMembers[team._id] || teamMembers[team._id].length === 0) && (
+                    {canManageTeams && (!teamMembers[team._id] || teamMembers[team._id].length === 0) && (
                       <Button
                         variant="outlined"
                         color="error"
@@ -333,7 +336,7 @@ const TeamsTabContent: React.FC = () => {
                 <StyledTableCell>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     {member.name}
-                    {isTeamOwner(member.MicrosoftId) && (
+                    {currentTeam?.owner?.MicrosoftId === member.MicrosoftId && (
                       <Chip 
                         label="Owner"
                         size="small"
@@ -348,44 +351,48 @@ const TeamsTabContent: React.FC = () => {
                 </StyledTableCell>
                 <StyledTableCell>{member.email}</StyledTableCell>
                 <StyledTableCell>{member.role}</StyledTableCell>
-                <StyledTableCell align="center">
-                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                    {!isTeamOwner(member.MicrosoftId) && (
-                      <Tooltip title="Set as Team Owner">
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleSetTeamOwner(member.MicrosoftId)}
-                          size="small"
-                        >
-                          <AdminPanelSettingsIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                    <IconButton
-                      color="error"
-                      onClick={() => handleRemoveMember(member.MicrosoftId)}
-                      size="small"
-                      title="Remove member"
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </StyledTableCell>
+                {canManageTeams && (
+                  <StyledTableCell align="center">
+                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                      {currentTeam?.owner?.MicrosoftId !== member.MicrosoftId && (
+                        <Tooltip title="Set as Team Owner">
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleSetTeamOwner(member.MicrosoftId)}
+                            size="small"
+                          >
+                            <AdminPanelSettingsIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <IconButton
+                        color="error"
+                        onClick={() => handleRemoveMember(member.MicrosoftId)}
+                        size="small"
+                        title="Remove member"
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </StyledTableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {/* Custom People Picker Modal */}
-      <PeoplePickerModal
-        open={isPickerOpen}
-        onClose={() => setIsPickerOpen(false)}
-        onSelectPeople={handlePeopleSelected}
-        title="Select Team Members"
-        multiSelect={true}
-        tenantId={tenantId}
-      />
+      {/* Custom People Picker Modal - Only for admin/super users */}
+      {canManageTeams && (
+        <PeoplePickerModal
+          open={isPickerOpen}
+          onClose={() => setIsPickerOpen(false)}
+          onSelectPeople={handlePeopleSelected}
+          title="Select Team Members"
+          multiSelect={true}
+          tenantId={tenantId}
+        />
+      )}
     </Box>
   );
 };

@@ -75,8 +75,19 @@ export class RoleService {
   }
 
   async getAllUsersWithTenantID(tenantId: string): Promise<dUser[]> {
+    try {
+      if (!tenantId) {
+        throw new ApiError('Tenant ID is required', 400);
+      }
 
-    return User.find({ tenantId });
+      console.log(`Fetching users for tenant: ${tenantId}`);
+      const users = await User.find({ tenantId });
+      console.log(`Found ${users.length} users for tenant ${tenantId}`);
+      return users;
+    } catch (error) {
+      console.error('Error in getAllUsersWithTenantID:', error);
+      throw error;
+    }
   }
 
   async getRoleByEmail(email: string): Promise<UserRole | null> {

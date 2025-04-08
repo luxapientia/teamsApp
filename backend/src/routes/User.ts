@@ -122,17 +122,32 @@ router.get(
 router.get(
   '/tenant/:tenantId',
   authenticateToken,
-  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),  
+  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER, UserRole.USER]),  
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { tenantId } = req.params;
+      
+      if (!tenantId) {
+        throw new ApiError('Tenant ID is required', 400);
+      }
+
+      console.log(`Processing request for tenant: ${tenantId}`);
       const users = await roleService.getAllUsersWithTenantID(tenantId);
+      
       res.json({
         status: 'success',
         data: users
       });
     } catch (error) {
-      next(error);
+      console.error('Error in /tenant/:tenantId endpoint:', error);
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({
+          status: 'error',
+          message: error.message
+        });
+      } else {
+        next(error);
+      }
     }
   }
 );  
@@ -140,7 +155,7 @@ router.get(
 router.get(
   '/team/:teamId',
   authenticateToken,
-  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),
+  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER, UserRole.USER]),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { teamId } = req.params;
