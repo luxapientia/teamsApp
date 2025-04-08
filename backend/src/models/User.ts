@@ -28,8 +28,7 @@ const userSchema = new mongoose.Schema<dUser>({
     required: false,
   },
   teamId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Team',
+    type: String,
     required: false,
   }
 });
