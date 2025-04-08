@@ -98,7 +98,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const handleApprove = async () => {
     if (notification) {
       try {
-        const response = await api.post(`/notifications/agreement/approve/${notification._id}`);
+        const response = await api.post(`/notifications/approve/${notification._id}`);
         if (response.status === 200) {
           dispatch(fetchNotifications());
           onBack?.();
@@ -112,13 +112,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const handleSendBack = async () => {
     if (notification) {
       try {
-        const response = await api.post(`/notifications/agreement/send-back/${notification._id}`);
+        const response = await api.post(`/notifications/send-back/${notification._id}`);
         if (response.status === 200) {
           dispatch(fetchNotifications());
           onBack?.();
         }
       } catch (error) {
-        console.error('Error approving notification:', error);
+        console.error('Error send back notification:', error);
       }
     }
   };
