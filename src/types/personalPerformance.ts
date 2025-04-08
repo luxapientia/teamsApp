@@ -30,6 +30,7 @@ export interface PersonalQuarterlyTarget {
 export interface PersonalPerformance {
     _id: string;
     annualTargetId: string;
+    teamId: string;
     quarterlyTargets: PersonalQuarterlyTarget[];
 }
 

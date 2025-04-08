@@ -61,12 +61,9 @@ const PersonalPerformanceAgreement: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
-  const [isEditable, setIsEditable] = useState(false);
-  const [supervisors] = useState([
-    { id: '1', name: 'John Doe' },
-    { id: '2', name: 'Jane Smith' },
-    // ... more supervisors
-  ]);
+  const teams = useAppSelector((state: RootState) =>
+    state.teams.teams
+  );
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -170,7 +167,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
                     {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.endDate}
                   </StyledTableCell>
                   <StyledTableCell>{selectedAnnualTarget?.status}</StyledTableCell>
-                  <StyledTableCell>{'team'}</StyledTableCell>
+                  <StyledTableCell>{teams.find(team => team._id === personalPerformance.teamId)?.name}</StyledTableCell>
                   <StyledTableCell align="center">
                     <ViewButton
                       size="small"
