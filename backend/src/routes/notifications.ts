@@ -238,7 +238,7 @@ router.post('/read/:notificationId', authenticateToken, async (req: Authenticate
   }
 });
 
-router.post('/agreement/approve/:notificationId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/approve/:notificationId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { notificationId } = req.params;
     const notification = await Notification.findById(notificationId);
@@ -247,16 +247,76 @@ router.post('/agreement/approve/:notificationId', authenticateToken, async (req:
       return res.status(404).json({ error: 'Notification not found' });
     }
 
+    const personalPerformance = await PersonalPerformance.findOne({ _id: notification.personalPerformanceId });
+    if (personalPerformance) {
+      const quarterlyTargets = personalPerformance.quarterlyTargets;
+      const newQuarterlyTargets = quarterlyTargets.map((quarterlyTarget: any) => {
+        if (quarterlyTarget.quarter === notification.quarter) {
+          if (notification.type === 'agreement') {
+            return {
+              ...quarterlyTarget._doc,
+              agreementStatus: 'Approved'
+            };
+          } else {
+            return {
+              ...quarterlyTarget._doc,
+              assessmentStatus: 'Approved'
+            };
+          }
+        }
+        return quarterlyTarget;
+      });
+      await PersonalPerformance.updateOne({ _id: notification.personalPerformanceId }, { $set: { quarterlyTargets: newQuarterlyTargets } });
+    }
 
+    await Notification.deleteOne({ _id: notificationId });
 
-    return res.status(200).json({ message: 'Notification approved successfully' });
+    return res.status(200).json({ message: 'Notification send back successfully' });
   } catch (error) {
-    console.error('Error approving notification:', error);
-    return res.status(500).json({ error: 'Failed to approve notification' });
+    console.error('Error send back notification:', error);
+    return res.status(500).json({ error: 'Failed to send back notification' });
   }
 });
 
+router.post('/send-back/:notificationId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { notificationId } = req.params;
+    const notification = await Notification.findById(notificationId);
 
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    const personalPerformance = await PersonalPerformance.findOne({ _id: notification.personalPerformanceId });
+    if (personalPerformance) {
+      const quarterlyTargets = personalPerformance.quarterlyTargets;
+      const newQuarterlyTargets = quarterlyTargets.map((quarterlyTarget: any) => {
+        if (quarterlyTarget.quarter === notification.quarter) {
+          if (notification.type === 'agreement') {
+            return {
+              ...quarterlyTarget._doc,
+              agreementStatus: 'Draft'
+            };
+          } else {
+            return {
+              ...quarterlyTarget._doc,
+              assessmentStatus: 'Draft'
+            };
+          }
+        }
+        return quarterlyTarget;
+      });
+      await PersonalPerformance.updateOne({ _id: notification.personalPerformanceId }, { $set: { quarterlyTargets: newQuarterlyTargets } });
+    }
+
+    await Notification.deleteOne({ _id: notificationId });
+
+    return res.status(200).json({ message: 'Notification send back successfully' });
+  } catch (error) {
+    console.error('Error send back notification:', error);
+    return res.status(500).json({ error: 'Failed to send back notification' });
+  }
+});
 
 
 export default router; 
