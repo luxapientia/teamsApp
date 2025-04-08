@@ -19,6 +19,6 @@ export const authConfig = {
       params.append('resource', authConfig.teamsResource);
     }
     
-    return `https://login.microsoftonline.com/${authConfig.tenantId}/oauth2/v2.0/authorize?${params.toString()}`;
+    return `https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize?${params.toString()}`;
   }
 }; 

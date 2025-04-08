@@ -26,11 +26,12 @@ export class AuthService {
 
   async handleCallback(code: string, redirectUri: string): Promise<{ token: string; user: UserProfile }> {
     try {
+      // Get the full token directly using the tenant ID from the code
       const tokenResponse = await axios.post(
-        `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
+        `https://login.microsoftonline.com/organizations/oauth2/v2.0/token`,
         new URLSearchParams({
           client_id: process.env.AZURE_CLIENT_ID!,
-          scope: 'openid profile email',
+          scope: 'openid profile email User.Read',
           code,
           redirect_uri: redirectUri,
           grant_type: 'authorization_code',
@@ -43,18 +44,22 @@ export class AuthService {
         }
       );
 
+      if (!tokenResponse.data.access_token) {
+        console.error('No access token received:', tokenResponse.data);
+        throw new Error('No access token received from token exchange');
+      }
+
       console.log('Token exchange successful');
       const accessToken = tokenResponse.data.access_token;
-      console.log('Access token received');
-
-      // Decode the access token to get the tenant ID
+      
+      // Decode the token to get the tenant ID
       const decodedToken = jwt.decode(accessToken) as any;
       const tenantId = decodedToken?.tid;
-      console.log('Tenant ID from access token:', tenantId);
+      console.log('Tenant ID from token:', tenantId);
 
       if (!tenantId) {
-        console.error('No tenant ID found in access token');
-        throw new Error('No tenant ID found in access token');
+        console.error('No tenant ID found in token');
+        throw new Error('No tenant ID found in token');
       }
 
       const userResponse = await axios.get('https://graph.microsoft.com/v1.0/me', {
@@ -74,7 +79,7 @@ export class AuthService {
         organization: userData.companyName || '',
         role: UserRole.USER,
         status: 'active',
-        tenantId: tenantId, // Use the tenant ID from the access token
+        tenantId: tenantId,
         organizationName: userData.companyName || ''
       };
 
@@ -107,6 +112,11 @@ export class AuthService {
 
       return { token, user: userProfile };
     } catch (error: any) {
+      console.error('Authentication error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   }
