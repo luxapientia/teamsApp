@@ -173,6 +173,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         status: error.response?.status
       });
 
+      // Handle consent required error
+      if (
+        error.response && 
+        error.response.status === 403 && 
+        error.response.data && 
+        error.response.data.error === 'consent_required'
+      ) {
+        console.log('Admin consent required for Teams SSO');
+        setIsLoading(false);
+        navigate('/consent', { 
+          state: { 
+            consentUrl: error.response.data.consentUrl,
+            tenantId: error.response.data.tenantId
+          } 
+        });
+        return;
+      }
+
       // Check for license errors
       if (
         error.response && 
