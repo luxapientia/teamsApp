@@ -166,7 +166,7 @@ router.get('/notifications', authenticateToken, async (req: AuthenticatedRequest
   try {
     const notifications = await Notification.find({
       recipientId: req.user?._id
-    }).populate('senderId') as any;
+    }).populate('senderId').populate('personalPerformanceId') as any;
 
     const result = notifications.map((notification: any) => {
       return {
@@ -175,7 +175,7 @@ router.get('/notifications', authenticateToken, async (req: AuthenticatedRequest
         sender: {
           _id: notification.senderId._id,
           fullName: notification.senderId.name,
-          team: "Team 1"
+          teamId: notification.personalPerformanceId.teamId
         },
         annualTargetId: notification.annualTargetId,
         quarter: notification.quarter,

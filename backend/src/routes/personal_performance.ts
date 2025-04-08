@@ -69,7 +69,7 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
         annualTargetId,
         quarter,
         userId: req.user?._id,
-        teamId: annualTargetId,
+        teamId: req.user?.teamId,
         tenantId: req.user?.tenantId,
         quarterlyTargets: ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => {
           return {
@@ -95,16 +95,18 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
 router.get('/team-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId } = req.query;
-    const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId }).populate('userId') as any[];
+    const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId }).populate('userId').populate('teamId') as any[];
     const isTeamOwner = true;
+
+    console.log('allPersonalPerformances', allPersonalPerformances);
 
     const teamPerformances: any[] = [];
     allPersonalPerformances.forEach(performance => {
       if(performance.quarterlyTargets[0].supervisorId === req.user?._id) {
-        teamPerformances.push({...performance._doc, fullName: performance.userId.name, position: 'position', team: 'team'});
+        teamPerformances.push({...performance._doc, fullName: performance.userId.name, position: 'position', team: performance.teamId.name});
       } else {
         if(isTeamOwner) {
-          teamPerformances.push({...performance._doc, fullName: performance.userId.name, position: 'position', team: 'team'});
+          teamPerformances.push({...performance._doc, fullName: performance.userId.name, position: 'position', team: performance.teamId.name});
         }
       }
     });

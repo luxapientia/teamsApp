@@ -153,6 +153,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
     dispatch(updatePersonalPerformance({
       _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',  
       annualTargetId: personalPerformance?.annualTargetId || '',
       quarterlyTargets: newPersonalQuarterlyTargets || []
     }));
@@ -193,7 +194,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     });
 
     await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
+        _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
       annualTargetId: personalPerformance?.annualTargetId || '',
       quarterlyTargets: newPersonalQuarterlyTargets || []
     }));
@@ -228,6 +230,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
     await dispatch(updatePersonalPerformance({
       _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
       annualTargetId: personalPerformance?.annualTargetId || '',
       quarterlyTargets: newPersonalQuarterlyTargets || []
     }));
