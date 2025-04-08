@@ -138,4 +138,65 @@ router.delete('/:teamId/members/:memberId', authenticateToken, async (req: Reque
   }
 });
 
+// Set a team owner
+router.put('/:teamId/owner/:userId', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { teamId, userId } = req.params;
+
+    if (!teamId || !userId) {
+      return res.status(400).json({ error: 'Team ID and User ID are required' });
+    }
+
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    // First, ensure the user is part of the team by assigning them to the team
+    await roleService.addUsersToTeam(teamId, [userId]);
+    
+    // Then set them as the owner
+    await roleService.setTeamOwner(teamId, userId);
+
+    return res.json({ message: 'Team owner set successfully' });
+  } catch (error) {
+    console.error('Set team owner error:', error);
+    return res.status(500).json({ error: 'Failed to set team owner' });
+  }
+});
+
+// Get team owner
+router.get('/:teamId/owner', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { teamId } = req.params;
+
+    if (!teamId) {
+      return res.status(400).json({ error: 'Team ID is required' });
+    }
+
+    const team = await Team.findById(teamId);
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found' });
+    }
+
+    if (!team.owner) {
+      return res.status(404).json({ error: 'Team owner not set' });
+    }
+
+    // Get the owner user details
+    const owner = await roleService.getUser(team.owner);
+    if (!owner) {
+      return res.status(404).json({ error: 'Team owner user not found' });
+    }
+
+    return res.json({ 
+      status: 'success',
+      data: owner 
+    });
+  } catch (error) {
+    console.error('Get team owner error:', error);
+    return res.status(500).json({ error: 'Failed to get team owner' });
+  }
+});
+
 export default router;

@@ -3,6 +3,7 @@ import User from '../models/User';
 import { ApiError } from '../utils/apiError';
 import { SuperUserModel } from '../models/superUser';
 import { ObjectId } from 'mongodb';
+import mongoose from 'mongoose';
 
 export class RoleService {
   async createUser(
@@ -126,6 +127,22 @@ export class RoleService {
       { MicrosoftId: userId, teamId: teamId },
       { $set: { teamId: null } }
     );
+  }
+
+  // Set a user as the owner of a team
+  async setTeamOwner(teamId: string, ownerId: string): Promise<void> {
+    const Team = mongoose.model('Team');
+    await Team.findByIdAndUpdate(
+      teamId,
+      { $set: { owner: ownerId } }
+    );
+  }
+  
+  // Check if a user is the owner of a team
+  async isTeamOwner(teamId: string, userId: string): Promise<boolean> {
+    const Team = mongoose.model('Team');
+    const team = await Team.findById(teamId);
+    return team?.owner === userId;
   }
 }
 
