@@ -103,12 +103,22 @@ export class RoleService {
     return user.teamId as ObjectId | null;
   }
 
-  async addUsersToTeam(teamId: ObjectId, userIds: ObjectId[]): Promise<void> {
-    await User.findByIdAndUpdate(teamId, { $addToSet: { users: { $each: userIds } } });
+  async addUsersToTeam(teamId: string, userIds: string[]): Promise<void> {
+    for (const userId of userIds) {
+      await User.findOneAndUpdate(
+        { MicrosoftId: userId }, 
+        { $set: { teamId: teamId } }
+      );
+    }
   }
 
-  async removeUsersFromTeam(teamId: ObjectId, userIds: ObjectId[]): Promise<void> {
-    await User.findByIdAndUpdate(teamId, { $pull: { users: { $in: userIds } } });
+  async removeUsersFromTeam(userIds: string[]): Promise<void> {
+    for (const userId of userIds) {
+      await User.findOneAndUpdate(
+        { MicrosoftId: userId },
+        { $set: { teamId: null } }
+      );
+    }
   }
 }
 

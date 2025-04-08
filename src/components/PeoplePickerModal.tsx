@@ -58,7 +58,6 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         }));
         setPeople(tempUsers);
         setFilteredPeople(tempUsers);
-        console.log('response', response);
       } catch (error) {
         console.error('Error fetching people:', error);
         setPeople([]);

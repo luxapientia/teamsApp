@@ -2,7 +2,6 @@ import express, { Request, Response } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import Team from '../models/Team';
 import { roleService } from '../services/roleService';
-import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -83,10 +82,8 @@ router.post('/:teamId/members', authenticateToken, async (req: Request, res: Res
     if (!team) {
       return res.status(404).json({ error: 'Team not found' });
     }
-
     // Convert string IDs to ObjectId
-    const teamIdAsObjectId = new mongoose.Types.ObjectId(teamId);
-    await roleService.addUsersToTeam(teamIdAsObjectId, userIds);
+    await roleService.addUsersToTeam(teamId, userIds);
 
     return res.json({ message: 'Member added successfully' });
   } catch (error) {
