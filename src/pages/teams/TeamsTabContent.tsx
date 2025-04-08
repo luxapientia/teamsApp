@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField } from '@mui/material';
+import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { createTeam, deleteTeam, fetchTeams, fetchAllTeamMembers } from '../../store/slices/teamsSlice';
 import { RootState } from '../../store';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
@@ -106,6 +107,17 @@ const TeamsTabContent: React.FC = () => {
       });
   };
 
+  // Handle member removal from a team
+  const handleRemoveMember = async (memberId: string) => {
+    try {
+      await api.delete(`/teams/${selectedTeamId}/members/${memberId}`);
+      // Refresh the team members list after removal
+      dispatch(fetchAllTeamMembers(tenantId));
+    } catch (error) {
+      console.error('Error removing team member:', error);
+    }
+  };
+
   // Fetch teams and all team members when component mounts or tenantId changes
   useEffect(() => {
     dispatch(fetchTeams(tenantId));
@@ -191,6 +203,7 @@ const TeamsTabContent: React.FC = () => {
                 <StyledHeaderCell>Name</StyledHeaderCell>
                 <StyledHeaderCell>Email</StyledHeaderCell>
                 <StyledHeaderCell>Role</StyledHeaderCell>
+                <StyledHeaderCell align="center">Actions</StyledHeaderCell>
               </TableRow>
             )}
           </TableHead>
@@ -268,6 +281,16 @@ const TeamsTabContent: React.FC = () => {
                 <StyledTableCell>{member.name}</StyledTableCell>
                 <StyledTableCell>{member.email}</StyledTableCell>
                 <StyledTableCell>{member.role}</StyledTableCell>
+                <StyledTableCell align="center">
+                  <IconButton
+                    color="error"
+                    onClick={() => handleRemoveMember(member.MicrosoftId)}
+                    size="small"
+                    title="Remove member"
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </StyledTableCell>
               </TableRow>
             ))}
           </TableBody>
