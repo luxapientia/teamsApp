@@ -168,25 +168,31 @@ router.get('/verify', async (req: Request, res: Response) => {
   }
 });
 
-// Add a route to handle admin consent callback
-router.get('/consent-callback', async (req: Request, res: Response) => {
+// Handle admin consent callback
+router.get('/consent-callback', async (req, res) => {
   try {
-    const { admin_consent, tenant } = req.query;
+    const { error, admin_consent, state } = req.query;
     
-    // Check if consent was granted
-    if (admin_consent === 'True') {
-      console.log(`Admin consent granted for tenant ${tenant}`);
-      // You could store this information in your database if needed
-      
-      // Redirect to the app with a success message
-      return res.redirect(`${process.env.FRONTEND_URL}/auth/consent-success?tenant=${tenant}`);
-    } else {
-      console.error(`Admin consent denied for tenant ${tenant}`);
-      return res.redirect(`${process.env.FRONTEND_URL}/auth/consent-error?tenant=${tenant}`);
+    if (error) {
+      console.error('Consent error:', error);
+      res.redirect('/auth/error?message=consent_failed');
+      return;
     }
+
+    if (!admin_consent) {
+      res.redirect('/auth/error?message=consent_denied');
+      return;
+    }
+
+    // Decode the state parameter
+    const stateData = JSON.parse(Buffer.from(state as string, 'base64').toString());
+    const { returnUrl } = stateData;
+
+    // Redirect back to the app
+    res.redirect(returnUrl);
   } catch (error) {
-    console.error('Error in consent callback:', error);
-    return res.status(500).json({ error: 'Failed to process consent callback' });
+    console.error('Error handling consent callback:', error);
+    res.redirect('/auth/error?message=unknown_error');
   }
 });
 
