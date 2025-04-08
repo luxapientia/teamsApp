@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { createTeam, deleteTeam, fetchTeams } from '../../store/slices/teamsSlice';
+import { createTeam, deleteTeam, fetchTeams, fetchAllTeamMembers } from '../../store/slices/teamsSlice';
 import { RootState } from '../../store';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
@@ -20,17 +20,17 @@ enum ViewStatus {
 
 const TeamsTabContent: React.FC = () => {
   const dispatch = useAppDispatch();
-  const teams = useAppSelector((state: RootState) => state.teams || []);
+  const { teams, teamMembers, loading } = useAppSelector((state: RootState) => state.teams);
   const { user } = useAuth();
   const tenantId = user?.tenantId || '987eaa8d-6b2d-4a86-9b2e-8af581ec8056';
   const [status, setStatus] = useState<ViewStatus>(ViewStatus.TEAM_LIST);
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [newTeamName, setNewTeamName] = useState<string>('');
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
-  const [isTeams, setIsTeams] = useState<boolean>(false);
   const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Get the members for the currently selected team
+  const currentTeamMembers = selectedTeamId ? (teamMembers[selectedTeamId] || []) : [];
 
   const handleViewClick = (teamId: string) => {
     console.log('handleViewClick', teamId);
@@ -50,20 +50,7 @@ const TeamsTabContent: React.FC = () => {
   };
 
   const handleAddMemberClick = () => {
-    // Always use our custom picker
     setIsPickerOpen(true);
-  };
-
-  const fetchTeamMembers = async () => {
-    if (selectedTeamId) {
-      try {
-        const response = await api.get(`/users/team/${selectedTeamId}`);
-        setTeamMembers(response.data.data);
-        console.log('teamMembers', teamMembers);
-      } catch (error) {
-        console.error('Error fetching team members:', error);
-      }
-    }
   };
 
   const handlePeopleSelected = async (people: Person[]) => {
@@ -73,9 +60,8 @@ const TeamsTabContent: React.FC = () => {
       await api.post(`/teams/${selectedTeamId}/members`, {
         userIds: people.map(person => person.MicrosoftId)
       });
-      // Refresh the teams list after adding members
-      dispatch(fetchTeams(tenantId));
-      fetchTeamMembers();
+      // Refresh all team members after adding new ones
+      dispatch(fetchAllTeamMembers(tenantId));
     } catch (error) {
       console.error('Error adding team members:', error);
     }
@@ -120,13 +106,14 @@ const TeamsTabContent: React.FC = () => {
       });
   };
 
+  // Fetch teams and all team members when component mounts or tenantId changes
   useEffect(() => {
     dispatch(fetchTeams(tenantId));
-    fetchTeamMembers();
-  }, [selectedTeamId]);
+    dispatch(fetchAllTeamMembers(tenantId));
+  }, [dispatch, tenantId]);
 
-  if (isTeams && !isInitialized) {
-    return <Box>Loading...</Box>;
+  if (loading) {
+    return <Box>Loading teams...</Box>;
   }
 
   return (
@@ -202,8 +189,7 @@ const TeamsTabContent: React.FC = () => {
             ) : (
               <TableRow>
                 <StyledHeaderCell>Name</StyledHeaderCell>
-                <StyledHeaderCell>Title</StyledHeaderCell>
-                <StyledHeaderCell>Location</StyledHeaderCell>
+                <StyledHeaderCell>Email</StyledHeaderCell>
                 <StyledHeaderCell>Role</StyledHeaderCell>
               </TableRow>
             )}
@@ -258,7 +244,7 @@ const TeamsTabContent: React.FC = () => {
                     >
                       View
                     </Button>
-                    {(!team.members || team.members.length === 0) && (
+                    {(!teamMembers[team._id] || teamMembers[team._id].length === 0) && (
                       <Button
                         variant="outlined"
                         color="error"
@@ -277,11 +263,10 @@ const TeamsTabContent: React.FC = () => {
               </TableRow>
             ))}
 
-            {status === ViewStatus.MEMBER_LIST && teamMembers.map((member, index) => (
+            {status === ViewStatus.MEMBER_LIST && currentTeamMembers.map((member, index) => (
               <TableRow key={index} hover>
                 <StyledTableCell>{member.name}</StyledTableCell>
-                <StyledTableCell>{member.title}</StyledTableCell>
-                <StyledTableCell>{member.location}</StyledTableCell>
+                <StyledTableCell>{member.email}</StyledTableCell>
                 <StyledTableCell>{member.role}</StyledTableCell>
               </TableRow>
             ))}
