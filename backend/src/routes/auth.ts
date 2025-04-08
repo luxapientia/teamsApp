@@ -117,4 +117,33 @@ router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Resp
   }
 });
 
+// Add a token verification endpoint
+router.get('/verify', async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Verify the token and get the user profile
+    const userProfile = await authService.verifyToken(token);
+    
+    if (!userProfile) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    // Return the user information for the client to update state
+    return res.json({
+      status: 'success',
+      data: {
+        user: userProfile,
+        token: token // Return the same token since it's still valid
+      }
+    });
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
 export default router; 
