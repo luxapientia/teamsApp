@@ -45,7 +45,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
     const [personalPerformance, setPersonalPerformance] = React.useState<PersonalPerformance | null>(null);
     const [selectedRatingScales, setSelectedRatingScales] = React.useState<AnnualTargetRatingScale[] | null>(null);
-    const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, position: string, team: string, teamId: string }[]>([]);
+    const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
 
     useEffect(() => {
         fetchPersonalPerformance();

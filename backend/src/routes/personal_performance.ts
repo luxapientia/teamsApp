@@ -103,10 +103,10 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
     const teamPerformances: any[] = [];
     allPersonalPerformances.forEach(performance => {
       if(performance.quarterlyTargets[0].supervisorId === req.user?._id) {
-        teamPerformances.push({...performance._doc, fullName: performance.userId.name, position: 'position', team: performance.teamId?.name});
+        teamPerformances.push({...performance._doc, fullName: performance.userId.name, jobTitle: performance.userId.jobTitle, team: performance.teamId?.name});
       } else {
         if(isTeamOwner) {
-          teamPerformances.push({...performance._doc, fullName: performance.userId.name, position: 'position', team: performance.teamId?.name});
+          teamPerformances.push({...performance._doc, fullName: performance.userId.name, jobTitle: performance.userId.jobTitle, team: performance.teamId?.name});
         }
       }
     });
