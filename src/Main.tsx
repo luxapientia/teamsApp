@@ -54,7 +54,7 @@ function Main() {
       <NotificationPage
         title='Notifications'
         icon={<Alert24Regular fontSize={iconSize} />}
-        tabs={['Quarterly Targets', 'Performance Assessments']}
+        tabs={[]}
         selectedTab={selectedTab}
       />
       <MyPerformanceAssessment
