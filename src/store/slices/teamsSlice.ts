@@ -130,23 +130,57 @@ export const fetchTeamOwner = createAsyncThunk(
 
 export const setTeamOwner = createAsyncThunk(
   'teams/setTeamOwner',
-  async ({ teamId, userId }: { teamId: string, userId: string }) => {
+  async ({ teamId, userId }: { teamId: string, userId: string | null }) => {
     try {
-      const response = await api.put(`/teams/${teamId}/owner/${userId}`);
+      const response = await api.put(`/teams/${teamId}/owner${userId ? `/${userId}` : ''}`);
       if (response.status === 200) {
         // After setting the owner, fetch their details
-        const ownerResponse = await api.get(`/teams/${teamId}/owner`);
-        if (ownerResponse.status === 200) {
-          return { 
-            teamId, 
-            owner: ownerResponse.data.data 
-          };
+        if (userId) {
+          const ownerResponse = await api.get(`/teams/${teamId}/owner`);
+          if (ownerResponse.status === 200) {
+            return { 
+              teamId, 
+              owner: ownerResponse.data.data 
+            };
+          }
         }
       }
       return { teamId, owner: null };
     } catch (error) {
       console.error('Error setting team owner:', error);
       return { teamId, owner: null };
+    }
+  }
+);
+
+// Add these new action creators for team member operations
+export const addTeamMembers = createAsyncThunk(
+  'teams/addTeamMembers',
+  async ({ teamId, userIds }: { teamId: string, userIds: string[] }) => {
+    try {
+      await api.post(`/teams/${teamId}/members`, { userIds });
+      // After adding members, fetch the updated team members
+      const response = await api.get(`/users/team/${teamId}`);
+      return {
+        teamId,
+        members: response.data.data || []
+      };
+    } catch (error) {
+      console.error('Error adding team members:', error);
+      throw error;
+    }
+  }
+);
+
+export const removeTeamMember = createAsyncThunk(
+  'teams/removeTeamMember',
+  async ({ teamId, memberId }: { teamId: string, memberId: string }) => {
+    try {
+      await api.delete(`/teams/${teamId}/members/${memberId}`);
+      return { teamId, memberId };
+    } catch (error) {
+      console.error('Error removing team member:', error);
+      throw error;
     }
   }
 );
@@ -205,6 +239,38 @@ const teamsSlice = createSlice({
       }
     });
     
+    // Add team members cases
+    builder.addCase(addTeamMembers.fulfilled, (state, action) => {
+      const { teamId, members } = action.payload;
+      state.teamMembers[teamId] = members;
+      
+      // Update the team owner if it was cleared during member addition
+      const team = state.teams.find(t => t._id === teamId);
+      if (team) {
+        const member = members.find(m => m.MicrosoftId === team.owner?.MicrosoftId);
+        if (!member) {
+          team.owner = null;
+        }
+      }
+    });
+
+    // Remove team member cases
+    builder.addCase(removeTeamMember.fulfilled, (state, action) => {
+      const { teamId, memberId } = action.payload;
+      if (state.teamMembers[teamId]) {
+        state.teamMembers[teamId] = state.teamMembers[teamId].filter(
+          member => member.MicrosoftId !== memberId
+        );
+      }
+      
+      // If the removed member was the owner, update the team's owner field
+      const team = state.teams.find(t => t._id === teamId);
+      if (team && team.owner?.MicrosoftId === memberId) {
+        team.owner = null;
+      }
+    });
+
+    // Set team owner cases
     builder.addCase(setTeamOwner.fulfilled, (state, action) => {
       const { teamId, owner } = action.payload;
       // Find the team and update its owner
