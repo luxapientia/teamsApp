@@ -100,7 +100,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         }
       }
 
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+      if (quarter === 'Q1' && target.isEditable === false) {
         return {
           ...target,
           supervisorId: event.target.value,
@@ -167,11 +167,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         }
       }
 
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+      if (quarter === 'Q1' && target.isEditable === false) {
         return {
           ...target,
           agreementStatus: AgreementStatus.Draft,
-          isEditable: calculateTotalWeight() === 100 ? true : false,
+          isEditable: calculateTotalWeight(newPersonalQuarterlyObjectives) === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: newPersonalQuarterlyObjectives
         }
@@ -193,8 +193,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   // Add total weight calculation function
-  const calculateTotalWeight = () => {
-    return personalQuarterlyObjectives.reduce((total, objective) => {
+  const calculateTotalWeight = (objectives: PersonalQuarterlyTargetObjective[]) =>   {
+    return objectives.reduce((total, objective) => {
       const totalWeight = objective.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0);
       return total + totalWeight;
     }, 0);
@@ -212,11 +212,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         }
       }
 
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight(personalQuarterlyObjectives) <= 100) {
         return {
           ...target,
           agreementStatus: AgreementStatus.Draft,
-          isEditable: calculateTotalWeight() === 100 ? true : false,
+          isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -305,7 +305,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   // Add validation function for submit button
   const canSubmit = () => {
-    return selectedSupervisor !== '' && calculateTotalWeight() === 100 && !isApproved;
+    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && canEdit();
   };
 
   const handleDeleteConfirm = async () => {
@@ -488,11 +488,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         <Typography
           sx={{
             fontWeight: 500,
-            color: calculateTotalWeight() === 100 ? '#059669' : '#DC2626'
+            color: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? '#059669' : '#DC2626'
           }}
         >
-          Total Weight: {calculateTotalWeight()}%
-          {calculateTotalWeight() > 100 && (
+          Total Weight: {calculateTotalWeight(personalQuarterlyObjectives)}%
+          {calculateTotalWeight(personalQuarterlyObjectives) > 100 && (
             <Typography
               component="span"
               sx={{
