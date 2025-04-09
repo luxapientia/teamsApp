@@ -42,6 +42,11 @@ const TeamsTabContent: React.FC = () => {
   // Get the current team object
   const currentTeam = teams.find(team => team._id === selectedTeamId);
 
+  // Get all team members across all teams
+  const allTeamMembers = React.useMemo(() => {
+    return Object.values(teamMembers).flat();
+  }, [teamMembers]);
+
   const handleViewClick = (teamId: string) => {
     console.log('handleViewClick', teamId);
     setStatus(ViewStatus.MEMBER_LIST);
@@ -418,6 +423,7 @@ const TeamsTabContent: React.FC = () => {
           title="Select Team Members"
           multiSelect={true}
           tenantId={tenantId}
+          currentTeamMembers={allTeamMembers}
         />
       )}
     </Box>
