@@ -34,6 +34,7 @@ interface PeoplePickerModalProps {
   tenantId: string;
   title?: string;
   multiSelect?: boolean;
+  currentTeamMembers?: Person[];
 }
 
 const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
@@ -42,7 +43,8 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
   tenantId,
   onSelectPeople,
   title = 'Select People',
-  multiSelect = true
+  multiSelect = true,
+  currentTeamMembers = []
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPeople, setSelectedPeople] = useState<Person[]>([]);
@@ -81,8 +83,13 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         email: user.mail
       }));
 
-      setPeople(prev => [...prev, ...newUsers]);
-      setFilteredPeople(prev => [...prev, ...newUsers]);
+      // Filter out all existing team members
+      const filteredNewUsers = newUsers.filter(user => 
+        !currentTeamMembers.some(member => member.MicrosoftId === user.MicrosoftId)
+      );
+
+      setPeople(prev => [...prev, ...filteredNewUsers]);
+      setFilteredPeople(prev => [...prev, ...filteredNewUsers]);
       setNextLink(response.data.nextLink || null);
       setHasMore(!!response.data.nextLink);
     } catch (error) {
@@ -106,8 +113,14 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         displayName: user.displayName,
         email: user.mail
       }));
-      setPeople(tempUsers);
-      setFilteredPeople(tempUsers);
+      
+      // Filter out all existing team members
+      const filteredUsers = tempUsers.filter(user => 
+        !currentTeamMembers.some(member => member.MicrosoftId === user.MicrosoftId)
+      );
+      
+      setPeople(filteredUsers);
+      setFilteredPeople(filteredUsers);
       setNextLink(response.data.nextLink || null);
       setHasMore(!!response.data.nextLink);
     } catch (error: any) {
