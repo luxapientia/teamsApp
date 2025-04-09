@@ -37,7 +37,6 @@ import { api } from '../../../services/api';
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
-  onSupervisorChange?: (supervisorId: string) => void;
   onBack?: () => void;
   personalPerformance?: PersonalPerformance | null;
 }
@@ -46,7 +45,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   annualTarget,
   quarter,
   onBack,
-  onSupervisorChange = () => { },
   personalPerformance = null,
 }) => {
   const dispatch = useAppDispatch();
@@ -89,7 +87,30 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const handleSupervisorChange = (event: SelectChangeEvent) => {
     setSelectedSupervisor(event.target.value);
-    onSupervisorChange(event.target.value);
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          supervisorId: event.target.value,
+        }
+      }
+
+      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+        return {
+          ...target,
+          supervisorId: event.target.value,
+        }
+      }
+      return target;
+    });
+
+    dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
+
   };
 
   const handleEdit = (objective: PersonalQuarterlyTargetObjective) => {
@@ -97,7 +118,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     setIsAddInitiativeModalOpen(true);
   };
 
-  const handleInitiativeSave = (data: {
+  const handleInitiativeSave = async (data: {
     perspectiveId: number;
     objectiveName: string;
     initiative: string;
@@ -110,37 +131,31 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       KPIs: data.kpis,
     };
 
+    let newPersonalQuarterlyObjectives = [...personalQuarterlyObjectives];
+
     if (editingObjective) {
-      setPersonalQuarterlyObjectives(prevObjectives =>
-        prevObjectives.map(obj =>
-          (obj.name === editingObjective.name &&
-            obj.initiativeName === editingObjective.initiativeName &&
-            obj.perspectiveId === editingObjective.perspectiveId)
-            ? newObjective
-            : obj
-        )
+      newPersonalQuarterlyObjectives = newPersonalQuarterlyObjectives.map(obj =>
+        (obj.name === editingObjective.name &&
+          obj.initiativeName === editingObjective.initiativeName &&
+          obj.perspectiveId === editingObjective.perspectiveId)
+          ? newObjective
+          : obj
       );
+      setPersonalQuarterlyObjectives(newPersonalQuarterlyObjectives);
     } else {
-      setPersonalQuarterlyObjectives(prev => [...prev, newObjective]);
+      newPersonalQuarterlyObjectives.push(newObjective);
+      setPersonalQuarterlyObjectives(newPersonalQuarterlyObjectives);
     }
 
     setEditingObjective(null);
     setIsAddInitiativeModalOpen(false);
-  };
-
-  const handleViewRatingScales = (kpi: QuarterlyTargetKPI) => {
-    setSelectedRatingScales(kpi.ratingScales);
-  };
-
-  const handleDraft = () => {
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-
       if (target.quarter === quarter) {
         return {
           ...target,
           agreementStatus: AgreementStatus.Draft,
           supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
+          objectives: newPersonalQuarterlyObjectives
         }
       }
 
@@ -150,20 +165,22 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           agreementStatus: AgreementStatus.Draft,
           isEditable: calculateTotalWeight() === 100 ? true : false,
           supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
+          objectives: newPersonalQuarterlyObjectives
         }
-
       }
       return target;
     });
 
-    dispatch(updatePersonalPerformance({
+    await dispatch(updatePersonalPerformance({
       _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',  
+      teamId: personalPerformance?.teamId || '',
       annualTargetId: personalPerformance?.annualTargetId || '',
       quarterlyTargets: newPersonalQuarterlyTargets || []
     }));
+  };
 
+  const handleViewRatingScales = (kpi: QuarterlyTargetKPI) => {
+    setSelectedRatingScales(kpi.ratingScales);
   };
 
   // Add total weight calculation function
@@ -200,7 +217,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     });
 
     await dispatch(updatePersonalPerformance({
-        _id: personalPerformance?._id || '',
+      _id: personalPerformance?._id || '',
       teamId: personalPerformance?.teamId || '',
       annualTargetId: personalPerformance?.annualTargetId || '',
       quarterlyTargets: newPersonalQuarterlyTargets || []
@@ -288,7 +305,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           obj.initiativeName === initiativeToDelete.initiativeName &&
           obj.perspectiveId === initiativeToDelete.perspectiveId)
       );
-      
+
       setPersonalQuarterlyObjectives(updatedObjectives);
 
       // Update Redux state
@@ -414,20 +431,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           </Typography>
         ) : (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
-                '&:hover': {
-                  backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
-                },
-                cursor: isSubmitted ? 'default' : 'pointer'
-              }}
-              disabled={!canEdit()}
-              onClick={() => handleDraft()}
+            <Typography
+              variant="caption"
+              sx={{ color: isSubmitted ? '#059669' : '#F59E0B' }}
+              fontWeight={600}
+              fontSize={'20px'}
             >
               {isSubmitted ? 'Submitted' : 'Draft'}
-            </Button>
+            </Typography>
             <Button
               variant="contained"
               sx={{
