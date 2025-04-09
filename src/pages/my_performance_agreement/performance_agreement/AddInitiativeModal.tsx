@@ -37,7 +37,7 @@ interface AddInitiativeModalProps {
     objectiveName: string;
     initiative: string;
     kpis: QuarterlyTargetKPI[];
-  }) => void;
+  }) => Promise<void>;
   editingObjective?: PersonalQuarterlyTargetObjective | null;
   personalQuarterlyObjectives: PersonalQuarterlyTargetObjective[];
 }
@@ -136,7 +136,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
     return (currentTotalWeight + newWeight) <= 100;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setError(null);
 
     if (!validateForm()) {
@@ -161,7 +161,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
       return;
     }
 
-    onSave({
+    await onSave({
       perspectiveId: selectedPerspective.index,
       objectiveName: selectedObjective,
       initiative,

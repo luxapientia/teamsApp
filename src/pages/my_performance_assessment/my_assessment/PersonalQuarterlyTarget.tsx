@@ -42,7 +42,6 @@ const AccessButton = styled(Button)({
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
-  onSupervisorChange?: (supervisorId: string) => void;
   onBack?: () => void;
   personalPerformance?: PersonalPerformance | null;
 }
@@ -51,7 +50,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   annualTarget,
   quarter,
   onBack,
-  onSupervisorChange = () => { },
   personalPerformance = null,
 }) => {
   const dispatch = useAppDispatch();
@@ -80,7 +78,33 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const handleSupervisorChange = (event: SelectChangeEvent) => {
     setSelectedSupervisor(event.target.value);
-    onSupervisorChange(event.target.value);
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          assessmentStatus: AssessmentStatus.Draft,
+          supervisorId: event.target.value,
+        }
+      }
+
+      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+        return {
+          ...target,
+          assessmentStatus: AssessmentStatus.Draft,
+          supervisorId: event.target.value,
+        }
+
+      }
+      return target;
+    });
+
+    dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
   };
 
   const fetchCompanyUsers = async () => {
@@ -274,7 +298,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
 
 
-  const handleSave = (newKPI: QuarterlyTargetKPI) => {
+  const handleSave = async (newKPI: QuarterlyTargetKPI) => {
     if (selectedKPI) {
       const newPersonalQuarterlyObjectives = personalQuarterlyObjectives.map(objective => {
         if (objective.perspectiveId === selectedKPI.perspectiveId && objective.name === selectedKPI.objectiveName && objective.initiativeName === selectedKPI.initiativeName) {
@@ -287,8 +311,38 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       })
       setPersonalQuarterlyObjectives(newPersonalQuarterlyObjectives);
       setSelectedKPI(null);
-    }
 
+      const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+
+        if (target.quarter === quarter) {
+          return {
+            ...target,
+            assessmentStatus: AssessmentStatus.Draft,
+            supervisorId: selectedSupervisor,
+            objectives: newPersonalQuarterlyObjectives
+          }
+        }
+
+        if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+          return {
+            ...target,
+            assessmentStatus: AssessmentStatus.Draft,
+            isEditable: calculateTotalWeight() === 100 ? true : false,
+            supervisorId: selectedSupervisor,
+            objectives: newPersonalQuarterlyObjectives
+          }
+
+        }
+        return target;
+      });
+
+      dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+    }
   };
 
   return (
@@ -363,20 +417,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           </Typography>
         ) : (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: isSubmitted ? '#9CA3AF' : '#F59E0B',
-                '&:hover': {
-                  backgroundColor: isSubmitted ? '#9CA3AF' : '#D97706'
-                },
-                cursor: isSubmitted ? 'default' : 'pointer'
-              }}
-              disabled={isSubmitted}
-              onClick={() => handleDraft()}
+            <Typography
+              variant="caption"
+              sx={{ color: isSubmitted ? '#059669' : '#F59E0B' }}
+              fontWeight={600}
+              fontSize={'20px'}
             >
               {isSubmitted ? 'Submitted' : 'Draft'}
-            </Button>
+            </Typography>
             <Button
               variant="contained"
               sx={{

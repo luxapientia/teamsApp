@@ -193,10 +193,6 @@ const PersonalPerformanceAgreement: React.FC = () => {
         <PersonalQuarterlyTargetContent
           annualTarget={selectedAnnualTarget}
           quarter={selectedQuarter as QuarterType}
-          onSupervisorChange={(supervisorId: string) => {
-            // Handle supervisor change
-            console.log('Selected supervisor:', supervisorId);
-          }}
           onBack={() => {
             setShowPersonalQuarterlyTarget(false);
             setShowQuarterlyTargets(true);
