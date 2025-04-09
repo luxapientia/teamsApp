@@ -18,6 +18,7 @@ import {
   Stack,
   IconButton,
   TextField,
+  TableContainer,
 } from '@mui/material';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -438,97 +439,104 @@ const PerformanceEvaluations: React.FC = () => {
 
           <Paper 
             className="performance-table"
-            sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}
+            sx={{ 
+              width: '100%', 
+              boxShadow: 'none', 
+              border: '1px solid #E5E7EB',
+              overflow: 'hidden'
+            }}
           >
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <StyledHeaderCell>Perspective</StyledHeaderCell>
-                  <StyledHeaderCell>Strategic Objective</StyledHeaderCell>
-                  <StyledHeaderCell align="center">Weight %</StyledHeaderCell>
-                  <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
-                  <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
-                  <StyledHeaderCell align="center">Target</StyledHeaderCell>
-                  <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
-                  <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
-                  <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
-                  <StyledHeaderCell align="center">Access</StyledHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {(() => {
-                  let currentPerspective = '';
-                  // First pass to calculate rowspans
-                  const perspectiveSpans = getQuarterlyObjectives().reduce((acc, objective) => {
-                    const perspectiveName = selectedAnnualTarget?.content.perspectives.find(p => p.index === objective.perspectiveId)?.name || '';
-                    acc[perspectiveName] = (acc[perspectiveName] || 0) + objective.KPIs.length;
-                    return acc;
-                  }, {} as Record<string, number>);
-
-                  return getQuarterlyObjectives().map((objective) => (
-                    objective.KPIs.map((kpi, kpiIndex) => {
+            <TableContainer sx={{ maxHeight: 'calc(100vh - 300px)', overflowX: 'auto' }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <StyledHeaderCell>Perspective</StyledHeaderCell>
+                    <StyledHeaderCell>Strategic Objective</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Weight %</StyledHeaderCell>
+                    <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Target</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Access</StyledHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {(() => {
+                    let currentPerspective = '';
+                    // First pass to calculate rowspans
+                    const perspectiveSpans = getQuarterlyObjectives().reduce((acc, objective) => {
                       const perspectiveName = selectedAnnualTarget?.content.perspectives.find(p => p.index === objective.perspectiveId)?.name || '';
-                      const row = (
-                        <TableRow key={`${objective.name}-${kpiIndex}`}>
-                          {/* Show perspective only for first KPI in the perspective */}
-                          {perspectiveName !== currentPerspective && (
-                            <StyledTableCell rowSpan={perspectiveSpans[perspectiveName]}>
-                              {perspectiveName}
-                            </StyledTableCell>
-                          )}
-                          {kpiIndex === 0 && (
-                            <StyledTableCell rowSpan={objective.KPIs.length}>
-                              {objective.name}
-                            </StyledTableCell>
-                          )}
-                          <StyledTableCell align="center">{kpi.weight}</StyledTableCell>
-                          <StyledTableCell>{kpi.indicator}</StyledTableCell>
-                          <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
-                          <StyledTableCell align="center">{kpi.target}</StyledTableCell>
-                          <StyledTableCell align="center">{kpi.actualAchieved}</StyledTableCell>
-                          <StyledTableCell align="center" sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}>
-                            {
-                              kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore)) &&
-                              `${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.score} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min} - ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
-                            }
-                          </StyledTableCell>
-                          <StyledTableCell align="center">
-                            {kpi.evidence && (
-                              <IconButton
-                                size="small"
-                                onClick={() => setEvidenceModalData({
-                                  evidence: kpi.evidence,
-                                  attachments: kpi.attachments
-                                })}
-                                sx={{ color: '#6B7280' }}
-                              >
-                                <DescriptionIcon />
-                              </IconButton>
+                      acc[perspectiveName] = (acc[perspectiveName] || 0) + objective.KPIs.length;
+                      return acc;
+                    }, {} as Record<string, number>);
+
+                    return getQuarterlyObjectives().map((objective) => (
+                      objective.KPIs.map((kpi, kpiIndex) => {
+                        const perspectiveName = selectedAnnualTarget?.content.perspectives.find(p => p.index === objective.perspectiveId)?.name || '';
+                        const row = (
+                          <TableRow key={`${objective.name}-${kpiIndex}`}>
+                            {/* Show perspective only for first KPI in the perspective */}
+                            {perspectiveName !== currentPerspective && (
+                              <StyledTableCell rowSpan={perspectiveSpans[perspectiveName]}>
+                                {perspectiveName}
+                              </StyledTableCell>
                             )}
-                          </StyledTableCell>
-                          {editable && (
-                            <StyledTableCell align="center">
-                              <AccessButton
-                                size="small"
-                                onClick={() => handleAccess(kpi)}
-                              >
-                                Evaluate
-                              </AccessButton>
+                            {kpiIndex === 0 && (
+                              <StyledTableCell rowSpan={objective.KPIs.length}>
+                                {objective.name}
+                              </StyledTableCell>
+                            )}
+                            <StyledTableCell align="center">{kpi.weight}</StyledTableCell>
+                            <StyledTableCell>{kpi.indicator}</StyledTableCell>
+                            <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
+                            <StyledTableCell align="center">{kpi.target}</StyledTableCell>
+                            <StyledTableCell align="center">{kpi.actualAchieved}</StyledTableCell>
+                            <StyledTableCell align="center" sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}>
+                              {
+                                kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore)) &&
+                                `${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.score} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min} - ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
+                              }
                             </StyledTableCell>
-                          )}
-                        </TableRow>
-                      );
+                            <StyledTableCell align="center">
+                              {kpi.evidence && (
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setEvidenceModalData({
+                                    evidence: kpi.evidence,
+                                    attachments: kpi.attachments
+                                  })}
+                                  sx={{ color: '#6B7280' }}
+                                >
+                                  <DescriptionIcon />
+                                </IconButton>
+                              )}
+                            </StyledTableCell>
+                            {editable && (
+                              <StyledTableCell align="center">
+                                <AccessButton
+                                  size="small"
+                                  onClick={() => handleAccess(kpi)}
+                                >
+                                  Evaluate
+                                </AccessButton>
+                              </StyledTableCell>
+                            )}
+                          </TableRow>
+                        );
 
-                      if (perspectiveName !== currentPerspective) {
-                        currentPerspective = perspectiveName;
-                      }
+                        if (perspectiveName !== currentPerspective) {
+                          currentPerspective = perspectiveName;
+                        }
 
-                      return row;
-                    })
-                  )).flat();
-                })()}
-              </TableBody>
-            </Table>
+                        return row;
+                      })
+                    )).flat();
+                  })()}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Paper>
           <Box 
             className="overall-rating"
