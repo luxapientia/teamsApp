@@ -38,7 +38,7 @@ export interface PersonalPerformance {
 
 export interface TeamPerformance extends PersonalPerformance {
     fullName: string;
-    position: string;
+    jobTitle: string;
     team: string;
 }
 
