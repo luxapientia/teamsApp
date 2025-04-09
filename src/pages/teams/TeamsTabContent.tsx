@@ -262,9 +262,10 @@ const TeamsTabContent: React.FC = () => {
               </TableRow>
             ) : (
               <TableRow>
-                <StyledHeaderCell width={isMobile ? "25%" : "25%"}>Name</StyledHeaderCell>
-                <StyledHeaderCell width={isMobile ? "35%" : "30%"}>Email</StyledHeaderCell>
-                <StyledHeaderCell width={isMobile ? "25%" : "15%"}>Role</StyledHeaderCell>
+                <StyledHeaderCell width={isMobile ? "15%" : "15%"}>Name</StyledHeaderCell>
+                <StyledHeaderCell width={isMobile ? "25%" : "25%"}>Job Role</StyledHeaderCell>
+                <StyledHeaderCell width={isMobile ? "30%" : "30%"}>Email</StyledHeaderCell>
+                <StyledHeaderCell width={isMobile ? "15%" : "15%"}>Role</StyledHeaderCell>
                 <StyledHeaderCell width={isMobile ? "15%" : "15%"}>Owner</StyledHeaderCell>
                 {canManageTeams && <StyledHeaderCell width={isMobile ? "15%" : "15%"} align="center">Actions</StyledHeaderCell>}
               </TableRow>
@@ -364,6 +365,7 @@ const TeamsTabContent: React.FC = () => {
                     {member.name}
                   </Box>
                 </StyledTableCell>
+                <StyledTableCell>{member.jobTitle}</StyledTableCell>
                 <StyledTableCell>{member.email}</StyledTableCell>
                 <StyledTableCell>{member.role}</StyledTableCell>
                 <StyledTableCell>
