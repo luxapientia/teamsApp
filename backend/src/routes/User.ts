@@ -1,5 +1,6 @@
 import express from 'express';
 import { roleService } from '../services/roleService';
+import { graphService } from '../services/graphService';
 import { authenticateToken } from '../middleware/auth';
 import { requireRole } from '../middleware/roleAuth';
 import type { AuthenticatedRequest } from '../middleware/roleAuth';
@@ -122,17 +123,32 @@ router.get(
 router.get(
   '/tenant/:tenantId',
   authenticateToken,
-  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),  
+  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER, UserRole.USER]),  
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { tenantId } = req.params;
+      
+      if (!tenantId) {
+        throw new ApiError('Tenant ID is required', 400);
+      }
+
+      console.log(`Processing request for tenant: ${tenantId}`);
       const users = await roleService.getAllUsersWithTenantID(tenantId);
+      
       res.json({
         status: 'success',
         data: users
       });
     } catch (error) {
-      next(error);
+      console.error('Error in /tenant/:tenantId endpoint:', error);
+      if (error instanceof ApiError) {
+        res.status(error.statusCode).json({
+          status: 'error',
+          message: error.message
+        });
+      } else {
+        next(error);
+      }
     }
   }
 );  
@@ -140,7 +156,7 @@ router.get(
 router.get(
   '/team/:teamId',
   authenticateToken,
-  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),
+  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER, UserRole.USER]),
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const { teamId } = req.params;
@@ -155,5 +171,105 @@ router.get(
   }
 );
 
+// Get all users in the organization using Graph API
+router.get(
+  '/organization/users',
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const user = req.user;
+      if (!user?.tenantId) {
+        throw new ApiError('User tenant ID not found', 400);
+      }
+
+      const pageSize = parseInt(req.query.pageSize as string) || 20;
+      const nextLink = req.query.nextLink as string;
+
+      try {
+        const result = await graphService.getOrganizationUsers(user.tenantId, pageSize, nextLink);
+        res.json({
+          status: 'success',
+          data: result.value,
+          nextLink: result['@odata.nextLink']
+        });
+      } catch (error: any) {
+        if (error instanceof ApiError && error.statusCode === 403) {
+          const consentUrl = graphService.getConsentUrl(user.tenantId);
+          res.status(403).json({
+            status: 'error',
+            message: error.message,
+            consentRequired: true,
+            consentUrl
+          });
+          return;
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in /organization/users endpoint:', error);
+      next(error);
+    }
+  }
+);
+
+// Bulk create or update users
+router.post(
+  '/bulk-create',
+  authenticateToken,
+  async (req: AuthenticatedRequest, res, next) => {
+    try {
+      const { users } = req.body;
+      const currentUser = req.user;
+
+      if (!Array.isArray(users)) {
+        throw new ApiError('Invalid users data', 400);
+      }
+
+      if (!currentUser?.tenantId) {
+        throw new ApiError('Tenant ID not found', 400);
+      }
+
+      const results = await Promise.all(
+        users.map(async (userData) => {
+          try {
+            // Check if user already exists
+            const existingUser = await User.findOne({ MicrosoftId: userData.MicrosoftId });
+            
+            if (existingUser) {
+              // Update existing user if needed
+              if (!existingUser.tenantId) {
+                existingUser.tenantId = userData.tenantId || currentUser.tenantId;
+                await existingUser.save();
+              }
+              return existingUser;
+            } else {
+              // Create new user with tenant ID
+              const newUser = await roleService.createUser(
+                userData.MicrosoftId,
+                userData.displayName,
+                userData.email,
+                UserRole.USER,
+                userData.tenantId || currentUser.tenantId // Use provided tenantId or fallback to current user's tenantId
+              );
+              return newUser;
+            }
+          } catch (error) {
+            console.error('Error processing user:', userData, error);
+            return null;
+          }
+        })
+      );
+
+      const successfulResults = results.filter(result => result !== null);
+
+      res.json({
+        status: 'success',
+        data: successfulResults
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router; 
