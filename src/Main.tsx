@@ -23,7 +23,6 @@ function Main() {
   const [selectedTab, setSelectedTab] = useState('');
   const { user } = useAuth();
   const dispatch = useAppDispatch();
-  const isAppOwner = user?.email === 'admin@siliconsoftwaresolutions.onmicrosoft.com';
   const selectedTabChanger = (tab: string) => {
     setSelectedTab(tab);
   }
@@ -48,6 +47,9 @@ function Main() {
     };
   }, [dispatch, subscribe, unsubscribe]);
 
+  const isSuperUser = user?.role === 'SuperUser';
+  const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
+
   return (
     <Layout selectedTabChanger={selectedTabChanger}>
       <NotificationPage
@@ -68,30 +70,38 @@ function Main() {
         tabs={['My Quarterly Targets']}
         selectedTab={selectedTab}
       />
-      <OrganizationPerformance
-        title='Organization Performance'
-        icon={<DataTrending24Regular fontSize={iconSize} />}
+      {(isAppOwner || isSuperUser) && (
+        <OrganizationPerformance
+          title='Organization Performance'
+          icon={<DataTrending24Regular fontSize={iconSize} />}
         tabs={['Performance Evaluations', 'Organization Performance']}
         selectedTab={selectedTab}
       />
+      )}
+      {(isAppOwner || isSuperUser) && (
       <AnnualCorporateScorecard
         title="Annual Corporate Scorecard"
         icon={<Globe24Regular fontSize={iconSize} />}
         tabs={['Quarterly Targets', 'Annual Targets']}
-        selectedTab={selectedTab}
-      />
-      <Reports
-        title='Reports'
-        icon={<DocumentText24Regular fontSize={iconSize} />}
+          selectedTab={selectedTab}
+        />
+      )}
+      {(isAppOwner || isSuperUser) && (
+        <Reports
+          title='Reports'
+          icon={<DocumentText24Regular fontSize={iconSize} />}
         tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
         selectedTab={selectedTab}
       />
+      )}
+      {(isAppOwner || isSuperUser) && (
       <Teams
         title='Teams'
         icon={<PeopleTeam24Regular fontSize={iconSize} />}
         tabs={['Teams']}
         selectedTab={selectedTab}
       />
+      )}
       {/* <AdminPanel /> */}
       {isAppOwner && (
         <ManagePage
