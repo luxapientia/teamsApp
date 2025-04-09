@@ -295,12 +295,12 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
           if (notification.type === 'agreement') {
             return {
               ...quarterlyTarget._doc,
-              agreementStatus: 'Draft'
+              agreementStatus: 'SendBack'
             };
           } else {
             return {
               ...quarterlyTarget._doc,
-              assessmentStatus: 'Draft'
+              assessmentStatus: 'SendBack'
             };
           }
         }

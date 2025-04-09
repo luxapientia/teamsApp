@@ -15,6 +15,7 @@ import {
   SelectChangeEvent,
   IconButton,
   styled,
+  Chip,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
@@ -63,6 +64,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   } | null>(null);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [isApproved, setIsApproved] = useState(false);
+  const [status, setStatus] = useState<AssessmentStatus | null>(null);
   useEffect(() => {
     fetchCompanyUsers();
   }, []);
@@ -73,6 +75,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
       setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === 'Submitted');
       setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === 'Approved');
+      setStatus(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus);
     }
   }, [personalPerformance]);
 
@@ -105,6 +108,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       annualTargetId: personalPerformance?.annualTargetId || '',
       quarterlyTargets: newPersonalQuarterlyTargets || []
     }));
+
+    setStatus(AssessmentStatus.Draft);
   };
 
   const fetchCompanyUsers = async () => {
@@ -156,40 +161,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }, 0);
   };
 
-  const handleDraft = () => {
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Draft,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Draft,
-          isEditable: calculateTotalWeight() === 100 ? true : false,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-
-      }
-      return target;
-    });
-
-    dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
-  };
-
   const handleSubmit = async () => {
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
 
@@ -234,6 +205,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
 
     setIsSubmitted(true);
+    setStatus(AssessmentStatus.Submitted);
   }
 
   // Add recall handler
@@ -342,6 +314,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarterlyTargets: newPersonalQuarterlyTargets || []
       }));
+
+      setStatus(AssessmentStatus.Draft);
     }
   };
 
@@ -409,22 +383,28 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         {isApproved ? (
-          <Typography
-            variant="caption"
-            sx={{ color: '#059669' }}
-          >
-            Approved
-          </Typography>
+          <Chip
+            label="Approved"
+            size="medium"
+            color="success"
+            sx={{
+              height: '30px',
+              fontSize: '0.75rem'
+            }}
+          />
         ) : (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            <Typography
-              variant="caption"
-              sx={{ color: isSubmitted ? '#059669' : '#F59E0B' }}
-              fontWeight={600}
-              fontSize={'20px'}
-            >
-              {isSubmitted ? 'Submitted' : 'Draft'}
-            </Typography>
+            {personalQuarterlyObjectives.length > 0 &&
+              <Chip
+                label={status}
+                size="medium"
+                color={status == 'SendBack' ? 'error' : 'warning'}
+                sx={{
+                  height: '30px',
+                  fontSize: '0.75rem'
+                }}
+              />
+            }
             <Button
               variant="contained"
               sx={{

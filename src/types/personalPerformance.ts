@@ -7,13 +7,15 @@ export interface PersonalQuarterlyTargetObjective extends QuarterlyTargetObjecti
 export enum AgreementStatus {
     Draft = 'Draft',
     Submitted = 'Submitted',
-    Approved = 'Approved'
+    Approved = 'Approved',
+    SendBack = 'SendBack'
 }
 
 export enum AssessmentStatus {
     Draft = 'Draft',
     Submitted = 'Submitted',
-    Approved = 'Approved'
+    Approved = 'Approved',
+    SendBack = 'SendBack'
 }
 
 

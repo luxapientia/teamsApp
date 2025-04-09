@@ -5,13 +5,15 @@ import { QuarterlyTargetKPI } from './AnnualTarget';
 export enum AgreementStatus {
   Draft = 'Draft',
   Submitted = 'Submitted',
-  Approved = 'Approved'
+  Approved = 'Approved',
+  SendBack = 'SendBack'
 }
 
 export enum AssessmentStatus {
   Draft = 'Draft',
   Submitted = 'Submitted',
-  Approved = 'Approved'
+  Approved = 'Approved',
+  SendBack = 'SendBack'
 }
 
 interface PersonalQuarterlyTargetObjective {
