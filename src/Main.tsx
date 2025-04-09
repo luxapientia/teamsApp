@@ -5,8 +5,6 @@ import AnnualCorporateScorecard from './pages/scorecards';
 import Teams from './pages/teams';
 import { ManagePage } from './pages/manage';
 import { GridRegular, Alert24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular } from '@fluentui/react-icons';
-import { Provider } from 'react-redux';
-import { store } from './store';
 import { useAuth } from './contexts/AuthContext';
 import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
@@ -18,13 +16,13 @@ import { useAppDispatch } from './hooks/useAppDispatch';
 import { fetchAnnualTargets } from './store/slices/scorecardSlice';
 import { useSocket } from './hooks/useSocket';
 import { SocketEvent } from './types/socket';
+import { fetchTeams } from './store/slices/teamsSlice';
 const iconSize = 24;
 
 function Main() {
   const [selectedTab, setSelectedTab] = useState('');
   const { user } = useAuth();
   const dispatch = useAppDispatch();
-  const isAppOwner = user?.email === 'admin@siliconsoftwaresolutions.onmicrosoft.com';
   const selectedTabChanger = (tab: string) => {
     setSelectedTab(tab);
   }
@@ -37,7 +35,7 @@ function Main() {
   useEffect(() => {
     dispatch(fetchNotifications());
     dispatch(fetchAnnualTargets());
-
+    dispatch(fetchTeams(user?.tenantId));
     // Subscribe to notification events
     subscribe(SocketEvent.NOTIFICATION, (data) => {
       dispatch(fetchNotifications());
@@ -48,6 +46,9 @@ function Main() {
       unsubscribe(SocketEvent.NOTIFICATION);
     };
   }, [dispatch, subscribe, unsubscribe]);
+
+  const isSuperUser = user?.role === 'SuperUser';
+  const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
 
   return (
     <Layout selectedTabChanger={selectedTabChanger}>
@@ -69,30 +70,38 @@ function Main() {
         tabs={['My Quarterly Targets']}
         selectedTab={selectedTab}
       />
-      <OrganizationPerformance
-        title='Organization Performance'
-        icon={<DataTrending24Regular fontSize={iconSize} />}
+      {(isAppOwner || isSuperUser) && (
+        <OrganizationPerformance
+          title='Organization Performance'
+          icon={<DataTrending24Regular fontSize={iconSize} />}
         tabs={['Performance Evaluations', 'Organization Performance']}
         selectedTab={selectedTab}
       />
+      )}
+      {(isAppOwner || isSuperUser) && (
       <AnnualCorporateScorecard
         title="Annual Corporate Scorecard"
         icon={<Globe24Regular fontSize={iconSize} />}
         tabs={['Quarterly Targets', 'Annual Targets']}
-        selectedTab={selectedTab}
-      />
-      <Reports
-        title='Reports'
-        icon={<DocumentText24Regular fontSize={iconSize} />}
+          selectedTab={selectedTab}
+        />
+      )}
+      {(isAppOwner || isSuperUser) && (
+        <Reports
+          title='Reports'
+          icon={<DocumentText24Regular fontSize={iconSize} />}
         tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
         selectedTab={selectedTab}
       />
+      )}
+      {(isAppOwner || isSuperUser) && (
       <Teams
         title='Teams'
         icon={<PeopleTeam24Regular fontSize={iconSize} />}
         tabs={['Teams']}
         selectedTab={selectedTab}
       />
+      )}
       {/* <AdminPanel /> */}
       {isAppOwner && (
         <ManagePage

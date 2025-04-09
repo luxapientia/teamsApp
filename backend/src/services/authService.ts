@@ -26,11 +26,12 @@ export class AuthService {
 
   async handleCallback(code: string, redirectUri: string): Promise<{ token: string; user: UserProfile }> {
     try {
+      // Get the full token directly using the tenant ID from the code
       const tokenResponse = await axios.post(
-        `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
+        `https://login.microsoftonline.com/organizations/oauth2/v2.0/token`,
         new URLSearchParams({
           client_id: process.env.AZURE_CLIENT_ID!,
-          scope: 'openid profile email',
+          scope: 'openid profile email User.Read',
           code,
           redirect_uri: redirectUri,
           grant_type: 'authorization_code',
@@ -43,18 +44,22 @@ export class AuthService {
         }
       );
 
+      if (!tokenResponse.data.access_token) {
+        console.error('No access token received:', tokenResponse.data);
+        throw new Error('No access token received from token exchange');
+      }
+
       console.log('Token exchange successful');
       const accessToken = tokenResponse.data.access_token;
-      console.log('Access token received');
-
-      // Decode the access token to get the tenant ID
+      
+      // Decode the token to get the tenant ID
       const decodedToken = jwt.decode(accessToken) as any;
       const tenantId = decodedToken?.tid;
-      console.log('Tenant ID from access token:', tenantId);
+      console.log('Tenant ID from token:', tenantId);
 
       if (!tenantId) {
-        console.error('No tenant ID found in access token');
-        throw new Error('No tenant ID found in access token');
+        console.error('No tenant ID found in token');
+        throw new Error('No tenant ID found in token');
       }
 
       const userResponse = await axios.get('https://graph.microsoft.com/v1.0/me', {
@@ -74,7 +79,7 @@ export class AuthService {
         organization: userData.companyName || '',
         role: UserRole.USER,
         status: 'active',
-        tenantId: tenantId, // Use the tenant ID from the access token
+        tenantId: tenantId,
         organizationName: userData.companyName || ''
       };
 
@@ -107,13 +112,29 @@ export class AuthService {
 
       return { token, user: userProfile };
     } catch (error: any) {
+      console.error('Authentication error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   }
 
   verifyToken(token: string): UserProfile | null {
     try {
+      // Verify the JWT token using the secret
       const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
+      
+      // Ensure the token has the necessary fields
+      if (!decoded.id || !decoded.email) {
+        console.error('Token missing required fields:', decoded);
+        return null;
+      }
+      
+      // Check if token has expired - not needed as jwt.verify already checks this
+      // but we could add custom expiration logic here if needed
+      
       return decoded;
     } catch (error) {
       console.error('Token verification failed:', error);
@@ -140,6 +161,17 @@ export class AuthService {
     }
   }
 
+  async getTeamsConsentUrl(tenantId: string, redirectUri: string, state?: string): Promise<string> {
+    const authUrl = `https://login.microsoftonline.com/${tenantId}/adminconsent`;
+    const params = new URLSearchParams({
+      client_id: process.env.AZURE_CLIENT_ID!,
+      redirect_uri: redirectUri,
+      ...(state && { state })
+    });
+
+    return `${authUrl}?${params.toString()}`;
+  }
+
   async verifyTeamsToken(token: string): Promise<UserProfile | null> {
     try {
       console.log('Starting Teams token verification...');
@@ -154,73 +186,95 @@ export class AuthService {
       console.log('Tenant ID from Teams token:', tenantId);
       
       // First, exchange the Teams token for a Graph API token
-      const tokenResponse = await axios.post(
-        `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
-        new URLSearchParams({
-          client_id: process.env.AZURE_CLIENT_ID!,
-          client_secret: process.env.AZURE_CLIENT_SECRET!,
-          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-          assertion: token,
-          scope: 'https://graph.microsoft.com/.default',
-          requested_token_use: 'on_behalf_of'
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+      try {
+        const tokenResponse = await axios.post(
+          `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
+          new URLSearchParams({
+            client_id: process.env.AZURE_CLIENT_ID!,
+            client_secret: process.env.AZURE_CLIENT_SECRET!,
+            grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+            assertion: token,
+            scope: 'https://graph.microsoft.com/.default',
+            requested_token_use: 'on_behalf_of'
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
           }
+        );
+
+        if (!tokenResponse.data.access_token) {
+          console.error('No access token received from token exchange');
+          return null;
         }
-      );
 
-      if (!tokenResponse.data.access_token) {
-        console.error('No access token received from token exchange');
-        return null;
-      }
+        const graphToken = tokenResponse.data.access_token;
+        console.log('Graph token received successfully');
 
-      const graphToken = tokenResponse.data.access_token;
-      console.log('Graph token received successfully');
+        // Now use the Graph token to get user profile
+        const graphRes = await axios.get('https://graph.microsoft.com/v1.0/me', {
+          headers: {
+            Authorization: `Bearer ${graphToken}`
+          }
+        });
 
-      // Now use the Graph token to get user profile
-      const graphRes = await axios.get('https://graph.microsoft.com/v1.0/me', {
-        headers: {
-          Authorization: `Bearer ${graphToken}`
+        if (!graphRes.data) {
+          console.error('No user data received from Graph API');
+          return null;
         }
-      });
 
-      if (!graphRes.data) {
-        console.error('No user data received from Graph API');
-        return null;
+        const userData = graphRes.data;
+        console.log('User data from Graph:', userData);
+
+        // Create a complete user profile
+        const userProfile: UserProfile = {
+          id: userData.id,
+          email: userData.mail || userData.userPrincipalName,
+          displayName: userData.displayName,
+          jobTitle: userData.jobTitle || '',
+          department: userData.department || '',
+          organization: userData.companyName || '',
+          role: UserRole.USER,
+          status: 'active',
+          tenantId: tenantId, // Use the tenant ID from the Teams token
+          organizationName: userData.companyName || ''
+        };
+
+        if (!userProfile.id || !userProfile.email) {
+          console.error('Invalid user profile: missing required fields', userProfile);
+          return null;
+        }
+
+        console.log('Created user profile:', userProfile);
+        return userProfile;
+      } catch (tokenError: any) {
+        // Check for consent_required error
+        if (tokenError.response?.data?.error === 'invalid_grant' && 
+            (tokenError.response?.data?.suberror === 'consent_required' || 
+             tokenError.response?.data?.error_description?.includes('consent'))) {
+          console.log('Consent required for the application');
+          // Store the tenant ID in the error for the route handler to use
+          const error: any = new Error('Consent required');
+          error.consentRequired = true;
+          error.tenantId = tenantId;
+          throw error;
+        }
+        // Re-throw for other errors
+        throw tokenError;
       }
-
-      const userData = graphRes.data;
-      console.log('User data from Graph:', userData);
-
-      // Create a complete user profile
-      const userProfile: UserProfile = {
-        id: userData.id,
-        email: userData.mail || userData.userPrincipalName,
-        displayName: userData.displayName,
-        jobTitle: userData.jobTitle || '',
-        department: userData.department || '',
-        organization: userData.companyName || '',
-        role: UserRole.USER,
-        status: 'active',
-        tenantId: tenantId, // Use the tenant ID from the Teams token
-        organizationName: userData.companyName || ''
-      };
-
-      if (!userProfile.id || !userProfile.email) {
-        console.error('Invalid user profile: missing required fields', userProfile);
-        return null;
-      }
-
-      console.log('Created user profile:', userProfile);
-      return userProfile;
     } catch (error: any) {
       console.error('Error verifying Teams token:', {
         message: error.message,
         response: error.response?.data,
         stack: error.stack
       });
+      
+      // Pass through the consent error
+      if (error.consentRequired) {
+        throw error;
+      }
+      
       return null;
     }
   }

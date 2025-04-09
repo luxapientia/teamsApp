@@ -75,8 +75,19 @@ export class RoleService {
   }
 
   async getAllUsersWithTenantID(tenantId: string): Promise<dUser[]> {
+    try {
+      if (!tenantId) {
+        throw new ApiError('Tenant ID is required', 400);
+      }
 
-    return User.find({ tenantId });
+      console.log(`Fetching users for tenant: ${tenantId}`);
+      const users = await User.find({ tenantId });
+      console.log(`Found ${users.length} users for tenant ${tenantId}`);
+      return users;
+    } catch (error) {
+      console.error('Error in getAllUsersWithTenantID:', error);
+      throw error;
+    }
   }
 
   async getRoleByEmail(email: string): Promise<UserRole | null> {
@@ -105,11 +116,24 @@ export class RoleService {
   }
 
   async addUsersToTeam(teamId: string, userIds: string[]): Promise<void> {
+    const Team = mongoose.model('Team');
+    const team = await Team.findById(teamId);
+
+    // Get the current owner's MicrosoftId
+    const currentOwnerId = team?.owner;
+
     for (const userId of userIds) {
+      // Add user to team
       await User.findOneAndUpdate(
         { MicrosoftId: userId }, 
         { $set: { teamId: teamId } }
       );
+
+      // If this user was previously the owner but is being re-added,
+      // make sure they don't retain owner status
+      if (userId === currentOwnerId) {
+        await this.setTeamOwner(teamId, null);
+      }
     }
   }
 
@@ -123,6 +147,16 @@ export class RoleService {
   }
 
   async removeUserFromTeam(teamId: string, userId: string): Promise<void> {
+    // First, check if the user is the team owner
+    const Team = mongoose.model('Team');
+    const team = await Team.findById(teamId);
+    
+    // If the user being removed is the owner, remove owner status
+    if (team?.owner === userId) {
+      await this.setTeamOwner(teamId, null);
+    }
+
+    // Remove user from the team
     await User.findOneAndUpdate(
       { MicrosoftId: userId, teamId: teamId },
       { $set: { teamId: null } }
@@ -130,7 +164,7 @@ export class RoleService {
   }
 
   // Set a user as the owner of a team
-  async setTeamOwner(teamId: string, ownerId: string): Promise<void> {
+  async setTeamOwner(teamId: string, ownerId: string | null): Promise<void> {
     const Team = mongoose.model('Team');
     await Team.findByIdAndUpdate(
       teamId,

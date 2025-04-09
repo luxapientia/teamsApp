@@ -15,6 +15,7 @@ import {
   TableHead,
   TableRow,
   Paper,
+  TableContainer,
 } from '@mui/material';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
@@ -165,100 +166,101 @@ const OrganizationPerformances: React.FC = () => {
       {showScores && selectedAnnualTarget && (
         <Box>
           <Paper sx={{
-            mb: 4,
+            width: '100%',
             boxShadow: 'none',
             border: '1px solid #E5E7EB',
-            borderRadius: '8px',
             overflow: 'hidden'
           }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <StyledHeaderCell>Annual Corporate Scorecard</StyledHeaderCell>
-                  <StyledHeaderCell>Start Date</StyledHeaderCell>
-                  <StyledHeaderCell>End Date</StyledHeaderCell>
-                  <StyledHeaderCell>Status</StyledHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                <TableRow
-                  sx={{
-                    '&:last-child td': { borderBottom: 0 }
-                  }}
-                >
-                  <StyledTableCell>{selectedAnnualTarget.name}</StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget.startDate}</StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget.endDate}</StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget.status}</StyledTableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+            <TableContainer sx={{ maxHeight: 'calc(100vh - 300px)', overflowX: 'auto' }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <StyledHeaderCell>Annual Corporate Scorecard</StyledHeaderCell>
+                    <StyledHeaderCell>Start Date</StyledHeaderCell>
+                    <StyledHeaderCell>End Date</StyledHeaderCell>
+                    <StyledHeaderCell>Status</StyledHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <TableRow>
+                    <StyledTableCell>{selectedAnnualTarget.name}</StyledTableCell>
+                    <StyledTableCell>{selectedAnnualTarget.startDate}</StyledTableCell>
+                    <StyledTableCell>{selectedAnnualTarget.endDate}</StyledTableCell>
+                    <StyledTableCell>{selectedAnnualTarget.status}</StyledTableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Paper>
 
           <Paper sx={{
+            width: '100%',
             boxShadow: 'none',
             border: '1px solid #E5E7EB',
             mt: 3,
+            overflow: 'hidden'
           }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-                    <StyledHeaderCell key={quarter.quarter} align="center">
-                      {quarter.quarter} Overall Performance Score
+            <TableContainer sx={{ maxHeight: 'calc(100vh - 300px)', overflowX: 'auto' }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
+                      <StyledHeaderCell key={quarter.quarter} align="center">
+                        {quarter.quarter} Overall Performance Score
+                      </StyledHeaderCell>
+                    ))}
+                    <StyledHeaderCell align="center">
+                      Overall Annual Performance Score
                     </StyledHeaderCell>
-                  ))}
-                  <StyledHeaderCell align="center">
-                    Overall Annual Performance Score
-                  </StyledHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                <TableRow>
-                  {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => {
-                    const score = calculateQuarterScore(quarter.objectives);
-                    const ratingScale = getRatingScaleInfo(score, selectedAnnualTarget);
-                    
-                    return (
-                      <StyledTableCell
-                        key={quarter.quarter}
-                        align="center"
-                        sx={{
-                          color: ratingScale?.color || '#DC2626',
-                          fontWeight: 500
-                        }}
-                      >
-                        {score && ratingScale ? (
-                          `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`
-                        ) : (
-                          'N/A'
-                        )}
-                      </StyledTableCell>
-                    );
-                  })}
-                  {(() => {
-                    const overallScore = calculateOverallScore(selectedAnnualTarget);
-                    const overallRatingScale = getRatingScaleInfo(overallScore, selectedAnnualTarget);
-                    
-                    return (
-                      <StyledTableCell
-                        align="center"
-                        sx={{
-                          color: overallRatingScale?.color || '#DC2626',
-                          fontWeight: 500
-                        }}
-                      >
-                        {overallScore && overallRatingScale ? (
-                          `${overallScore} ${overallRatingScale.name} (${overallRatingScale.min}-${overallRatingScale.max})`
-                        ) : (
-                          'N/A'
-                        )}
-                      </StyledTableCell>
-                    );
-                  })()}
-                </TableRow>
-              </TableBody>
-            </Table>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  <TableRow>
+                    {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => {
+                      const score = calculateQuarterScore(quarter.objectives);
+                      const ratingScale = getRatingScaleInfo(score, selectedAnnualTarget);
+                      
+                      return (
+                        <StyledTableCell
+                          key={quarter.quarter}
+                          align="center"
+                          sx={{
+                            color: ratingScale?.color || '#DC2626',
+                            fontWeight: 500
+                          }}
+                        >
+                          {score && ratingScale ? (
+                            `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`
+                          ) : (
+                            'N/A'
+                          )}
+                        </StyledTableCell>
+                      );
+                    })}
+                    {(() => {
+                      const overallScore = calculateOverallScore(selectedAnnualTarget);
+                      const overallRatingScale = getRatingScaleInfo(overallScore, selectedAnnualTarget);
+                      
+                      return (
+                        <StyledTableCell
+                          align="center"
+                          sx={{
+                            color: overallRatingScale?.color || '#DC2626',
+                            fontWeight: 500
+                          }}
+                        >
+                          {overallScore && overallRatingScale ? (
+                            `${overallScore} ${overallRatingScale.name} (${overallRatingScale.min}-${overallRatingScale.max})`
+                          ) : (
+                            'N/A'
+                          )}
+                        </StyledTableCell>
+                      );
+                    })()}
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Paper>
         </Box>
       )}

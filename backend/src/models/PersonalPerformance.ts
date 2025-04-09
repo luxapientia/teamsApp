@@ -43,7 +43,7 @@ export interface PersonalPerformanceDocument extends Document {
 const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
   teamId: {
     type: String,
-    required: true,
+    required: false,
     ref: 'Team',
   },
   userId: {

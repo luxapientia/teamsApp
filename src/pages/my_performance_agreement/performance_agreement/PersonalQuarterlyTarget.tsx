@@ -15,6 +15,10 @@ import {
   SelectChangeEvent,
   IconButton,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
@@ -54,6 +58,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [initiativeToDelete, setInitiativeToDelete] = useState<PersonalQuarterlyTargetObjective | null>(null);
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -274,7 +280,39 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     return selectedSupervisor !== '' && calculateTotalWeight() === 100 && !isApproved;
   };
 
+  const handleDeleteConfirm = async () => {
+    if (initiativeToDelete) {
+      // Update local state
+      const updatedObjectives = personalQuarterlyObjectives.filter(obj =>
+        !(obj.name === initiativeToDelete.name &&
+          obj.initiativeName === initiativeToDelete.initiativeName &&
+          obj.perspectiveId === initiativeToDelete.perspectiveId)
+      );
+      
+      setPersonalQuarterlyObjectives(updatedObjectives);
 
+      // Update Redux state
+      const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+        if (target.quarter === quarter) {
+          return {
+            ...target,
+            objectives: updatedObjectives
+          }
+        }
+        return target;
+      });
+
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+
+      setDeleteConfirmOpen(false);
+      setInitiativeToDelete(null);
+    }
+  };
 
   return (
     <Box>
@@ -583,15 +621,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                       size="small"
                                       sx={{ color: '#6B7280' }}
                                       onClick={() => {
-                                        if (window.confirm('Are you sure you want to delete this objective?')) {
-                                          setPersonalQuarterlyObjectives(prev =>
-                                            prev.filter(obj =>
-                                              !(obj.name === initiative.name &&
-                                                obj.initiativeName === initiative.initiativeName &&
-                                                obj.perspectiveId === initiative.perspectiveId)
-                                            )
-                                          );
-                                        }
+                                        setInitiativeToDelete(initiative);
+                                        setDeleteConfirmOpen(true);
                                       }}
                                     >
                                       <DeleteIcon fontSize="small" />
@@ -657,6 +688,43 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           ratingScales={selectedRatingScales}
         />
       )}
+
+      {/* Add confirmation dialog */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => {
+          setDeleteConfirmOpen(false);
+          setInitiativeToDelete(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this objective? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setDeleteConfirmOpen(false);
+              setInitiativeToDelete(null);
+            }}
+            variant="outlined"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            variant="contained"
+            color="error"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box >
   );
 };
