@@ -95,7 +95,7 @@ function Main() {
       <MyPerformanceAssessment
         title="My Performance Assessment"
         icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-        tabs={TeamOwnerStatus ? ['My Assessments', 'Team Performances'] : ['My Assessments']}
+        tabs={TeamOwnerStatus ? ['My Assessments','My Performances', 'Team Performances'] : ['My Assessments', 'My Performances']}
         selectedTab={selectedTab}
       />
       <MyPerformanceAgreement

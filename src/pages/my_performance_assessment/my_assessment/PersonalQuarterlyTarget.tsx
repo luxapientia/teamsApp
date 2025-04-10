@@ -260,12 +260,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
     return isWithinPeriod() &&
       quarterlyTarget?.isEditable !== false &&
-      !isSubmitted && !isApproved && quarterlyTarget?.agreementStatus !== 'Approved';
+      !isSubmitted && !isApproved && quarterlyTarget?.agreementStatus === 'Approved';
   };
 
   // Add validation function for submit button
   const canSubmit = () => {
-    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved;
+    const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && quarterlyTarget?.agreementStatus === 'Approved';
   };
 
 
