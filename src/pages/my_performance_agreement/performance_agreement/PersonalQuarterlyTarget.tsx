@@ -296,14 +296,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     return today >= startDate && today <= endDate;
   };
 
-  const areAllKPIsEvaluated = () => {
-    return personalQuarterlyObjectives.every(objective =>
-      objective.KPIs.every(kpi =>
-        kpi.actualAchieved !== null && kpi.actualAchieved !== undefined
-      )
-    );
-  };
-
   // Update canEdit function to also check submission status
   const canEdit = () => {
     const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
@@ -314,7 +306,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   // Add validation function for submit button
   const canSubmit = () => {
-    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && areAllKPIsEvaluated();
+    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved;
   };
 
   const handleDeleteConfirm = async () => {
@@ -529,12 +521,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         >
           {!selectedSupervisor ? 'Please select a supervisor' : 'Total weight must be 100%'}
         </Typography>
-      )}
-
-      {!areAllKPIsEvaluated() && (
-        <Alert severity="warning" sx={{ mt: 2 }}>
-          Please ensure all KPIs are evaluated before submitting.
-        </Alert>
       )}
 
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
