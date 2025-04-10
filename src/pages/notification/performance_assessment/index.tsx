@@ -155,7 +155,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
-  const handleSendBack = async (emailBody: string, emailSubject: string) => {
+  const handleSendBack = async (emailSubject: string, emailBody: string) => {
     if (notification) {
       try {
         const response = await api.post(`/notifications/send-back/${notification._id}`, {
