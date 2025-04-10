@@ -488,7 +488,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                 <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
                 <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
-                <StyledHeaderCell align="center">Access</StyledHeaderCell>
+                <StyledHeaderCell align="center">Evaluate</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
