@@ -14,13 +14,12 @@ const router = express.Router();
 router.get(
   '/:microsoftId',
   authenticateToken,
-  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const role = await roleService.getUser(req.params.microsoftId);
+      const user = await roleService.getUser(req.params.microsoftId);
       res.json({
         status: 'success',
-        data: { role }
+        data: { user }
       });
     } catch (error) {
       next(error);
