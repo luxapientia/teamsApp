@@ -117,7 +117,7 @@ const TeamPerformanceAgreements: React.FC = () => {
         state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
     );
 
-    const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, position: string, team: string, teamId: string }[]>([]);
+    const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
 
     useEffect(() => {
         fetchCompanyUsers();
@@ -203,7 +203,7 @@ const TeamPerformanceAgreements: React.FC = () => {
                         <TableHead>
                             <TableRow>
                                 <StyledHeaderCell>Full Name</StyledHeaderCell>
-                                <StyledHeaderCell>Position</StyledHeaderCell>
+                                <StyledHeaderCell>Job Title</StyledHeaderCell>
                                 <StyledHeaderCell>Team</StyledHeaderCell>
                                 <StyledHeaderCell align="right">Actions</StyledHeaderCell>
                             </TableRow>
@@ -212,7 +212,7 @@ const TeamPerformanceAgreements: React.FC = () => {
                             {companyUsers.map((user, index) => (
                                 <TableRow key={index}>
                                     <StyledTableCell>{user.fullName}</StyledTableCell>
-                                    <StyledTableCell>{user.position}</StyledTableCell>
+                                    <StyledTableCell>{user.jobTitle}</StyledTableCell>
                                     <StyledTableCell>{user.team}</StyledTableCell>
                                     <StyledTableCell align="right">
                                         <AccessButton

@@ -12,6 +12,7 @@ export interface dUser {
   name: string;
   email: string;
   role: UserRole;
-  tenantId?: string; // Optional, used for SUPER_USER role
-  teamId?: ObjectId; // Optional, used for SUPER_USER role
+  tenantId?: string;
+  teamId?: ObjectId;
+  jobTitle?: string;
 }

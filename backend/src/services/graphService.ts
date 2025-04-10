@@ -107,6 +107,69 @@ export class GraphService {
     });
     return `${baseUrl}?${params.toString()}`;
   }
+
+  async sendMail(tenantId: string, fromUserId: string, toEmail: string, subject: string, body: string): Promise<void> {
+    try {
+      if (!tenantId) {
+        throw new ApiError('Tenant ID is required', 400);
+      }
+
+      if (!fromUserId) {
+        throw new ApiError('Sender user ID is required', 400);
+      }
+
+      console.log('Getting access token for tenant:', tenantId);
+      const accessToken = await this.getAppAccessToken(tenantId);
+      console.log('Successfully got access token');
+
+      const message = {
+        message: {
+          subject,
+          body: {
+            contentType: 'HTML',
+            content: body
+          },
+          toRecipients: [
+            {
+              emailAddress: {
+                address: toEmail
+              }
+            }
+          ]
+        },
+        saveToSentItems: true
+      };
+
+      try {
+        await axios.post(
+          `https://graph.microsoft.com/v1.0/users/${fromUserId}/sendMail`,
+          message,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        console.log('Email sent successfully');
+      } catch (error: any) {
+        console.error('Graph API error:', error.response?.data);
+        if (error.response?.status === 403) {
+          throw new ApiError(
+            'Insufficient permissions to send email. Please ensure the application has Mail.Send permissions.',
+            403
+          );
+        }
+        throw error;
+      }
+    } catch (error: any) {
+      console.error('Error sending email:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('Failed to send email', 500);
+    }
+  }
 }
 
 export const graphService = new GraphService(); 
