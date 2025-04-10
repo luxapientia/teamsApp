@@ -8,14 +8,14 @@ export enum AgreementStatus {
     Draft = 'Draft',
     Submitted = 'Submitted',
     Approved = 'Approved',
-    SendBack = 'SendBack'
+    SendBack = 'Send Back'
 }
 
 export enum AssessmentStatus {
     Draft = 'Draft',
     Submitted = 'Submitted',
     Approved = 'Approved',
-    SendBack = 'SendBack'
+    SendBack = 'Send Back'
 }
 
 
