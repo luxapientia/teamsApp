@@ -398,7 +398,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               <Chip
                 label={status}
                 size="medium"
-                color={status == 'SendBack' ? 'error' : 'warning'}
+                color={status == 'Send Back' ? 'error' : 'warning'}
                 sx={{
                   height: '30px',
                   fontSize: '0.75rem'

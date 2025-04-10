@@ -14,13 +14,12 @@ const router = express.Router();
 router.get(
   '/:microsoftId',
   authenticateToken,
-  requireRole([UserRole.APP_OWNER, UserRole.SUPER_USER]),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const role = await roleService.getUser(req.params.microsoftId);
+      const user = await roleService.getUser(req.params.microsoftId);
       res.json({
         status: 'success',
-        data: { role }
+        data: { user }
       });
     } catch (error) {
       next(error);
@@ -237,19 +236,22 @@ router.post(
             
             if (existingUser) {
               // Update existing user if needed
-              if (!existingUser.tenantId) {
+              if (!existingUser.tenantId || !existingUser.jobTitle) {
                 existingUser.tenantId = userData.tenantId || currentUser.tenantId;
+                existingUser.jobTitle = userData.jobTitle || existingUser.jobTitle;
                 await existingUser.save();
               }
               return existingUser;
             } else {
-              // Create new user with tenant ID
+              // Create new user with tenant ID and job title
               const newUser = await roleService.createUser(
                 userData.MicrosoftId,
                 userData.displayName,
                 userData.email,
                 UserRole.USER,
-                userData.tenantId || currentUser.tenantId // Use provided tenantId or fallback to current user's tenantId
+                userData.tenantId || currentUser.tenantId,
+                undefined,
+                userData.jobTitle
               );
               return newUser;
             }

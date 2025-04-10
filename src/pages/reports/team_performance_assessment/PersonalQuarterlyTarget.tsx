@@ -67,7 +67,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [selectedSupervisor, setSelectedSupervisor] = useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
-  const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, position: string, team: string, teamId: string }[]>([]);
+  const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
 
   const [evidenceModalData, setEvidenceModalData] = useState<{
     evidence: string;

@@ -6,6 +6,7 @@ import { socketService } from '../server';
 import { SocketEvent } from '../types/socket';
 import User from '../models/User';
 import PersonalPerformance from '../models/PersonalPerformance';
+import { graphService } from '../services/graphService';
 // import multer from 'multer';
 // import fs from 'fs';
 
@@ -281,6 +282,13 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
 router.post('/send-back/:notificationId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { notificationId } = req.params;
+    const { emailBody, emailSubject, senderId } = req.body;
+    const sender = await User.findById(senderId);
+    
+    if (!sender?.email) {
+      return res.status(404).json({ error: 'Sender email not found' });
+    }
+
     const notification = await Notification.findById(notificationId);
 
     if (!notification) {
@@ -295,25 +303,50 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
           if (notification.type === 'agreement') {
             return {
               ...quarterlyTarget._doc,
-              agreementStatus: 'SendBack'
+              agreementStatus: 'Send Back'
             };
           } else {
             return {
               ...quarterlyTarget._doc,
-              assessmentStatus: 'SendBack'
+              assessmentStatus: 'Send Back'
             };
           }
         }
         return quarterlyTarget;
       });
-      await PersonalPerformance.updateOne({ _id: notification.personalPerformanceId }, { $set: { quarterlyTargets: newQuarterlyTargets } });
+      await PersonalPerformance.updateOne(
+        { _id: notification.personalPerformanceId },
+        { $set: { quarterlyTargets: newQuarterlyTargets } }
+      );
+
+      // Send email notification using the provided subject
+      const emailContent = `
+        <html>
+          <body>
+            <h2>Performance ${notification.type === 'agreement' ? 'Agreement' : 'Assessment'} Update</h2>
+            <p>Your ${notification.type === 'agreement' ? 'performance agreement' : 'performance assessment'} for ${notification.quarter} has been sent back for revision.</p>
+            <p>Here goes the reason for sending back the ${notification.type === 'agreement' ? 'performance agreement' : 'performance assessment'}:</p>
+            <p>${emailBody}</p>
+            <p>Please log in to the system to review and make the necessary changes.</p>
+          </body>
+        </html>
+      `;
+
+      // Use the current user's ID (req.user.MicrosoftId) to send the email
+      await graphService.sendMail(
+        req.user?.tenantId || '',
+        req.user?.MicrosoftId || '',
+        sender.email,
+        emailSubject,
+        emailContent
+      );
     }
 
     await Notification.deleteOne({ _id: notificationId });
 
-    return res.status(200).json({ message: 'Notification send back successfully' });
+    return res.status(200).json({ message: 'Notification sent back successfully and email notification sent' });
   } catch (error) {
-    console.error('Error send back notification:', error);
+    console.error('Error sending back notification:', error);
     return res.status(500).json({ error: 'Failed to send back notification' });
   }
 });

@@ -25,6 +25,7 @@ export interface Person {
   MicrosoftId: string;
   displayName: string;
   email?: string;
+  jobTitle?: string;
 }
 
 interface PeoplePickerModalProps {
@@ -80,7 +81,8 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
       const newUsers = response.data.data.map((user: any) => ({
         MicrosoftId: user.id,
         displayName: user.displayName,
-        email: user.mail
+        email: user.mail,
+        jobTitle: user.jobTitle
       }));
 
       // Filter out all existing team members
@@ -111,7 +113,8 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
       const tempUsers = response.data.data.map((user: any) => ({
         MicrosoftId: user.id,
         displayName: user.displayName,
-        email: user.mail
+        email: user.mail,
+        jobTitle: user.jobTitle
       }));
       
       // Filter out all existing team members
@@ -197,6 +200,7 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
           MicrosoftId: person.MicrosoftId,
           displayName: person.displayName,
           email: person.email,
+          jobTitle: person.jobTitle,
           tenantId: tenantId
         }))
       });
@@ -296,9 +300,16 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
                       </Typography>
                     }
                     secondary={
-                      <Typography variant="body2" color="textSecondary" component="span">
-                        {person.email}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body2" color="textSecondary" component="span">
+                          {person.email}
+                        </Typography>
+                        {person.jobTitle && (
+                          <Typography variant="body2" color="textSecondary" component="span" sx={{ display: 'block' }}>
+                            {person.jobTitle}
+                          </Typography>
+                        )}
+                      </Box>
                     }
                   />
                 </ListItem>
