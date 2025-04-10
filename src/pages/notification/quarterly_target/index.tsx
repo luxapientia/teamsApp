@@ -32,7 +32,7 @@ import { api } from '../../../services/api';
 import { Notification } from '@/types';
 import { fetchNotifications } from '../../../store/slices/notificationSlice';
 import SendBackModal from '../../../components/Modal/SendBackModal';
-
+import { useToast } from '../../../contexts/ToastContext';
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
@@ -54,6 +54,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -120,12 +121,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           emailBody,
           senderId: notification.sender._id
         });
+        dispatch(fetchNotifications());
+        onBack?.();
         if (response.status === 200) {
-          dispatch(fetchNotifications());
-          onBack?.();
+          showToast('email sent successfully', 'success');
         }
       } catch (error) {
         console.error('Error send back notification:', error);
+        showToast('sending email failed', 'error');
       }
     }
   };
