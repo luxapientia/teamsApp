@@ -28,6 +28,7 @@ import { RootState } from '../../../store';
 import { api } from '../../../services/api';
 import EvidenceModal from './EvidenceModal';
 import { fetchNotifications } from '../../../store/slices/notificationSlice';
+import SendBackModal from '../../../components/Modal/SendBackModal';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -63,7 +64,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   } | null>(null);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
-
+  const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -154,16 +155,21 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
-  const handleSendBack = async () => {
+  const handleSendBack = async (emailBody: string, emailSubject: string) => {
     if (notification) {
       try {
-        const response = await api.post(`/notifications/send-back/${notification._id}`);
+        const response = await api.post(`/notifications/send-back/${notification._id}`, {
+          emailBody,
+          emailSubject,
+          senderId: notification.sender._id
+        });
         if (response.status === 200) {
           dispatch(fetchNotifications());
+          setSendBackModalOpen(false);
           onBack?.();
         }
       } catch (error) {
-        console.error('Error send back notification:', error);
+        console.error('Error sending back notification:', error);
       }
     }
   };
@@ -209,7 +215,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 color: '#9CA3AF'
               }
             }}
-            // disabled={!isSubmitted && !canSubmit()}
             onClick={handleApprove}
           >
             Approve
@@ -223,12 +228,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               },
               cursor: 'pointer'
             }}
-            // disabled={isSubmitted}
-            onClick={handleSendBack}
+            onClick={() => setSendBackModalOpen(true)}
           >
             Send Back
           </Button>
-
         </Box>
       </Box>
 
@@ -448,6 +451,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           attachments={evidenceModalData.attachments}
         />
       )}
+
+      <SendBackModal
+        open={sendBackModalOpen}
+        onClose={() => setSendBackModalOpen(false)}
+        onSendBack={handleSendBack}
+        title="Send Back Email"
+        emailSubject={`${annualTarget.name} - Performance ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
+      />
     </Box >
   );
 };
