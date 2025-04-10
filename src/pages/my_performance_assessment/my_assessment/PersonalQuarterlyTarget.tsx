@@ -16,6 +16,7 @@ import {
   IconButton,
   styled,
   Chip,
+  Alert,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
@@ -243,6 +244,22 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     setIsSubmitted(false);
   };
 
+  const areAllKPIsEvaluated = () => {
+    return personalQuarterlyObjectives.every(objective =>
+      objective.KPIs.every(kpi =>
+        kpi.actualAchieved !== ""
+      )
+    );
+  };
+
+  const isKPIsEmpty = () => {
+    return personalQuarterlyObjectives.every(objective =>
+      objective.KPIs.every(kpi =>
+        kpi.actualAchieved === ""
+      )
+    );
+  }
+
   // Add date validation function
   const isWithinPeriod = () => {
     const assessmentPeriod = annualTarget.content.assessmentPeriod[quarter];
@@ -266,7 +283,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   // Add validation function for submit button
   const canSubmit = () => {
     const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
-    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && quarterlyTarget?.agreementStatus === 'Approved';
+    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && quarterlyTarget?.agreementStatus === 'Approved' && areAllKPIsEvaluated();
   };
 
 
@@ -395,7 +412,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           />
         ) : (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {personalQuarterlyObjectives.length > 0 &&
+            {personalQuarterlyObjectives.length > 0 && !isKPIsEmpty() &&
               <Chip
                 label={status}
                 size="medium"
@@ -471,6 +488,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         >
           {!selectedSupervisor ? 'Please select a supervisor' : 'Total weight must be 100%'}
         </Typography>
+      )}
+
+      {!areAllKPIsEvaluated() && (
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          Please ensure all KPIs are evaluated before submitting.
+        </Alert>
       )}
 
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
