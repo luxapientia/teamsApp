@@ -33,6 +33,7 @@ import { Notification } from '@/types';
 import { fetchNotifications } from '../../../store/slices/notificationSlice';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useToast } from '../../../contexts/ToastContext';
+
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
@@ -113,23 +114,25 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
-  const handleSendBack = async (emailSubject: string, emailBody: string) => {
+  const handleSendBack = (emailSubject: string, emailBody: string) => {
     if (notification) {
-      try {
-        const response = await api.post(`/notifications/send-back/${notification._id}`, {
-          emailSubject,
-          emailBody,
-          senderId: notification.sender._id
-        });
-        dispatch(fetchNotifications());
-        onBack?.();
-        if (response.status === 200) {
-          showToast('email sent successfully', 'success');
+      (async () => {
+        try {
+          const response = await api.post(`/notifications/send-back/${notification._id}`, {
+            emailSubject,
+            emailBody,
+            senderId: notification.sender._id
+          });
+          dispatch(fetchNotifications());
+          if (response.status === 200) {
+            showToast('email sent successfully', 'success');
+          }
+        } catch (error) {
+          console.error('Error send back notification:', error);
+          showToast('sending email failed', 'error');
         }
-      } catch (error) {
-        console.error('Error send back notification:', error);
-        showToast('sending email failed', 'error');
-      }
+      })();
+      onBack?.();
     }
   };
 
