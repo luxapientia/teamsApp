@@ -31,6 +31,8 @@ import { updatePersonalPerformance } from '../../../store/slices/personalPerform
 import { api } from '../../../services/api';
 import { Notification } from '@/types';
 import { fetchNotifications } from '../../../store/slices/notificationSlice';
+import SendBackModal from '../../../components/Modal/SendBackModal';
+
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
@@ -51,6 +53,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
+  const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -109,10 +112,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
-  const handleSendBack = async () => {
+  const handleSendBack = async (emailSubject: string, emailBody: string) => {
     if (notification) {
       try {
-        const response = await api.post(`/notifications/send-back/${notification._id}`);
+        const response = await api.post(`/notifications/send-back/${notification._id}`, {
+          emailSubject,
+          emailBody,
+          senderId: notification.sender._id
+        });
         if (response.status === 200) {
           dispatch(fetchNotifications());
           onBack?.();
@@ -187,7 +194,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               cursor: 'pointer'
             }}
             // disabled={isSubmitted}
-            onClick={handleSendBack}
+            onClick={() => setSendBackModalOpen(true)}
           >
             Send Back
           </Button>
@@ -369,6 +376,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           ratingScales={selectedRatingScales}
         />
       )}
+
+      <SendBackModal
+        open={sendBackModalOpen}
+        onClose={() => setSendBackModalOpen(false)}
+        onSendBack={handleSendBack}
+        title="Send Back Email"
+        emailSubject={`${annualTarget.name} - Performance ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
+      />
     </Box >
   );
 };
