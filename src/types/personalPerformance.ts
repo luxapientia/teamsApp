@@ -8,14 +8,14 @@ export enum AgreementStatus {
     Draft = 'Draft',
     Submitted = 'Submitted',
     Approved = 'Approved',
-    SendBack = 'SendBack'
+    SendBack = 'Send Back'
 }
 
 export enum AssessmentStatus {
     Draft = 'Draft',
     Submitted = 'Submitted',
     Approved = 'Approved',
-    SendBack = 'SendBack'
+    SendBack = 'Send Back'
 }
 
 
@@ -38,7 +38,7 @@ export interface PersonalPerformance {
 
 export interface TeamPerformance extends PersonalPerformance {
     fullName: string;
-    position: string;
+    jobTitle: string;
     team: string;
 }
 

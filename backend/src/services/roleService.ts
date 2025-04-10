@@ -12,7 +12,8 @@ export class RoleService {
     email: string,
     role: UserRole,
     tenantId?: string,
-    teamId?: string
+    teamId?: string,
+    jobTitle?: string
   ): Promise<dUser> {
     // Validate role
     if (!Object.values(UserRole).includes(role)) {
@@ -34,8 +35,9 @@ export class RoleService {
       name,
       email,
       role,
-      ...(tenantId && role === UserRole.SUPER_USER ? { tenantId } : {}),
-      ...(teamId && role === UserRole.SUPER_USER ? { teamId } : {})
+      tenantId,
+      teamId,
+      jobTitle
     });
 
     return user;

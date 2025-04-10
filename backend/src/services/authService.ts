@@ -93,7 +93,9 @@ export class AuthService {
             userProfile.email,
             userProfile.displayName,
             role || UserRole.USER,
-            userProfile.tenantId
+            userProfile.tenantId,
+            undefined,
+            userProfile.jobTitle
           );
         } else {
           await roleService.updateUser(
@@ -103,7 +105,8 @@ export class AuthService {
               name: userProfile.displayName,
               email: userProfile.email,
               role: role || UserRole.USER,
-              tenantId: userProfile.tenantId
+              tenantId: userProfile.tenantId,
+              jobTitle: userProfile.jobTitle
             }
           );
         }
@@ -213,7 +216,7 @@ export class AuthService {
         console.log('Graph token received successfully');
 
         // Now use the Graph token to get user profile
-        const graphRes = await axios.get('https://graph.microsoft.com/v1.0/me', {
+        const graphRes = await axios.get('https://graph.microsoft.com/v1.0/me?$select=id,displayName,mail,userPrincipalName,jobTitle,department,companyName', {
           headers: {
             Authorization: `Bearer ${graphToken}`
           }
@@ -244,6 +247,35 @@ export class AuthService {
         if (!userProfile.id || !userProfile.email) {
           console.error('Invalid user profile: missing required fields', userProfile);
           return null;
+        }
+
+        // Save or update user in database
+        const user = await roleService.getUser(userProfile.id);
+        const role = await roleService.getRoleByEmail(userProfile.email);
+        userProfile.role = role || UserRole.USER;
+        
+        if (!user) {
+          await roleService.createUser(
+            userProfile.id,
+            userProfile.email,
+            userProfile.displayName,
+            role || UserRole.USER,
+            userProfile.tenantId,
+            undefined,
+            userProfile.jobTitle
+          );
+        } else {
+          await roleService.updateUser(
+            userProfile.id,
+            {
+              MicrosoftId: userProfile.id,
+              name: userProfile.displayName,
+              email: userProfile.email,
+              role: role || UserRole.USER,
+              tenantId: userProfile.tenantId,
+              jobTitle: userProfile.jobTitle
+            }
+          );
         }
 
         console.log('Created user profile:', userProfile);

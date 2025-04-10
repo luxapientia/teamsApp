@@ -16,7 +16,8 @@ import { useAppDispatch } from './hooks/useAppDispatch';
 import { fetchAnnualTargets } from './store/slices/scorecardSlice';
 import { useSocket } from './hooks/useSocket';
 import { SocketEvent } from './types/socket';
-import { fetchTeams } from './store/slices/teamsSlice';
+import { fetchTeams, fetchTeamOwner, setTeamOwner } from './store/slices/teamsSlice';
+import { api } from './services/api';
 const iconSize = 24;
 
 function Main() {
@@ -49,6 +50,33 @@ function Main() {
 
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
+  const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
+
+  useEffect(() => {
+    const fetchTeamOwnerFromDB = async () => {
+      if (user?.id) {
+        try {
+          const response = await api.get(`/users/${user.id}`);
+          const teamId = response.data.data.user.teamId;
+          if (teamId) {
+            const result = await dispatch(fetchTeamOwner(teamId));
+            if (result.payload && typeof result.payload === 'object' && result.payload !== null) {
+              const owner = (result.payload as { owner: { MicrosoftId: string } }).owner;
+              if (owner && owner.MicrosoftId === user.id) {
+                setTeamOwnerStatus(true);
+              } else {
+                setTeamOwnerStatus(false);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching team owner:', error);
+          setTeamOwnerStatus(false);
+        }
+      }
+    };
+    fetchTeamOwnerFromDB();
+  }, [user?.id, dispatch]);
 
   return (
     <Layout selectedTabChanger={selectedTabChanger}>
@@ -61,7 +89,7 @@ function Main() {
       <MyPerformanceAssessment
         title='My Performance Assessment'
         icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-        tabs={['My Assessments', 'Team Performances']}
+        tabs={TeamOwnerStatus ? ['My Assessments', 'Team Performances'] : ['My Assessments']}
         selectedTab={selectedTab}
       />
       <MyPerformanceAgreement

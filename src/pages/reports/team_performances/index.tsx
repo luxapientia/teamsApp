@@ -108,7 +108,7 @@ const TeamPerformances: React.FC = () => {
             <TableHead>
               <TableRow>
                 <StyledHeaderCell>Full Name</StyledHeaderCell>
-                <StyledHeaderCell>Position</StyledHeaderCell>
+                <StyledHeaderCell>Job Title</StyledHeaderCell>
                 <StyledHeaderCell>Team</StyledHeaderCell>
                 <StyledHeaderCell>Q1 Overall Performance Score</StyledHeaderCell>
                 <StyledHeaderCell>Q2 Overall Performance Score</StyledHeaderCell>
@@ -131,7 +131,7 @@ const TeamPerformances: React.FC = () => {
                 return (
                   <TableRow key={performance._id}>
                     <StyledTableCell>{performance.fullName}</StyledTableCell>
-                    <StyledTableCell>{performance.position}</StyledTableCell>
+                    <StyledTableCell>{performance.jobTitle}</StyledTableCell>
                     <StyledTableCell>{performance.team}</StyledTableCell>
                     {quarterScores.map((score, idx) => {
                       const ratingScale = getRatingScaleInfo(score, annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
