@@ -40,5 +40,18 @@ export interface ApiResponse<T> {
   data: T;
   status: number;
   message?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  displayName: string;
+  jobTitle?: string;
+  department?: string;
+  organization?: string;
+  role: string;
+  status?: 'active' | 'inactive';
+  tenantId?: string;
+  organizationName?: string;
 } 
 

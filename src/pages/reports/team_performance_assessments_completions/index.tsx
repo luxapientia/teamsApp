@@ -122,7 +122,7 @@ const TeamPerformances: React.FC = () => {
             <TableHead>
               <TableRow>
                 <StyledHeaderCell>Full Name</StyledHeaderCell>
-                <StyledHeaderCell>Position</StyledHeaderCell>
+                <StyledHeaderCell>Job Title</StyledHeaderCell>
                 <StyledHeaderCell>Team</StyledHeaderCell>
                 <StyledHeaderCell>Status</StyledHeaderCell>
                 <StyledHeaderCell>Date, Time</StyledHeaderCell>
@@ -133,7 +133,7 @@ const TeamPerformances: React.FC = () => {
                 teamPerformances.map((performance: TeamPerformance) => (
                   <TableRow key={performance._id}>
                     <StyledTableCell>{performance.fullName}</StyledTableCell>
-                    <StyledTableCell>{performance.position}</StyledTableCell>
+                    <StyledTableCell>{performance.jobTitle}</StyledTableCell>
                     <StyledTableCell>{performance.team}</StyledTableCell>
                     <StyledTableCell>{performance.quarterlyTargets.find(quarter => quarter.quarter === selectedQuarter)?.assessmentStatus}</StyledTableCell>
                     <StyledTableCell>{new Date().toLocaleString()}</StyledTableCell>

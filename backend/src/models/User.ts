@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema<dUser>({
     type: String,
     required: false,
     ref: 'Team'
+  },
+  jobTitle: {
+    type: String,
+    required: false,
   }
 });
 

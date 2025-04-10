@@ -35,7 +35,7 @@ router.post('/callback', async (req: Request, res: Response) => {
           const role = await roleService.getRoleByEmail(userProfile.email);
           userProfile.role = role || UserRole.USER;
           if (!user) {
-            await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, role || UserRole.USER, userProfile.tenantId);
+            await roleService.createUser(userProfile.id, userProfile.email, userProfile.displayName, role || UserRole.USER, userProfile.tenantId, userProfile.jobTitle);
           } else {
             await roleService.updateUser(
               userProfile.id,
@@ -44,7 +44,8 @@ router.post('/callback', async (req: Request, res: Response) => {
                 name: userProfile.displayName,
                 email: userProfile.email,
                 role: role || UserRole.USER,
-                tenantId: userProfile.tenantId
+                tenantId: userProfile.tenantId,
+                jobTitle: userProfile.jobTitle
               }
             );
           }

@@ -91,7 +91,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         }
       }
 
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+      if (quarter === 'Q1' && target.isEditable === false) {
         return {
           ...target,
           assessmentStatus: AssessmentStatus.Draft,
@@ -154,8 +154,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   // Add total weight calculation function
-  const calculateTotalWeight = () => {
-    return personalQuarterlyObjectives.reduce((total, objective) => {
+  const calculateTotalWeight = (objectives: PersonalQuarterlyTargetObjective[]) => {
+    return objectives.reduce((total, objective) => {
       const totalWeight = objective.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0);
       return total + totalWeight;
     }, 0);
@@ -173,11 +173,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         }
       }
 
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+      if (quarter === 'Q1' && target.isEditable === false) {
         return {
           ...target,
           assessmentStatus: AssessmentStatus.Draft,
-          isEditable: calculateTotalWeight() === 100 ? true : false,
+          isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -260,12 +260,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
     return isWithinPeriod() &&
       quarterlyTarget?.isEditable !== false &&
-      !isSubmitted && !isApproved;
+      !isSubmitted && !isApproved && quarterlyTarget?.agreementStatus !== 'Approved';
   };
 
   // Add validation function for submit button
   const canSubmit = () => {
-    return selectedSupervisor !== '' && calculateTotalWeight() === 100 && !isApproved;
+    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved;
   };
 
 
@@ -295,11 +295,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           }
         }
 
-        if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight() <= 100) {
+        if (quarter === 'Q1' && target.isEditable === false) {
           return {
             ...target,
             assessmentStatus: AssessmentStatus.Draft,
-            isEditable: calculateTotalWeight() === 100 ? true : false,
+            isEditable: calculateTotalWeight(newPersonalQuarterlyObjectives) === 100 ? true : false,
             supervisorId: selectedSupervisor,
             objectives: newPersonalQuarterlyObjectives
           }
@@ -398,7 +398,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               <Chip
                 label={status}
                 size="medium"
-                color={status == 'SendBack' ? 'error' : 'warning'}
+                color={status == 'Send Back' ? 'error' : 'warning'}
                 sx={{
                   height: '30px',
                   fontSize: '0.75rem'
@@ -438,11 +438,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         <Typography
           sx={{
             fontWeight: 500,
-            color: calculateTotalWeight() === 100 ? '#059669' : '#DC2626'
+            color: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? '#059669' : '#DC2626'
           }}
         >
-          Total Weight: {calculateTotalWeight()}%
-          {calculateTotalWeight() > 100 && (
+          Total Weight: {calculateTotalWeight(personalQuarterlyObjectives)}%
+          {calculateTotalWeight(personalQuarterlyObjectives) > 100 && (
             <Typography
               component="span"
               sx={{
