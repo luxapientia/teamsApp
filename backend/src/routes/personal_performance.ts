@@ -5,6 +5,8 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import User from '../models/User';
+import AnnualTarget from '../models/AnnualTarget';
+import { ApiError } from '../utils/apiError';
 
 const router = express.Router();
 
@@ -162,4 +164,81 @@ router.delete('/delete-file', authenticateToken, async (req: AuthenticatedReques
     return res.status(500).json({ error: 'Failed to delete file' });
   }
 });
+
+router.post('/copy-initiatives', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { sourceScorecardId, targetPerformanceId } = req.body;
+
+    // Find the source scorecard
+    const sourceScorecard = await AnnualTarget.findById(sourceScorecardId);
+    if (!sourceScorecard) {
+      throw new ApiError('Source scorecard not found', 404);
+    }
+    // Find the target personal performance
+    const targetPerformance = await PersonalPerformance.findById(targetPerformanceId);
+    if (!targetPerformance) {
+      throw new ApiError('Target performance not found', 404);
+    }
+
+    // Get Q1 objectives from source scorecard
+    const q1Objectives = sourceScorecard.content.objectives.map(obj => ({
+      perspectiveId: obj.perspectiveId,
+      name: obj.name,
+      initiativeName: obj.name, // Using objective name as initiative name by default
+      KPIs: obj.KPIs.map(kpi => ({
+        indicator: kpi.indicator,
+        weight: kpi.weight,
+        baseline: kpi.baseline,
+        target: kpi.target,
+        ratingScales: kpi.ratingScales,
+        ratingScore: -1,
+        actualAchieved: '',
+        evidence: '',
+        attachments: []
+      }))
+    }));
+    // Update all quarters with the same objectives
+    const updatedQuarterlyTargets = targetPerformance.quarterlyTargets.map(target => {
+      // Create a deep copy of q1Objectives to avoid reference issues
+      const objectives = JSON.parse(JSON.stringify(q1Objectives));
+      
+      return {
+        quarter: target.quarter,
+        agreementStatus: target.quarter === 'Q1' ? AgreementStatus.Draft : target.agreementStatus,
+        assessmentStatus: target.assessmentStatus,
+        isEditable: target.quarter === 'Q1' ? true : false,
+        supervisorId: target.supervisorId || '',
+        objectives: objectives  // Use the deep copied objectives
+      };
+    });
+
+    // Update the personal performance document with proper MongoDB update operators
+    const updatedPerformance = await PersonalPerformance.findByIdAndUpdate(
+      targetPerformanceId,
+      { 
+        $set: { 
+          quarterlyTargets: updatedQuarterlyTargets
+        }
+      },
+      { 
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!updatedPerformance) {
+      throw new ApiError('Failed to update performance', 500);
+    }
+
+    return res.json(updatedPerformance);
+
+  } catch (error) {
+    console.error('Copy initiatives error:', error);
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    return res.status(500).json({ error: 'Failed to copy initiatives' });
+  }
+});
+
 export default router; 
