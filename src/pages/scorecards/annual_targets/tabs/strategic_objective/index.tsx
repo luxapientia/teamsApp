@@ -101,7 +101,9 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
   }
 
   const handleExportPDF = () => {
-    exportPdf(PdfType.AnnualTargets, tableRef, annualTarget.name, `Total Weight: ${totalWeight}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
+    if (objectives.length > 0) {
+      exportPdf(PdfType.AnnualTargets, tableRef, annualTarget.name, `Total Weight: ${totalWeight}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
+    }
   }
 
 

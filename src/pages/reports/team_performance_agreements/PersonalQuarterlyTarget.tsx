@@ -154,7 +154,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     {`${annualTarget.name}, ${quarter}`}
                 </Typography>
 
-                <Stack direction="row" spacing={2}>
+                {/* <Stack direction="row" spacing={2}>
                     <Button
                         variant="outlined"
                         color="primary"
@@ -171,7 +171,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                         Export to PDF
                     </Button>
                     <Button onClick={onBack}>Back</Button>
-                </Stack>
+                </Stack> */}
             </Box>
 
             <Box sx={{ mb: 3 }}>

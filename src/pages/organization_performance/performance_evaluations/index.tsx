@@ -244,11 +244,13 @@ const PerformanceEvaluations: React.FC = () => {
   };
 
   const handleExportPDF = async () => {
-    const score = calculateOverallRating(getQuarterlyObjectives());
-    const ratingScale = getRatingScaleInfo(score);
-    const title = `${selectedAnnualTarget?.name}`;
-    exportPdf(PdfType.PerformanceEvaluation, tableRef, title, 'Total Weight: ' + String(calculateTotalWeight(getQuarterlyObjectives())), '', [0.1, 0.15, 0.1, 0.25, 0.1, 0.1, 0.1, 0.1],
-      { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
+    if (getQuarterlyObjectives().length > 0) {
+      const score = calculateOverallRating(getQuarterlyObjectives());
+      const ratingScale = getRatingScaleInfo(score);
+      const title = `${selectedAnnualTarget?.name}`;
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, 'Total Weight: ' + String(calculateTotalWeight(getQuarterlyObjectives())), '', [0.1, 0.15, 0.1, 0.25, 0.1, 0.1, 0.1, 0.1],
+        { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
+    }
   }
 
   return (
