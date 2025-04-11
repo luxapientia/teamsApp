@@ -170,8 +170,10 @@ const QuarterlyTargetTable: React.FC = () => {
   };
 
   const handleExportPDF = () => {
-    const title = `${user.organizationName} ${selectedAnnualTarget?.name} ${selectedQuarter}`;
-    exportPdf(PdfType.AnnualTargets, tableRef, title, `Total Weight: ${calculateTotalWeight(getQuarterlyObjectives())}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
+    if (getQuarterlyObjectives().length > 0) {
+      const title = `${user.organizationName} ${selectedAnnualTarget?.name} ${selectedQuarter}`;
+      exportPdf(PdfType.AnnualTargets, tableRef, title, `Total Weight: ${calculateTotalWeight(getQuarterlyObjectives())}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
+    }
   }
 
   return (
