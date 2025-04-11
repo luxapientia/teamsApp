@@ -185,7 +185,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 color: '#9CA3AF'
               }
             }}
-            // disabled={!isSubmitted && !canSubmit()}
             onClick={handleApprove}
           >
             Approve
