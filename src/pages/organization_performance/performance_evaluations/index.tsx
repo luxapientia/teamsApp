@@ -31,6 +31,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { exportPdf } from '../../../utils/exportPdf';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -113,6 +114,7 @@ const PerformanceEvaluations: React.FC = () => {
     attachments: Array<{ name: string; url: string }>;
   } | null>(null);
   const tableRef = useRef();
+  const { user } = useAuth();
 
   const [editable, setEditable] = useState(false);
 
@@ -246,7 +248,7 @@ const PerformanceEvaluations: React.FC = () => {
   const handleExportPDF = async () => {
     const score = calculateOverallRating(getQuarterlyObjectives());
     const ratingScale = getRatingScaleInfo(score);
-    const title = `${selectedAnnualTarget?.name}`;
+    const title = `${user.organizationName} ${selectedAnnualTarget?.name} ${selectedQuarter} Performance Evaluation`;
     exportPdf(PdfType.PerformanceEvaluation, tableRef, title, 'Total Weight: ' + String(calculateTotalWeight(getQuarterlyObjectives())), '', [0.1, 0.15, 0.1, 0.25, 0.1, 0.1, 0.1, 0.1],
       { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
   }

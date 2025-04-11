@@ -32,6 +32,7 @@ import { updateAnnualTarget } from '../../../store/slices/scorecardSlice';
 import RatingScalesModal from '../../../components/RatingScalesModal';
 import { ExportButton } from '../../../components/Buttons';
 import { exportPdf } from '../../../utils/exportPdf';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -77,6 +78,7 @@ const QuarterlyTargetTable: React.FC = () => {
   const [editingObjective, setEditingObjective] = useState<QuarterlyTargetObjective | null>(null);
   const [selectedKPIRatingScales, setSelectedKPIRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
   const tableRef = useRef();
+  const { user } = useAuth();
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -168,7 +170,7 @@ const QuarterlyTargetTable: React.FC = () => {
   };
 
   const handleExportPDF = () => {
-    const title = `${selectedAnnualTarget?.name}`;
+    const title = `${user.organizationName} ${selectedAnnualTarget?.name} ${selectedQuarter}`;
     exportPdf(PdfType.AnnualTargets, tableRef, title, `Total Weight: ${calculateTotalWeight(getQuarterlyObjectives())}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
   }
 
