@@ -4,6 +4,7 @@ import { PageProps } from '../../types';
 import PerformanceAgreement from './performance_agreement';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchAnnualTargets } from '../../store/slices/scorecardSlice';
+import ManagePerformanceAgreement from './manage_performance_agreement';
 const MyPerformanceAgreement: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
   const dispatch = useAppDispatch();
 
@@ -13,7 +14,8 @@ const MyPerformanceAgreement: React.FC<PageProps> = ({ title, icon, tabs, select
 
   return (
     <Box>
-      <PerformanceAgreement />
+      {selectedTab === 'Manage Performance Agreement' && <ManagePerformanceAgreement />}
+      {selectedTab === 'My Quarterly Targets' && <PerformanceAgreement />}
     </Box>
   );
 };

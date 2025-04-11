@@ -19,16 +19,20 @@ import {
   ListItemText,
   TableContainer,
   IconButton,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { AnnualTarget, QuarterType } from '../../../types/annualCorporateScorecard';
+import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective, QuarterType } from '../../../types/annualCorporateScorecard';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchPersonalPerformances } from '../../../store/slices/personalPerformanceSlice';
-import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalPerformance } from '../../../types';
+import { StyledHeaderCell, StyledTableCell, StyledMenuItem, StyledListItemIcon } from '../../../components/StyledTableComponents';
+import { PersonalPerformance, PersonalQuarterlyTarget } from '../../../types';
+import { api } from '../../../services/api';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
+import SearchIcon from '@mui/icons-material/Search';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -58,8 +62,10 @@ const PersonalPerformanceAgreement: React.FC = () => {
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showQuarterlyTargets, setShowQuarterlyTargets] = useState(false);
   const [selectedQuarter, setSelectedQuarter] = useState('');
-  const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState('');
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
+  const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string, team: string, position: string }[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const teams = useAppSelector((state: RootState) =>
     state.teams.teams
   );
@@ -78,7 +84,21 @@ const PersonalPerformanceAgreement: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
+    fetchCompanyUsers();
   }, [dispatch]);
+
+  const fetchCompanyUsers = async () => {
+    try {
+      const response = await api.get('/personal-performance/company-users');
+      if (response.status === 200) {
+        setCompanyUsers(response.data.data);
+      } else {
+        setCompanyUsers([]);
+      }
+    } catch (error) {
+      setCompanyUsers([]);
+    }
+  }
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
@@ -97,6 +117,15 @@ const PersonalPerformanceAgreement: React.FC = () => {
       setShowPersonalQuarterlyTarget(false);
     }
   };
+
+  const filteredUsers = companyUsers.filter(user => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      user.name.toLowerCase().includes(searchLower) ||
+      user.position.toLowerCase().includes(searchLower) ||
+      user.team.toLowerCase().includes(searchLower)
+    );
+  });
 
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
@@ -138,65 +167,78 @@ const PersonalPerformanceAgreement: React.FC = () => {
         >
           View
         </ViewButton>
-
-
       </Box>
+
       {showQuarterlyTargets && selectedAnnualTarget && (
         <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+          <Box sx={{ p: 2 }}>
+            <TextField
+              fullWidth
+              variant="outlined"
+              placeholder="Search by name, position, or team..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: '#fff',
+                  '& fieldset': {
+                    borderColor: '#E5E7EB',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#D1D5DB',
+                  },
+                },
+              }}
+            />
+          </Box>
           <TableContainer>
             <Table>
               <TableHead>
                 <TableRow>
-                  <StyledHeaderCell>Annual Corporate Scorecard</StyledHeaderCell>
-                  <StyledHeaderCell>Start Date</StyledHeaderCell>
-                  <StyledHeaderCell>End Date</StyledHeaderCell>
-                  <StyledHeaderCell>Status</StyledHeaderCell>
-                  <StyledHeaderCell>Team</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Full Name</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Position</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Team</StyledHeaderCell>
                   <StyledHeaderCell align="center">Actions</StyledHeaderCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {personalPerformances.map((personalPerformance: PersonalPerformance, index: number) => (
-                  <TableRow key={index}>
-                    <StyledTableCell>{selectedAnnualTarget?.name}</StyledTableCell>
-                    <StyledTableCell>
-                    {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.startDate}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.endDate}
-                  </StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget?.status}</StyledTableCell>
-                  <StyledTableCell>{teams.find(team => team._id === personalPerformance.teamId)?.name}</StyledTableCell>
-                  <StyledTableCell align="center">
-                    <ViewButton
-                      size="small"
-                      onClick={() => {
-                        setShowQuarterlyTargets(false);
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <StyledTableCell align="center">{user.name}</StyledTableCell>
+                    <StyledTableCell align="center">{user.position}</StyledTableCell>
+                    <StyledTableCell align="center">{user.team}</StyledTableCell>
+                    <StyledTableCell align="center">
+                      <Button variant="contained" color="primary" onClick={() => {
                         setShowPersonalQuarterlyTarget(true);
-                        setSelectedPersonalPerformance(personalPerformance);
-                      }}
-                    >
-                      View
-                    </ViewButton>
-                  </StyledTableCell>
+                        setShowQuarterlyTargets(false);
+                        setSelectedUserId(user.id);
+                      }}>
+                        View
+                      </Button>
+                    </StyledTableCell>
                   </TableRow>
                 ))}
-
               </TableBody>
             </Table>
           </TableContainer>
-
         </Paper>
       )}
       {showPersonalQuarterlyTarget && selectedAnnualTarget && (
         <PersonalQuarterlyTargetContent
-          annualTarget={selectedAnnualTarget}
+          annualTarget={selectedAnnualTarget as AnnualTarget}
           quarter={selectedQuarter as QuarterType}
           onBack={() => {
             setShowPersonalQuarterlyTarget(false);
             setShowQuarterlyTargets(true);
           }}
-          personalPerformance={selectedPersonalPerformance}
+          userId={selectedUserId}
         />
       )}
     </Box>
