@@ -2,6 +2,7 @@ export * from './annualCorporateScorecard';
 export * from './page';
 export * from './personalPerformance';
 export * from './notification';
+export * from './pdf'
 
 export type BaseEntity = {
   _id: string;
