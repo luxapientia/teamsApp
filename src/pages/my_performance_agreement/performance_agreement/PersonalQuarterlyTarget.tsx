@@ -10,7 +10,6 @@ import {
   Paper,
   TableContainer,
   FormControl,
-  Select,
   MenuItem,
   SelectChangeEvent,
   IconButton,
@@ -22,6 +21,8 @@ import {
   Badge,
   Chip,
   Alert,
+  Autocomplete,
+  TextField,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
@@ -411,21 +412,38 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             },
           }}
         >
-          <Select
-            value={selectedSupervisor}
-            onChange={handleSupervisorChange}
-            displayEmpty
+          <Autocomplete
+            value={companyUsers.find(user => user.id === selectedSupervisor) || null}
+            onChange={(event, newValue) => {
+              if (newValue) {
+                const event = { target: { value: newValue.id } } as SelectChangeEvent;
+                handleSupervisorChange(event);
+              }
+            }}
             disabled={!canEdit()}
-          >
-            <MenuItem value="" disabled>
-              <Typography color="textSecondary">Select Supervisor</Typography>
-            </MenuItem>
-            {companyUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.name}
+            options={companyUsers}
+            getOptionLabel={(option) => option.name || ''}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Select Supervisor"
+                size="small"
+              />
+            )}
+            renderOption={(props, option) => (
+              <MenuItem {...props} value={option.id}>
+                {option.name}
               </MenuItem>
-            ))}
-          </Select>
+            )}
+            disableClearable
+            sx={{
+              '& .MuiAutocomplete-inputRoot': {
+                '& .MuiAutocomplete-input': {
+                  cursor: !canEdit() ? 'not-allowed' : 'text',
+                },
+              },
+            }}
+          />
         </FormControl>
       </Box>
 
