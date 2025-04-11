@@ -24,6 +24,7 @@ import { fetchTeamPerformances } from '../../../store/slices/personalPerformance
 import { TeamPerformance, PersonalQuarterlyTargetObjective, PdfType, AnnualTarget } from '../../../types';
 
 import { ExportButton } from '../../../components/Buttons';
+import { useAuth } from '../../../contexts/AuthContext';
 
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
@@ -65,6 +66,7 @@ const TeamPerformances: React.FC = () => {
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
   const tableRef = useRef();
+  const { user } = useAuth();
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
@@ -109,7 +111,7 @@ const TeamPerformances: React.FC = () => {
 
   const handleExportPDF = async () => {
     if (teamPerformances.length > 0) {
-      const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name}`;
+      const title = `${user.organizationName} Overall Performances - ${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name}`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.1, 0.1, 0.05, 0.15, 0.15, 0.15, 0.15, 0.15]);
     }
   }

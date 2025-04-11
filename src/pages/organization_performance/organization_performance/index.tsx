@@ -23,6 +23,7 @@ import { RootState } from '../../../store';
 import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective, PdfType } from '../../../types';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { ExportButton } from '../../../components/Buttons';
+import { useAuth } from '../../../contexts/AuthContext';
 
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
@@ -84,6 +85,7 @@ const OrganizationPerformances: React.FC = () => {
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showScores, setShowScores] = useState(false);
   const tableRef = useRef();
+  const { user } = useAuth();
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -145,7 +147,7 @@ const OrganizationPerformances: React.FC = () => {
 
   const handleExportPDF = async () => {
     if (selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.length > 0) {
-      const title = `${selectedAnnualTarget?.name}`;
+      const title = `${user.organizationName} ${selectedAnnualTarget?.name} Performances`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.2, 0.2, 0.2, 0.2, 0.2]);
     }
   }
