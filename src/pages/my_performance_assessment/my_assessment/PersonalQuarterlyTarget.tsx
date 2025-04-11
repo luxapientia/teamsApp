@@ -349,11 +349,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleExportPDF = async () => {
-    const score = calculateOverallScore(personalQuarterlyObjectives);
-    const ratingScale = getRatingScaleInfo(score);
-    const title = `${user.displayName} Performance Assessment - ${annualTarget?.name} ${quarter}`;
-    exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
-      { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
+    if (personalQuarterlyObjectives.length > 0) {
+      const score = calculateOverallScore(personalQuarterlyObjectives);
+      const ratingScale = getRatingScaleInfo(score);
+      const title = `${user.displayName} Performance Assessment - ${annualTarget?.name} ${quarter}`;
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
+        { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
+    }
   }
 
   return (
