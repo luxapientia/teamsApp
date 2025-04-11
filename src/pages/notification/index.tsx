@@ -60,7 +60,8 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {notification.sender.fullName}
-                      {!notification.isRead && (
+                      {/* {!notification.isRead && ( */}
+                      {(
                         <Chip
                           label="New"
                           size="small"

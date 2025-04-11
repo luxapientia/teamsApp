@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Box,
   Button,
@@ -12,6 +12,7 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -22,6 +23,13 @@ import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
 import { AnnualTargetObjective, AnnualTargetKPI, AnnualTargetRatingScale, AnnualTargetPerspective } from '../../../../../types/annualCorporateScorecard';
 import RatingScalesModal from '../../../../../components/RatingScalesModal';
+import { useAuth } from '../../../../../contexts/AuthContext'
+
+import { ExportButton } from '../../../../../components/Buttons';
+
+import { exportPdf } from '../../../../../utils/exportPdf';
+import { PdfType } from '../../../../../types';
+
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -45,6 +53,8 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingObjective, setEditingObjective] = useState<AnnualTargetObjective | null>(null);
   const [selectedKPIRatingScales, setSelectedKPIRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
+  const tableRef = useRef();
+  const { user } = useAuth();
 
   const annualTarget = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target.name === targetName)
@@ -91,40 +101,46 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
     if (!objectives || objectives.length === 0) return [];
     return [...objectives].sort((a, b) => a.perspectiveId - b.perspectiveId);
   }
-  
+
+  const handleExportPDF = () => {
+    if (objectives.length > 0) {
+      const title = `${user.organizationName} ${annualTarget.name}`;
+      exportPdf(PdfType.AnnualTargets, tableRef, title, `Total Weight: ${totalWeight}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
+    }
+  }
+
 
   return (
     <Box p={2}>
       <Stack spacing={2}>
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            justifyContent: 'flex-end',
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
             gap: 1
           }}
         >
-          <Typography 
-            variant="body2" 
-            sx={{ 
-              color: '#6B7280',
-              fontWeight: 500 
-            }}
+          <ExportButton
+            className="pdf"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportPDF}
+            size="small"
           >
-            Total Weight:
-          </Typography>
-          <Typography 
-            variant="body2" 
-            sx={{ 
+            Export to PDF
+          </ExportButton>
+          <Typography
+            variant="body2"
+            sx={{
               color: totalWeight === 100 ? '#059669' : '#DC2626',
-              fontWeight: 600 
+              fontWeight: 600
             }}
           >
-            {totalWeight}%
+            Total Weight: {totalWeight}%
           </Typography>
         </Box>
 
-        <Table size="small">
+        <Table size="small" ref={tableRef}>
           <TableHead>
             <TableRow>
               <StyledHeaderCell>Perspective</StyledHeaderCell>
@@ -133,8 +149,8 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
               <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
               <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
               <StyledHeaderCell align="center">Target</StyledHeaderCell>
-              <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
-              <StyledHeaderCell align="center">Actions</StyledHeaderCell>
+              <StyledHeaderCell align="center" className='noprint'>Rating Scale</StyledHeaderCell>
+              <StyledHeaderCell align="center" className='noprint'>Actions</StyledHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -154,7 +170,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
                 const totalKPIs = objectives.reduce((total, obj) => total + obj.KPIs.length, 0);
                 const perspectiveName = perspectives.find(p => p.index === Number(perspectiveId))?.name;
 
-                return objectives.map((objective, objIndex) => 
+                return objectives.map((objective, objIndex) =>
                   objective.KPIs.map((kpi, kpiIndex) => (
                     <TableRow key={`${objective.name}-${kpiIndex}`}>
                       {objIndex === 0 && kpiIndex === 0 && (
@@ -171,7 +187,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
                       <StyledTableCell>{kpi.indicator}</StyledTableCell>
                       <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
                       <StyledTableCell align="center">{kpi.target}</StyledTableCell>
-                      <StyledTableCell align="center">
+                      <StyledTableCell align="center" className='noprint'>
                         <Button
                           variant="outlined"
                           size="small"
@@ -189,7 +205,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
                         </Button>
                       </StyledTableCell>
                       {kpiIndex === 0 && (
-                        <StyledTableCell align="center" rowSpan={objective.KPIs.length}>
+                        <StyledTableCell align="center" rowSpan={objective.KPIs.length} className='noprint'>
                           <Stack direction="row" spacing={1} justifyContent="flex-end">
                             <IconButton
                               size="small"

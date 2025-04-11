@@ -340,6 +340,15 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
         emailSubject,
         emailContent
       );
+
+      // Use the current user's ID (req.user.MicrosoftId) to send the email
+      await graphService.sendMail(
+        req.user?.tenantId || '',
+        req.user?.MicrosoftId || '',
+        req.user?.email || '',
+        emailSubject,
+        emailContent
+      );
     }
 
     await Notification.deleteOne({ _id: notificationId });

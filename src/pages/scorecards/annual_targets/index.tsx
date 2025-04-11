@@ -19,7 +19,19 @@ import {
     Typography,
     Tabs,
     Tab,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    Select,
+    FormControl,
+    InputLabel,
+    FormHelperText,
+    Theme
 } from '@mui/material';
+import { SxProps } from '@mui/system';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import EditIcon from '@mui/icons-material/Edit';
@@ -27,7 +39,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { AnnualTarget, AnnualTargetStatus } from '../../../types/annualCorporateScorecard';
-import { deleteAnnualTarget } from '../../../store/slices/scorecardSlice';
+import { deleteAnnualTarget, fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { RootState } from '../../../store';
@@ -38,6 +50,11 @@ import ContractingPeriodTab from './tabs/contracting_period';
 import AssessmentsPeriodTab from './tabs/assessments_period';
 import AddIcon from '@mui/icons-material/Add';
 import AddAnnualTargetModal from './AddAnnualTargetModal';
+import { ExportButton } from '../../../components/Buttons';
+import { api } from '../../../services/api';
+import { fetchTeams } from '../../../store/slices/teamsSlice';
+import { useAuth } from '../../../contexts/AuthContext';
+
 // Styled components
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     borderBottom: '1px solid #E5E7EB',
@@ -123,6 +140,16 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 
     '&:active': {
         transform: 'translateY(0)',
+    },
+}));
+
+const CreateButton = styled(Button)(({ theme }) => ({
+    textTransform: 'none',
+    borderColor: '#E5E7EB',
+    color: '#374151',
+    '&:hover': {
+        borderColor: '#D1D5DB',
+        backgroundColor: '#F9FAFB',
     },
 }));
 
@@ -249,6 +276,14 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
     );
 };
 
+interface CreateFromExistingForm {
+    name: string;
+    sourceScorecard: string;
+    startDate: string;
+    endDate: string;
+    status: AnnualTargetStatus;
+}
+
 const AnnualTargets: React.FC = () => {
     const dispatch = useAppDispatch();
     const { annualTargets, status } = useAppSelector((state: RootState) => state.scorecard);
@@ -257,7 +292,15 @@ const AnnualTargets: React.FC = () => {
     const [expandRow, setExpandRow] = useState<((open: boolean) => void) | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTarget, setEditingTarget] = useState<AnnualTarget | null>(null);
-
+    const [isCreateFromExistingOpen, setIsCreateFromExistingOpen] = useState(false);
+    const [createFromExistingForm, setCreateFromExistingForm] = useState<CreateFromExistingForm>({
+        name: '',
+        sourceScorecard: '',
+        startDate: '',
+        endDate: '',
+        status: AnnualTargetStatus.Active,
+    });
+    const { user } = useAuth();
 
     useEffect(() => {
         // if (status === 'idle') {
@@ -303,25 +346,47 @@ const AnnualTargets: React.FC = () => {
         }
     };
 
+    const handleCreateFromExisting = async () => {
+        try {
+            const response = await api.post('/score-card/annual-targets/create-from-existing', {
+                ...createFromExistingForm,
+                tenantId: user.tenantId
+            });
+            if (response.data) {
+                dispatch(fetchAnnualTargets()); // Refresh annual targets instead of teams
+                setIsCreateFromExistingOpen(false);
+                setCreateFromExistingForm({
+                    name: '',
+                    sourceScorecard: '',
+                    startDate: '',
+                    endDate: '',
+                    status: AnnualTargetStatus.Active,
+                });
+            }
+        } catch (error) {
+            console.error('Error creating from existing scorecard:', error);
+        }
+    };
+
     return (
         <div>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                <Button
-                    variant="outlined"
-                    startIcon={<AddIcon />}
-                    onClick={() => setIsModalOpen(true)}
-                    sx={{
-                        textTransform: 'none',
-                        borderColor: '#E5E7EB',
-                        color: '#374151',
-                        '&:hover': {
-                            borderColor: '#D1D5DB',
-                            backgroundColor: '#F9FAFB',
-                        },
-                    }}
-                >
-                    New
-                </Button>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                    <CreateButton
+                        variant="outlined"
+                        startIcon={<AddIcon />}
+                        onClick={() => setIsModalOpen(true)}
+                    >
+                        New
+                    </CreateButton>
+                    <CreateButton
+                        variant="outlined"
+                        startIcon={<AddIcon />}
+                        onClick={() => setIsCreateFromExistingOpen(true)}
+                    >
+                        Create from another annual corporate scorecard
+                    </CreateButton>
+                </Box>
             </Box>
             <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
                 <TableContainer>
@@ -396,6 +461,95 @@ const AnnualTargets: React.FC = () => {
                 onClose={() => setIsModalOpen(false)}
                 editingAnnualTarget={editingTarget}
             />
+            <Dialog 
+                open={isCreateFromExistingOpen} 
+                onClose={() => setIsCreateFromExistingOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Create from another annual corporate scorecard</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                        <TextField
+                            label="Name"
+                            required
+                            fullWidth
+                            value={createFromExistingForm.name}
+                            onChange={(e) => setCreateFromExistingForm({
+                                ...createFromExistingForm,
+                                name: e.target.value
+                            })}
+                        />
+                        <FormControl fullWidth required>
+                            <InputLabel>Select annual corporate scorecard to create from</InputLabel>
+                            <Select
+                                value={createFromExistingForm.sourceScorecard}
+                                label="Select annual corporate scorecard to create from"
+                                onChange={(e) => setCreateFromExistingForm({
+                                    ...createFromExistingForm,
+                                    sourceScorecard: e.target.value
+                                })}
+                            >
+                                {annualTargets.map((target) => (
+                                    <MenuItem key={target._id} value={target._id}>
+                                        {target.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            <TextField
+                                label="Start date"
+                                type="date"
+                                required
+                                InputLabelProps={{ shrink: true }}
+                                value={createFromExistingForm.startDate}
+                                onChange={(e) => setCreateFromExistingForm({
+                                    ...createFromExistingForm,
+                                    startDate: e.target.value
+                                })}
+                                sx={{ flex: 1 }}
+                            />
+                            <TextField
+                                label="End date"
+                                type="date"
+                                required
+                                InputLabelProps={{ shrink: true }}
+                                value={createFromExistingForm.endDate}
+                                onChange={(e) => setCreateFromExistingForm({
+                                    ...createFromExistingForm,
+                                    endDate: e.target.value
+                                })}
+                                sx={{ flex: 1 }}
+                            />
+                        </Box>
+                        <FormControl fullWidth required>
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={createFromExistingForm.status}
+                                label="Status"
+                                onChange={(e) => setCreateFromExistingForm({
+                                    ...createFromExistingForm,
+                                    status: e.target.value as AnnualTargetStatus
+                                })}
+                            >
+                                <MenuItem value={AnnualTargetStatus.Active}>Active</MenuItem>
+                                <MenuItem value={AnnualTargetStatus.Inactive}>Inactive</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsCreateFromExistingOpen(false)}>Cancel</Button>
+                    <Button 
+                        variant="contained"
+                        onClick={handleCreateFromExisting}
+                        disabled={!createFromExistingForm.name || !createFromExistingForm.sourceScorecard || !createFromExistingForm.startDate || !createFromExistingForm.endDate}
+                    >
+                        Create
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </div>
     );
 };
