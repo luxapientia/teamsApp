@@ -263,7 +263,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     );
   };
 
-  const isKPIsEmpty = () => {
+  const isAssessmentsEmpty = () => {
     return personalQuarterlyObjectives.every(objective =>
       objective.KPIs.every(kpi =>
         kpi.actualAchieved === ""
@@ -441,7 +441,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           />
         ) : (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {personalQuarterlyObjectives.length > 0 && !isKPIsEmpty() &&
+            {personalQuarterlyObjectives.length > 0 && !isAssessmentsEmpty() &&
               <Chip
                 label={status}
                 size="medium"
