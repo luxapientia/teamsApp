@@ -29,6 +29,7 @@ import { RootState } from '../../../store';
 import { api } from '../../../services/api';
 import KPIModal from './KPIModal';
 import EvidenceModal from './EvidenceModal';
+import { useAuth } from '../../../contexts/AuthContext';
 
 import { ExportButton } from '../../../components/Buttons';
 
@@ -73,6 +74,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isApproved, setIsApproved] = useState(false);
   const [status, setStatus] = useState<AssessmentStatus | null>(null);
   const tableRef = useRef();
+  const { user } = useAuth();
 
 
   useEffect(() => {
@@ -350,7 +352,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (personalQuarterlyObjectives.length > 0) {
       const score = calculateOverallScore(personalQuarterlyObjectives);
       const ratingScale = getRatingScaleInfo(score);
-      const title = `${annualTarget?.name}`;
+      const title = `${user.displayName} Performance Assessment - ${annualTarget?.name} ${quarter}`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
         { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
     }
@@ -538,7 +540,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                 <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Evidence</StyledHeaderCell>
-                <StyledHeaderCell align="center" className='noprint'>Access</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Evaluate</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>

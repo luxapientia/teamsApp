@@ -23,6 +23,7 @@ import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
 import { AnnualTargetObjective, AnnualTargetKPI, AnnualTargetRatingScale, AnnualTargetPerspective } from '../../../../../types/annualCorporateScorecard';
 import RatingScalesModal from '../../../../../components/RatingScalesModal';
+import { useAuth } from '../../../../../contexts/AuthContext'
 
 import { ExportButton } from '../../../../../components/Buttons';
 
@@ -53,6 +54,7 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
   const [editingObjective, setEditingObjective] = useState<AnnualTargetObjective | null>(null);
   const [selectedKPIRatingScales, setSelectedKPIRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
   const tableRef = useRef();
+  const { user } = useAuth();
 
   const annualTarget = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target.name === targetName)
@@ -102,7 +104,8 @@ const StrategicObjectiveTab: React.FC<StrategicObjectiveTabProps> = ({ targetNam
 
   const handleExportPDF = () => {
     if (objectives.length > 0) {
-      exportPdf(PdfType.AnnualTargets, tableRef, annualTarget.name, `Total Weight: ${totalWeight}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
+      const title = `${user.organizationName} ${annualTarget.name}`;
+      exportPdf(PdfType.AnnualTargets, tableRef, title, `Total Weight: ${totalWeight}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
     }
   }
 

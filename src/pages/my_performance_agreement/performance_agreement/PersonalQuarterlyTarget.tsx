@@ -36,6 +36,7 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { api } from '../../../services/api';
+import { useAuth } from '../../../contexts/AuthContext';
 
 import { ExportButton } from '../../../components/Buttons';
 
@@ -69,6 +70,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [initiativeToDelete, setInitiativeToDelete] = useState<PersonalQuarterlyTargetObjective | null>(null);
   const [status, setStatus] = useState<AgreementStatus | null>(null);
   const tableRef = useRef();
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -351,7 +353,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleExportPDF = async () => {
-    const title = `${annualTarget?.name}`;
+    const title = `${user.displayName} Performance Agreement - ${annualTarget?.name} ${quarter}`;
     if (personalQuarterlyObjectives.length > 0) {
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.15, 0.15, 0.1, 0.25, 0.1, 0.1, 0.15]);
     }
