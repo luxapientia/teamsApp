@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   pagePropsList
 }) => {
 
-  const unReadNotifications = useAppSelector((state: RootState) => state.notification.notifications.filter((notification) => notification.isRead === false));
+  const notifications = useAppSelector((state: RootState) => state.notification.notifications);
 
   return (
     <aside
@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <span className="inline-flex items-center justify-center w-6 h-6">
                   {pageProps.title === 'Notifications' ? (
                     <Badge 
-                      badgeContent={unReadNotifications.length} 
+                      badgeContent={notifications.length} 
                       color="error"
                       sx={{
                         '& .MuiBadge-badge': {
