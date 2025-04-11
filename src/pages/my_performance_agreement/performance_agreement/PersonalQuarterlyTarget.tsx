@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Button,
@@ -27,7 +27,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus } from '../../../types/personalPerformance';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, PdfType } from '../../../types';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddInitiativeModal from './AddInitiativeModal';
@@ -36,6 +36,12 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { api } from '../../../services/api';
+
+import { ExportButton } from '../../../components/Buttons';
+
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+
+import { exportPdf } from '../../../utils/exportPdf';
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
@@ -62,6 +68,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [initiativeToDelete, setInitiativeToDelete] = useState<PersonalQuarterlyTargetObjective | null>(null);
   const [status, setStatus] = useState<AgreementStatus | null>(null);
+  const tableRef = useRef();
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -343,6 +350,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
+  const handleExportPDF = async () => {
+    const title = `${annualTarget?.name}`;
+    exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.15, 0.15, 0.1, 0.25, 0.1, 0.1, 0.15]);
+  }
+
   return (
     <Box>
       <Box sx={{
@@ -351,10 +363,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <Typography variant="h6">
-          {`${annualTarget.name}, ${quarter}`}
-        </Typography>
 
+        <ExportButton
+          className="pdf"
+          startIcon={<FileDownloadIcon />}
+          onClick={handleExportPDF}
+          size="small"
+          sx={{ marginTop: 2 }}
+        >
+          Export to PDF
+        </ExportButton>
         <Button
           onClick={onBack}
           variant="outlined"
@@ -369,7 +387,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           Back
         </Button>
       </Box>
-
+      <Typography variant="h6">
+        {`${annualTarget.name}, ${quarter}`}
+      </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl
           variant="outlined"
@@ -525,7 +545,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
         <TableContainer>
-          <Table>
+          <Table ref={tableRef}>
             <TableHead>
               <TableRow>
                 <StyledHeaderCell>Perspective</StyledHeaderCell>
@@ -535,8 +555,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
-                <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
-                <StyledHeaderCell align="center">Actions</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Rating Scale</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Actions</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -617,7 +637,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             <StyledTableCell align="center">
                               {kpi.target}
                             </StyledTableCell>
-                            <StyledTableCell align="center">
+                            <StyledTableCell align="center" className='noprint'>
                               <IconButton
                                 size="small"
                                 onClick={() => handleViewRatingScales(kpi)}
@@ -634,7 +654,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               </IconButton>
                             </StyledTableCell>
                             {kpiIndex === 0 && (
-                              <StyledTableCell align="center" rowSpan={initiative.KPIs.length}>
+                              <StyledTableCell align="center" rowSpan={initiative.KPIs.length} className='noprint'>
                                 {canEdit() ? (
                                   <Stack direction="row" spacing={1} justifyContent="center">
                                     <IconButton
