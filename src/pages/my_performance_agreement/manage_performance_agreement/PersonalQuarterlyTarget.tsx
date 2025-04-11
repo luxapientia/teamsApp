@@ -12,26 +12,21 @@ import {
     FormControl,
     Select,
     MenuItem,
-    SelectChangeEvent,
     IconButton,
-    Stack,
-    CircularProgress,
+    Chip,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget } from '@/types/personalPerformance';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus } from '../../../types/personalPerformance';
 import RatingScalesModal from '../../../components/RatingScalesModal';
 import { api } from '../../../services/api';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
     quarter: QuarterType;
     onBack?: () => void;
     userId: string;
-    teamId: string;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
@@ -39,13 +34,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     quarter,
     onBack,
     userId,
-    teamId
 }) => {
     const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
     const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
     const [personalPerformance, setPersonalPerformance] = React.useState<PersonalPerformance | null>(null);
     const [selectedRatingScales, setSelectedRatingScales] = React.useState<AnnualTargetRatingScale[] | null>(null);
     const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
+    const [isApproved, setIsApproved] = useState(false);
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -56,6 +51,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         if (personalPerformance) {
             setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
             setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
+            setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Approved);
         }
     }, [personalPerformance]);
 
@@ -79,7 +75,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 params: {
                     userId: userId,
                     annualTargetId: annualTarget._id,
-                    teamId: teamId
                 }
             });
 
@@ -99,6 +94,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         }, 0);
     };
 
+    const isAssessmentsEmpty = () => {
+        return personalQuarterlyObjectives.every(objective =>
+            objective.KPIs.every(kpi =>
+                kpi.actualAchieved === ""
+            )
+        );
+    }
+
+
+
+    const handleSendBack = () => {
+
+    };
+
     return (
         <Box>
             <Box sx={{
@@ -112,7 +121,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 </Typography>
             </Box>
 
-            <Box sx={{ mb: 3 }}>
+            <Box sx={{
+                mb: 3,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+            }}>
                 <FormControl
                     variant="outlined"
                     size="small"
@@ -141,13 +155,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                         ))}
                     </Select>
                 </FormControl>
-            </Box>
-            <Box sx={{
-                mb: 3,
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'center'
-            }}>
                 <Button
                     onClick={onBack}
                     variant="outlined"
@@ -162,6 +169,34 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     Back
                 </Button>
             </Box>
+            {isApproved && isAssessmentsEmpty() && (
+                <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Chip
+                            label={'Approved'}
+                            size="medium"
+                            color={'success'}
+                            sx={{
+                                height: '40px',
+                                fontSize: '1rem'
+                            }}
+                        />
+                        <Button
+                            variant="contained"
+                            sx={{
+                                backgroundColor: '#F59E0B',
+                                '&:hover': {
+                                    backgroundColor: '#D97706'
+                                },
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Send Back
+                        </Button>
+
+                    </Box>
+                </Box>
+            )}
 
             {/* Add total weight display */}
             <Box
@@ -193,8 +228,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     )}
                 </Typography>
             </Box>
-
-
 
             <Paper
                 className="performance-table"

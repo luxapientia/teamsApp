@@ -38,8 +38,8 @@ const upload = multer({ storage });
 
 router.get('/company-users', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const companyUsers = await User.find({ tenantId: req.user?.tenantId, _id: { $ne: req.user?._id } })
-    return res.json(companyUsers.map(user => ({ id: user._id, name: user.name })));
+    const companyUsers = await User.find({ tenantId: req.user?.tenantId, _id: { $ne: req.user?._id } }).populate('teamId') as any[];
+    return res.json(companyUsers.map((user: any) => ({ id: user._id, name: user.name, team: user.teamId?.name, position: user?.jobTitle })));
   } catch (error) {
     console.error('Company users error:', error);
     return res.status(500).json({ error: 'Failed to get company users' });
