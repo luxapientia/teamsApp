@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -23,16 +23,14 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { QuarterType, AnnualTargetObjective, QuarterlyTargetKPI, AnnualTargetPerspective, AnnualTargetRatingScale, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
+import { QuarterType, AnnualTargetObjective, QuarterlyTargetKPI, AnnualTargetPerspective, AnnualTargetRatingScale, QuarterlyTargetObjective, PdfType } from '../../../types';
 import KPIModal from './KPIModal';
 import DescriptionIcon from '@mui/icons-material/Description';
 import EvidenceModal from './EvidenceModal';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { PDFDownloadLink, Document, Page, View, Text, StyleSheet, pdf } from '@react-pdf/renderer';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { exportPdf } from '../../../utils/exportPdf';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -109,11 +107,12 @@ const PerformanceEvaluations: React.FC = () => {
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [showTable, setShowTable] = useState(false);
-  const [selectedKPI, setSelectedKPI] = useState< QuarterlyTargetKPI | null>(null);
+  const [selectedKPI, setSelectedKPI] = useState<QuarterlyTargetKPI | null>(null);
   const [evidenceModalData, setEvidenceModalData] = useState<{
     evidence: string;
     attachments: Array<{ name: string; url: string }>;
   } | null>(null);
+  const tableRef = useRef();
 
   const [editable, setEditable] = useState(false);
 
@@ -238,81 +237,19 @@ const PerformanceEvaluations: React.FC = () => {
   // Add function to get rating scale info
   const getRatingScaleInfo = (score: number | null) => {
     if (!score || !selectedAnnualTarget) return null;
-    
+
     return selectedAnnualTarget.content.ratingScales.find(
       scale => scale.score === score
     );
   };
 
   const handleExportPDF = async () => {
-    try {
-      // Get the table and overall rating elements
-      const table = document.querySelector('.performance-table');
-      const overallRating = document.querySelector('.overall-rating');
-      if (!table || !overallRating) return;
-
-      // Create canvas from table
-      const tableCanvas = await html2canvas(table as HTMLElement, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-
-      // Create canvas from overall rating
-      const ratingCanvas = await html2canvas(overallRating as HTMLElement, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-
-      // Calculate dimensions
-      const imgWidth = 290; // A4 width in mm
-      const pageHeight = 210; // A4 height in mm
-      const tableHeight = (tableCanvas.height * imgWidth) / tableCanvas.width;
-      const ratingHeight = (ratingCanvas.height * imgWidth) / ratingCanvas.width;
-
-      // Create PDF in landscape
-      const pdf = new jsPDF('l', 'mm', 'a4');
-
-      // Add title
-      pdf.setFontSize(16);
-      pdf.text(`${selectedAnnualTarget?.name}, ${selectedQuarter}`, 10, 10);
-
-      // Add assessment period
-      const assessmentPeriod = selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as QuarterType];
-      if (assessmentPeriod) {
-        pdf.setFontSize(10);
-        pdf.text(`Assessment Period: ${new Date(assessmentPeriod.startDate).toLocaleDateString()} - ${new Date(assessmentPeriod.endDate).toLocaleDateString()}`, 10, 20);
-      }
-
-      // Add table image
-      pdf.addImage(
-        tableCanvas.toDataURL('image/png'),
-        'PNG',
-        10, // x position
-        25, // y position
-        imgWidth,
-        tableHeight
-      );
-
-      // Add overall rating
-      pdf.addImage(
-        ratingCanvas.toDataURL('image/png'),
-        'PNG',
-        imgWidth - 60, // Position at right side
-        tableHeight + 30,
-        60, // width
-        ratingHeight
-      );
-
-      // Save PDF
-      pdf.save(`Performance_Evaluation_${selectedQuarter}_${new Date().toISOString().split('T')[0]}.pdf`);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-    }
-  };
+    const score = calculateOverallRating(getQuarterlyObjectives());
+    const ratingScale = getRatingScaleInfo(score);
+    const title = `${selectedAnnualTarget?.name}`;
+    exportPdf(PdfType.PerformanceEvaluation, tableRef, title, 'Total Weight: ' + String(calculateTotalWeight(getQuarterlyObjectives())), '', [0.1, 0.15, 0.1, 0.25, 0.1, 0.1, 0.1, 0.1],
+      { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
+  }
 
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
@@ -437,17 +374,17 @@ const PerformanceEvaluations: React.FC = () => {
 
           </Box>
 
-          <Paper 
+          <Paper
             className="performance-table"
-            sx={{ 
-              width: '100%', 
-              boxShadow: 'none', 
+            sx={{
+              width: '100%',
+              boxShadow: 'none',
               border: '1px solid #E5E7EB',
               overflow: 'hidden'
             }}
           >
             <TableContainer sx={{ maxHeight: 'calc(100vh - 300px)', overflowX: 'auto' }}>
-              <Table size="small" stickyHeader>
+              <Table size="small" stickyHeader ref={tableRef} >
                 <TableHead>
                   <TableRow>
                     <StyledHeaderCell>Perspective</StyledHeaderCell>
@@ -458,8 +395,8 @@ const PerformanceEvaluations: React.FC = () => {
                     <StyledHeaderCell align="center">Target</StyledHeaderCell>
                     <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                     <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Evaluate</StyledHeaderCell>
+                    <StyledHeaderCell align="center" className='noprint'>Evidence</StyledHeaderCell>
+                    <StyledHeaderCell align="center" className='noprint'>Evaluate</StyledHeaderCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -493,13 +430,17 @@ const PerformanceEvaluations: React.FC = () => {
                             <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
                             <StyledTableCell align="center">{kpi.target}</StyledTableCell>
                             <StyledTableCell align="center">{kpi.actualAchieved}</StyledTableCell>
-                            <StyledTableCell align="center" sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}>
+                            <StyledTableCell
+                              align="center"
+                              sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}
+                              data-color={kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color}
+                            >
                               {
                                 kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore)) &&
                                 `${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.score} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min} - ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
                               }
                             </StyledTableCell>
-                            <StyledTableCell align="center">
+                            <StyledTableCell align="center" className='noprint'>
                               {kpi.evidence && (
                                 <IconButton
                                   size="small"
@@ -514,7 +455,7 @@ const PerformanceEvaluations: React.FC = () => {
                               )}
                             </StyledTableCell>
                             {editable && (
-                              <StyledTableCell align="center">
+                              <StyledTableCell align="center" className='noprint'>
                                 <AccessButton
                                   size="small"
                                   onClick={() => handleAccess(kpi)}
@@ -538,13 +479,13 @@ const PerformanceEvaluations: React.FC = () => {
               </Table>
             </TableContainer>
           </Paper>
-          <Box 
+          <Box
             className="overall-rating"
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'flex-end', 
-              gap: 1, 
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 1,
               mt: 2,
               backgroundColor: '#ffffff',
               padding: 2,
@@ -552,12 +493,12 @@ const PerformanceEvaluations: React.FC = () => {
             }}
           >
             <Typography variant="body2" sx={{ color: '#6B7280', fontWeight: 500 }}>
-              Overall Rating Score = 
+              Overall Rating Score =
             </Typography>
             {(() => {
               const score = calculateOverallRating(getQuarterlyObjectives());
               const ratingScale = getRatingScaleInfo(score);
-              
+
               if (!score || !ratingScale) {
                 return (
                   <Typography variant="body2" sx={{

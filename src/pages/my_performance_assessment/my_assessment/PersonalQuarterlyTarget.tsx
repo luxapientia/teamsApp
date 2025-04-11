@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Button,
@@ -21,7 +21,7 @@ import {
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus } from '../../../types/personalPerformance';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, PdfType } from '../../../types';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
@@ -29,6 +29,12 @@ import { RootState } from '../../../store';
 import { api } from '../../../services/api';
 import KPIModal from './KPIModal';
 import EvidenceModal from './EvidenceModal';
+
+import { ExportButton } from '../../../components/Buttons';
+
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+
+import { exportPdf } from '../../../utils/exportPdf';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -66,6 +72,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [isApproved, setIsApproved] = useState(false);
   const [status, setStatus] = useState<AssessmentStatus | null>(null);
+  const tableRef = useRef();
+
+
   useEffect(() => {
     fetchCompanyUsers();
   }, []);
@@ -337,6 +346,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
+  const handleExportPDF = async () => {
+    const score = calculateOverallScore(personalQuarterlyObjectives);
+    const ratingScale = getRatingScaleInfo(score);
+    const title = `${annualTarget?.name}`;
+    exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
+      { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
+  }
+
   return (
     <Box>
       <Box sx={{
@@ -345,10 +362,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <Typography variant="h6">
-          {`${annualTarget.name}, ${quarter}`}
-        </Typography>
 
+        <ExportButton
+          className="pdf"
+          startIcon={<FileDownloadIcon />}
+          onClick={handleExportPDF}
+          size="small"
+          sx={{ marginTop: 2 }}
+        >
+          Export to PDF
+        </ExportButton>
         <Button
           onClick={onBack}
           variant="outlined"
@@ -363,7 +386,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           Back
         </Button>
       </Box>
-
+      <Typography variant="h6">
+        {`${annualTarget.name}, ${quarter}`}
+      </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl
           variant="outlined"
@@ -498,7 +523,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
         <TableContainer>
-          <Table>
+          <Table ref={tableRef}>
             <TableHead>
               <TableRow>
                 <StyledHeaderCell>Perspective</StyledHeaderCell>
@@ -510,8 +535,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                 <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
-                <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
-                <StyledHeaderCell align="center">Evaluate</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Evidence</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Evaluate</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -596,13 +621,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             <StyledTableCell align="center">
                               {kpi.actualAchieved}
                             </StyledTableCell>
-                            <StyledTableCell align="center" sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}>
+                            <StyledTableCell align="center"
+                              sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}
+                              data-color={kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color || '#DC2626'}
+                            >
                               {
                                 kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore)) &&
                                 `${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.score} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min} - ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
                               }
                             </StyledTableCell>
-                            <StyledTableCell align="center">
+                            <StyledTableCell align="center" className='noprint'>
                               {kpi.evidence && (
                                 <IconButton
                                   size="small"
@@ -616,7 +644,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 </IconButton>
                               )}
                             </StyledTableCell>
-                            <StyledTableCell align="center">
+                            <StyledTableCell align="center" className='noprint'>
                               {canEdit() ? (
                                 <AccessButton
                                   size="small"

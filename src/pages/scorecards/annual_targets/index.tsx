@@ -20,6 +20,7 @@ import {
     Tabs,
     Tab,
 } from '@mui/material';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import EditIcon from '@mui/icons-material/Edit';
@@ -38,6 +39,8 @@ import ContractingPeriodTab from './tabs/contracting_period';
 import AssessmentsPeriodTab from './tabs/assessments_period';
 import AddIcon from '@mui/icons-material/Add';
 import AddAnnualTargetModal from './AddAnnualTargetModal';
+
+import { ExportButton } from '../../../components/Buttons';
 // Styled components
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
     borderBottom: '1px solid #E5E7EB',
@@ -305,7 +308,8 @@ const AnnualTargets: React.FC = () => {
 
     return (
         <div>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                
                 <Button
                     variant="outlined"
                     startIcon={<AddIcon />}
