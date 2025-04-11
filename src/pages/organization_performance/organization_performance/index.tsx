@@ -144,8 +144,10 @@ const OrganizationPerformances: React.FC = () => {
   };
 
   const handleExportPDF = async () => {
-    const title = `${selectedAnnualTarget?.name}`;
-    exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.2, 0.2, 0.2, 0.2, 0.2]);
+    if (selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.length > 0) {
+      const title = `${selectedAnnualTarget?.name}`;
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.2, 0.2, 0.2, 0.2, 0.2]);
+    }
   }
 
   return (
