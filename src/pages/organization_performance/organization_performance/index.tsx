@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -20,8 +20,15 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
+import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective, PdfType } from '../../../types';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
+import { ExportButton } from '../../../components/Buttons';
+import { useAuth } from '../../../contexts/AuthContext';
+
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+
+import { exportPdf } from '../../../utils/exportPdf';
+
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -77,6 +84,8 @@ const OrganizationPerformances: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showScores, setShowScores] = useState(false);
+  const tableRef = useRef();
+  const { user } = useAuth();
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -130,11 +139,18 @@ const OrganizationPerformances: React.FC = () => {
 
   const getRatingScaleInfo = (score: number | null, annualTarget: AnnualTarget) => {
     if (!score) return null;
-    
+
     return annualTarget.content.ratingScales.find(
       scale => scale.score === score
     );
   };
+
+  const handleExportPDF = async () => {
+    if (selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.length > 0) {
+      const title = `${user.organizationName} ${selectedAnnualTarget?.name} Performances`;
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.2, 0.2, 0.2, 0.2, 0.2]);
+    }
+  }
 
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
@@ -192,7 +208,15 @@ const OrganizationPerformances: React.FC = () => {
               </Table>
             </TableContainer>
           </Paper>
-
+          <ExportButton
+            className="pdf"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportPDF}
+            size="small"
+            sx={{marginTop: 2}}
+          >
+            Export to PDF
+          </ExportButton>
           <Paper sx={{
             width: '100%',
             boxShadow: 'none',
@@ -200,8 +224,9 @@ const OrganizationPerformances: React.FC = () => {
             mt: 3,
             overflow: 'hidden'
           }}>
+
             <TableContainer sx={{ maxHeight: 'calc(100vh - 300px)', overflowX: 'auto' }}>
-              <Table size="small" stickyHeader>
+              <Table size="small" stickyHeader ref={tableRef}>
                 <TableHead>
                   <TableRow>
                     {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
@@ -219,7 +244,7 @@ const OrganizationPerformances: React.FC = () => {
                     {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => {
                       const score = calculateQuarterScore(quarter.objectives);
                       const ratingScale = getRatingScaleInfo(score, selectedAnnualTarget);
-                      
+
                       return (
                         <StyledTableCell
                           key={quarter.quarter}
@@ -228,7 +253,8 @@ const OrganizationPerformances: React.FC = () => {
                             color: ratingScale?.color || '#DC2626',
                             fontWeight: 500
                           }}
-                        >
+                          data-color={ratingScale?.color || '#DC2626'}
+                          >
                           {score && ratingScale ? (
                             `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`
                           ) : (
@@ -240,7 +266,7 @@ const OrganizationPerformances: React.FC = () => {
                     {(() => {
                       const overallScore = calculateOverallScore(selectedAnnualTarget);
                       const overallRatingScale = getRatingScaleInfo(overallScore, selectedAnnualTarget);
-                      
+
                       return (
                         <StyledTableCell
                           align="center"

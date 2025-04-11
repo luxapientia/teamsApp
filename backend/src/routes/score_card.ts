@@ -4,6 +4,7 @@ import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { ApiError } from '../utils/apiError';
 
 const router = express.Router();
 
@@ -114,6 +115,121 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req: Aut
       error: 'Failed to upload file',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+router.post('/annual-targets/create-from-existing', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, sourceScorecard, startDate, endDate, status, tenantId } = req.body;
+    // Validate required fields
+    if (!name || !sourceScorecard || !startDate || !endDate || !status || !tenantId) {
+      throw new ApiError('Missing required fields', 400);
+    }
+
+    // Find the source scorecard
+    const sourceTarget = await AnnualTarget.findById(sourceScorecard);
+    if (!sourceTarget) {
+      throw new ApiError('Source scorecard not found', 404);
+    }
+
+    // Check if a scorecard with the same name already exists
+    const existingTarget = await AnnualTarget.findOne({ name, tenantId });
+    if (existingTarget) {
+      throw new ApiError('An annual target with this name already exists', 400);
+    }
+
+    // Create quarterly dates based on the start and end date
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+
+    // Create new annual target with copied content
+    const newAnnualTarget = new AnnualTarget({
+      name,
+      tenantId,
+      startDate,
+      endDate,
+      status,
+      content: {
+        // Copy perspectives, objectives and rating scales from source
+        perspectives: sourceTarget.content.perspectives,
+        objectives: sourceTarget.content.objectives,
+        ratingScales: sourceTarget.content.ratingScales,
+        totalWeight: sourceTarget.content.totalWeight,
+        
+        // Set new contracting period based on the new dates
+        contractingPeriod: {
+          Q1: {
+            startDate: startDateObj.toISOString().split('T')[0],
+            endDate: endDateObj.toISOString().split('T')[0]
+          },
+          Q2: {
+            startDate: startDateObj.toISOString().split('T')[0],
+            endDate: endDateObj.toISOString().split('T')[0]
+          },
+          Q3: {
+            startDate: startDateObj.toISOString().split('T')[0],
+            endDate: endDateObj.toISOString().split('T')[0]
+          },
+          Q4: {
+            startDate: startDateObj.toISOString().split('T')[0],
+            endDate: endDateObj.toISOString().split('T')[0]
+          }
+        },
+        
+        // Set new assessment period based on the new dates
+        assessmentPeriod: {
+          Q1: {
+            startDate: startDateObj.toISOString().split('T')[0],
+            endDate: endDateObj.toISOString().split('T')[0]
+          },
+          Q2: {
+            startDate: startDateObj.toISOString().split('T')[0],
+            endDate: endDateObj.toISOString().split('T')[0]
+          },
+          Q3: {
+            startDate: startDateObj.toISOString().split('T')[0],
+            endDate: endDateObj.toISOString().split('T')[0]
+          },
+          Q4: {
+            startDate: startDateObj.toISOString().split('T')[0],
+            endDate: endDateObj.toISOString().split('T')[0]
+          }
+        },
+
+        // Initialize quarterly targets
+        quarterlyTarget: {
+          editable: false,
+          quarterlyTargets: ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => ({
+            quarter,
+            objectives: sourceTarget.content.objectives.map(obj => ({
+              perspectiveId: obj.perspectiveId,
+              name: obj.name,
+              KPIs: obj.KPIs.map(kpi => ({
+                indicator: kpi.indicator,
+                weight: kpi.weight,
+                baseline: kpi.baseline,
+                target: kpi.target,
+                ratingScales: kpi.ratingScales,
+                ratingScore: -1,
+                actualAchieved: '',
+                evidence: '',
+                attachments: []
+              }))
+            }))
+          }))
+        }
+      }
+    });
+
+    const savedTarget = await newAnnualTarget.save();
+    return res.json(savedTarget);
+
+  } catch (error) {
+    console.error('Create from existing annual target error:', error);
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+    return res.status(500).json({ error: 'Failed to create annual target from existing' });
   }
 });
 

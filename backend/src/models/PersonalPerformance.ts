@@ -62,21 +62,23 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
     required: true,
   },
   quarterlyTargets: [{
+    _id: false,
     quarter: {
       type: String,
-      enum: ['Q1', 'Q2', 'Q3', 'Q4']
+      enum: ['Q1', 'Q2', 'Q3', 'Q4'],
+      required: true
     },
     agreementStatus: {
       type: String,
-      enum: ['Draft', 'Submitted', 'Approved'],
+      enum: Object.values(AgreementStatus),
       required: true,
-      default: 'Draft',
+      default: AgreementStatus.Draft,
     },
     assessmentStatus: {
       type: String,
-      enum: ['Draft', 'Submitted', 'Approved'],
+      enum: Object.values(AssessmentStatus),
       required: true,
-      default: 'Draft',
+      default: AssessmentStatus.Draft,
     },
     isEditable: {
       type: Boolean,
@@ -88,22 +90,64 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
       required: false,
     },
     objectives: [{
-      perspectiveId: Number,
-      name: String,
-      initiativeName: String,
+      _id: false,
+      perspectiveId: {
+        type: Number,
+        required: true
+      },
+      name: {
+        type: String,
+        required: true
+      },
+      initiativeName: {
+        type: String,
+        required: true
+      },
       KPIs: [{
-        indicator: String,
-        weight: Number,
-        baseline: String,
-        target: String,
+        _id: false,
+        indicator: {
+          type: String,
+          required: true
+        },
+        weight: {
+          type: Number,
+          required: true
+        },
+        baseline: {
+          type: String,
+          required: true
+        },
+        target: {
+          type: String,
+          required: true
+        },
         ratingScales: [{
-          score: Number,
-          name: String,
-          max: String,
-          min: String,
-          color: String
+          _id: false,
+          score: {
+            type: Number,
+            required: true
+          },
+          name: {
+            type: String,
+            required: true
+          },
+          max: {
+            type: String,
+            required: true
+          },
+          min: {
+            type: String,
+            required: true
+          },
+          color: {
+            type: String,
+            required: true
+          }
         }],
-        ratingScore: Number,
+        ratingScore: {
+          type: Number,
+          default: -1
+        },
         actualAchieved: {
           type: String,
           default: ''
@@ -112,13 +156,11 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
           type: String,
           default: ''
         },
-        attachments: {
-          type: [{
-            name: String,
-            url: String
-          }],
-          default: []
-        }
+        attachments: [{
+          _id: false,
+          name: String,
+          url: String
+        }]
       }]
     }]
   }]

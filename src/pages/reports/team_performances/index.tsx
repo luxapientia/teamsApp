@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -19,8 +19,14 @@ import { RootState } from '../../../store';
 import { AnnualTarget } from '../../../types/annualCorporateScorecard';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
-import { PersonalQuarterlyTargetObjective, TeamPerformance } from '../../../types';
+import { PersonalQuarterlyTargetObjective, TeamPerformance, PdfType } from '../../../types';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
+
+import { ExportButton } from '../../../components/Buttons';
+
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+
+import { exportPdf } from '../../../utils/exportPdf';
 
 const TeamPerformances: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -29,6 +35,9 @@ const TeamPerformances: React.FC = () => {
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
+
+  const tableRef = useRef();
+
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
@@ -71,6 +80,13 @@ const TeamPerformances: React.FC = () => {
     );
   };
 
+  const handleExportPDF = async () => {
+    if (teamPerformances.length > 0) {
+      const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name}`;
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.1, 0.1, 0.05, 0.15, 0.15, 0.15, 0.15, 0.15]);
+    }
+  }
+
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
@@ -104,7 +120,16 @@ const TeamPerformances: React.FC = () => {
 
       {showTable && (
         <Paper sx={{ boxShadow: 'none', border: '1px solid #E5E7EB' }}>
-          <Table>
+          <ExportButton
+            className="pdf"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportPDF}
+            size="small"
+            sx={{ margin: 2 }}
+          >
+            Export to PDF
+          </ExportButton>
+          <Table ref={tableRef}>
             <TableHead>
               <TableRow>
                 <StyledHeaderCell>Full Name</StyledHeaderCell>
@@ -136,7 +161,7 @@ const TeamPerformances: React.FC = () => {
                     {quarterScores.map((score, idx) => {
                       const ratingScale = getRatingScaleInfo(score, annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
                       return (
-                        <StyledTableCell key={idx}>
+                        <StyledTableCell key={idx} data-color={ratingScale?.color || '#DC2626'}>
                           <Typography sx={{ color: ratingScale?.color }}>
                             {ratingScale ? `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` : 'N/A'}
                           </Typography>
@@ -146,7 +171,7 @@ const TeamPerformances: React.FC = () => {
                     {(() => {
                       const ratingScale = getRatingScaleInfo(annualScore, annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
                       return (
-                        <StyledTableCell>
+                        <StyledTableCell data-color={ratingScale?.color || '#DC2626'}>
                           <Typography sx={{ color: ratingScale?.color }}>
                             {ratingScale ? `${annualScore} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` : 'N/A'}
                           </Typography>

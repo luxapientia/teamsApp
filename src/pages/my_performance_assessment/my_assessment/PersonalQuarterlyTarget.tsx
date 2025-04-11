@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Button,
@@ -14,13 +14,16 @@ import {
   MenuItem,
   SelectChangeEvent,
   IconButton,
+  Autocomplete,
+  TextField,
   styled,
   Chip,
+  Alert,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus } from '../../../types/personalPerformance';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, PdfType } from '../../../types';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
@@ -28,6 +31,13 @@ import { RootState } from '../../../store';
 import { api } from '../../../services/api';
 import KPIModal from './KPIModal';
 import EvidenceModal from './EvidenceModal';
+import { useAuth } from '../../../contexts/AuthContext';
+
+import { ExportButton } from '../../../components/Buttons';
+
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+
+import { exportPdf } from '../../../utils/exportPdf';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -65,6 +75,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [isApproved, setIsApproved] = useState(false);
   const [status, setStatus] = useState<AssessmentStatus | null>(null);
+  const tableRef = useRef();
+  const { user } = useAuth();
+
+
   useEffect(() => {
     fetchCompanyUsers();
   }, []);
@@ -243,6 +257,22 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     setIsSubmitted(false);
   };
 
+  const areAllKPIsEvaluated = () => {
+    return personalQuarterlyObjectives.every(objective =>
+      objective.KPIs.every(kpi =>
+        kpi.actualAchieved !== ""
+      )
+    );
+  };
+
+  const isAssessmentsEmpty = () => {
+    return personalQuarterlyObjectives.every(objective =>
+      objective.KPIs.every(kpi =>
+        kpi.actualAchieved === ""
+      )
+    );
+  }
+
   // Add date validation function
   const isWithinPeriod = () => {
     const assessmentPeriod = annualTarget.content.assessmentPeriod[quarter];
@@ -266,7 +296,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   // Add validation function for submit button
   const canSubmit = () => {
     const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
-    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && quarterlyTarget?.agreementStatus === 'Approved';
+    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && quarterlyTarget?.agreementStatus === 'Approved' && areAllKPIsEvaluated();
   };
 
 
@@ -320,6 +350,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
+  const handleExportPDF = async () => {
+    if (personalQuarterlyObjectives.length > 0) {
+      const score = calculateOverallScore(personalQuarterlyObjectives);
+      const ratingScale = getRatingScaleInfo(score);
+      const title = `${user.displayName} Performance Assessment - ${annualTarget?.name} ${quarter}`;
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
+        { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
+    }
+  }
+
   return (
     <Box>
       <Box sx={{
@@ -328,10 +368,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <Typography variant="h6">
-          {`${annualTarget.name}, ${quarter}`}
-        </Typography>
 
+        <ExportButton
+          className="pdf"
+          startIcon={<FileDownloadIcon />}
+          onClick={handleExportPDF}
+          size="small"
+          sx={{ marginTop: 2 }}
+        >
+          Export to PDF
+        </ExportButton>
         <Button
           onClick={onBack}
           variant="outlined"
@@ -346,7 +392,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           Back
         </Button>
       </Box>
-
+      <Typography variant="h6">
+        {`${annualTarget.name}, ${quarter}`}
+      </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl
           variant="outlined"
@@ -364,21 +412,38 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             },
           }}
         >
-          <Select
-            value={selectedSupervisor}
-            onChange={handleSupervisorChange}
-            displayEmpty
-            disabled={true}
-          >
-            <MenuItem value="" disabled>
-              <Typography color="textSecondary">Select Supervisor</Typography>
-            </MenuItem>
-            {companyUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.name}
+          <Autocomplete
+            value={companyUsers.find(user => user.id === selectedSupervisor) || null}
+            onChange={(event, newValue) => {
+              if (newValue) {
+                const event = { target: { value: newValue.id } } as SelectChangeEvent;
+                handleSupervisorChange(event);
+              }
+            }}
+            // disabled={!canEdit()}
+            options={companyUsers}
+            getOptionLabel={(option) => option.name || ''}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Select Supervisor"
+                size="small"
+              />
+            )}
+            renderOption={(props, option) => (
+              <MenuItem {...props} value={option.id}>
+                {option.name}
               </MenuItem>
-            ))}
-          </Select>
+            )}
+            disableClearable
+            sx={{
+              '& .MuiAutocomplete-inputRoot': {
+                '& .MuiAutocomplete-input': {
+                  // cursor: !canEdit() ? 'not-allowed' : 'text',
+                },
+              },
+            }}
+          />
         </FormControl>
       </Box>
 
@@ -395,7 +460,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           />
         ) : (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {personalQuarterlyObjectives.length > 0 &&
+            {personalQuarterlyObjectives.length > 0 && !isAssessmentsEmpty() &&
               <Chip
                 label={status}
                 size="medium"
@@ -473,9 +538,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Typography>
       )}
 
+      {!areAllKPIsEvaluated() && (
+        <Alert severity="warning" sx={{ mt: 2 }}>
+          Please ensure all KPIs are evaluated before submitting.
+        </Alert>
+      )}
+
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
         <TableContainer>
-          <Table>
+          <Table ref={tableRef}>
             <TableHead>
               <TableRow>
                 <StyledHeaderCell>Perspective</StyledHeaderCell>
@@ -487,8 +558,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                 <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
-                <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
-                <StyledHeaderCell align="center">Access</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Evidence</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Evaluate</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -573,13 +644,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             <StyledTableCell align="center">
                               {kpi.actualAchieved}
                             </StyledTableCell>
-                            <StyledTableCell align="center" sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}>
+                            <StyledTableCell align="center"
+                              sx={{ color: kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color }}
+                              data-color={kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.color || '#DC2626'}
+                            >
                               {
                                 kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore)) &&
                                 `${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.score} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min} - ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
                               }
                             </StyledTableCell>
-                            <StyledTableCell align="center">
+                            <StyledTableCell align="center" className='noprint'>
                               {kpi.evidence && (
                                 <IconButton
                                   size="small"
@@ -593,7 +667,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 </IconButton>
                               )}
                             </StyledTableCell>
-                            <StyledTableCell align="center">
+                            <StyledTableCell align="center" className='noprint'>
                               {canEdit() ? (
                                 <AccessButton
                                   size="small"

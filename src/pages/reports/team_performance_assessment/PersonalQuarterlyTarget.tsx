@@ -145,49 +145,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     );
   };
 
-  const handleExportPDF = async () => {
-    try {
-      // Get the table element
-      const table = document.querySelector('.performance-table');
-      if (!table) return;
-
-      // Create canvas from table
-      const canvas = await html2canvas(table as HTMLElement, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-      });
-
-      // Calculate dimensions
-      const imgWidth = 290; // A4 width in mm
-      const pageHeight = 210; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      // Create PDF
-      const pdf = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape
-
-      // Add title
-      pdf.setFontSize(16);
-      pdf.text(`${annualTarget.name}, ${quarter}`, 10, 10);
-
-      // Add table image
-      pdf.addImage(
-        canvas.toDataURL('image/png'),
-        'PNG',
-        10, // x position
-        20, // y position
-        imgWidth,
-        imgHeight
-      );
-
-      // Save PDF
-      pdf.save(`performance-assessment-${quarter}.pdf`);
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-    }
-  };
-
   return (
     <Box>
       <Box sx={{
@@ -199,25 +156,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         <Typography variant="h6">
           {`${annualTarget.name}, ${quarter}`}
         </Typography>
-
-        <Stack direction="row" spacing={2}>
-          <Button
-            variant="outlined"
-            color="primary"
-            onClick={handleExportPDF}
-            sx={{
-              borderColor: '#E5E7EB',
-              color: '#DC2626',
-              '&:hover': {
-                borderColor: '#DC2626',
-                backgroundColor: '#FEF2F2',
-              }
-            }}
-          >
-            Export to PDF
-          </Button>
-          <Button onClick={onBack}>Back</Button>
-        </Stack>
       </Box>
 
       <Box sx={{ mb: 3 }}>
@@ -249,6 +187,27 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             ))}
           </Select>
         </FormControl>
+      </Box>
+
+      <Box sx={{
+        mb: 3,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center'
+      }}>
+        <Button
+          onClick={onBack}
+          variant="outlined"
+          color="primary"
+          sx={{
+            minWidth: '100px',
+            '&:hover': {
+              backgroundColor: 'rgba(25, 118, 210, 0.04)'
+            }
+          }}
+        >
+          Back
+        </Button>
       </Box>
 
       <Paper
