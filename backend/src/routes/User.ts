@@ -7,6 +7,7 @@ import type { AuthenticatedRequest } from '../middleware/roleAuth';
 import { UserRole } from '../types/user';
 import { ApiError } from '../utils/apiError';
 import User from '../models/User';
+import Team from '../models/Team';
 
 const router = express.Router();
 
@@ -169,6 +170,41 @@ router.get(
     }
   }
 );
+
+router.get('/is_team_owner/:userId', authenticateToken, async (req: AuthenticatedRequest, res, next) => {
+    try {
+        const {userId} = req.params;
+        if (!userId) {
+            throw new ApiError('User not authenticated', 401);
+        }
+        console.log(userId, 'userId')
+        // Find team where current user is the owner
+        const team = await Team.findOne({ owner: userId });
+        
+        if (!team) {
+            return res.json({
+                status: 'success',
+                data: {
+                    isTeamOwner: false,
+                    team: null
+                }
+            });
+        }
+
+        return res.json({
+            status: 'success',
+            data: {
+                isTeamOwner: true,
+                team: {
+                    _id: team._id,
+                    name: team.name
+                }
+            }
+        });
+    } catch (error) {
+        return next(error);
+    }
+});
 
 // Get all users in the organization using Graph API
 router.get(

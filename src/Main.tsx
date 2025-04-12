@@ -4,7 +4,7 @@ import './styles/globals.css';
 import AnnualCorporateScorecard from './pages/scorecards';
 import Teams from './pages/teams';
 import { ManagePage } from './pages/manage';
-import { GridRegular, Alert24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular } from '@fluentui/react-icons';
+import { GridRegular, Alert24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular, Home24Regular } from '@fluentui/react-icons';
 import { useAuth } from './contexts/AuthContext';
 import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
@@ -16,12 +16,13 @@ import { useAppDispatch } from './hooks/useAppDispatch';
 import { fetchAnnualTargets } from './store/slices/scorecardSlice';
 import { useSocket } from './hooks/useSocket';
 import { SocketEvent } from './types/socket';
-import { fetchTeams, fetchTeamOwner, setTeamOwner } from './store/slices/teamsSlice';
+import { fetchTeams, fetchTeamOwner } from './store/slices/teamsSlice';
 import { api } from './services/api';
+import Dashboard from './pages/dashboard';
 const iconSize = 24;
 
 function Main() {
-  const [selectedTab, setSelectedTab] = useState('');
+  const [selectedTab, setSelectedTab] = useState('Dashboard');
   const { user } = useAuth();
   const dispatch = useAppDispatch();
   const selectedTabChanger = (tab: string) => {
@@ -51,24 +52,16 @@ function Main() {
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
   const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
+  const [isTeamOwner, setisTeamOwner] = useState(false);
 
   useEffect(() => {
     const fetchTeamOwnerFromDB = async () => {
       if (user?.id) {
         try {
           const response = await api.get(`/users/${user.id}`);
-          const teamId = response.data.data.user.teamId;
-          if (teamId) {
-            const result = await dispatch(fetchTeamOwner(teamId));
-            if (result.payload && typeof result.payload === 'object' && result.payload !== null) {
-              const owner = (result.payload as { owner: { MicrosoftId: string } }).owner;
-              if (owner && owner.MicrosoftId === user.id) {
-                setTeamOwnerStatus(true);
-              } else {
-                setTeamOwnerStatus(false);
-              }
-            }
-          }
+          const teamInfo = await api.get(`/users/is_team_owner/${user.id}`);
+          const result = teamInfo.data.data;
+          setTeamOwnerStatus(result.isTeamOwner);
         } catch (error) {
           console.error('Error fetching team owner:', error);
           setTeamOwnerStatus(false);
@@ -80,37 +73,52 @@ function Main() {
 
   return (
     <Layout selectedTabChanger={selectedTabChanger}>
+      {(TeamOwnerStatus || isAppOwner || isSuperUser) &&<Dashboard
+        title="Dashboard"
+        icon={<Home24Regular fontSize={iconSize} />}
+        tabs={['Dashboard']}
+        selectedTab={selectedTab}
+      />}
       <NotificationPage
-        title='Notifications'
+        title="Notifications"
         icon={<Alert24Regular fontSize={iconSize} />}
         tabs={[]}
         selectedTab={selectedTab}
       />
       <MyPerformanceAssessment
-        title='My Performance Assessment'
+        title="My Performance Assessment"
         icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-        tabs={TeamOwnerStatus ? ['My Assessments','My Performances', 'Team Performances', 'Manage Performance Assessment'] : ['My Assessments', 'My Performances', 'Manage Performance Assessment']}
+        tabs={TeamOwnerStatus ? 
+          (isAppOwner || isSuperUser ? 
+            ['My Assessments', 'My Performances', 'Team Performances', 'Manage Performance Assessment'] : 
+            ['My Assessments', 'My Performances', 'Team Performances']
+          ) : 
+          (isAppOwner || isSuperUser ? 
+            ['My Assessments', 'My Performances', 'Manage Performance Assessment'] : 
+            ['My Assessments', 'My Performances']
+          )}
         selectedTab={selectedTab}
       />
       <MyPerformanceAgreement
-        title='My Performance Agreement'
+        title="My Performance Agreement"
         icon={<Handshake24Regular fontSize={iconSize} />}
-        tabs={['My Quarterly Targets', 'Manage Performance Agreement']}
+        tabs={isAppOwner || isSuperUser ? 
+          ['My Performance Agreements', 'Manage Performance Agreement'] : 
+          ['My Performance Agreements']}
         selectedTab={selectedTab}
       />
       {(isAppOwner || isSuperUser) && (
         <OrganizationPerformance
-          title='Organization Performance'
-          icon={<DataTrending24Regular fontSize={iconSize} />}
+        title="Organization Performance"
+        icon={<DataTrending24Regular fontSize={iconSize} />}
         tabs={['Performance Evaluations', 'Organization Performance']}
         selectedTab={selectedTab}
-      />
-      )}
+      />)}
       {(isAppOwner || isSuperUser) && (
       <AnnualCorporateScorecard
         title="Annual Corporate Scorecard"
         icon={<Globe24Regular fontSize={iconSize} />}
-        tabs={['Quarterly Targets', 'Annual Targets']}
+        tabs={['Quarterly Corporate Scorecards', 'Annual Corporate Scorecards']}
           selectedTab={selectedTab}
         />
       )}
@@ -118,19 +126,18 @@ function Main() {
         <Reports
           title='Reports'
           icon={<DocumentText24Regular fontSize={iconSize} />}
-        tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
-        selectedTab={selectedTab}
-      />
+          tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
+          selectedTab={selectedTab}
+        />
       )}
       {(isAppOwner || isSuperUser) && (
-      <Teams
-        title='Teams'
-        icon={<PeopleTeam24Regular fontSize={iconSize} />}
-        tabs={['Teams']}
-        selectedTab={selectedTab}
-      />
+        <Teams
+          title='Teams'
+          icon={<PeopleTeam24Regular fontSize={iconSize} />}
+          tabs={['Teams']}
+          selectedTab={selectedTab}
+        />
       )}
-      {/* <AdminPanel /> */}
       {isAppOwner && (
         <ManagePage
           title="Manage Companies"

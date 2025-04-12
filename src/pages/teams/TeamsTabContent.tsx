@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Box, Button, Paper, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, TextField, IconButton, Tooltip, Chip, ClickAwayListener, useTheme, useMediaQuery } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditIcon from '@mui/icons-material/Edit';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { createTeam, deleteTeam, fetchTeams, fetchAllTeamMembers, fetchTeamOwner, setTeamOwner, addTeamMembers, removeTeamMember } from '../../store/slices/teamsSlice';
 import { RootState } from '../../store';
@@ -32,6 +33,9 @@ const TeamsTabContent: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
+  const [editingTeamName, setEditingTeamName] = useState<string>('');
+  const editInputRef = useRef<HTMLInputElement>(null);
   
   // Check if user has admin/super user privileges
   const canManageTeams = user?.role === 'AppOwner' || user?.role === 'SuperUser';
@@ -146,6 +150,49 @@ const TeamsTabContent: React.FC = () => {
   const handleCancelAddTeam = () => {
     setStatus(ViewStatus.TEAM_LIST);
     setNewTeamName('');
+  };
+
+  // Add function to handle team name update
+  const handleUpdateTeam = async (teamId: string, newName: string) => {
+    try {
+      await api.put(`/teams/${teamId}`, { name: newName });
+      dispatch(fetchTeams(tenantId));
+      setEditingTeamId(null);
+      setEditingTeamName('');
+    } catch (error) {
+      console.error('Error updating team:', error);
+    }
+  };
+
+  // Add function to handle edit mode
+  const handleEditClick = (team: { _id: string; name: string }) => {
+    setEditingTeamId(team._id);
+    setEditingTeamName(team.name);
+    setTimeout(() => {
+      editInputRef.current?.focus();
+    }, 0);
+  };
+
+  // Add function to handle edit cancel
+  const handleEditCancel = () => {
+    setEditingTeamId(null);
+    setEditingTeamName('');
+  };
+
+  // Add function to handle edit save
+  const handleEditSave = (teamId: string) => {
+    if (editingTeamName.trim()) {
+      handleUpdateTeam(teamId, editingTeamName.trim());
+    }
+  };
+
+  // Add keyboard event handler for editing
+  const handleEditKeyPress = (event: React.KeyboardEvent, teamId: string) => {
+    if (event.key === 'Enter') {
+      handleEditSave(teamId);
+    } else if (event.key === 'Escape') {
+      handleEditCancel();
+    }
   };
 
   // Fetch teams and all team members when component mounts or tenantId changes
@@ -325,33 +372,98 @@ const TeamsTabContent: React.FC = () => {
 
             {(status === ViewStatus.TEAM_LIST || status === ViewStatus.TEAM_ADDING) && teams.map(team => (
               <TableRow key={team._id} hover>
-                <StyledTableCell>{team.name}</StyledTableCell>
+                <StyledTableCell>
+                  {editingTeamId === team._id ? (
+                    <ClickAwayListener onClickAway={handleEditCancel}>
+                      <TextField
+                        inputRef={editInputRef}
+                        value={editingTeamName}
+                        onChange={(e) => setEditingTeamName(e.target.value)}
+                        onKeyDown={(e) => handleEditKeyPress(e, team._id)}
+                        fullWidth
+                        variant="standard"
+                        size="small"
+                        autoFocus
+                      />
+                    </ClickAwayListener>
+                  ) : (
+                    team.name
+                  )}
+                </StyledTableCell>
                 <StyledTableCell align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                    <Button
-                      variant="outlined"
-                      onClick={() => handleViewClick(team._id)}
-                      sx={{
-                        fontSize: '0.75rem',
-                        padding: '4px 8px',
-                        minWidth: 'auto',
-                      }}
-                    >
-                      View
-                    </Button>
-                    {canManageTeams && (!teamMembers[team._id] || teamMembers[team._id].length === 0) && (
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        onClick={() => handleDeleteTeam(team._id)}
-                        sx={{
-                          fontSize: '0.75rem',
-                          padding: '4px 8px',
-                          minWidth: 'auto',
-                        }}
-                      >
-                        Delete
-                      </Button>
+                    {editingTeamId === team._id ? (
+                      <>
+                        <Button
+                          variant="contained"
+                          onClick={() => handleEditSave(team._id)}
+                          sx={{
+                            fontSize: '0.75rem',
+                            padding: '4px 12px',
+                            minWidth: 'auto',
+                            backgroundColor: '#0078D4',
+                            '&:hover': {
+                              backgroundColor: '#106EBE',
+                            }
+                          }}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={handleEditCancel}
+                          sx={{
+                            fontSize: '0.75rem',
+                            padding: '4px 12px',
+                            minWidth: 'auto',
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleViewClick(team._id)}
+                          sx={{
+                            fontSize: '0.75rem',
+                            padding: '4px 8px',
+                            minWidth: 'auto',
+                          }}
+                        >
+                          View
+                        </Button>
+                        {canManageTeams && (
+                          <>
+                            <Button
+                              variant="outlined"
+                              onClick={() => handleEditClick(team)}
+                              sx={{
+                                fontSize: '0.75rem',
+                                padding: '4px 8px',
+                                minWidth: 'auto',
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            {(!teamMembers[team._id] || teamMembers[team._id].length === 0) && (
+                              <Button
+                                variant="outlined"
+                                color="error"
+                                onClick={() => handleDeleteTeam(team._id)}
+                                sx={{
+                                  fontSize: '0.75rem',
+                                  padding: '4px 8px',
+                                  minWidth: 'auto',
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </>
                     )}
                   </Box>
                 </StyledTableCell>
