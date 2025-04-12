@@ -18,6 +18,7 @@ import { useSocket } from './hooks/useSocket';
 import { SocketEvent } from './types/socket';
 import { fetchTeams, fetchTeamOwner, setTeamOwner } from './store/slices/teamsSlice';
 import { api } from './services/api';
+import Dashboard from './pages/dashboard';
 const iconSize = 24;
 
 function Main() {
