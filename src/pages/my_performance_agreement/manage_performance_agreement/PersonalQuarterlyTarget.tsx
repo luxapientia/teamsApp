@@ -18,7 +18,7 @@ import {
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus } from '../../../types/personalPerformance';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus } from '../../../types/personalPerformance';
 import RatingScalesModal from '../../../components/RatingScalesModal';
 import { api } from '../../../services/api';
 
@@ -102,7 +102,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         );
     }
 
-
+    const canSendBack = () => {
+        return isApproved && personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft;
+    }
 
     const handleSendBack = () => {
 
@@ -169,7 +171,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     Back
                 </Button>
             </Box>
-            {isApproved && isAssessmentsEmpty() && (
+            {canSendBack() && (
                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
                     <Box sx={{ display: 'flex', gap: 2 }}>
                         <Chip
