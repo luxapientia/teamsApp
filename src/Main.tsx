@@ -107,12 +107,13 @@ function Main() {
           ['My Performance Agreements']}
         selectedTab={selectedTab}
       />
-      <OrganizationPerformance
+      {(isAppOwner || isSuperUser) && (
+        <OrganizationPerformance
         title="Organization Performance"
         icon={<DataTrending24Regular fontSize={iconSize} />}
         tabs={['Performance Evaluations', 'Organization Performance']}
         selectedTab={selectedTab}
-      />
+      />)}
       {(isAppOwner || isSuperUser) && (
       <AnnualCorporateScorecard
         title="Annual Corporate Scorecard"

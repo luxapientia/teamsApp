@@ -16,9 +16,9 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { AnnualTarget, AnnualTargetStatus } from '../../../types/annualCorporateScorecard';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { createAnnualTarget, updateAnnualTarget } from '../../../store/slices/scorecardSlice';
+import { createAnnualTarget, updateAnnualTarget, fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { useToast } from '../../../contexts/ToastContext';
-
+import { useAppSelector } from '../../../hooks/useAppSelector';
 interface AddAnnualTargetModalProps {
   open: boolean;
   onClose: () => void;
@@ -39,8 +39,9 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState<string>(formatDateForInput(new Date()));
   const [endDate, setEndDate] = useState<string>(formatDateForInput(new Date()));
-  const [status, setStatus] = useState<AnnualTargetStatus>(AnnualTargetStatus.Active);
+  const [status, setStatus] = useState<AnnualTargetStatus>(AnnualTargetStatus.Inactive);
   const [dateError, setDateError] = useState('');
+  const annualTargets = useAppSelector(state => state.scorecard.annualTargets);
 
   useEffect(() => {
     if (editingAnnualTarget) {
@@ -65,7 +66,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
     }
   };
 
-  const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEndDateChange = async(e: React.ChangeEvent<HTMLInputElement>) => {
     const newEndDate = new Date(e.target.value);
     if (newEndDate.toISOString().split('T')[0] < startDate) {
       setDateError('End date cannot be before start date');
@@ -75,7 +76,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
     setDateError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (endDate < startDate) {
       setDateError('End date cannot be before start date');
@@ -83,7 +84,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
     }
 
     if (editingAnnualTarget) {
-      dispatch(updateAnnualTarget({
+      await dispatch(updateAnnualTarget({
         ...editingAnnualTarget,
         name,
         startDate,
@@ -91,7 +92,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
         status,
       }));
     } else {
-      dispatch(createAnnualTarget({
+      await dispatch(createAnnualTarget({
         name,
         startDate,
         endDate,
@@ -145,6 +146,8 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
       }));
     }
 
+    dispatch(fetchAnnualTargets());
+
     onClose();
   };
 
@@ -152,7 +155,7 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
     setName('');
     setStartDate(formatDateForInput(new Date()));
     setEndDate(formatDateForInput(new Date()));
-    setStatus(AnnualTargetStatus.Active);
+    setStatus(AnnualTargetStatus.Inactive);
     onClose();
   };
 
@@ -253,8 +256,8 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
                     backgroundColor: '#F9FAFB',
                   }}
                 >
-                  <MenuItem value={AnnualTargetStatus.Active}>Active</MenuItem>
                   <MenuItem value={AnnualTargetStatus.Inactive}>Inactive</MenuItem>
+                  <MenuItem value={AnnualTargetStatus.Active} disabled={annualTargets.some(target => target.status === AnnualTargetStatus.Active)}>Active</MenuItem>
                 </Select>
               </FormControl>
 

@@ -458,7 +458,10 @@ const AnnualTargets: React.FC = () => {
             </Paper>
             <AddAnnualTargetModal
                 open={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingTarget(null);
+                }}
                 editingAnnualTarget={editingTarget}
             />
             <Dialog 
