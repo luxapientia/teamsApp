@@ -20,7 +20,9 @@ import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspe
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus } from '../../../types/personalPerformance';
 import { api } from '../../../services/api';
+import { useToast } from '../../../contexts/ToastContext';
 import EvidenceModal from './EvidenceModal';
+import SendBackModal from '../../../components/Modal/SendBackModal';
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
@@ -45,6 +47,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         attachments: Array<{ name: string; url: string }>;
     } | null>(null);
     const [isApproved, setIsApproved] = useState(false);
+    const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
+    const { showToast } = useToast();
+
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -126,8 +131,29 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     };
 
 
-    const handleSendBack = () => {
-
+    const handleSendBack = (emailSubject: string, emailBody: string) => {
+        if (personalPerformance) {
+        (async () => {
+            try {
+                const response = await api.post(`/personal-performance/send-back`, {
+                    emailSubject,
+                    emailBody,
+                    supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
+                    userId: personalPerformance.userId,
+                    manageType: 'Assessment',
+                    performanceId: personalPerformance._id,
+                    quarter: quarter
+                });
+                if (response.status === 200) {
+                    showToast('email sent successfully', 'success');
+                }
+                } catch (error) {
+                console.error('Error send back notification:', error);
+                showToast('sending email failed', 'error');
+            }
+        })();
+        onBack?.();
+        }
     };
 
     return (
@@ -212,6 +238,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 },
                                 cursor: 'pointer'
                             }}
+                            onClick={() => setSendBackModalOpen(true)}
                         >
                             Send Back
                         </Button>
@@ -430,6 +457,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     );
                 })()}
             </Box>
+
+            <SendBackModal
+                open={sendBackModalOpen}
+                onClose={() => setSendBackModalOpen(false)}
+                onSendBack={handleSendBack}
+                title="Send Back Email"
+                emailSubject={`${annualTarget.name} - Performance Agreement ${quarter}`}
+            />
             {evidenceModalData && (
                 <EvidenceModal
                     open={!!evidenceModalData}

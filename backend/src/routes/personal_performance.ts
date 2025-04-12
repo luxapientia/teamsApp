@@ -82,7 +82,6 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
         }
         return quarterlyTarget;
       });
-      console.log(performanceId, newQuarterlyTargets, 'rererereeeeeeeeee')
       await PersonalPerformance.updateOne(
         { _id: performanceId },
         { $set: { quarterlyTargets: newQuarterlyTargets } }
