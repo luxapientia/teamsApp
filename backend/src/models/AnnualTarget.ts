@@ -1,6 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
 
-enum AnnualTargetStatus {
+export enum AnnualTargetStatus {
   Active = 'active',
   Inactive = 'inactive'
 }
