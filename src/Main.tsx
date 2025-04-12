@@ -95,7 +95,7 @@ function Main() {
       <MyPerformanceAgreement
         title='My Performance Agreement'
         icon={<Handshake24Regular fontSize={iconSize} />}
-        tabs={['My Quarterly Targets', 'Manage Performance Agreement']}
+        tabs={['My Performance Agreements', 'Manage Performance Agreement']}
         selectedTab={selectedTab}
       />
       {(isAppOwner || isSuperUser) && (
@@ -110,7 +110,7 @@ function Main() {
       <AnnualCorporateScorecard
         title="Annual Corporate Scorecard"
         icon={<Globe24Regular fontSize={iconSize} />}
-        tabs={['Quarterly Targets', 'Annual Targets']}
+        tabs={['Quarterly Corporate Scorecards', 'Annual Corporate Scorecards']}
           selectedTab={selectedTab}
         />
       )}
