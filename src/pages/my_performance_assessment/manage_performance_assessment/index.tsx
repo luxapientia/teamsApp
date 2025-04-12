@@ -89,7 +89,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
 
   const fetchCompanyUsers = async () => {
     try {
-      const response = await api.get('/personal-performance/company-users');
+      const response = await api.get('/personal-performance/company-users-all');
       if (response.status === 200) {
         setCompanyUsers(response.data.data);
       } else {
