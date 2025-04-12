@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import AnnualTarget, { AnnualTargetDocument } from '../models/AnnualTarget';
+import AnnualTarget, { AnnualTargetDocument, AnnualTargetStatus } from '../models/AnnualTarget';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import multer from 'multer';
 import fs from 'fs';
@@ -12,7 +12,7 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     const uploadDir = path.join(__dirname, '../../public/uploads');
     console.log('Upload directory:', uploadDir);
-    
+
     try {
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
@@ -38,7 +38,15 @@ const upload = multer({ storage });
 router.get('/annual-targets', authenticateToken, async (_req: Request, res: Response) => {
   try {
     const annualTargets = await AnnualTarget.find() as AnnualTargetDocument[];
-    return res.json(annualTargets);
+    const sortedAnnualTargets = annualTargets.sort((a, b) => {
+      if (a.status === AnnualTargetStatus.Active && b.status !== AnnualTargetStatus.Active) {
+        return -1;
+      } else if (a.status !== AnnualTargetStatus.Active && b.status === AnnualTargetStatus.Active) {
+        return 1;
+      }
+      return 0;
+    });
+    return res.json(sortedAnnualTargets);
   } catch (error) {
     console.error('Annual targets error:', error);
     return res.status(500).json({ error: 'Failed to get annual targets' });
@@ -110,7 +118,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req: Aut
 
   } catch (error) {
     console.error('Upload file error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to upload file',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
