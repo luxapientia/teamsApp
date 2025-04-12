@@ -90,7 +90,7 @@ const HalfDoughnutCard: React.FC<HalfDoughnutCardProps> = ({
   return (
     <DashboardCard>
       <CardHeader>
-        <Typography variant="h6" sx={{ color: 'white', fontWeight: 500 }}>
+        <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center'  }}>
           {title}
         </Typography>
       </CardHeader>
