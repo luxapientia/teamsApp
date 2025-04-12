@@ -10,7 +10,6 @@ import {
   Paper,
   TableContainer,
   FormControl,
-  Select,
   MenuItem,
   SelectChangeEvent,
   IconButton,
@@ -22,6 +21,10 @@ import {
   Badge,
   Chip,
   Alert,
+  Autocomplete,
+  TextField,
+  InputLabel,
+  Select,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
@@ -34,6 +37,7 @@ import AddInitiativeModal from './AddInitiativeModal';
 import RatingScalesModal from '../../../components/RatingScalesModal';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { RootState } from '../../../store';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { api } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -61,6 +65,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [isAddInitiativeModalOpen, setIsAddInitiativeModalOpen] = useState(false);
+  const [isAddFromExistingOpen, setIsAddFromExistingOpen] = useState(false);
   const [editingObjective, setEditingObjective] = useState<PersonalQuarterlyTargetObjective | null>(null);
   const [selectedRatingScales, setSelectedRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -71,6 +76,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [status, setStatus] = useState<AgreementStatus | null>(null);
   const tableRef = useRef();
   const { user } = useAuth();
+
+  // Add state for the dialog
+  const [sourceScorecardId, setSourceScorecardId] = useState('');
+  const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -355,9 +364,36 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const handleExportPDF = async () => {
     const title = `${user.displayName} Performance Agreement - ${annualTarget?.name} ${quarter}`;
     if (personalQuarterlyObjectives.length > 0) {
-      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.15, 0.15, 0.1, 0.25, 0.1, 0.1, 0.15]);
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.15, 0.15, 0.2, 0.1, 0.2, 0.1, 0.1]);
     }
   }
+
+  const handleAddFromExisting = async () => {
+    if (!sourceScorecardId) return;
+
+    try {
+      const response = await api.post('/personal-performance/copy-initiatives', {
+        sourceScorecardId,
+        targetPerformanceId: personalPerformance?._id,
+      });
+      
+      // Update the redux store with the response data
+      dispatch(updatePersonalPerformance(response.data.data));
+      
+      // Update local state with the new objectives
+      const updatedQuarterlyTarget = response.data.data.quarterlyTargets.find(
+        (target: PersonalQuarterlyTarget) => target.quarter === quarter
+      );
+      setPersonalQuarterlyObjectives(updatedQuarterlyTarget?.objectives || []);
+      
+      setIsAddFromExistingOpen(false);
+      setSourceScorecardId('');
+    } catch (error) {
+      console.error('Error copying initiatives:', error);
+    }
+  };
+
+  const canAddFromExisting = quarter === 'Q1' && personalQuarterlyObjectives.length === 0;
 
   return (
     <Box>
@@ -411,50 +447,76 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             },
           }}
         >
-          <Select
-            value={selectedSupervisor}
-            onChange={handleSupervisorChange}
-            displayEmpty
+          <Autocomplete
+            value={companyUsers.find(user => user.id === selectedSupervisor) || null}
+            onChange={(event, newValue) => {
+              if (newValue) {
+                const event = { target: { value: newValue.id } } as SelectChangeEvent;
+                handleSupervisorChange(event);
+              }
+            }}
             disabled={!canEdit()}
-          >
-            <MenuItem value="" disabled>
-              <Typography color="textSecondary">Select Supervisor</Typography>
-            </MenuItem>
-            {companyUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.name}
+            options={companyUsers}
+            getOptionLabel={(option) => option.name || ''}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Select Supervisor"
+                size="small"
+              />
+            )}
+            renderOption={(props, option) => (
+              <MenuItem {...props} value={option.id}>
+                {option.name}
               </MenuItem>
-            ))}
-          </Select>
+            )}
+            disableClearable
+            sx={{
+              '& .MuiAutocomplete-inputRoot': {
+                '& .MuiAutocomplete-input': {
+                  cursor: !canEdit() ? 'not-allowed' : 'text',
+                },
+              },
+            }}
+          />
         </FormControl>
       </Box>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        {canEdit() ? (
-          <Button
-            onClick={() => setIsAddInitiativeModalOpen(true)}
-            variant="outlined"
-            color="primary"
-            sx={{
-              minWidth: '100px',
-              '&:hover': {
-                backgroundColor: 'rgba(25, 118, 210, 0.04)'
-              }
-            }}
-          >
-            Add Initiative
-          </Button>
-        ) : (
-          <Typography
-            variant="caption"
-            sx={{
-              color: '#6B7280',
-              fontStyle: 'italic'
-            }}
-          >
-            Not Editable
-          </Typography>
-        )}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {canEdit() && (
+            <>
+              <Button
+                onClick={() => setIsAddInitiativeModalOpen(true)}
+                variant="outlined"
+                color="primary"
+                sx={{
+                  minWidth: '100px',
+                  '&:hover': {
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)'
+                  }
+                }}
+              >
+                Add Initiative
+              </Button>
+              {canAddFromExisting && (
+                <Button
+                  onClick={() => setIsAddFromExistingOpen(true)}
+                  variant="outlined"
+                  color="primary"
+                  sx={{
+                    minWidth: '100px',
+                    '&:hover': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.04)'
+                    }
+                  }}
+                >
+                  Add from Existing Initiatives
+                </Button>
+              )}
+            </>
+          )}
+        </Box>
 
         {isApproved ? (
           <Chip
@@ -773,6 +835,44 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             autoFocus
           >
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add the dialog for copying initiatives */}
+      <Dialog
+        open={isAddFromExistingOpen}
+        onClose={() => setIsAddFromExistingOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Add from Existing Initiatives</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, minWidth: 400 }}>
+            <FormControl fullWidth>
+              <InputLabel>Select Annual Target</InputLabel>
+              <Select
+                value={sourceScorecardId}
+                onChange={(e) => setSourceScorecardId(e.target.value)}
+                label="Select Annual Target"
+              >
+                {annualTargets.map((target) => (
+                  <MenuItem key={target._id} value={target._id}>
+                    {target.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsAddFromExistingOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleAddFromExisting}
+            variant="contained"
+            disabled={!sourceScorecardId}
+          >
+            Copy Initiatives
           </Button>
         </DialogActions>
       </Dialog>

@@ -16,11 +16,13 @@ import {
     Chip,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
+import { useToast } from '../../../contexts/ToastContext';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus } from '../../../types/personalPerformance';
 import RatingScalesModal from '../../../components/RatingScalesModal';
 import { api } from '../../../services/api';
+import SendBackModal from '../../../components/Modal/SendBackModal';
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
@@ -41,6 +43,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const [selectedRatingScales, setSelectedRatingScales] = React.useState<AnnualTargetRatingScale[] | null>(null);
     const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
     const [isApproved, setIsApproved] = useState(false);
+    const { showToast } = useToast();
+    const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -106,8 +110,29 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return isApproved && personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft;
     }
 
-    const handleSendBack = () => {
-
+    const handleSendBack = (emailSubject: string, emailBody: string) => {
+        if (personalPerformance) {
+        (async () => {
+            try {
+                const response = await api.post(`/personal-performance/send-back`, {
+                    emailSubject,
+                    emailBody,
+                    supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
+                    userId: personalPerformance.userId,
+                    manageType: 'Agreement',
+                    performanceId: personalPerformance._id,
+                    quarter: quarter
+                });
+                if (response.status === 200) {
+                    showToast('email sent successfully', 'success');
+                }
+                } catch (error) {
+                console.error('Error send back notification:', error);
+                showToast('sending email failed', 'error');
+            }
+        })();
+        onBack?.();
+        }
     };
 
     return (
@@ -192,6 +217,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 },
                                 cursor: 'pointer'
                             }}
+                            onClick={() => setSendBackModalOpen(true)}
                         >
                             Send Back
                         </Button>
@@ -365,6 +391,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     </Table>
                 </TableContainer>
             </Paper>
+
+            <SendBackModal
+                open={sendBackModalOpen}
+                onClose={() => setSendBackModalOpen(false)}
+                onSendBack={handleSendBack}
+                title="Send Back Email"
+                emailSubject={`${annualTarget.name} - Performance Agreement ${quarter}`}
+            />
 
             {selectedRatingScales && (
                 <RatingScalesModal
