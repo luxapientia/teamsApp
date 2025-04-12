@@ -16,7 +16,7 @@ import { useAppDispatch } from './hooks/useAppDispatch';
 import { fetchAnnualTargets } from './store/slices/scorecardSlice';
 import { useSocket } from './hooks/useSocket';
 import { SocketEvent } from './types/socket';
-import { fetchTeams, fetchTeamOwner, setTeamOwner } from './store/slices/teamsSlice';
+import { fetchTeams, fetchTeamOwner } from './store/slices/teamsSlice';
 import { api } from './services/api';
 import Dashboard from './pages/dashboard';
 const iconSize = 24;
@@ -52,24 +52,16 @@ function Main() {
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
   const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
+  const [isTeamOwner, setisTeamOwner] = useState(false);
 
   useEffect(() => {
     const fetchTeamOwnerFromDB = async () => {
       if (user?.id) {
         try {
           const response = await api.get(`/users/${user.id}`);
-          const teamId = response.data.data.user.teamId;
-          if (teamId) {
-            const result = await dispatch(fetchTeamOwner(teamId));
-            if (result.payload && typeof result.payload === 'object' && result.payload !== null) {
-              const owner = (result.payload as { owner: { MicrosoftId: string } }).owner;
-              if (owner && owner.MicrosoftId === user.id) {
-                setTeamOwnerStatus(true);
-              } else {
-                setTeamOwnerStatus(false);
-              }
-            }
-          }
+          const teamInfo = await api.get(`/users/is_team_owner/${user.id}`);
+          const result = teamInfo.data.data;
+          setTeamOwnerStatus(result.isTeamOwner);
         } catch (error) {
           console.error('Error fetching team owner:', error);
           setTeamOwnerStatus(false);
@@ -81,12 +73,12 @@ function Main() {
 
   return (
     <Layout selectedTabChanger={selectedTabChanger}>
-      <Dashboard
+      {(TeamOwnerStatus || isAppOwner || isSuperUser) &&<Dashboard
         title="Dashboard"
         icon={<Home24Regular fontSize={iconSize} />}
         tabs={['Dashboard']}
         selectedTab={selectedTab}
-      />
+      />}
       <NotificationPage
         title="Notifications"
         icon={<Alert24Regular fontSize={iconSize} />}
