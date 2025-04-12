@@ -89,13 +89,23 @@ function Main() {
       <MyPerformanceAssessment
         title='My Performance Assessment'
         icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-        tabs={TeamOwnerStatus ? ['My Assessments','My Performances', 'Team Performances', 'Manage Performance Assessment'] : ['My Assessments', 'My Performances', 'Manage Performance Assessment']}
+        tabs={TeamOwnerStatus ? 
+          (isAppOwner || isSuperUser ? 
+            ['My Assessments', 'My Performances', 'Team Performances', 'Manage Performance Assessment'] : 
+            ['My Assessments', 'My Performances', 'Team Performances']
+          ) : 
+          (isAppOwner || isSuperUser ? 
+            ['My Assessments', 'My Performances', 'Manage Performance Assessment'] : 
+            ['My Assessments', 'My Performances']
+          )}
         selectedTab={selectedTab}
       />
       <MyPerformanceAgreement
         title='My Performance Agreement'
         icon={<Handshake24Regular fontSize={iconSize} />}
-        tabs={['My Performance Agreements', 'Manage Performance Agreement']}
+        tabs={isAppOwner || isSuperUser ? 
+          ['My Performance Agreements', 'Manage Performance Agreement'] : 
+          ['My Performance Agreements']}
         selectedTab={selectedTab}
       />
       {(isAppOwner || isSuperUser) && (
