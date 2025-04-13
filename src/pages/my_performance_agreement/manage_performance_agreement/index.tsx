@@ -127,7 +127,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
 
     }
   };
-
+  
   const filteredUsers = companyUsers.filter(user => {
     const searchLower = searchQuery.toLowerCase();
     return (
