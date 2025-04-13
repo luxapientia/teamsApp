@@ -4,8 +4,8 @@ export enum AnnualTargetStatus {
 }
 
 export enum TargetTab {
-    Quarterly = 'Quarterly Targets',
-    Annual = 'Annual Targets'
+    Quarterly = 'Quarterly Corporate Scorecards',
+    Annual = 'Annual Corporate Scorecards'
 }
 
 export interface AnnualTarget {
