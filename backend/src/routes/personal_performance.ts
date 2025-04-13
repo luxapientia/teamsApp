@@ -194,7 +194,6 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
     const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId }).populate('userId').populate('teamId') as any[];
     const isTeamOwner = true;
 
-    console.log('allPersonalPerformances', allPersonalPerformances);
 
     const teamPerformances: any[] = [];
     allPersonalPerformances.forEach(performance => {

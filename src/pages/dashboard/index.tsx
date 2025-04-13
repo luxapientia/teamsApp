@@ -34,6 +34,7 @@ import { AnnualTarget, QuarterType, AnnualTargetStatus, QuarterlyTargetObjective
 import { TeamPerformance, AgreementStatus, AssessmentStatus } from '../../types/personalPerformance';
 import HalfDoughnutCard from '../../components/HalfDoughnutCard';
 import { useAuth } from '../../contexts/AuthContext';
+import { api } from '../../services/api';
 
 interface DashboardProps {
   title?: string;
@@ -126,25 +127,20 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   );
 
   useEffect(() => {
-    if (user?.tenantId) {
-      dispatch(fetchTeams(user.tenantId)).then((action) => {
-        if (fetchTeams.fulfilled.match(action)) {
-          const teams = action.payload;
-          teams.forEach(team => {
-            dispatch(fetchTeamOwner(team._id)).then((ownerAction) => {
-              if (fetchTeamOwner.fulfilled.match(ownerAction)) {
-                const { owner } = ownerAction.payload;
-                if (owner && owner.email === user.email) {
-                  console.log(team.name, "team name");
-                  setUserOwnedTeam(team.name);
-                }
-              }
-            });
-          });
+    const fetchTeamOwnerFromDB = async () => {
+      if (user?.id) {
+        try {
+          const teamInfo = await api.get(`/users/is_team_owner/${user.id}`);
+          const result = teamInfo.data.data;
+          setUserOwnedTeam(result.isTeamOwner);
+        } catch (error) {
+          console.error('Error fetching team owner:', error);
+          setUserOwnedTeam(null);
         }
-      });
-    }
-  }, [dispatch, user]);
+      }
+    };
+    fetchTeamOwnerFromDB();
+  }, [user?.id, dispatch]);
 
   const calculateQuarterScore = (objectives: QuarterlyTargetObjective[]) => {
     let totalWeightedScore = 0;
@@ -431,7 +427,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   </TableRow>
                 );
               })}
-            {viewMode != 'team' &&
+          {viewMode != 'team' &&
             teamPerformances
               .map((performance: TeamPerformance) => {
                 const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
@@ -495,7 +491,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           </Select>
         </StyledFormControl>
 
-        {(isSuperUser || isAppOwner) && userOwnedTeam && (
+        {(isSuperUser || isAppOwner || userOwnedTeam) && (
           <StyledFormControl sx={{ minWidth: { xs: '100%', sm: 200 } }}>
             <InputLabel>View Mode</InputLabel>
             <Select
@@ -507,8 +503,8 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                 resetTables();
               }}
             >
-              <MenuItem value="org">Organization Wide</MenuItem>
-              <MenuItem value="team">Team View</MenuItem>
+              {(isSuperUser || isAppOwner) && <MenuItem value="org">Organization Wide</MenuItem>}
+              {userOwnedTeam && <MenuItem value="team">Team View</MenuItem>}
             </Select>
           </StyledFormControl>
         )}
@@ -597,36 +593,38 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
             </Box>
           )}
 
-          <Box sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2
-          }}>
-            <Box
-              onClick={() => setShowPerformanceTable(!showPerformanceTable)}
-              sx={{ cursor: 'pointer' }}
-            >
-              <HalfDoughnutCard
-                title={viewMode === 'team' ? `${userOwnedTeam} Performance` : "Company-wide Performance"}
-                chartData={performanceChartData}
-                metrics={performanceData.metrics}
-                gridLayout
-              />
-            </Box>
-            {showPerformanceTable && (
-              <Box sx={{
-                overflowX: 'auto',
-                '& .MuiTableContainer-root': {
-                  maxWidth: '100%'
-                }
-              }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  {viewMode === 'team' ? `${userOwnedTeam} Performance Details` : "Performance Details"}
-                </Typography>
-                <PerformanceTable />
+          {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2
+            }}>
+              <Box
+                onClick={() => setShowPerformanceTable(!showPerformanceTable)}
+                sx={{ cursor: 'pointer' }}
+              >
+                <HalfDoughnutCard
+                  title={viewMode === 'team' ? `${userOwnedTeam} Performance` : "Company-wide Performance"}
+                  chartData={performanceChartData}
+                  metrics={performanceData.metrics}
+                  gridLayout
+                />
               </Box>
-            )}
-          </Box>
+              {showPerformanceTable && (
+                <Box sx={{
+                  overflowX: 'auto',
+                  '& .MuiTableContainer-root': {
+                    maxWidth: '100%'
+                  }
+                }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    {viewMode === 'team' ? `${userOwnedTeam} Performance Details` : "Performance Details"}
+                  </Typography>
+                  <PerformanceTable />
+                </Box>
+              )}
+            </Box>
+          )}
         </Box>
       )}
     </Box>
