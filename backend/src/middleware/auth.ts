@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
 import User from '../models/User';
 import { dUser } from '../types/user';
+import { UserRole } from '../types/user';
 export interface AuthenticatedRequest extends Request {
   user?: dUser;
 }
@@ -27,9 +28,18 @@ export const authenticateToken = async (
     res.status(401).json({ error: 'Invalid token' });
     return;
   }
-
   const result = await User.findOne({ email: user.email }) as dUser;
-
-  req.user = result;
+  const duser = {
+    MicrosoftId: user.id, // Microsoft ID
+    name: user.displayName,
+    email: user.email,
+    role: user.role,
+    tenantId: user.tenantId,
+    jobTitle: user.jobTitle
+  }
+  req.user = result ? result : {
+    ...duser,
+    role: duser.role as UserRole
+  };
   next();
 }; 
