@@ -22,8 +22,12 @@ import {
   ArcElement,
   Tooltip,
   Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
   ChartData,
 } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { RootState } from '../../store';
@@ -76,7 +80,38 @@ const ViewButton = styled(Button)({
   },
 });
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+const DashboardCard = styled(Paper)(({ theme }) => ({
+  borderRadius: '12px',
+  boxShadow: 'none',
+  backgroundColor: '#EBF8FF',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+}));
+
+const CardHeader = styled(Box)(({ theme }) => ({
+  padding: '16px 24px',
+  backgroundColor: '#0097A7',
+  borderTopLeftRadius: '12px',
+  borderTopRightRadius: '12px',
+}));
+
+const CardContent = styled(Box)(({ theme }) => ({
+  padding: '24px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '24px',
+}));
+
+ChartJS.register(
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend
+);
 
 const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab }) => {
   const dispatch = useAppDispatch();
@@ -294,8 +329,54 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         data: performanceData.metrics.map(m => m.percentage),
         backgroundColor: performanceData.metrics.map(m => m.color),
         borderWidth: 0,
+        borderRadius: 4,
+        barThickness: 40,
+        maxBarThickness: 50,
       },
     ],
+  };
+
+  const performanceChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            return `${context.formattedValue}%`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: {
+            size: 11
+          }
+        }
+      },
+      y: {
+        beginAtZero: true,
+        max: 100,
+        grid: {
+          display: true,
+          color: '#f0f0f0',
+        },
+        ticks: {
+          callback: (value: number) => `${value}%`,
+          font: {
+            size: 11
+          }
+        },
+      },
+    },
   };
 
   const PendingTargetsTable = () => (
@@ -522,94 +603,111 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
       {showDashboard && (
         <Box sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
+          flexDirection: 'column',
           gap: { xs: 2, sm: 3 },
-          '& > *': {
-            flex: { xs: '1 1 100%', md: '1 1 0%' },
-            minWidth: { xs: '100%', md: 0 }
-          }
         }}>
-          {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2
-            }}>
-              <Box
-                onClick={() => setShowPendingTargetsTable(!showPendingTargetsTable)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <HalfDoughnutCard
-                  title={viewMode === 'team' ? `${userOwnedTeam} Pending Agreements` : "Pending Agreements - Company Wide"}
-                  chartData={chartData(pendingTargetsData)}
-                  metrics={pendingTargetsData.metrics}
-                />
-              </Box>
-              {showPendingTargetsTable && (
-                <Box sx={{
-                  overflowX: 'auto',
-                  '& .MuiTableContainer-root': {
-                    maxWidth: '100%'
-                  }
-                }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    {viewMode === 'team' ? `${userOwnedTeam} Pending Agreements Details` : "Pending Agreements Details"}
-                  </Typography>
-                  <PendingTargetsTable />
+          <Box sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: { xs: 2, sm: 3 },
+            '& > *': {
+              flex: { xs: '1 1 100%', md: '1 1 0%' },
+              minWidth: { xs: '100%', md: 0 }
+            },
+            width: '80%',
+            marginX: 'auto'
+          }}>
+            {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+              }}>
+                <Box
+                  onClick={() => setShowPendingTargetsTable(!showPendingTargetsTable)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <HalfDoughnutCard
+                    title={viewMode === 'team' ? `${userOwnedTeam} Pending Agreements` : "Pending Agreements - Company Wide"}
+                    chartData={chartData(pendingTargetsData)}
+                    metrics={pendingTargetsData.metrics}
+                  />
                 </Box>
-              )}
-            </Box>
-          )}
+                {showPendingTargetsTable && (
+                  <Box sx={{
+                    overflowX: 'auto',
+                    '& .MuiTableContainer-root': {
+                      maxWidth: '100%'
+                    }
+                  }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                      {viewMode === 'team' ? `${userOwnedTeam} Pending Agreements Details` : "Pending Agreements Details"}
+                    </Typography>
+                    <PendingTargetsTable />
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+              }}>
+                <Box
+                  onClick={() => setShowPendingAssessmentsTable(!showPendingAssessmentsTable)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <HalfDoughnutCard
+                    title={viewMode === 'team' ? `${userOwnedTeam} Pending Assessments` : "Pending Assessments - Company Wide"}
+                    chartData={chartData(pendingAssessmentsData)}
+                    metrics={pendingAssessmentsData.metrics}
+                  />
+                </Box>
+                {showPendingAssessmentsTable && (
+                  <Box sx={{
+                    overflowX: 'auto',
+                    '& .MuiTableContainer-root': {
+                      maxWidth: '100%'
+                    }
+                  }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                      {viewMode === 'team' ? `${userOwnedTeam} Pending Assessments Details` : "Pending Assessments Details"}
+                    </Typography>
+                    <PendingAssessmentsTable />
+                  </Box>
+                )}
+              </Box>
+            )}
+          </Box>
 
           {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
             <Box sx={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 2
-            }}>
-              <Box
-                onClick={() => setShowPendingAssessmentsTable(!showPendingAssessmentsTable)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <HalfDoughnutCard
-                  title={viewMode === 'team' ? `${userOwnedTeam} Pending Assessments` : "Pending Assessments - Company Wide"}
-                  chartData={chartData(pendingAssessmentsData)}
-                  metrics={pendingAssessmentsData.metrics}
-                />
-              </Box>
-              {showPendingAssessmentsTable && (
-                <Box sx={{
-                  overflowX: 'auto',
-                  '& .MuiTableContainer-root': {
-                    maxWidth: '100%'
-                  }
-                }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    {viewMode === 'team' ? `${userOwnedTeam} Pending Assessments Details` : "Pending Assessments Details"}
-                  </Typography>
-                  <PendingAssessmentsTable />
-                </Box>
-              )}
-            </Box>
-          )}
-
-          {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2
+              gap: 2,
+              width: '100%'
             }}>
               <Box
                 onClick={() => setShowPerformanceTable(!showPerformanceTable)}
                 sx={{ cursor: 'pointer' }}
               >
-                <HalfDoughnutCard
-                  title={viewMode === 'team' ? `${userOwnedTeam} Performance` : "Company-wide Performance"}
-                  chartData={performanceChartData}
-                  metrics={performanceData.metrics}
-                  gridLayout
-                />
+                <DashboardCard>
+                  <CardHeader>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
+                      {viewMode === 'team' ? `${userOwnedTeam} Performance` : "Company-wide Performance"}
+                    </Typography>
+                  </CardHeader>
+                  <CardContent>
+                    <Bar
+                      data={performanceChartData}
+                      options={performanceChartOptions}
+                    />
+                  </CardContent>
+                </DashboardCard>
               </Box>
+
               {showPerformanceTable && (
                 <Box sx={{
                   overflowX: 'auto',
