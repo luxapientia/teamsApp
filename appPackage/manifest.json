@@ -3,10 +3,9 @@
     "manifestVersion": "1.16",
     "version": "1.0.0",
     "id": "af138b87-5e67-40bd-ad03-575faf285d97",
-    "packageName": "com.microsoft.teams.extension",
     "developer": {
         "name": "Silicon Software Solutions",
-        "websiteUrl": "https://app.teamscorecards.online",
+        "websiteUrl": "https://teamscorecards.online",
         "privacyUrl": "https://app.teamscorecards.online/privacy-policy.html",
         "termsOfUseUrl": "https://app.teamscorecards.online/terms-of-use.html"
     },
