@@ -3,10 +3,9 @@
     "manifestVersion": "1.16",
     "version": "1.0.0",
     "id": "af138b87-5e67-40bd-ad03-575faf285d97",
-    "packageName": "com.microsoft.teams.extension",
     "developer": {
         "name": "Silicon Software Solutions",
-        "websiteUrl": "https://app.teamscorecards.online",
+        "websiteUrl": "https://teamscorecards.online",
         "privacyUrl": "https://app.teamscorecards.online/privacy-policy.html",
         "termsOfUseUrl": "https://app.teamscorecards.online/terms-of-use.html"
     },
@@ -15,12 +14,12 @@
         "outline": "outline.png"
     },
     "name": {
-        "short": "TeamScoreCards",
-        "full": "TeamScoreCards - Employees Performance Management System"
+        "short": "C-Suite Scorecards",
+        "full": "C-Suite Scorecards - Employees Performance Management System"
     },
     "description": {
         "short": "Performance Management made seamless in Microsoft Teams.",
-        "full": "Overview\nTeams Scorecards empowers organizations to simplify and elevate performance management directly within Microsoft Teams.\n\nBuilt for modern teams, it enables employees and managers to set goals, track targets, conduct performance reviews, and access real-time reports — without ever leaving Teams.\nKey Features\n- Easy-to-use interface for employees and managers.\n- Define and manage individual, team, and company performance targets.\n- Approve and assess performance agreements seamlessly.\n- Automated notifications and reminders within Teams.\n- Single Sign-On (SSO) integrated with Azure Active Directory.\n- Access real-time performance reports and dashboards.\n- Effortless setup of performance periods and KPIs.\n- Power BI Integration for advanced analytics.\n- No external logins required — manage everything inside Teams.\nWhy Teams Scorecards?\n- Seamless integration within Microsoft Teams.\n- Empower employees to engage with performance processes effortlessly.\n- Real-time collaboration between employees and supervisors.\n- Supervisor & Employee alignment through approval workflows.\n- Company-wide performance visibility at your fingertips.\nSecurity & Compliance\nTeams Scorecards leverages Microsoft Azure for secure data storage, integrated with Microsoft 365 compliance standards and Azure Active Directory for authentication.\n\nYour organizational data remains protected and private within your Microsoft ecosystem.\nGet Started Today\nDeploy Teams Scorecards across your organization and bring performance management closer to where your teams collaborate.\nSupport\nNeed help or want to learn more?\n\nVisit: https://teamscorecards.online\nEmail: info@silicon.com.na \nPhone: +264 811 60 2133\n"
+        "full": "Overview\nC-Suite Scorecards empowers organizations to simplify and elevate performance management directly within Microsoft Teams.\n\nBuilt for modern teams, it enables employees and managers to set goals, track targets, conduct performance reviews, and access real-time reports — without ever leaving Teams.\nKey Features\n- Easy-to-use interface for employees and managers.\n- Define and manage individual, team, and company performance targets.\n- Approve and assess performance agreements seamlessly.\n- Automated notifications and reminders within Teams.\n- Single Sign-On (SSO) integrated with Azure Active Directory.\n- Access real-time performance reports and dashboards.\n- Effortless setup of performance periods and KPIs.\n- Power BI Integration for advanced analytics.\n- No external logins required — manage everything inside Teams.\nWhy C-Suite Scorecards?\n- Seamless integration within Microsoft Teams.\n- Empower employees to engage with performance processes effortlessly.\n- Real-time collaboration between employees and supervisors.\n- Supervisor & Employee alignment through approval workflows.\n- Company-wide performance visibility at your fingertips.\nSecurity & Compliance\nC-Suite Scorecards leverages Microsoft Azure for secure data storage, integrated with Microsoft 365 compliance standards and Azure Active Directory for authentication.\n\nYour organizational data remains protected and private within your Microsoft ecosystem.\nGet Started Today\nDeploy C-Suite Scorecards across your organization and bring performance management closer to where your teams collaborate.\nSupport\nNeed help or want to learn more?\n\nVisit: https://teamscorecards.online\nEmail: info@silicon.com.na \nPhone: +264 811 60 2133\n"
     },
     "accentColor": "#FFFFFF",
     "composeExtensions": [],
