@@ -49,6 +49,44 @@ router.get('/company-users', authenticateToken, async (req: AuthenticatedRequest
   }
 });
 
+router.get('/manage-performance-agreement/company-users', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { annualTargetId, quarter } = req.query;
+    const personalPerformances = await PersonalPerformance.find({ tenantId: req.user?.tenantId, annualTargetId, quarterlyTargets: { $elemMatch: { quarter, agreementStatus: 'Approved' } } }).populate('userId').populate('teamId') as any[];
+    const users = personalPerformances.map((performance: any) => {
+      return {
+        id: performance.userId._id,
+        name: performance.userId.name,
+        team: performance.teamId?.name,
+        position: performance.userId?.jobTitle
+      }
+    });
+    return res.json(users);
+  } catch (error) {
+    console.error('Company users error:', error);
+    return res.status(500).json({ error: 'Failed to get company users' });
+  }
+});
+
+router.get('/manage-performance-assessment/company-users', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { annualTargetId, quarter } = req.query;
+    const personalPerformances = await PersonalPerformance.find({ tenantId: req.user?.tenantId, annualTargetId, quarterlyTargets: { $elemMatch: { quarter, assessmentStatus: 'Approved' } } }).populate('userId').populate('teamId') as any[];
+    const users = personalPerformances.map((performance: any) => {
+      return {
+        id: performance.userId._id,
+        name: performance.userId.name,
+        team: performance.teamId?.name,
+        position: performance.userId?.jobTitle
+      }
+    });
+    return res.json(users);
+  } catch (error) {
+    console.error('Company users error:', error);
+    return res.status(500).json({ error: 'Failed to get company users' });
+  }
+});
+
 router.get('/company-users-all', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const companyUsers = await User.find({ tenantId: req.user?.tenantId }).populate('teamId') as any[];
