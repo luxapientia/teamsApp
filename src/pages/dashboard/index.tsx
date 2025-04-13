@@ -117,7 +117,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   const dispatch = useAppDispatch();
   const { user } = useAuth();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState<string>('');
-  const [selectedQuarter, setSelectedQuarter] = useState<QuarterType>('Q1');
+  const [selectedQuarter, setSelectedQuarter] = useState<QuarterType | ''>('');
   const [showDashboard, setShowDashboard] = useState(false);
   const [showPendingTargetsTable, setShowPendingTargetsTable] = useState(false);
   const [showPendingAssessmentsTable, setShowPendingAssessmentsTable] = useState(false);
@@ -148,7 +148,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     }>
   });
 
-  const [viewMode, setViewMode] = useState<'org' | 'team'>('org');
+  const [viewMode, setViewMode] = useState<'org' | 'team' | ''>('');
 
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
@@ -156,7 +156,6 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
-  const teams = useAppSelector((state: RootState) => state.teams.teams);
   const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
@@ -167,7 +166,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         try {
           const teamInfo = await api.get(`/users/is_team_owner/${user.id}`);
           const result = teamInfo.data.data;
-          setUserOwnedTeam(result.isTeamOwner);
+          setUserOwnedTeam(result.team.name);
         } catch (error) {
           console.error('Error fetching team owner:', error);
           setUserOwnedTeam(null);
@@ -535,7 +534,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   );
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{
         display: 'flex',
         gap: 2,
