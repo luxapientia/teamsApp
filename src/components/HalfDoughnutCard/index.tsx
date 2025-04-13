@@ -95,8 +95,23 @@ const HalfDoughnutCard: React.FC<HalfDoughnutCardProps> = ({
         </Typography>
       </CardHeader>
       <CardContent>
-        <Box sx={{ height: 300, position: 'relative' }}>
-          <Doughnut data={chartData} options={chartOptions} />
+        <Box sx={{ 
+          position: 'relative',
+          paddingTop: '56.25%', // 16:9 aspect ratio
+          width: '100%'
+        }}>
+          <Box sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Doughnut data={chartData} options={chartOptions} />
+          </Box>
         </Box>
         <Box sx={{ width: '100%', height: '1px', backgroundColor: '#E5E7EB' }} />
         <MetricBox>
