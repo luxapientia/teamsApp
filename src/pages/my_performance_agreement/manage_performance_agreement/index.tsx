@@ -84,12 +84,16 @@ const PersonalPerformanceAgreement: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
-    fetchCompanyUsers();
   }, [dispatch]);
 
   const fetchCompanyUsers = async () => {
     try {
-      const response = await api.get('/personal-performance/company-users');
+      const response = await api.get('/personal-performance/manage-performance-agreement/company-users', {
+        params: {
+          annualTargetId: selectedAnnualTargetId,
+          quarter: selectedQuarter
+        }
+      });
       if (response.status === 200) {
         setCompanyUsers(response.data.data);
       } else {
@@ -103,11 +107,15 @@ const PersonalPerformanceAgreement: React.FC = () => {
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
     setShowQuarterlyTargets(false);
+    setShowPersonalQuarterlyTarget(false);
+
   };
 
   const handleQuarterChange = (event: SelectChangeEvent) => {
     setSelectedQuarter(event.target.value);
     setShowQuarterlyTargets(false);
+    setShowPersonalQuarterlyTarget(false);
+
   };
 
   const handleView = () => {
@@ -115,6 +123,8 @@ const PersonalPerformanceAgreement: React.FC = () => {
       dispatch(fetchPersonalPerformances({ annualTargetId: selectedAnnualTargetId, quarter: selectedQuarter }));
       setShowQuarterlyTargets(true);
       setShowPersonalQuarterlyTarget(false);
+      fetchCompanyUsers();
+
     }
   };
 
