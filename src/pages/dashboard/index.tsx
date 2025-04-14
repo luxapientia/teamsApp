@@ -619,6 +619,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
       performance: performanceResult[index]
     }));
 
+    console.log(teamsTable, 'teamstable')
     return (
       <TableContainer component={Paper} sx={{ maxHeight: 400, overflowY: 'auto' }}>
         <Table stickyHeader>
@@ -865,8 +866,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               gap: 2,
               width: '100%'
             }}>
-              <Box
-                onClick={() => setShowPerformanceTable(!showPerformanceTable)}
+              {(isAppOwner || isSuperUser) && <Box
                 sx={{ cursor: 'pointer' }}
               >
                 <DashboardCard>
@@ -879,7 +879,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     <HeatmapByTeam />
                   </CardContent>
                 </DashboardCard>
-              </Box>
+              </Box>}
             </Box>
           )}
         </Box>
