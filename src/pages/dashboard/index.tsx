@@ -176,21 +176,29 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     fetchTeamOwnerFromDB();
   }, [user?.id, dispatch]);
 
-  const calculateQuarterScore = (objectives: QuarterlyTargetObjective[]) => {
-    let totalWeightedScore = 0;
-    let totalWeight = 0;
-
+  const calculatePersonalPerformanceScore = (objectives: QuarterlyTargetObjective[], ratingCounts: Map<number, number>) => {
     objectives.forEach(objective => {
-      objective.KPIs.forEach(kpi => {
-        if (kpi.ratingScore !== -1) {
-          totalWeightedScore += (kpi.ratingScore * kpi.weight);
-          totalWeight += kpi.weight;
-        }
-      });
+      if (objective.KPIs.length) {
+        objective.KPIs.forEach(kpi => {
+          if (kpi.ratingScore) {
+            ratingCounts.set(kpi.ratingScore, (ratingCounts.get(kpi.ratingScore) || 0) + 1);
+          }
+        });
+      }
+    });
+  };
+
+  const calculateAggregatePerformance = (performances: TeamPerformance[], quarter: QuarterType) => {
+    const aggregateRatingCounts = new Map<number, number>();
+    
+    performances.forEach(performance => {
+      const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === quarter);
+      if (quarterlyTarget) {
+        calculatePersonalPerformanceScore(quarterlyTarget.objectives, aggregateRatingCounts);
+      }
     });
 
-    if (totalWeight === 0) return null;
-    return Math.round(totalWeightedScore / totalWeight);
+    return aggregateRatingCounts;
   };
 
   useEffect(() => {
@@ -253,10 +261,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           }
 
           // Calculate performance score
-          const score = calculateQuarterScore(quarterlyTarget?.objectives || []);
-          if (score !== null) {
-            ratingCounts.set(score, (ratingCounts.get(score) || 0) + 1);
-          }
+          calculatePersonalPerformanceScore(quarterlyTarget?.objectives || [], ratingCounts);
         });
 
         // Calculate percentages for agreements
@@ -472,66 +477,56 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     </TableContainer>
   );
 
-  const PerformanceTable = () => (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Full Name</TableCell>
-            <TableCell>Team</TableCell>
-            <TableCell>Position</TableCell>
-            <TableCell>Quarter</TableCell>
-            <TableCell>Performance Rating Score</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {viewMode == 'team' &&
-            teamPerformances
-              .filter(p => !userOwnedTeam || p.team === userOwnedTeam)
-              .map((performance: TeamPerformance) => {
-                const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-                const score = calculateQuarterScore(quarterlyTarget?.objectives || []);
-                const ratingScale = score !== null ? selectedAnnualTarget?.content.ratingScales.find(scale => scale.score === score) : null;
+  const PerformanceTable = () => {
+    const filteredPerformances = viewMode === 'team' 
+      ? teamPerformances.filter(p => p.team === userOwnedTeam)
+      : teamPerformances;
 
-                return (
-                  <TableRow key={performance._id}>
-                    <TableCell>{performance.fullName}</TableCell>
-                    <TableCell>{performance.team}</TableCell>
-                    <TableCell>{performance.jobTitle}</TableCell>
-                    <TableCell>{selectedQuarter}</TableCell>
-                    <TableCell>
-                      <Typography sx={{ color: ratingScale?.color }}>
-                        {ratingScale ? `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` : 'N/A'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-          {viewMode != 'team' &&
-            teamPerformances
-              .map((performance: TeamPerformance) => {
-                const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-                const score = calculateQuarterScore(quarterlyTarget?.objectives || []);
-                const ratingScale = score !== null ? selectedAnnualTarget?.content.ratingScales.find(scale => scale.score === score) : null;
+    // Only calculate if we have a valid quarter selected
+    if (!selectedQuarter) {
+      return null;
+    }
 
-                return (
-                  <TableRow key={performance._id}>
-                    <TableCell>{performance.fullName}</TableCell>
-                    <TableCell>{performance.team}</TableCell>
-                    <TableCell>{performance.jobTitle}</TableCell>
-                    <TableCell>{selectedQuarter}</TableCell>
-                    <TableCell>
-                      <Typography sx={{ color: ratingScale?.color }}>
-                        {ratingScale ? `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` : 'N/A'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+    const aggregateRatingCounts = calculateAggregatePerformance(filteredPerformances, selectedQuarter);
+    const totalRatings = Array.from(aggregateRatingCounts.values()).reduce((sum, count) => sum + count, 0);
+
+    return (
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Rating Scale</TableCell>
+              <TableCell>Count</TableCell>
+              <TableCell>Percentage</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {selectedAnnualTarget?.content.ratingScales.map(scale => {
+              const count = aggregateRatingCounts.get(scale.score) || 0;
+              const percentage = totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0;
+
+              return (
+                <TableRow key={scale.score}>
+                  <TableCell>
+                    <Typography sx={{ color: scale.color, fontWeight: 500 }}>
+                      {scale.name} ({scale.min}-{scale.max})
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{count}</TableCell>
+                  <TableCell>{percentage}%</TableCell>
+                </TableRow>
+              );
+            })}
+            <TableRow>
+              <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>{totalRatings}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>100%</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
 
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
