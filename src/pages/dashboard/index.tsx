@@ -190,7 +190,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
 
   const calculateAggregatePerformance = (performances: TeamPerformance[], quarter: QuarterType) => {
     const aggregateRatingCounts = new Map<number, number>();
-    
+
     performances.forEach(performance => {
       const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === quarter);
       if (quarterlyTarget) {
@@ -227,6 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     if (selectedAnnualTargetId && selectedQuarter) {
       try {
         const response = await dispatch(fetchTeamPerformances(selectedAnnualTargetId));
+
         const performances = response.payload as TeamPerformance[];
 
         const filteredPerformances = (viewMode === 'team' && userOwnedTeam)
@@ -478,7 +479,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   );
 
   const PerformanceTable = () => {
-    const filteredPerformances = viewMode === 'team' 
+    const filteredPerformances = viewMode === 'team'
       ? teamPerformances.filter(p => p.team === userOwnedTeam)
       : teamPerformances;
 
@@ -517,11 +518,114 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                 </TableRow>
               );
             })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
+
+  const HeatmapByTeam = () => {
+    // Only process if we have a valid quarter selected
+    if (!selectedQuarter) {
+      return null;
+    }
+    // Initialize team performance counts
+    const teams = Array.from(new Set(teamPerformances.map(performance => performance.team))).sort();
+
+    const agreementResult = teams.map(team => {
+      const agreementStatus = teamPerformances.filter(p => p.team == team).map(performance => {
+        return performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatus;
+      });
+      const approvedCount = agreementStatus.filter(tmp => tmp == 'Approved').length;
+      const totalCount = agreementStatus.length;
+      return Math.round(approvedCount / totalCount) * 100;
+    })
+
+    const assessmentResult = teams.map(team => {
+      const assessmentStatus = teamPerformances.filter(p => p.team == team).map(performance => {
+        return performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatus;
+      });
+      const approvedCount = assessmentStatus.filter(tmp => tmp == 'Approved').length;
+      const totalCount = assessmentStatus.length;
+      return Math.round(approvedCount / totalCount) * 100;
+    })
+
+    // Add function to calculate overall rating score
+    const getPersonalPerformanceScore = (objectives: QuarterlyTargetObjective[]) => {
+      let totalWeightedScore = 0;
+      let totalWeight = 0;
+
+      objectives.forEach(objective => {
+        objective.KPIs.forEach(kpi => {
+          if (kpi.ratingScore !== -1) {
+            totalWeightedScore += (kpi.ratingScore * kpi.weight);
+            totalWeight += kpi.weight;
+          }
+        });
+      });
+
+      if (totalWeight === 0) return null;
+
+      return Math.round(totalWeightedScore / totalWeight);
+    };
+
+    const getRatingScaleInfo = (score) => {
+      const { color, min, max, name } = selectedAnnualTarget.content.ratingScales.find(ratingScale => ratingScale.score == score);
+      return { color, min, max, name }
+    }
+
+    const performanceResult = teams.map(team => {
+      const performanceStatus = teamPerformances.filter(p => p.team == team).map(performance => {
+        return getPersonalPerformanceScore(performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter).objectives);
+      });
+
+      return Math.round(performanceStatus.reduce((per, sum) => per + sum, 0) / performanceStatus.length);
+    });
+
+    const teamsTable = teams.map((team, index) => {
+      return { teamName: team, agreement: agreementResult[index], assessment: assessmentResult[index], performance: performanceResult[index] }
+    })
+
+    return (
+      <TableContainer component={Paper} sx={{ maxHeight: 400, overflowY: 'auto' }}>
+        <Table stickyHeader>
+          <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Total</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>{totalRatings}</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>100%</TableCell>
+              <TableCell>Team</TableCell>
+              <TableCell>Agreements</TableCell>
+              <TableCell>Assessments</TableCell>
+              <TableCell>Performance</TableCell>
             </TableRow>
+          </TableHead>
+          <TableBody>
+            {teamsTable.map(teamsRow => (
+              <TableRow key={teamsRow.teamName} hover>
+                <TableCell sx={{ fontWeight: 500 }}>
+                  {teamsRow.teamName}
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontWeight: 500
+                  }}
+                >
+                  {teamsRow.agreement}%
+                </TableCell>
+                <TableCell
+                  align="center"
+                  sx={{
+                    fontWeight: 500
+                  }}
+                >
+                  {teamsRow.assessment}%
+                </TableCell>
+                <TableCell sx={{color: getRatingScaleInfo(teamsRow.performance).color}}>
+                  {
+                    `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)`
+                  }
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </TableContainer>
@@ -529,7 +633,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   };
 
   return (
-    <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
       <Box sx={{
         display: 'flex',
         gap: 2,
@@ -715,6 +819,31 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   <PerformanceTable />
                 </Box>
               )}
+            </Box>
+          )}
+
+          {(canViewManagementCharts) && (
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              width: '100%'
+            }}>
+              <Box
+                onClick={() => setShowPerformanceTable(!showPerformanceTable)}
+                sx={{ cursor: 'pointer' }}
+              >
+                <DashboardCard>
+                  <CardHeader>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
+                      Heatmap by Team
+                    </Typography>
+                  </CardHeader>
+                  <CardContent>
+                    <HeatmapByTeam />
+                  </CardContent>
+                </DashboardCard>
+              </Box>
             </Box>
           )}
         </Box>
