@@ -22,8 +22,12 @@ import {
   ArcElement,
   Tooltip,
   Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
   ChartData,
 } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { RootState } from '../../store';
@@ -34,6 +38,7 @@ import { AnnualTarget, QuarterType, AnnualTargetStatus, QuarterlyTargetObjective
 import { TeamPerformance, AgreementStatus, AssessmentStatus } from '../../types/personalPerformance';
 import HalfDoughnutCard from '../../components/HalfDoughnutCard';
 import { useAuth } from '../../contexts/AuthContext';
+import { api } from '../../services/api';
 
 interface DashboardProps {
   title?: string;
@@ -75,13 +80,44 @@ const ViewButton = styled(Button)({
   },
 });
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+const DashboardCard = styled(Paper)(({ theme }) => ({
+  borderRadius: '12px',
+  boxShadow: 'none',
+  backgroundColor: '#EBF8FF',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  overflow: 'hidden',
+}));
+
+const CardHeader = styled(Box)(({ theme }) => ({
+  padding: '16px 24px',
+  backgroundColor: '#0097A7',
+  borderTopLeftRadius: '12px',
+  borderTopRightRadius: '12px',
+}));
+
+const CardContent = styled(Box)(({ theme }) => ({
+  padding: '24px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '24px',
+}));
+
+ChartJS.register(
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend
+);
 
 const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab }) => {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState<string>('');
-  const [selectedQuarter, setSelectedQuarter] = useState<QuarterType>('Q1');
+  const [selectedQuarter, setSelectedQuarter] = useState<QuarterType | ''>('');
   const [showDashboard, setShowDashboard] = useState(false);
   const [showPendingTargetsTable, setShowPendingTargetsTable] = useState(false);
   const [showPendingAssessmentsTable, setShowPendingAssessmentsTable] = useState(false);
@@ -112,7 +148,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     }>
   });
 
-  const [viewMode, setViewMode] = useState<'org' | 'team'>('org');
+  const [viewMode, setViewMode] = useState<'org' | 'team' | ''>('');
 
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
@@ -120,47 +156,49 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
-  const teams = useAppSelector((state: RootState) => state.teams.teams);
   const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
 
   useEffect(() => {
-    if (user?.tenantId) {
-      dispatch(fetchTeams(user.tenantId)).then((action) => {
-        if (fetchTeams.fulfilled.match(action)) {
-          const teams = action.payload;
-          teams.forEach(team => {
-            dispatch(fetchTeamOwner(team._id)).then((ownerAction) => {
-              if (fetchTeamOwner.fulfilled.match(ownerAction)) {
-                const { owner } = ownerAction.payload;
-                if (owner && owner.email === user.email) {
-                  console.log(team.name, "team name");
-                  setUserOwnedTeam(team.name);
-                }
-              }
-            });
-          });
+    const fetchTeamOwnerFromDB = async () => {
+      if (user?.id) {
+        try {
+          const teamInfo = await api.get(`/users/is_team_owner/${user.id}`);
+          const result = teamInfo.data.data;
+          setUserOwnedTeam(result.team.name);
+        } catch (error) {
+          console.error('Error fetching team owner:', error);
+          setUserOwnedTeam(null);
         }
-      });
-    }
-  }, [dispatch, user]);
+      }
+    };
+    fetchTeamOwnerFromDB();
+  }, [user?.id, dispatch]);
 
-  const calculateQuarterScore = (objectives: QuarterlyTargetObjective[]) => {
-    let totalWeightedScore = 0;
-    let totalWeight = 0;
-
+  const calculatePersonalPerformanceScore = (objectives: QuarterlyTargetObjective[], ratingCounts: Map<number, number>) => {
     objectives.forEach(objective => {
-      objective.KPIs.forEach(kpi => {
-        if (kpi.ratingScore !== -1) {
-          totalWeightedScore += (kpi.ratingScore * kpi.weight);
-          totalWeight += kpi.weight;
-        }
-      });
+      if (objective.KPIs.length) {
+        objective.KPIs.forEach(kpi => {
+          if (kpi.ratingScore) {
+            ratingCounts.set(kpi.ratingScore, (ratingCounts.get(kpi.ratingScore) || 0) + 1);
+          }
+        });
+      }
+    });
+  };
+
+  const calculateAggregatePerformance = (performances: TeamPerformance[], quarter: QuarterType) => {
+    const aggregateRatingCounts = new Map<number, number>();
+
+    performances.forEach(performance => {
+      const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === quarter);
+      if (quarterlyTarget) {
+        calculatePersonalPerformanceScore(quarterlyTarget.objectives, aggregateRatingCounts);
+      }
     });
 
-    if (totalWeight === 0) return null;
-    return Math.round(totalWeightedScore / totalWeight);
+    return aggregateRatingCounts;
   };
 
   useEffect(() => {
@@ -189,6 +227,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     if (selectedAnnualTargetId && selectedQuarter) {
       try {
         const response = await dispatch(fetchTeamPerformances(selectedAnnualTargetId));
+
         const performances = response.payload as TeamPerformance[];
 
         const filteredPerformances = (viewMode === 'team' && userOwnedTeam)
@@ -223,10 +262,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           }
 
           // Calculate performance score
-          const score = calculateQuarterScore(quarterlyTarget?.objectives || []);
-          if (score !== null) {
-            ratingCounts.set(score, (ratingCounts.get(score) || 0) + 1);
-          }
+          calculatePersonalPerformanceScore(quarterlyTarget?.objectives || [], ratingCounts);
         });
 
         // Calculate percentages for agreements
@@ -298,8 +334,54 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         data: performanceData.metrics.map(m => m.percentage),
         backgroundColor: performanceData.metrics.map(m => m.color),
         borderWidth: 0,
+        borderRadius: 4,
+        barThickness: 40,
+        maxBarThickness: 50,
       },
     ],
+  };
+
+  const performanceChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            return `${context.formattedValue}%`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: {
+            size: 11
+          }
+        }
+      },
+      y: {
+        beginAtZero: true,
+        max: 100,
+        grid: {
+          display: true,
+          color: '#f0f0f0',
+        },
+        ticks: {
+          callback: (value: number) => `${value}%`,
+          font: {
+            size: 11
+          }
+        },
+      },
+    },
   };
 
   const PendingTargetsTable = () => (
@@ -396,66 +478,196 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     </TableContainer>
   );
 
-  const PerformanceTable = () => (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Full Name</TableCell>
-            <TableCell>Team</TableCell>
-            <TableCell>Position</TableCell>
-            <TableCell>Quarter</TableCell>
-            <TableCell>Performance Rating Score</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {viewMode == 'team' &&
-            teamPerformances
-              .filter(p => !userOwnedTeam || p.team === userOwnedTeam)
-              .map((performance: TeamPerformance) => {
-                const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-                const score = calculateQuarterScore(quarterlyTarget?.objectives || []);
-                const ratingScale = score !== null ? selectedAnnualTarget?.content.ratingScales.find(scale => scale.score === score) : null;
+  const PerformanceTable = () => {
+    const filteredPerformances = viewMode === 'team'
+      ? teamPerformances.filter(p => p.team === userOwnedTeam)
+      : teamPerformances;
 
-                return (
-                  <TableRow key={performance._id}>
-                    <TableCell>{performance.fullName}</TableCell>
-                    <TableCell>{performance.team}</TableCell>
-                    <TableCell>{performance.jobTitle}</TableCell>
-                    <TableCell>{selectedQuarter}</TableCell>
-                    <TableCell>
-                      <Typography sx={{ color: ratingScale?.color }}>
-                        {ratingScale ? `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` : 'N/A'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            {viewMode != 'team' &&
-            teamPerformances
-              .map((performance: TeamPerformance) => {
-                const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-                const score = calculateQuarterScore(quarterlyTarget?.objectives || []);
-                const ratingScale = score !== null ? selectedAnnualTarget?.content.ratingScales.find(scale => scale.score === score) : null;
+    // Only calculate if we have a valid quarter selected
+    if (!selectedQuarter) {
+      return null;
+    }
 
-                return (
-                  <TableRow key={performance._id}>
-                    <TableCell>{performance.fullName}</TableCell>
-                    <TableCell>{performance.team}</TableCell>
-                    <TableCell>{performance.jobTitle}</TableCell>
-                    <TableCell>{selectedQuarter}</TableCell>
-                    <TableCell>
-                      <Typography sx={{ color: ratingScale?.color }}>
-                        {ratingScale ? `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` : 'N/A'}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+    const aggregateRatingCounts = calculateAggregatePerformance(filteredPerformances, selectedQuarter);
+    const totalRatings = Array.from(aggregateRatingCounts.values()).reduce((sum, count) => sum + count, 0);
+
+    return (
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Rating Scale</TableCell>
+              <TableCell>Count</TableCell>
+              <TableCell>Percentage</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {selectedAnnualTarget?.content.ratingScales.map(scale => {
+              const count = aggregateRatingCounts.get(scale.score) || 0;
+              const percentage = totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0;
+
+              return (
+                <TableRow key={scale.score}>
+                  <TableCell>
+                    <Typography sx={{ color: scale.color, fontWeight: 500 }}>
+                      {scale.name} ({scale.min}-{scale.max})
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{count}</TableCell>
+                  <TableCell>{percentage}%</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
+
+  const HeatmapByTeam = () => {
+    if (!selectedQuarter || !selectedAnnualTarget) {
+      return null;
+    }
+
+    const teams = Array.from(new Set(teamPerformances.map(performance => performance.team))).sort();
+
+    // Calculate agreement percentages
+    const agreementResult = teams.map(team => {
+      const agreementStatus = teamPerformances
+        .filter(p => p.team === team)
+        .map(performance => performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatus);
+      const approvedCount = agreementStatus.filter(tmp => tmp === 'Approved').length;
+      const totalCount = agreementStatus.length;
+      return totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
+    });
+
+    // Calculate assessment percentages
+    const assessmentResult = teams.map(team => {
+      const assessmentStatus = teamPerformances
+        .filter(p => p.team === team)
+        .map(performance => performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatus);
+      const approvedCount = assessmentStatus.filter(tmp => tmp === 'Approved').length;
+      const totalCount = assessmentStatus.length;
+      return totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
+    });
+
+    // Calculate performance scores
+    const getPersonalPerformanceScore = (objectives: QuarterlyTargetObjective[]) => {
+      let totalWeightedScore = 0;
+      let totalWeight = 0;
+
+      objectives.forEach(objective => {
+        objective.KPIs.forEach(kpi => {
+          if (kpi.ratingScore !== -1) {
+            totalWeightedScore += (kpi.ratingScore * kpi.weight);
+            totalWeight += kpi.weight;
+          }
+        });
+      });
+
+      if (totalWeight === 0) return null;
+      return Math.round(totalWeightedScore / totalWeight);
+    };
+
+    const performanceResult = teams.map(team => {
+      const teamMembers = teamPerformances.filter(p => p.team === team);
+      const scores = teamMembers
+        .map(performance => {
+          const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
+          return quarterlyTarget ? getPersonalPerformanceScore(quarterlyTarget.objectives) : null;
+        })
+        .filter((score): score is number => score !== null);
+      
+      return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
+    });
+
+    const getRatingScaleInfo = (score: number | null) => {
+      if (score === null) {
+        return {
+          color: '#666666',
+          min: '0',
+          max: '0',
+          name: 'N/A'
+        };
+      }
+
+      const ratingScale = selectedAnnualTarget.content.ratingScales.find(
+        scale => scale.score === score
+      );
+
+      if (!ratingScale) {
+        return {
+          color: '#666666',
+          min: '0',
+          max: '0',
+          name: 'N/A'
+        };
+      }
+
+      return {
+        color: ratingScale.color,
+        min: ratingScale.min,
+        max: ratingScale.max,
+        name: ratingScale.name
+      };
+    };
+
+    const teamsTable = teams.map((team, index) => ({
+      teamName: team,
+      agreement: agreementResult[index],
+      assessment: assessmentResult[index],
+      performance: performanceResult[index]
+    }));
+
+    console.log(teamsTable, 'teamstable')
+    return (
+      <TableContainer component={Paper} sx={{ maxHeight: 400, overflowY: 'auto' }}>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Team</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Agreements</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Assessments</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Performance</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {teamsTable.map(teamsRow => (
+              <TableRow key={teamsRow.teamName} hover>
+                <TableCell sx={{ fontWeight: 500 }}>
+                  {teamsRow.teamName}
+                </TableCell>
+                <TableCell 
+                  align="center"
+                  sx={{ fontWeight: 500 }}
+                >
+                  {teamsRow.agreement}%
+                </TableCell>
+                <TableCell 
+                  align="center"
+                  sx={{ fontWeight: 500 }}
+                >
+                  {teamsRow.assessment}%
+                </TableCell>
+                <TableCell 
+                  align="center"
+                  sx={{ 
+                    color: getRatingScaleInfo(teamsRow.performance).color,
+                    fontWeight: 500
+                  }}
+                >
+                  {teamsRow.performance !== null ? 
+                    `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)` 
+                    : 'N/A'
+                  }
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
@@ -495,7 +707,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           </Select>
         </StyledFormControl>
 
-        {(isSuperUser || isAppOwner) && userOwnedTeam && (
+        {(isSuperUser || isAppOwner || userOwnedTeam) && (
           <StyledFormControl sx={{ minWidth: { xs: '100%', sm: 200 } }}>
             <InputLabel>View Mode</InputLabel>
             <Select
@@ -507,8 +719,8 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                 resetTables();
               }}
             >
-              <MenuItem value="org">Organization Wide</MenuItem>
-              <MenuItem value="team">Team View</MenuItem>
+              {(isSuperUser || isAppOwner) && <MenuItem value="org">Organization Wide</MenuItem>}
+              {userOwnedTeam && <MenuItem value="team">Team View</MenuItem>}
             </Select>
           </StyledFormControl>
         )}
@@ -526,107 +738,150 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
       {showDashboard && (
         <Box sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
+          flexDirection: 'column',
           gap: { xs: 2, sm: 3 },
-          '& > *': {
-            flex: { xs: '1 1 100%', md: '1 1 0%' },
-            minWidth: { xs: '100%', md: 0 }
-          }
         }}>
-          {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2
-            }}>
-              <Box
-                onClick={() => setShowPendingTargetsTable(!showPendingTargetsTable)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <HalfDoughnutCard
-                  title={viewMode === 'team' ? `${userOwnedTeam} Pending Agreements` : "Pending Agreements - Company Wide"}
-                  chartData={chartData(pendingTargetsData)}
-                  metrics={pendingTargetsData.metrics}
-                />
-              </Box>
-              {showPendingTargetsTable && (
-                <Box sx={{
-                  overflowX: 'auto',
-                  '& .MuiTableContainer-root': {
-                    maxWidth: '100%'
-                  }
-                }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    {viewMode === 'team' ? `${userOwnedTeam} Pending Agreements Details` : "Pending Agreements Details"}
-                  </Typography>
-                  <PendingTargetsTable />
-                </Box>
-              )}
-            </Box>
-          )}
-
-          {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2
-            }}>
-              <Box
-                onClick={() => setShowPendingAssessmentsTable(!showPendingAssessmentsTable)}
-                sx={{ cursor: 'pointer' }}
-              >
-                <HalfDoughnutCard
-                  title={viewMode === 'team' ? `${userOwnedTeam} Pending Assessments` : "Pending Assessments - Company Wide"}
-                  chartData={chartData(pendingAssessmentsData)}
-                  metrics={pendingAssessmentsData.metrics}
-                />
-              </Box>
-              {showPendingAssessmentsTable && (
-                <Box sx={{
-                  overflowX: 'auto',
-                  '& .MuiTableContainer-root': {
-                    maxWidth: '100%'
-                  }
-                }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    {viewMode === 'team' ? `${userOwnedTeam} Pending Assessments Details` : "Pending Assessments Details"}
-                  </Typography>
-                  <PendingAssessmentsTable />
-                </Box>
-              )}
-            </Box>
-          )}
-
           <Box sx={{
             display: 'flex',
-            flexDirection: 'column',
-            gap: 2
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: { xs: 2, sm: 3 },
+            '& > *': {
+              flex: { xs: '1 1 100%', md: '1 1 0%' },
+              minWidth: { xs: '100%', md: 0 }
+            },
+            width: '80%',
+            marginX: 'auto'
           }}>
-            <Box
-              onClick={() => setShowPerformanceTable(!showPerformanceTable)}
-              sx={{ cursor: 'pointer' }}
-            >
-              <HalfDoughnutCard
-                title={viewMode === 'team' ? `${userOwnedTeam} Performance` : "Company-wide Performance"}
-                chartData={performanceChartData}
-                metrics={performanceData.metrics}
-                gridLayout
-              />
-            </Box>
-            {showPerformanceTable && (
+            {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
               <Box sx={{
-                overflowX: 'auto',
-                '& .MuiTableContainer-root': {
-                  maxWidth: '100%'
-                }
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
               }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  {viewMode === 'team' ? `${userOwnedTeam} Performance Details` : "Performance Details"}
-                </Typography>
-                <PerformanceTable />
+                <Box
+                  onClick={() => setShowPendingTargetsTable(!showPendingTargetsTable)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <HalfDoughnutCard
+                    title={viewMode === 'team' ? `${userOwnedTeam} Pending Agreements` : "Pending Agreements - Company Wide"}
+                    chartData={chartData(pendingTargetsData)}
+                    metrics={pendingTargetsData.metrics}
+                  />
+                </Box>
+                {showPendingTargetsTable && (
+                  <Box sx={{
+                    overflowX: 'auto',
+                    '& .MuiTableContainer-root': {
+                      maxWidth: '100%'
+                    }
+                  }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                      {viewMode === 'team' ? `${userOwnedTeam} Pending Agreements Details` : "Pending Agreements Details"}
+                    </Typography>
+                    <PendingTargetsTable />
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+              }}>
+                <Box
+                  onClick={() => setShowPendingAssessmentsTable(!showPendingAssessmentsTable)}
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <HalfDoughnutCard
+                    title={viewMode === 'team' ? `${userOwnedTeam} Pending Assessments` : "Pending Assessments - Company Wide"}
+                    chartData={chartData(pendingAssessmentsData)}
+                    metrics={pendingAssessmentsData.metrics}
+                  />
+                </Box>
+                {showPendingAssessmentsTable && (
+                  <Box sx={{
+                    overflowX: 'auto',
+                    '& .MuiTableContainer-root': {
+                      maxWidth: '100%'
+                    }
+                  }}>
+                    <Typography variant="h6" sx={{ mb: 2 }}>
+                      {viewMode === 'team' ? `${userOwnedTeam} Pending Assessments Details` : "Pending Assessments Details"}
+                    </Typography>
+                    <PendingAssessmentsTable />
+                  </Box>
+                )}
               </Box>
             )}
           </Box>
+
+          {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              width: '100%'
+            }}>
+              <Box
+                onClick={() => setShowPerformanceTable(!showPerformanceTable)}
+                sx={{ cursor: 'pointer' }}
+              >
+                <DashboardCard>
+                  <CardHeader>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
+                      {viewMode === 'team' ? `${userOwnedTeam} Performance` : "Company-wide Performance"}
+                    </Typography>
+                  </CardHeader>
+                  <CardContent>
+                    <Bar
+                      data={performanceChartData}
+                      options={performanceChartOptions}
+                    />
+                  </CardContent>
+                </DashboardCard>
+              </Box>
+
+              {showPerformanceTable && (
+                <Box sx={{
+                  overflowX: 'auto',
+                  '& .MuiTableContainer-root': {
+                    maxWidth: '100%'
+                  }
+                }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    {viewMode === 'team' ? `${userOwnedTeam} Performance Details` : "Performance Details"}
+                  </Typography>
+                  <PerformanceTable />
+                </Box>
+              )}
+            </Box>
+          )}
+
+          {(canViewManagementCharts) && (
+            <Box sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              width: '100%'
+            }}>
+              {(isAppOwner || isSuperUser) && <Box
+                sx={{ cursor: 'pointer' }}
+              >
+                <DashboardCard>
+                  <CardHeader>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
+                      Heatmap by Team
+                    </Typography>
+                  </CardHeader>
+                  <CardContent>
+                    <HeatmapByTeam />
+                  </CardContent>
+                </DashboardCard>
+              </Box>}
+            </Box>
+          )}
         </Box>
       )}
     </Box>

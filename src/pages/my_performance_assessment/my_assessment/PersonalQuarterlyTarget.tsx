@@ -21,7 +21,7 @@ import {
   Alert,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
-import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
+import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '../../../types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, PdfType } from '../../../types';
 import { useAppSelector } from '../../../hooks/useAppSelector';

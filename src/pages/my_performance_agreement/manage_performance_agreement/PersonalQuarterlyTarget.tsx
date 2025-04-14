@@ -106,8 +106,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         );
     }
 
-    const canSendBack = () => {
-        return isApproved && personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft;
+    const canSendBack = async() => {
+        return isApproved && (await personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft);
     }
 
     const handleSendBack = (emailSubject: string, emailBody: string) => {

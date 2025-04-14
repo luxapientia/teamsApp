@@ -1,13 +1,13 @@
 {
     "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
     "manifestVersion": "1.16",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "id": "af138b87-5e67-40bd-ad03-575faf285d97",
     "developer": {
         "name": "Silicon Software Solutions",
         "websiteUrl": "https://teamscorecards.online",
-        "privacyUrl": "https://app.teamscorecards.online/privacy-policy.html",
-        "termsOfUseUrl": "https://app.teamscorecards.online/terms-of-use.html"
+        "privacyUrl": "https://teamscorecards.online/privacy-policy.html",
+        "termsOfUseUrl": "https://teamscorecards.online/terms-of-use.html"
     },
     "icons": {
         "color": "color.png",
