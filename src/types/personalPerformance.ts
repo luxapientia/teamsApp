@@ -34,7 +34,7 @@ export interface PersonalPerformance {
     annualTargetId: string;
     teamId: string;
     quarterlyTargets: PersonalQuarterlyTarget[];
-    userId?: string;
+    userId?: string | { _id: string };
 }
 
 export interface TeamPerformance extends PersonalPerformance {
