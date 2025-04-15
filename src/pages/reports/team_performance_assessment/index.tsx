@@ -67,6 +67,21 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
   padding: '16px',
   color: '#374151',
+  '&:first-of-type': {
+    width: '25%', // Full Name column
+  },
+  '&:nth-of-type(2)': {
+    width: '20%', // Job Title column
+  },
+  '&:nth-of-type(3)': {
+    width: '20%', // Team column
+  },
+  '&:nth-of-type(4)': {
+    width: '15%', // Status column
+  },
+  '&:last-of-type': {
+    width: '20%', // Actions column
+  }
 }));
 
 const StyledHeaderCell = styled(TableCell)(({ theme }) => ({
@@ -74,6 +89,21 @@ const StyledHeaderCell = styled(TableCell)(({ theme }) => ({
   padding: '16px',
   color: '#6B7280',
   fontWeight: 500,
+  '&:first-of-type': {
+    width: '25%', // Full Name column
+  },
+  '&:nth-of-type(2)': {
+    width: '20%', // Job Title column
+  },
+  '&:nth-of-type(3)': {
+    width: '20%', // Team column
+  },
+  '&:nth-of-type(4)': {
+    width: '15%', // Status column
+  },
+  '&:last-of-type': {
+    width: '20%', // Actions column
+  }
 }));
 
 const ExportButton = styled(Button)({
@@ -114,25 +144,7 @@ const TeamPerformanceAgreements: React.FC = () => {
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedTeamId, setSelectedTeamId] = useState('');
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
-
-  const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
-
-  useEffect(() => {
-    fetchCompanyUsers();
-  }, []);
-
-  const fetchCompanyUsers = async () => {
-    try {
-      const response = await api.get('/report/company-users');
-      if (response.status === 200) {
-        setCompanyUsers(response.data.data);
-      } else {
-        setCompanyUsers([]);
-      }
-    } catch (error) {
-      setCompanyUsers([]);
-    }
-  }
+  const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -208,23 +220,25 @@ const TeamPerformanceAgreements: React.FC = () => {
                 <StyledHeaderCell>Full Name</StyledHeaderCell>
                 <StyledHeaderCell>Job Title</StyledHeaderCell>
                 <StyledHeaderCell>Team</StyledHeaderCell>
-                <StyledHeaderCell align="right">Actions</StyledHeaderCell>
+                <StyledHeaderCell>Status</StyledHeaderCell>
+                <StyledHeaderCell align="center">Actions</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {companyUsers.map((user, index) => (
+              {teamPerformances.map((teamPerformance, index) => (
                 <TableRow key={index}>
-                  <StyledTableCell>{user.fullName}</StyledTableCell>
-                  <StyledTableCell>{user.jobTitle}</StyledTableCell>
-                  <StyledTableCell>{user.team}</StyledTableCell>
-                  <StyledTableCell align="right">
+                  <StyledTableCell>{teamPerformance.fullName}</StyledTableCell>
+                  <StyledTableCell>{teamPerformance.jobTitle}</StyledTableCell>
+                  <StyledTableCell>{teamPerformance.team}</StyledTableCell>
+                  <StyledTableCell>{teamPerformance.quarterlyTargets.find(target => target.quarter === selectedQuarter)?.assessmentStatus}</StyledTableCell>
+                  <StyledTableCell align="center">
                     <AccessButton
                       size="small"
                       onClick={() => {
                         setShowPersonalQuarterlyTarget(true);
                         setShowTable(false);
-                        setSelectedUserId(user.id);
-                        setSelectedTeamId(user.teamId);
+                        setSelectedUserId(typeof teamPerformance.userId === 'string' ? teamPerformance.userId : teamPerformance.userId?._id);
+                        setSelectedTeamId(teamPerformance.teamId);
                       }}
                     >
                       View
