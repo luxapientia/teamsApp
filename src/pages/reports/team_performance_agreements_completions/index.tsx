@@ -23,7 +23,7 @@ import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
 import { TeamPerformance } from '../../../types';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
-
+import { api } from '../../../services/api';
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
   borderRadius: '8px',
@@ -47,7 +47,7 @@ const TeamPerformances: React.FC = () => {
   const selectedAnnualTarget = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
-  const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
+  const [teamPerformances, setTeamPerformances] = useState([]);
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
@@ -63,9 +63,23 @@ const TeamPerformances: React.FC = () => {
     setShowTable(false);
   };
 
+  const fetchTeamPerformances = async () => {
+    try {
+      const response = await api.get(`/report/team-performances?annualTargetId=${selectedAnnualTargetId}`);
+      if (response.status === 200) {
+        setTeamPerformances(response.data.data);
+      } else {
+        setTeamPerformances([]);
+      }
+    } catch (error) {
+      console.error('Error fetching team performances:', error);
+      setTeamPerformances([]);
+    }
+  }
+
   const handleView = () => {
     if (selectedAnnualTargetId && selectedQuarter) {
-      dispatch(fetchTeamPerformances(selectedAnnualTargetId));
+      fetchTeamPerformances();
       setShowTable(true);
     }
   };
