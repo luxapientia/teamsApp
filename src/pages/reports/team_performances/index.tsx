@@ -25,7 +25,7 @@ import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTab
 import { ExportButton } from '../../../components/Buttons';
 
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-
+import { api } from '../../../services/api';
 import { exportPdf } from '../../../utils/exportPdf';
 
 const TeamPerformances: React.FC = () => {
@@ -34,7 +34,7 @@ const TeamPerformances: React.FC = () => {
   const [showTable, setShowTable] = useState(false);
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
-  const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
+  const [teamPerformances, setTeamPerformances] = useState([]);
 
   const tableRef = useRef();
 
@@ -43,6 +43,20 @@ const TeamPerformances: React.FC = () => {
     dispatch(fetchAnnualTargets());
   }, [dispatch]);
 
+  const fetchTeamPerformances = async () => {
+    try {
+      const response = await api.get(`/report/team-performances?annualTargetId=${selectedAnnualTargetId}`);
+      if (response.status === 200) {
+        setTeamPerformances(response.data.data);
+      } else {
+        setTeamPerformances([]);
+      }
+    } catch (error) {
+      console.error('Error fetching team performances:', error);
+      setTeamPerformances([]);
+    }
+  }
+
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
     setShowTable(false);
@@ -50,7 +64,7 @@ const TeamPerformances: React.FC = () => {
 
   const handleView = () => {
     if (selectedAnnualTargetId) {
-      dispatch(fetchTeamPerformances(selectedAnnualTargetId));
+      fetchTeamPerformances();
       setShowTable(true);
     }
   };

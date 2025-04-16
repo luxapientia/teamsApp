@@ -139,7 +139,7 @@ const TeamPerformanceAgreements: React.FC = () => {
     const [selectedUserId, setSelectedUserId] = useState('');
     const [selectedTeamId, setSelectedTeamId] = useState('');
     const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
-    const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
+    const [teamPerformances, setTeamPerformances] = useState([]);
 
     const annualTargets = useAppSelector((state: RootState) =>
         state.scorecard.annualTargets
@@ -148,6 +148,20 @@ const TeamPerformanceAgreements: React.FC = () => {
     const selectedAnnualTarget = useAppSelector((state: RootState) =>
         state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
     );
+
+    const fetchTeamPerformances = async () => {
+        try {
+            const response = await api.get(`/report/team-performances?annualTargetId=${selectedAnnualTargetId}`);
+            if (response.status === 200) {
+                setTeamPerformances(response.data.data);
+            } else {
+                setTeamPerformances([]);
+            }
+        } catch (error) {
+            console.error('Error fetching team performances:', error);
+            setTeamPerformances([]);
+        }
+    }
 
     const handleScorecardChange = (event: SelectChangeEvent) => {
         setSelectedAnnualTargetId(event.target.value);
@@ -161,7 +175,7 @@ const TeamPerformanceAgreements: React.FC = () => {
 
     const handleView = () => {
         if (selectedAnnualTargetId && selectedQuarter) {
-            dispatch(fetchTeamPerformances(selectedAnnualTargetId));
+            fetchTeamPerformances();
             setShowTable(true);
             setSelectedUserId('');
             setSelectedTeamId('');
