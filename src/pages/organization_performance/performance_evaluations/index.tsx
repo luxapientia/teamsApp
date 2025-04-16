@@ -200,7 +200,7 @@ const PerformanceEvaluations: React.FC = () => {
         'Baseline': kpi.baseline,
         'Target': kpi.target,
         'Actual Achieved': kpi.actualAchieved,
-        'Performance Rating Scale': kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))
+        'Performance Rating Score': kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))
           ? `${kpi.ratingScore} ${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.name} (${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.min}-${kpi.ratingScales.find(scale => scale.score === Number(kpi.ratingScore))?.max})`
           : '',
         'Evidence': kpi.evidence
@@ -236,8 +236,8 @@ const PerformanceEvaluations: React.FC = () => {
     return Math.round(totalWeightedScore / totalWeight);
   };
 
-  // Add function to get rating scale info
-  const getRatingScaleInfo = (score: number | null) => {
+  // Add function to get rating score info
+  const getRatingScoreInfo = (score: number | null) => {
     if (!score || !selectedAnnualTarget) return null;
 
     return selectedAnnualTarget.content.ratingScales.find(
@@ -248,10 +248,10 @@ const PerformanceEvaluations: React.FC = () => {
   const handleExportPDF = async () => {
     if (getQuarterlyObjectives().length > 0) {
       const score = calculateOverallRating(getQuarterlyObjectives());
-      const ratingScale = getRatingScaleInfo(score);
+      const ratingScore = getRatingScoreInfo(score);
       const title = `${user.organizationName} ${selectedAnnualTarget?.name} ${selectedQuarter} Performance Evaluation`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, 'Total Weight: ' + String(calculateTotalWeight(getQuarterlyObjectives())), '', [0.1, 0.15, 0.1, 0.25, 0.1, 0.1, 0.1, 0.1],
-        { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
+        { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
     }
   }
 
@@ -398,7 +398,7 @@ const PerformanceEvaluations: React.FC = () => {
                     <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                     <StyledHeaderCell align="center">Target</StyledHeaderCell>
                     <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                     <StyledHeaderCell align="center" className='noprint'>Evidence</StyledHeaderCell>
                     <StyledHeaderCell align="center" className='noprint'>Evaluate</StyledHeaderCell>
                   </TableRow>
@@ -501,9 +501,9 @@ const PerformanceEvaluations: React.FC = () => {
             </Typography>
             {(() => {
               const score = calculateOverallRating(getQuarterlyObjectives());
-              const ratingScale = getRatingScaleInfo(score);
+              const ratingScore = getRatingScoreInfo(score);
 
-              if (!score || !ratingScale) {
+              if (!score || !ratingScore) {
                 return (
                   <Typography variant="body2" sx={{
                     color: '#DC2626',
@@ -520,14 +520,14 @@ const PerformanceEvaluations: React.FC = () => {
 
               return (
                 <Typography variant="body2" sx={{
-                  color: ratingScale.color,
+                  color: ratingScore.color,
                   fontWeight: 600,
                   backgroundColor: '#E5E7EB',
                   px: 2,
                   py: 0.5,
                   borderRadius: 1
                 }}>
-                  {`${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`}
+                  {`${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`}
                 </Typography>
               );
             })()}
