@@ -127,8 +127,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     return Math.round(totalWeightedScore / totalWeight);
   };
 
-  // Add function to get rating scale info
-  const getRatingScaleInfo = (score: number | null) => {
+  // Add function to get rating score info
+  const getRatingScoreInfo = (score: number | null) => {
     if (!score || !annualTarget) return null;
 
     return annualTarget.content.ratingScales.find(
@@ -285,7 +285,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
-                <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
+                <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                 <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
               </TableRow>
             </TableHead>
@@ -417,9 +417,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Typography>
         {(() => {
           const score = calculateOverallScore(personalQuarterlyObjectives);
-          const ratingScale = getRatingScaleInfo(score);
+          const ratingScore = getRatingScoreInfo(score);
 
-          if (!score || !ratingScale) {
+          if (!score || !ratingScore) {
             return (
               <Typography variant="body2" sx={{
                 color: '#DC2626',
@@ -436,14 +436,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
           return (
             <Typography variant="body2" sx={{
-              color: ratingScale.color,
+              color: ratingScore.color,
               fontWeight: 600,
               backgroundColor: '#E5E7EB',
               px: 2,
               py: 0.5,
               borderRadius: 1
             }}>
-              {`${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`}
+              {`${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`}
             </Typography>
           );
         })()}

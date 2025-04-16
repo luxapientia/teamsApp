@@ -121,7 +121,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return Math.round(totalWeightedScore / totalWeight);
     };
 
-    // Add function to get rating scale info
+    // Add function to get rating score info
     const getRatingScaleInfo = (score: number | null) => {
         if (!score || !annualTarget) return null;
 
@@ -294,7 +294,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
-                                <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
+                                <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
                             </TableRow>
                         </TableHead>
