@@ -616,7 +616,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               <TableRow>
                 <StyledHeaderCell>Perspective</StyledHeaderCell>
                 <StyledHeaderCell>Strategic Objective</StyledHeaderCell>
-                <StyledHeaderCell>Initiative</StyledHeaderCell>
+                <StyledHeaderCell>Initiative/KPA</StyledHeaderCell>
                 <StyledHeaderCell align="center">Weight %</StyledHeaderCell>
                 <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>

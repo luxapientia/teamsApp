@@ -235,7 +235,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
         </Box>
 
         <Box sx={{ mb: 3 }}>
-          <Typography sx={{ mb: 1 }}>Initiative</Typography>
+          <Typography sx={{ mb: 1 }}>Initiative/KPA</Typography>
           <TextField
             fullWidth
             size="small"
