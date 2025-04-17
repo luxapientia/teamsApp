@@ -15,7 +15,7 @@ interface OrgDevTeamMember {
 }
 
 const OrganizationalDevelopmentTeam: React.FC = () => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const [members, setMembers] = useState<OrgDevTeamMember[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ const OrganizationalDevelopmentTeam: React.FC = () => {
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/users/org-dev-team/getAll/${user?.tenantId}`);
+      const response = await api.get(`/users/org-dev-plan/get-all-members/${user?.tenantId}`);
       // Map the response data to match the OrgDevTeamMember interface
       const mappedMembers = response.data.data.map((member: any) => ({
         MicrosoftId: member.MicrosoftId,
@@ -59,8 +59,14 @@ const OrganizationalDevelopmentTeam: React.FC = () => {
   const handlePeopleSelected = async (selectedPeople: Person[]) => {
     try {
       const userIds = selectedPeople.map(person => person.MicrosoftId);
-      await api.post('/users/org-dev-team/add', { userIds });
+      await api.post('/users/org-dev-plan/add-member', { userIds });
       await fetchMembers();
+      
+      // Update auth context if current user was added
+      if (user && userIds.includes(user.MicrosoftId)) {
+        setUser({ ...user, isDevMember: true });
+      }
+      
       setIsPickerOpen(false);
     } catch (error) {
       console.error('Error adding team members:', error);
@@ -70,8 +76,13 @@ const OrganizationalDevelopmentTeam: React.FC = () => {
 
   const handleRemoveMember = async (memberId: string) => {
     try {
-      await api.delete(`/users/org-dev-team/remove/${memberId}`);
+      await api.delete(`/users/org-dev-plan/remove-member/${memberId}`);
       await fetchMembers();
+      
+      // Update auth context if current user was removed
+      if (user && memberId === user.MicrosoftId) {
+        setUser({ ...user, isDevMember: false });
+      }
     } catch (error) {
       console.error('Error removing team member:', error);
       setError('Failed to remove team member');

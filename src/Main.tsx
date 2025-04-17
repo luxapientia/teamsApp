@@ -52,8 +52,12 @@ function Main() {
 
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
+  const [isDevMember, setIsDevMember] = useState(false);
   const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
 
+  useEffect(() => {
+    setIsDevMember(user?.isDevMember);
+  }, []);
   useEffect(() => {
     const fetchTeamOwnerFromDB = async () => {
       if (user?.id) {
@@ -72,7 +76,7 @@ function Main() {
 
   return (
     <Layout selectedTabChanger={selectedTabChanger}>
-      {(TeamOwnerStatus || isAppOwner || isSuperUser) &&<Dashboard
+      {(TeamOwnerStatus || isAppOwner || isSuperUser) && <Dashboard
         title="Dashboard"
         icon={<Home24Regular fontSize={iconSize} />}
         tabs={['Dashboard']}
@@ -84,22 +88,28 @@ function Main() {
         tabs={[]}
         selectedTab={selectedTab}
       />
-      <EmployeeDevPlan
-        title="Employee Development Plan"
-        icon={<LearningApp24Regular fontSize={iconSize} />}
-        tabs={['Organization Development Team', 'Enable Employees Development', 'Training & Courses Management', 'Annual Organization Development Plans', 'Employees Training', 'My Training Dashboard']}
-        selectedTab={selectedTab}
-      />
+      {(isSuperUser || isAppOwner || isDevMember) &&
+        <EmployeeDevPlan
+          title="Employee Development Plan"
+          icon={<LearningApp24Regular fontSize={iconSize} />}
+          tabs={(isSuperUser || isAppOwner) ?
+            (isDevMember ?
+              ['Organization Development Team', 'Enable Employees Development', 'Training & Courses Management', 'Annual Organization Development Plans', 'Employees Training', 'My Training Dashboard'] :
+              ['Organization Development Team']) :
+            (isDevMember &&
+              ['Enable Employees Development', 'Training & Courses Management', 'Annual Organization Development Plans', 'Employees Training', 'My Training Dashboard'])}
+          selectedTab={selectedTab}
+        />}
       <MyPerformanceAssessment
         title="My Performance Assessment"
         icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-        tabs={TeamOwnerStatus ? 
-          (isAppOwner || isSuperUser ? 
-            ['My Assessments', 'My Performances', 'Team Performances', 'Manage Performance Assessment'] : 
+        tabs={TeamOwnerStatus ?
+          (isAppOwner || isSuperUser ?
+            ['My Assessments', 'My Performances', 'Team Performances', 'Manage Performance Assessment'] :
             ['My Assessments', 'My Performances', 'Team Performances']
-          ) : 
-          (isAppOwner || isSuperUser ? 
-            ['My Assessments', 'My Performances', 'Manage Performance Assessment'] : 
+          ) :
+          (isAppOwner || isSuperUser ?
+            ['My Assessments', 'My Performances', 'Manage Performance Assessment'] :
             ['My Assessments', 'My Performances']
           )}
         selectedTab={selectedTab}
@@ -107,23 +117,23 @@ function Main() {
       <MyPerformanceAgreement
         title="My Performance Agreement"
         icon={<Handshake24Regular fontSize={iconSize} />}
-        tabs={isAppOwner || isSuperUser ? 
-          ['My Performance Agreements', 'Manage Performance Agreement'] : 
+        tabs={isAppOwner || isSuperUser ?
+          ['My Performance Agreements', 'Manage Performance Agreement'] :
           ['My Performance Agreements']}
         selectedTab={selectedTab}
       />
       {(isAppOwner || isSuperUser) && (
         <OrganizationPerformance
-        title="Organization Performance"
-        icon={<DataTrending24Regular fontSize={iconSize} />}
-        tabs={['Performance Evaluations', 'Organization Performance']}
-        selectedTab={selectedTab}
-      />)}
+          title="Organization Performance"
+          icon={<DataTrending24Regular fontSize={iconSize} />}
+          tabs={['Performance Evaluations', 'Organization Performance']}
+          selectedTab={selectedTab}
+        />)}
       {(isAppOwner || isSuperUser) && (
-      <AnnualCorporateScorecard
-        title="Annual Corporate Scorecard"
-        icon={<Globe24Regular fontSize={iconSize} />}
-        tabs={['Quarterly Corporate Scorecards', 'Annual Corporate Scorecards']}
+        <AnnualCorporateScorecard
+          title="Annual Corporate Scorecard"
+          icon={<Globe24Regular fontSize={iconSize} />}
+          tabs={['Quarterly Corporate Scorecards', 'Annual Corporate Scorecards']}
           selectedTab={selectedTab}
         />
       )}

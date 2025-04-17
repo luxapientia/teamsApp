@@ -28,6 +28,7 @@ interface PersonalQuarterlyTarget {
   isEditable: boolean;
   agreementStatus: AgreementStatus;
   assessmentStatus: AssessmentStatus;
+  isDevelopmentPlanEnabled?: boolean;
   supervisorId?: string;
   objectives: PersonalQuarterlyTargetObjective[];
 }

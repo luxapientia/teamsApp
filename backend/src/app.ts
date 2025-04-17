@@ -15,7 +15,7 @@ import reportRoutes from './routes/report';
 import { authenticateToken } from './middleware/auth';
 import { checkLicenseStatus } from './middleware/licenseCheck';
 import userRoutes from './routes/User';
-import orgDevTeamRoutes from './routes/orgDevTeam';
+import orgDevPlanRoutes from './routes/orgDevPlan';
 const app = express();
 
 // Middleware
@@ -43,7 +43,7 @@ app.use('/api/notifications', authenticateToken, checkLicenseStatus, notificatio
 app.use('/api/teams', authenticateToken, checkLicenseStatus, teamRoutes);
 app.use('/api/report', authenticateToken, checkLicenseStatus, reportRoutes);
 app.use('/api/users', authenticateToken, checkLicenseStatus, userRoutes);
-app.use('/api/users/org-dev-team', orgDevTeamRoutes);
+app.use('/api/users/org-dev-plan', orgDevPlanRoutes);
 
 
 // Connect to MongoDB

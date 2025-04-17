@@ -8,7 +8,7 @@ import { ApiError } from '../utils/apiError';
 const router = express.Router();
 
 // Get all development team members for a tenant
-router.get('/getAll/:tenantId', authenticateToken, async (req, res, next) => {
+router.get('/get-all-members/:tenantId', authenticateToken, async (req, res, next) => {
   try {
     const { tenantId } = req.params;
     console.log('tenantId', tenantId);
@@ -32,7 +32,7 @@ router.get('/getAll/:tenantId', authenticateToken, async (req, res, next) => {
 });
 
 // Add members to development team
-router.post('/add', authenticateToken, requireRole([UserRole.SUPER_USER, UserRole.APP_OWNER]), async (req, res, next) => {
+router.post('/add-member', authenticateToken, requireRole([UserRole.SUPER_USER, UserRole.APP_OWNER]), async (req, res, next) => {
   try {
     const { userIds } = req.body;
 
@@ -55,7 +55,7 @@ router.post('/add', authenticateToken, requireRole([UserRole.SUPER_USER, UserRol
 });
 
 // Remove member from development team
-router.delete('/remove/:userId', authenticateToken, requireRole([UserRole.SUPER_USER, UserRole.APP_OWNER]), async (req, res, next) => {
+router.delete('/remove-member/:userId', authenticateToken, requireRole([UserRole.SUPER_USER, UserRole.APP_OWNER]), async (req, res, next) => {
   try {
     const { userId } = req.params;
 
