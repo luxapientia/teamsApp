@@ -4,7 +4,7 @@ import { config } from '../config';
 import * as dotenv from 'dotenv';
 import { UserProfile } from '../types';
 import { roleService } from './roleService';
-import { UserRole } from '../types/user';
+import { dUser, UserRole } from '../types/user';
 
 dotenv.config();
 
@@ -124,7 +124,8 @@ export class AuthService {
     }
   }
 
-  verifyToken(token: string): UserProfile | null {
+  // verifyToken(token: string): UserProfile | null {
+  async verifyToken(token: string): Promise<Promise<dUser | null> | null> {
     try {
       // Verify the JWT token using the secret
       const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
@@ -135,10 +136,12 @@ export class AuthService {
         return null;
       }
       
+      const dbUser = await roleService.getUser(decoded.id);
       // Check if token has expired - not needed as jwt.verify already checks this
       // but we could add custom expiration logic here if needed
-      
-      return decoded;
+
+      // return decoded;
+      return dbUser;
     } catch (error) {
       console.error('Token verification failed:', error);
       return null;
