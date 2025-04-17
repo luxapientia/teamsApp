@@ -194,6 +194,15 @@ const scorecardSlice = createSlice({
         target.status = action.payload.status;
       }
     },
+    updateQuarterlyTarget(
+      state,
+      action: PayloadAction<AnnualTarget>
+    ) {
+      const index = state.annualTargets.findIndex(t => t._id === action.payload._id);
+      if (index !== -1) {
+        state.annualTargets[index] = action.payload;
+      }
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -230,5 +239,5 @@ const scorecardSlice = createSlice({
   },
 });
 
-export const { updateTargetStatus } = scorecardSlice.actions;
+export const { updateTargetStatus, updateQuarterlyTarget } = scorecardSlice.actions;
 export default scorecardSlice.reducer; 

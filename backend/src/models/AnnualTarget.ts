@@ -87,6 +87,7 @@ type QuarterType = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
 export interface QuarterlyTarget {
   quarter: QuarterType;
+  isDevelopmentPlanEnabled?: boolean;
   objectives: QuarterlyTargetObjective[];
 }
 
@@ -221,6 +222,11 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
         quarter: {
           type: String,
           enum: ['Q1', 'Q2', 'Q3', 'Q4']
+        },
+        isDevelopmentPlanEnabled: {
+          type: Boolean,
+          require: false,
+          default: false
         },
         objectives: [{
           perspectiveId: Number,
