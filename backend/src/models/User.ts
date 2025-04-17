@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema<dUser>({
   jobTitle: {
     type: String,
     required: false,
+  },
+  isDevMember: {
+    type: Boolean,
+    default: false
   }
 });
 

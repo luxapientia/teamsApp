@@ -4,7 +4,7 @@ import './styles/globals.css';
 import AnnualCorporateScorecard from './pages/scorecards';
 import Teams from './pages/teams';
 import { ManagePage } from './pages/manage';
-import { GridRegular, Alert24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular, Home24Regular } from '@fluentui/react-icons';
+import { GridRegular, Alert24Regular, LearningApp24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular, Home24Regular } from '@fluentui/react-icons';
 import { useAuth } from './contexts/AuthContext';
 import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
@@ -19,6 +19,7 @@ import { SocketEvent } from './types/socket';
 import { fetchTeams, fetchTeamOwner } from './store/slices/teamsSlice';
 import { api } from './services/api';
 import Dashboard from './pages/dashboard';
+import EmployeeDevPlan from './pages/employee_dev_plan';
 const iconSize = 24;
 
 function Main() {
@@ -52,13 +53,11 @@ function Main() {
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
   const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
-  const [isTeamOwner, setisTeamOwner] = useState(false);
 
   useEffect(() => {
     const fetchTeamOwnerFromDB = async () => {
       if (user?.id) {
         try {
-          const response = await api.get(`/users/${user.id}`);
           const teamInfo = await api.get(`/users/is_team_owner/${user.id}`);
           const result = teamInfo.data.data;
           setTeamOwnerStatus(result.isTeamOwner);
@@ -83,6 +82,12 @@ function Main() {
         title="Notifications"
         icon={<Alert24Regular fontSize={iconSize} />}
         tabs={[]}
+        selectedTab={selectedTab}
+      />
+      <EmployeeDevPlan
+        title="Employee Development Plan"
+        icon={<LearningApp24Regular fontSize={iconSize} />}
+        tabs={['Organization Development Team', 'Enable Employees Development', 'Training & Courses Management', 'Annual Organization Development Plans', 'Employees Training', 'My Training Dashboard']}
         selectedTab={selectedTab}
       />
       <MyPerformanceAssessment
