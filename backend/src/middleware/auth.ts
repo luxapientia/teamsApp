@@ -27,6 +27,7 @@ export const authenticateToken = async (
     return;
   }
   const duser = {
+    _id: user._id,
     MicrosoftId: user.MicrosoftId, // Microsoft ID
     name: user.name,
     email: user.email,
