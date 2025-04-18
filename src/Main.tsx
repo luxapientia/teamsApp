@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import Layout from './layouts/Layout';
 import './styles/globals.css';
 import AnnualCorporateScorecard from './pages/scorecards';
-import Teams from './pages/teams';
 import { ManagePage } from './pages/manage';
 import { GridRegular, Alert24Regular, LearningApp24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular, Home24Regular } from '@fluentui/react-icons';
 import { useAuth } from './contexts/AuthContext';
@@ -20,6 +19,7 @@ import { fetchTeams, fetchTeamOwner } from './store/slices/teamsSlice';
 import { api } from './services/api';
 import Dashboard from './pages/dashboard';
 import EmployeeDevPlan from './pages/employee_dev_plan';
+import TeamsPage from './pages/teams';
 const iconSize = 24;
 
 function Main() {
@@ -146,10 +146,10 @@ function Main() {
         />
       )}
       {(isAppOwner || isSuperUser) && (
-        <Teams
+        <TeamsPage
           title='Teams'
           icon={<PeopleTeam24Regular fontSize={iconSize} />}
-          tabs={['Teams']}
+          tabs={['Teams', 'Super User']}
           selectedTab={selectedTab}
         />
       )}

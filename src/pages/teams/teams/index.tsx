@@ -4,15 +4,15 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import { createTeam, deleteTeam, fetchTeams, fetchAllTeamMembers, fetchTeamOwner, setTeamOwner, addTeamMembers, removeTeamMember } from '../../store/slices/teamsSlice';
-import { RootState } from '../../store';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { useAppSelector } from '../../hooks/useAppSelector';
+import { createTeam, deleteTeam, fetchTeams, fetchAllTeamMembers, fetchTeamOwner, setTeamOwner, addTeamMembers, removeTeamMember } from '../../../store/slices/teamsSlice';
+import { RootState } from '../../../store';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { useAppSelector } from '../../../hooks/useAppSelector';
 import * as microsoftTeams from "@microsoft/teams-js";
-import { api } from '../../services/api';
-import PeoplePickerModal, { Person } from '../../components/PeoplePickerModal';
-import { useAuth } from '../../contexts/AuthContext';
-import { StyledHeaderCell, StyledTableCell, ViewButton } from '../../components/StyledTableComponents';
+import { api } from '../../../services/api';
+import PeoplePickerModal, { Person } from '../../../components/PeoplePickerModal';
+import { useAuth } from '../../../contexts/AuthContext';
+import { StyledHeaderCell, StyledTableCell, ViewButton } from '../../../components/StyledTableComponents';
 
 enum ViewStatus {
   TEAM_LIST = 'TEAM_LIST',
@@ -21,7 +21,7 @@ enum ViewStatus {
   MEMBER_ADDING = 'MEMBER_ADDING',
 }
 
-const TeamsTabContent: React.FC = () => {
+const Teams: React.FC = () => {
   const dispatch = useAppDispatch();
   const { teams, teamMembers, loading } = useAppSelector((state: RootState) => state.teams);
   const { user } = useAuth();
@@ -554,4 +554,4 @@ const TeamsTabContent: React.FC = () => {
   );
 };
 
-export default TeamsTabContent;
+export default Teams;

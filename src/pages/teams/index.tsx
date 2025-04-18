@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import TeamsTabContent from './TeamsTabContent';
+import Teams from './teams';
+import SuperUser from './super_user';
 import { PageProps } from '@/types';
 
-const Teams: React.FC<PageProps> = (props) => {
+const TeamsPage: React.FC<PageProps> = (props) => {
 
   return (
     <div className="space-y-6">
       {/* Conditional Rendering */}
-      {props.selectedTab === 'Teams' && <TeamsTabContent />}
+      {props.selectedTab === 'Teams' && <Teams />}
+      {props.selectedTab === 'Super User' && <SuperUser />}
     </div>
   );
 };
 
-export default Teams;
+export default TeamsPage;
