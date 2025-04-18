@@ -95,9 +95,10 @@ function Main() {
           tabs={(isSuperUser || isAppOwner) ?
             (isDevMember ?
               ['Organization Development Team', 'Enable Employees Development', 'Training & Courses Management', 'Annual Organization Development Plans', 'Employees Training', 'My Training Dashboard'] :
-              ['Organization Development Team']) :
-            (isDevMember &&
-              ['Enable Employees Development', 'Training & Courses Management', 'Annual Organization Development Plans', 'Employees Training', 'My Training Dashboard'])}
+              ['Organization Development Team', 'My Training Dashboard']) :
+            (isDevMember ?
+              ['Enable Employees Development', 'Training & Courses Management', 'Annual Organization Development Plans', 'Employees Training', 'My Training Dashboard'] :
+              ['My Training Dashboard'])}
           selectedTab={selectedTab}
         />}
       <MyPerformanceAssessment
