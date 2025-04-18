@@ -19,6 +19,7 @@ import {
   styled,
   Chip,
   Alert,
+  Switch,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '../../../types/annualCorporateScorecard';
@@ -38,6 +39,11 @@ import { ExportButton } from '../../../components/Buttons';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { exportPdf } from '../../../utils/exportPdf';
+
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import SelectCourseModal from './SelectCourseModal';
+import { Course } from '../../../types/course';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -75,8 +81,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [isApproved, setIsApproved] = useState(false);
   const [status, setStatus] = useState<AssessmentStatus | null>(null);
+  const [isNotApplicable, setIsNotApplicable] = useState(false);
   const tableRef = useRef();
   const { user } = useAuth();
+  const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
 
 
   useEffect(() => {
@@ -360,6 +368,17 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   }
 
+  const handleNotApplicableToggle = () => {
+    const newValue = !isNotApplicable;
+    setIsNotApplicable(newValue);
+    
+  };
+
+  const handleAddPersonalDevelopment = async (selectedCourses: Course[]) => {
+  };
+
+  const handleDeleteCourse = async (courseToDelete: Course | string) => {
+  };
   return (
     <Box>
       <Box sx={{
@@ -749,7 +768,85 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           );
         })()}
       </Box>
-
+      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+        <Box sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: '#0078D4',
+                '&:hover': {
+                  backgroundColor: '#106EBE'
+                }
+              }}
+              onClick={() => setIsSelectCourseModalOpen(true)}
+              disabled={isNotApplicable}
+            >
+              Add Personal Development
+            </Button>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Switch
+                checked={isNotApplicable}
+                onChange={handleNotApplicableToggle}
+                size="small"
+                // disabled={!canEdit()}
+              />
+              <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                Not Applicable
+              </Typography>
+            </Box>
+          </Box>
+          
+          {!isNotApplicable && (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <StyledHeaderCell>Course Name</StyledHeaderCell>
+                    <StyledHeaderCell>Description</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Actions</StyledHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {currentQuarterTarget?.personalDevelopment?.map((course: any, index) => {
+                    // Handle both string IDs and populated course objects
+                    const courseData = typeof course === 'string' 
+                      ? { _id: course, name: 'Loading...', description: 'Loading...' }
+                      : course;
+                      
+                    return (
+                      <TableRow key={courseData._id}>
+                        <StyledTableCell>{courseData.name}</StyledTableCell>
+                        <StyledTableCell>{courseData.description}</StyledTableCell>
+                        <StyledTableCell align="center">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteCourse(courseData)}
+                            sx={{ color: '#6B7280', ml: 1 }}
+                            // disabled={!canEdit()}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </StyledTableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {(!currentQuarterTarget?.personalDevelopment || 
+                    currentQuarterTarget?.personalDevelopment?.length === 0) && (
+                    <TableRow>
+                      <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                        <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                          No personal development courses added
+                        </Typography>
+                      </StyledTableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Box>
+      </Paper>
       {selectedKPI && (
         <KPIModal
           open={!!selectedKPI}
@@ -769,6 +866,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           attachments={evidenceModalData.attachments}
         />
       )}
+
+      <SelectCourseModal
+        open={isSelectCourseModalOpen}
+        onClose={() => setIsSelectCourseModalOpen(false)}
+        onSelect={handleAddPersonalDevelopment}
+        tenantId={user?.tenantId || ''}
+      />
     </Box >
   );
 };
