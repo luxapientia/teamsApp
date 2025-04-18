@@ -86,6 +86,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const { user } = useAuth();
   const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
 
+  const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
+  const currentPerformance = personalPerformances.find(p => p._id === personalPerformance?._id);
+  const currentQuarterTarget = currentPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
 
   useEffect(() => {
     fetchCompanyUsers();

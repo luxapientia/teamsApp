@@ -1,4 +1,5 @@
 import { QuarterlyTargetObjective } from "./annualCorporateScorecard";
+import { Course } from "./course";
 
 export interface PersonalQuarterlyTargetObjective extends QuarterlyTargetObjective {
     initiativeName: string;
@@ -18,8 +19,6 @@ export enum AssessmentStatus {
     SendBack = 'Send Back'
 }
 
-
-
 export interface PersonalQuarterlyTarget {
     quarter: string;
     agreementStatus: AgreementStatus;
@@ -27,6 +26,8 @@ export interface PersonalQuarterlyTarget {
     isEditable: boolean;
     supervisorId?: string;
     objectives: PersonalQuarterlyTargetObjective[];
+    personalDevelopment?: Array<Course>;
+    isPersonalDevelopmentNotApplicable?: boolean;
 }
 
 export interface PersonalPerformance {
