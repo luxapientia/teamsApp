@@ -270,7 +270,20 @@ router.put('/update-personal-performance/:id', authenticateToken, async (req: Au
     const { id } = req.params;
     const { personalPerformance } = req.body;
 
-    const updatedPersonalPerformance = await PersonalPerformance.findByIdAndUpdate(id, personalPerformance, { new: true });
+    const updatedPersonalPerformance = await PersonalPerformance.findByIdAndUpdate(
+      id, 
+      personalPerformance, 
+      { new: true }
+    ).populate({
+      path: 'quarterlyTargets.personalDevelopment',
+      select: 'name description status',
+      model: 'Course'
+    });
+
+    if (!updatedPersonalPerformance) {
+      return res.status(404).json({ error: 'Personal performance not found' });
+    }
+
     return res.json(updatedPersonalPerformance);
   } catch (error) {
     console.error('Update personal performance error:', error);

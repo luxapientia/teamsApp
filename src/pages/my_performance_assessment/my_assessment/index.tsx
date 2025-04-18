@@ -84,6 +84,13 @@ const PerformanceAssessment: React.FC = () => {
     dispatch(fetchAnnualTargets());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (personalPerformances.length > 0) {
+      const personalPerformance = personalPerformances.find(performance => performance.annualTargetId === selectedAnnualTargetId);
+      setSelectedPersonalPerformance(personalPerformance);
+    }
+  }, [personalPerformances])
+
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
     setShowQuarterlyTargets(false);

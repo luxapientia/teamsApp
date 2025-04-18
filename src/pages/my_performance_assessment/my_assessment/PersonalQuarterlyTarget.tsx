@@ -27,7 +27,7 @@ import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTab
 import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, PdfType } from '../../../types';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
+import { fetchPersonalPerformances, updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { RootState } from '../../../store';
 import { api } from '../../../services/api';
 import KPIModal from './KPIModal';
@@ -85,10 +85,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const tableRef = useRef();
   const { user } = useAuth();
   const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
-
-  const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
-  const currentPerformance = personalPerformances.find(p => p._id === personalPerformance?._id);
-  const currentQuarterTarget = currentPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -310,8 +306,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && quarterlyTarget?.agreementStatus === 'Approved' && areAllKPIsEvaluated();
   };
 
-
-
   const handleSave = async (newKPI: QuarterlyTargetKPI) => {
     if (selectedKPI) {
       const newPersonalQuarterlyObjectives = personalQuarterlyObjectives.map(objective => {
@@ -374,13 +368,65 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const handleNotApplicableToggle = () => {
     const newValue = !isNotApplicable;
     setIsNotApplicable(newValue);
-    
   };
 
   const handleAddPersonalDevelopment = async (selectedCourses: Course[]) => {
+    console.log(selectedCourses, 'selectedCourses');
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          personalDevelopment: [...target.personalDevelopment, ...selectedCourses].filter((course, index, self) =>
+            index === self.findIndex((c) => c._id === course._id)
+          )
+        }
+      }
+      return target;
+    });
+
+    const updatedPersonalPerformance = await dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
+
+    console.log(updatedPersonalPerformance, 'updatedPersonalPerformance');
+
+    await dispatch(fetchPersonalPerformances({
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarter: quarter
+    }));
+
+    console.log(personalPerformance, 'new personalPerformance');
   };
 
-  const handleDeleteCourse = async (courseToDelete: Course | string) => {
+  const handleDeleteCourse = async (courseToDelete: Course) => {
+    console.log(courseToDelete, 'courseToDelete');
+
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          personalDevelopment: target.personalDevelopment.filter(course => course._id !== courseToDelete._id)
+        }
+      }
+      return target;
+    });
+
+    const updatedPersonalPerformance = await dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
+
+    console.log(updatedPersonalPerformance, 'deleted course');
+
+    dispatch(fetchPersonalPerformances({
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarter: quarter
+    }));
   };
   return (
     <Box>
@@ -792,14 +838,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 checked={isNotApplicable}
                 onChange={handleNotApplicableToggle}
                 size="small"
-                // disabled={!canEdit()}
+              // disabled={!canEdit()}
               />
               <Typography variant="body2" sx={{ color: '#6B7280' }}>
                 Not Applicable
               </Typography>
             </Box>
           </Box>
-          
+
           {!isNotApplicable && (
             <TableContainer>
               <Table>
@@ -811,39 +857,37 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {currentQuarterTarget?.personalDevelopment?.map((course: any, index) => {
-                    // Handle both string IDs and populated course objects
-                    const courseData = typeof course === 'string' 
-                      ? { _id: course, name: 'Loading...', description: 'Loading...' }
-                      : course;
-                      
-                    return (
-                      <TableRow key={courseData._id}>
-                        <StyledTableCell>{courseData.name}</StyledTableCell>
-                        <StyledTableCell>{courseData.description}</StyledTableCell>
-                        <StyledTableCell align="center">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteCourse(courseData)}
-                            sx={{ color: '#6B7280', ml: 1 }}
+                  {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)
+                    ?.personalDevelopment?.map((course: any, index) => {
+                      // Handle both string IDs and populated course objects
+
+                      return (
+                        <TableRow key={course._id}>
+                          <StyledTableCell>{course.name}</StyledTableCell>
+                          <StyledTableCell>{course.description}</StyledTableCell>
+                          <StyledTableCell align="center">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteCourse(course)}
+                              sx={{ color: '#6B7280', ml: 1 }}
                             // disabled={!canEdit()}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </StyledTableCell>
+                        </TableRow>
+                      );
+                    })}
+                  {(!personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.personalDevelopment ||
+                    personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.personalDevelopment?.length === 0) && (
+                      <TableRow>
+                        <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                          <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                            No personal development courses added
+                          </Typography>
                         </StyledTableCell>
                       </TableRow>
-                    );
-                  })}
-                  {(!currentQuarterTarget?.personalDevelopment || 
-                    currentQuarterTarget?.personalDevelopment?.length === 0) && (
-                    <TableRow>
-                      <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
-                        <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                          No personal development courses added
-                        </Typography>
-                      </StyledTableCell>
-                    </TableRow>
-                  )}
+                    )}
                 </TableBody>
               </Table>
             </TableContainer>
