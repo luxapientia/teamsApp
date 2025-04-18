@@ -204,6 +204,9 @@ router.get('/personal-performance/:notificationId', authenticateToken, async (re
     const personalPerformance = await PersonalPerformance.findOne({
       annualTargetId: notification.annualTargetId,
       userId: notification.senderId
+    }).populate({
+      path: 'quarterlyTargets.personalDevelopment',
+      select: 'name description status'
     });
 
     return res.json(personalPerformance);
