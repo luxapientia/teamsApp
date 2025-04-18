@@ -1,5 +1,5 @@
-import axios, { AxiosError } from 'axios';
-import { Company, SuperUser, License } from '../types';
+import axios, { AxiosError, AxiosInstance } from 'axios';
+import { Company, SuperUser, License, Course } from '../types';
 
 // Get the API URL from environment or try common development ports
 export const getAPIBaseURL = () => {
@@ -17,12 +17,30 @@ export const getAPIBaseURL = () => {
 
 const API_BASE_URL = getAPIBaseURL();
 
+interface ApiInstance extends AxiosInstance {
+  // ... existing interface properties ...
+  
+  // Training Courses
+  getCourses(tenantId: string): Promise<any>;
+  createCourse(data: { name: string; description: string; status: 'active' | 'inactive' }): Promise<any>;
+  updateCourse(courseId: string, data: { name: string; description: string; status: 'active' | 'inactive' }): Promise<any>;
+  deleteCourse(courseId: string): Promise<any>;
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-});
+}) as ApiInstance;
+
+// Implement training course methods
+api.getCourses = (tenantId: string) => api.get<ApiResponse<Course[]>>(`/training-courses/${tenantId}`);
+api.createCourse = (data: { name: string; description: string; status: 'active' | 'inactive' }) => 
+  api.post<ApiResponse<Course>>('/training-courses', data);
+api.updateCourse = (courseId: string, data: { name: string; description: string; status: 'active' | 'inactive' }) => 
+  api.put<ApiResponse<Course>>(`/training-courses/${courseId}`, data);
+api.deleteCourse = (courseId: string) => api.delete(`/training-courses/${courseId}`);
 
 interface ApiResponse<T> {
   data: T;
@@ -106,5 +124,15 @@ export const licenseAPI = {
   update: (id: string, data: Partial<Omit<License, '_id' | '__v'>>) => 
     api.put<ApiResponse<License>>(`/licenses/${id}`, data),
   delete: (id: string) => api.delete(`/licenses/${id}`),
+};
+
+// Training Courses
+export const courseAPI = {
+  getAll: (tenantId: string) => api.get<ApiResponse<Course[]>>(`/training-courses/${tenantId}`),
+  create: (data: Omit<Course, '_id' | 'createdAt' | 'updatedAt' | 'tenantId'>) => 
+    api.post<ApiResponse<Course>>('/training-courses', data),
+  update: (courseId: string, data: Partial<Omit<Course, '_id' | 'createdAt' | 'updatedAt' | 'tenantId'>>) => 
+    api.put<ApiResponse<Course>>(`/training-courses/${courseId}`, data),
+  delete: (courseId: string) => api.delete(`/training-courses/${courseId}`),
 }; 
 

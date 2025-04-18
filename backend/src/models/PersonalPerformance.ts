@@ -30,6 +30,8 @@ interface PersonalQuarterlyTarget {
   assessmentStatus: AssessmentStatus;
   supervisorId?: string;
   objectives: PersonalQuarterlyTargetObjective[];
+  isPersonalDevelopmentNotApplicable?: boolean;
+  personalDevelopment?: string[]; // Array of course IDs
 }
 
 
@@ -80,6 +82,18 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
       required: true,
       default: AssessmentStatus.Draft,
     },
+    isPersonalDevelopmentNotApplicable: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    personalDevelopment: {
+      type: [String],
+      required: false,
+      ref: 'Course',
+      default: []
+    },
+
     isEditable: {
       type: Boolean,
       required: true,

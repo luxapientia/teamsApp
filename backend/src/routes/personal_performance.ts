@@ -196,21 +196,35 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
   try {
     const annualTargetId = req.query.annualTargetId as string;
     const quarter = req.query.quarter as string;
-    const personalPerformances = await PersonalPerformance.find({ annualTargetId, userId: req.user?._id }) as PersonalPerformanceDocument[];
+    
+    // Get the user from the database to ensure we have the correct _id
+    const dbUser = await User.findOne({ MicrosoftId: req.user?.MicrosoftId });
+    if (!dbUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const personalPerformances = await PersonalPerformance.find({ annualTargetId, userId: dbUser._id })
+      .populate({
+        path: 'quarterlyTargets.personalDevelopment',
+        select: 'name description status',
+        model: 'Course'
+      }) as PersonalPerformanceDocument[];
 
     if(personalPerformances.length === 0) {
       const newPersonalPerformance = await PersonalPerformance.create({
         annualTargetId,
         quarter,
-        userId: req.user?._id,
-        teamId: req.user?.teamId || annualTargetId,
-        tenantId: req.user?.tenantId,
+        userId: dbUser._id,
+        teamId: dbUser.teamId || annualTargetId,
+        tenantId: dbUser.tenantId,
         quarterlyTargets: ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => {
           return {
             quarter,
             agreementStatus: AgreementStatus.Draft,
             assessmentStatus: AssessmentStatus.Draft,
             isEditable: quarter === 'Q1' ? true : false,
+            isPersonalDevelopmentNotApplicable: false,
+            personalDevelopment: [],
             supervisorId: '',
             objectives: []
           }
