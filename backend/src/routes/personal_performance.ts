@@ -184,7 +184,12 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
 router.get('/personal-performance', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { userId, annualTargetId } = req.query;
-    const personalPerformance = await PersonalPerformance.findOne({ userId, annualTargetId }) as PersonalPerformanceDocument;
+    const personalPerformance = await PersonalPerformance.findOne({ userId, annualTargetId })
+      .populate({
+        path: 'quarterlyTargets.personalDevelopment',
+        select: 'name description status',
+        model: 'Course'
+      }) as PersonalPerformanceDocument;
     return res.json(personalPerformance);
   } catch (error) {
     console.error('Personal performance error:', error);

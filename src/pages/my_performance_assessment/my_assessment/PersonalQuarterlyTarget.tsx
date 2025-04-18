@@ -365,9 +365,26 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   }
 
-  const handleNotApplicableToggle = () => {
+  const handleNotApplicableToggle = async () => {
     const newValue = !isNotApplicable;
     setIsNotApplicable(newValue);
+
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          isPersonalDevelopmentNotApplicable: newValue
+        }
+      }
+      return target;
+    });
+
+    await dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
   };
 
   const handleAddPersonalDevelopment = async (selectedCourses: Course[]) => {
@@ -829,7 +846,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 }
               }}
               onClick={() => setIsSelectCourseModalOpen(true)}
-              disabled={isNotApplicable}
+              disabled={isNotApplicable || !canEdit()}
             >
               Add Personal Development
             </Button>
@@ -838,7 +855,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 checked={isNotApplicable}
                 onChange={handleNotApplicableToggle}
                 size="small"
-              // disabled={!canEdit()}
+                disabled={!canEdit()}
               />
               <Typography variant="body2" sx={{ color: '#6B7280' }}>
                 Not Applicable
@@ -870,7 +887,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               size="small"
                               onClick={() => handleDeleteCourse(course)}
                               sx={{ color: '#6B7280', ml: 1 }}
-                            // disabled={!canEdit()}
+                              disabled={!canEdit()}
                             >
                               <DeleteIcon />
                             </IconButton>
