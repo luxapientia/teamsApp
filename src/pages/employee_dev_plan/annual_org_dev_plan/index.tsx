@@ -27,6 +27,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import type { RootState } from '../../../store';
 import { fetchDevPlans, createDevPlan, deleteDevPlan, updateDevPlan } from '../../../store/slices/devPlanSlice';
 import { useToast } from '../../../contexts/ToastContext';
+import PlanView from './plan_view';
 
 interface NewPlan {
   name: string;
@@ -41,6 +42,7 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newPlan, setNewPlan] = useState<NewPlan>({ name: '' });
   const [editingPlan, setEditingPlan] = useState<EditingPlan | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   
   const dispatch = useAppDispatch();
   const { user } = useAuth();
@@ -60,7 +62,11 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
   }, [dispatch, tenantId]);
 
   const handleView = (id: string) => {
-    console.log('View plan:', id);
+    setSelectedPlanId(id);
+  };
+
+  const handleBack = () => {
+    setSelectedPlanId(null);
   };
 
   const handleEdit = (plan: { _id: string; name: string }) => {
@@ -121,6 +127,30 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography color="error">Error loading development plans</Typography>
+      </Box>
+    );
+  }
+
+  if (selectedPlanId) {
+    return (
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            onClick={handleBack}
+            variant="outlined"
+            sx={{
+              color: '#0078D4',
+              borderColor: '#0078D4',
+              '&:hover': {
+                borderColor: '#106EBE',
+                backgroundColor: 'rgba(0, 120, 212, 0.04)',
+              },
+            }}
+          >
+            Back to Plans
+          </Button>
+        </Box>
+        <PlanView planId={selectedPlanId} />
       </Box>
     );
   }

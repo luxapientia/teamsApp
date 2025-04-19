@@ -42,5 +42,6 @@ export interface TeamPerformance extends PersonalPerformance {
     fullName: string;
     jobTitle: string;
     team: string;
+    email?: string;
 }
 

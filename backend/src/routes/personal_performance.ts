@@ -248,20 +248,49 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
 router.get('/team-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId } = req.query;
-    const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId }).populate('userId').populate('teamId') as any[];
+    console.log('Fetching team performances for annualTargetId:', annualTargetId);
+    
+    const allPersonalPerformances = await PersonalPerformance.find({ 
+      annualTargetId, 
+      tenantId: req.user?.tenantId 
+    })
+    .populate({
+      path: 'userId',
+      select: 'name email jobTitle MicrosoftId',
+      model: 'User'
+    })
+    .populate('teamId')
+    .populate('quarterlyTargets.personalDevelopment') as any[];
+
+    console.log('Raw performances:', allPersonalPerformances.map(p => ({
+      userId: p.userId,
+      teamId: p.teamId
+    })));
+    
     const isTeamOwner = true;
 
+    const teamPerformances = allPersonalPerformances
+      .filter(performance => performance.userId && (
+        performance.quarterlyTargets[0].supervisorId === req.user?._id || isTeamOwner
+      ))
+      .map(performance => ({
+        ...performance._doc,
+        fullName: performance.userId.name,
+        jobTitle: performance.userId.jobTitle,
+        email: performance.userId.email,
+        microsoftId: performance.userId.MicrosoftId,
+        team: performance.teamId?.name,
+        quarterlyTargets: performance.quarterlyTargets.map((target: any) => ({
+          ...target._doc,
+          personalDevelopment: target.personalDevelopment || []
+        }))
+      }));
 
-    const teamPerformances: any[] = [];
-    allPersonalPerformances.forEach(performance => {
-      if(performance.quarterlyTargets[0].supervisorId === req.user?._id) {
-        teamPerformances.push({...performance._doc, fullName: performance.userId.name, jobTitle: performance.userId.jobTitle, team: performance.teamId?.name});
-      } else {
-        if(isTeamOwner) {
-          teamPerformances.push({...performance._doc, fullName: performance.userId.name, jobTitle: performance.userId.jobTitle, team: performance.teamId?.name});
-        }
-      }
-    });
+    console.log('Processed performances:', teamPerformances.map(p => ({
+      fullName: p.fullName,
+      email: p.email,
+      microsoftId: p.microsoftId
+    })));
 
     return res.json(teamPerformances);
   } catch (error) {

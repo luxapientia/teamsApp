@@ -1,11 +1,16 @@
-import { Training, TrainingStatus } from '../models/Training';
+import { Training, ITraining } from '../models/Training';
 import { Types } from 'mongoose';
 
-class TrainingService {
+export enum TrainingStatus {
+  PLANNED = 'Planned',
+  COMPLETED = 'Completed'
+}
+
+export class TrainingService {
   async create(name: string) {
     const training = new Training({
       name,
-      status: TrainingStatus.REQUESTED,
+      status: TrainingStatus.PLANNED,
       requestedDate: new Date()
     });
     return await training.save();
@@ -69,6 +74,74 @@ class TrainingService {
   async getByStatus(status: TrainingStatus) {
     return await Training.find({ status }).sort({ createdAt: -1 });
   }
-}
 
-export default new TrainingService(); 
+  async getTrainingsByPlanId(planId: string): Promise<ITraining[]> {
+    return Training.find({ planId: new Types.ObjectId(planId) });
+  }
+
+  async addEmployeesToPlan(
+    planId: string,
+    employees: Array<{
+      microsoftId: string;
+      displayName: string;
+      email: string;
+      jobTitle?: string;
+      team?: string;
+      trainingRequested?: string;
+      status?: TrainingStatus;
+      dateRequested: Date;
+    }>
+  ): Promise<ITraining[]> {
+    const trainings = employees.map(employee => ({
+      planId: new Types.ObjectId(planId),
+      microsoftId: employee.microsoftId,
+      displayName: employee.displayName,
+      email: employee.email,
+      jobTitle: employee.jobTitle,
+      team: employee.team,
+      trainingRequested: employee.trainingRequested || '',
+      status: employee.status || TrainingStatus.PLANNED,
+      dateRequested: employee.dateRequested
+    }));
+
+    const docs = await Training.insertMany(trainings);
+    return docs.map(doc => doc.toObject());
+  }
+
+  async removeEmployeeFromPlan(planId: string, email: string): Promise<boolean> {
+    const result = await Training.deleteOne({
+      planId: new Types.ObjectId(planId),
+      email
+    });
+    return result.deletedCount > 0;
+  }
+
+  async updateTrainingStatus(
+    planId: string,
+    email: string,
+    trainingRequested: string,
+    status: TrainingStatus
+  ): Promise<ITraining | null> {
+    return Training.findOneAndUpdate(
+      { 
+        planId: new Types.ObjectId(planId), 
+        email,
+        trainingRequested
+      },
+      { $set: { status } },
+      { new: true }
+    );
+  }
+
+  async updateTrainingRequest(
+    planId: string,
+    email: string,
+    trainingRequested: string
+  ): Promise<ITraining | null> {
+    return Training.findOneAndUpdate(
+      { planId: new Types.ObjectId(planId), email },
+      { trainingRequested },
+      { new: true }
+    );
+  }
+} 

@@ -1,48 +1,59 @@
 import { Schema, model, Document } from 'mongoose';
 
 export enum TrainingStatus {
-  REQUESTED = 'REQUESTED',
-  PLANNED = 'PLANNED',
-  COMPLETED = 'COMPLETED'
+  REQUESTED = 'Requested',
+  PLANNED = 'Planned',
+  COMPLETED = 'Completed'
 }
 
 export interface ITraining extends Document {
-  courseId: Schema.Types.ObjectId;
-  userId: Schema.Types.ObjectId;
   planId: Schema.Types.ObjectId;
+  microsoftId: string;
+  displayName: string;
+  email: string;
+  jobTitle?: string;
+  team?: string;
+  trainingRequested: string;
   status: TrainingStatus;
-  requestedDate: Date;
+  dateRequested: Date;
 }
 
 const trainingSchema = new Schema<ITraining>(
   {
-    courseId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Course',
-      required: true,
-    },
-    userId: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
     planId: {
       type: Schema.Types.ObjectId,
-      ref: 'Plan',
-      required: true,
+      ref: 'OrgDevPlan',
+      required: true
+    },
+    microsoftId: {
+      type: String,
+      required: true
+    },
+    displayName: {
+      type: String,
+      required: true
+    },
+    email: {
+      type: String,
+      required: true
+    },
+    jobTitle: String,
+    team: String,
+    trainingRequested: {
+      type: String,
+      required: true
     },
     status: {
       type: String,
       enum: Object.values(TrainingStatus),
-      required: true,
-      default: TrainingStatus.REQUESTED,
+      default: TrainingStatus.REQUESTED
     },
-    requestedDate: {
+    dateRequested: {
       type: Date,
-      required: true,
-      default: Date.now,
+      default: Date.now
     }
-  }
+  },
+  { timestamps: true }
 );
 
 export const Training = model<ITraining>('Training', trainingSchema);
