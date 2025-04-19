@@ -160,7 +160,6 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
         (typeof performance.userId === 'object' ? performance.userId.email : undefined);
 
       if (!email) {
-        console.error('Missing email for employee:', performance);
         return;
       }
 
@@ -184,14 +183,12 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
     const formattedEmployees = Object.values(selectedEmployees)
       .filter(employee => {
         if (!employee.email) {
-          console.error('Employee missing email:', employee);
           return false;
         }
         return true;
       });
     
     if (formattedEmployees.length === 0) {
-      console.error('No valid employees to add');
       return;
     }
 

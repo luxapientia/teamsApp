@@ -25,7 +25,6 @@ export const fetchDevPlans = createAsyncThunk(
   'devPlan/fetchDevPlans',
   async (tenantId: string) => {
     const response = await api.get(`/users/org-dev-plan/${tenantId}`);
-    console.log('response', response.data);
     return response.data.data;
   }
 );

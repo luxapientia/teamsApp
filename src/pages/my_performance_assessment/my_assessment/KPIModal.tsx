@@ -162,8 +162,6 @@ const KPIModal: React.FC<KPIModalProps> = ({
         });
       }
 
-      console.log(newFiles, '-------------------------');
-
       setFilesToUpload(prev => [...prev, ...newFiles]);
       setAttachments(newAttachments);
     }

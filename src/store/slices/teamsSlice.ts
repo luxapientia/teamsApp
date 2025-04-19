@@ -24,7 +24,6 @@ export const fetchTeams = createAsyncThunk(
     try {
       const response = await api.get(`/teams/${tenantId}`);
       if (response.status === 200) {
-        console.log('response.data.data', response.data.data);
         return response.data.data as Team[];
       } else {
         return [];
