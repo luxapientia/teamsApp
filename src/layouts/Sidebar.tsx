@@ -4,7 +4,7 @@ import {
   ChevronLeftRegular,
   ChevronRightRegular,
   GridRegular,
-  SignOutRegular
+  SignOut24Regular
 } from '@fluentui/react-icons';
 import { PageProps } from '../types';
 import { useAppSelector } from '../hooks/useAppSelector';
@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           className="w-full flex items-center px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition-colors"
         >
           <span className="inline-flex items-center justify-center w-6 h-6">
-            <SignOutRegular />
+            <SignOut24Regular />
           </span>
           {isOpen && <span className="ml-3">Sign out</span>}
         </button>
