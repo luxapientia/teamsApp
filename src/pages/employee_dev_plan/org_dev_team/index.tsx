@@ -65,8 +65,6 @@ const OrganizationalDevelopmentTeam: React.FC = () => {
       // Update auth context if current user was added
       if (user && userIds.includes(user.MicrosoftId)) {
         setUser({ ...user, isDevMember: true });
-        // Force navigation refresh by reloading the page
-        window.location.reload();
       }
       
       setIsPickerOpen(false);
@@ -84,8 +82,6 @@ const OrganizationalDevelopmentTeam: React.FC = () => {
       // Update auth context if current user was removed
       if (user && memberId === user.MicrosoftId) {
         setUser({ ...user, isDevMember: false });
-        // Force navigation refresh by reloading the page
-        window.location.reload();
       }
     } catch (error) {
       console.error('Error removing team member:', error);

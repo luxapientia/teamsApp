@@ -57,7 +57,6 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
   const [isAddingEmployees, setIsAddingEmployees] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [shouldRefresh, setShouldRefresh] = useState(false);
   const [planName, setPlanName] = useState('');
   const { showToast } = useToast();
   const tableRef = useRef<any>(null);
@@ -66,7 +65,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
   useEffect(() => {
     fetchEmployees();
     fetchPlanDetails();
-  }, [planId, shouldRefresh]);
+  }, [planId]);
 
   const fetchPlanDetails = async () => {
     try {
@@ -80,19 +79,11 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     }
   };
 
-  // Handle employee updates
-  useEffect(() => {
-    if (employees.length > 0) {
-      setShouldRefresh(true);
-    }
-  }, [employees]);
-
   const fetchEmployees = async () => {
     try {
       const response = await api.get(`/training/${planId}/employees`);
       if (response.data.status === 'success') {
         setEmployees(response.data.data.employees || []);
-        setShouldRefresh(false);
       } else {
         throw new Error(response.data.message || 'Failed to fetch employees');
       }
@@ -151,7 +142,6 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
       if (response.data.status === 'success') {
         setEmployees(prev => [...prev, ...response.data.data.employees]);
-        setShouldRefresh(true);
         showToast('Employees added successfully', 'success');
       } else {
         throw new Error(response.data.message || 'Failed to add employees');
