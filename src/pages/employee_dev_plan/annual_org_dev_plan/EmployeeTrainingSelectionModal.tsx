@@ -26,16 +26,6 @@ import { AssessmentStatus, PersonalPerformance } from '../../../types/personalPe
 import { RootState } from '../../../store';
 import { TrainingStatus } from './plan_view';
 
-interface Employee {
-  userId: string;
-  displayName: string;
-  email: string;
-  jobTitle?: string;
-  team?: string;
-  trainingRequested?: string;
-  dateRequested?: Date;
-}
-
 interface UserData {
   _id: string;
   email: string;
@@ -72,14 +62,12 @@ interface EmployeeTrainingSelectionModalProps {
   open: boolean;
   onClose: () => void;
   onSelectEmployees: (employees: SelectedEmployee[]) => void;
-  existingEmployees: Employee[];
 }
 
 const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalProps> = ({
   open,
   onClose,
   onSelectEmployees,
-  existingEmployees
 }) => {
   const [selectedEmployees, setSelectedEmployees] = useState<{ [key: string]: SelectedEmployee }>({});
   const [approvedEmployees, setApprovedEmployees] = useState<(TeamPerformance & { coursesWithQuarters: { quarter: string; courses: Course[] }[] })[]>([]);
@@ -87,6 +75,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   const { user } = useAuth();
   const { teamPerformances = [], status: teamPerformancesStatus } = useAppSelector((state: RootState) => state.personalPerformance);
   const { annualTargets, status: annualTargetsStatus } = useAppSelector((state: RootState) => state.scorecard);
+  const { employees: existingEmployees } = useAppSelector((state: RootState) => state.trainingEmployees);
 
   useEffect(() => {
     if (open) {

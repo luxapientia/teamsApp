@@ -4,6 +4,7 @@ import teamsReducer from './slices/teamsSlice';
 import personalPerformanceReducer from './slices/personalPerformanceSlice';
 import notificationReducer from './slices/notificationSlice';
 import devPlanReducer from './slices/devPlanSlice';
+import trainingEmployeesReducer from './slices/trainingEmployeesSlice';
 
 export const store = configureStore({
   reducer: {
@@ -11,7 +12,8 @@ export const store = configureStore({
     teams: teamsReducer,
     personalPerformance: personalPerformanceReducer,
     notification: notificationReducer,
-    devPlan: devPlanReducer
+    devPlan: devPlanReducer,
+    trainingEmployees: trainingEmployeesReducer
   },
 });
 

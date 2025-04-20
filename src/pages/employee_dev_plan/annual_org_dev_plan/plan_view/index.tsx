@@ -31,6 +31,12 @@ import { exportPdf } from '../../../../utils/exportPdf';
 import { ExportButton } from '../../../../components/Buttons';
 import { PdfType } from '../../../../types';
 import * as XLSX from 'xlsx';
+import { 
+  fetchEmployees, 
+  addEmployees, 
+  updateEmployeeStatus, 
+  removeEmployee 
+} from '../../../../store/slices/trainingEmployeesSlice';
 
 export enum TrainingStatus {
   PLANNED = 'Planned',
@@ -55,17 +61,18 @@ interface PlanViewProps {
 
 const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
   const [isAddingEmployees, setIsAddingEmployees] = useState(false);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
   const [planName, setPlanName] = useState('');
   const { showToast } = useToast();
   const tableRef = useRef<any>(null);
+  const dispatch = useAppDispatch();
+  
+  const { employees, loading, error } = useAppSelector((state: RootState) => state.trainingEmployees);
 
   // Initial load and refresh trigger
   useEffect(() => {
-    fetchEmployees();
+    dispatch(fetchEmployees(planId));
     fetchPlanDetails();
-  }, [planId]);
+  }, [planId, dispatch]);
 
   const fetchPlanDetails = async () => {
     try {
@@ -79,23 +86,6 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     }
   };
 
-  const fetchEmployees = async () => {
-    try {
-      const response = await api.get(`/training/${planId}/employees`);
-      if (response.data.status === 'success') {
-        console.log(response.data.data.employees, 'employees');
-        setEmployees(response.data.data.employees || []);
-      } else {
-        throw new Error(response.data.message || 'Failed to fetch employees');
-      }
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-      showToast('Failed to fetch employees', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleAddEmployees = () => {
     setIsAddingEmployees(true);
   };
@@ -106,47 +96,18 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   const handleStatusChange = async (email: string, trainingRequested: string, newStatus: TrainingStatus) => {
     try {
-      const response = await api.patch(`/training/${planId}/employees/${email}/status`, {
-        trainingRequested,
-        status: newStatus
-      });
-
-      if (!response.data || response.data.status === 'error') {
-        throw new Error(response.data?.message || 'Failed to update status');
-      }
-
-      setEmployees(prev => prev.map(emp => 
-        emp.email === email && emp.trainingRequested === trainingRequested
-          ? { ...emp, status: newStatus }
-          : emp
-      ));
-
+      await dispatch(updateEmployeeStatus({ planId, email, trainingRequested, status: newStatus })).unwrap();
       showToast('Status updated successfully', 'success');
     } catch (error) {
       console.error('Error updating status:', error);
       showToast('Failed to update status', 'error');
-      // Refresh to ensure we're in sync with the server
-      await fetchEmployees();
     }
   };
 
   const handlePeopleSelected = async (selectedPeople: Employee[]) => {
     try {
-      const peopleWithStatus = selectedPeople.map(person => ({
-        ...person,
-        status: TrainingStatus.PLANNED
-      }));
-
-      const response = await api.post(`/training/${planId}/employees`, {
-        employees: peopleWithStatus
-      });
-
-      if (response.data.status === 'success') {
-        setEmployees(prev => [...prev, ...response.data.data.employees]);
-        showToast('Employees added successfully', 'success');
-      } else {
-        throw new Error(response.data.message || 'Failed to add employees');
-      }
+      await dispatch(addEmployees({ planId, employees: selectedPeople })).unwrap();
+      showToast('Employees added successfully', 'success');
     } catch (error) {
       console.error('Error adding employees:', error);
       showToast('Failed to add employees', 'error');
@@ -156,27 +117,11 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   const handleRemoveEmployee = async (email: string, trainingRequested: string) => {
     try {
-      // Optimistically update the UI
-      setEmployees(prev => prev.filter(emp => 
-        !(emp.email === email && emp.trainingRequested === trainingRequested)
-      ));
-
-      const response = await api.delete(`/training/${planId}/employees/${email}`, {
-        data: { trainingRequested }
-      });
-
-      if (!response.data || response.data.status === 'error') {
-        // Revert the optimistic update if the API call fails
-        await fetchEmployees();
-        throw new Error(response.data?.message || 'Failed to remove employee');
-      }
-
+      await dispatch(removeEmployee({ planId, email, trainingRequested })).unwrap();
       showToast('Employee removed successfully', 'success');
     } catch (error) {
       console.error('Error removing employee:', error);
       showToast('Failed to remove employee', 'error');
-      // Refresh the list to ensure we're in sync with the server
-      await fetchEmployees();
     }
   };
 
@@ -230,6 +175,14 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     return (
       <Box sx={{ width: '100%' }}>
         <LinearProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ width: '100%', textAlign: 'center', mt: 2 }}>
+        <Typography color="error">{error}</Typography>
       </Box>
     );
   }
@@ -369,7 +322,6 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         open={isAddingEmployees}
         onClose={handleCloseModal}
         onSelectEmployees={handlePeopleSelected}
-        existingEmployees={employees}
       />
     </Box>
   );

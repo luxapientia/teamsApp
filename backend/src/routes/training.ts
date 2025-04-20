@@ -10,6 +10,7 @@ router.get('/:planId/employees', authenticateToken, async (req, res) => {
   try {
     const { planId } = req.params;
     const trainings = await trainingService.getTrainingsByPlanId(planId);
+    console.log('trainings', trainings);
     
     return res.json({
       status: 'success',
