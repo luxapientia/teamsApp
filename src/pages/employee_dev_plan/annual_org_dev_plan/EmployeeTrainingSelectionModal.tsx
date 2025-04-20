@@ -82,6 +82,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   existingEmployees
 }) => {
   const [selectedEmployees, setSelectedEmployees] = useState<{ [key: string]: SelectedEmployee }>({});
+  const [approvedEmployees, setApprovedEmployees] = useState<(TeamPerformance & { coursesWithQuarters: { quarter: string; courses: Course[] }[] })[]>([]);
   const dispatch = useAppDispatch();
   const { user } = useAuth();
   const { teamPerformances = [], status: teamPerformancesStatus } = useAppSelector((state: RootState) => state.personalPerformance);
@@ -90,6 +91,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   useEffect(() => {
     if (open) {
       setSelectedEmployees({});
+      setApprovedEmployees([]);
       dispatch(fetchAnnualTargets());
     }
   }, [open, dispatch]);
@@ -101,6 +103,11 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
       });
     }
   }, [annualTargets, dispatch]);
+
+  useEffect(() => {
+    const processedEmployees = getApprovedEmployeesWithCourses();
+    setApprovedEmployees(processedEmployees);
+  }, [teamPerformances, existingEmployees]);
 
   const getApprovedEmployeesWithCourses = () => {
     if (!Array.isArray(teamPerformances)) return [];
@@ -203,13 +210,8 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
     onClose();
   };
 
-  const approvedEmployees = getApprovedEmployeesWithCourses();
-  const isLoading = teamPerformancesStatus === 'loading' || annualTargetsStatus === 'loading' || !annualTargets.length;
-  const hasAvailableEmployees = approvedEmployees.some(employee => 
-    employee.coursesWithQuarters.some(({ courses }) => 
-      courses.some(course => !isTrainingRegistered(employee.email, course.name))
-    )
-  );
+  const isLoading = teamPerformancesStatus === 'loading' || annualTargetsStatus === 'loading';
+  const hasAvailableEmployees = approvedEmployees.length > 0;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>

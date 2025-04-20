@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useAppDispatch } from '../../../../hooks/useAppDispatch';
 import { useAppSelector } from '../../../../hooks/useAppSelector';
 import { useToast } from '../../../../contexts/ToastContext';
@@ -26,6 +27,10 @@ import { format } from 'date-fns';
 import { api } from '../../../../services/api';
 import EmployeeTrainingSelectionModal from '../EmployeeTrainingSelectionModal';
 import { RootState } from '@/store';
+import { exportPdf } from '../../../../utils/exportPdf';
+import { ExportButton } from '../../../../components/Buttons';
+import { PdfType } from '../../../../types';
+import * as XLSX from 'xlsx';
 
 export enum TrainingStatus {
   PLANNED = 'Planned',
@@ -52,17 +57,42 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
   const [isAddingEmployees, setIsAddingEmployees] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shouldRefresh, setShouldRefresh] = useState(false);
+  const [planName, setPlanName] = useState('');
   const { showToast } = useToast();
+  const tableRef = useRef<any>(null);
 
+  // Initial load and refresh trigger
   useEffect(() => {
     fetchEmployees();
-  }, [planId]);
+    fetchPlanDetails();
+  }, [planId, shouldRefresh]);
+
+  const fetchPlanDetails = async () => {
+    try {
+      const response = await api.get(`/users/org-dev-plan/plan/${planId}`);
+      if (response.data) {
+        setPlanName(response.data.data.name || 'Training Plan');
+      }
+    } catch (error) {
+      console.error('Error fetching plan details:', error);
+      setPlanName('Training Plan');
+    }
+  };
+
+  // Handle employee updates
+  useEffect(() => {
+    if (employees.length > 0) {
+      setShouldRefresh(true);
+    }
+  }, [employees]);
 
   const fetchEmployees = async () => {
     try {
       const response = await api.get(`/training/${planId}/employees`);
       if (response.data.status === 'success') {
         setEmployees(response.data.data.employees || []);
+        setShouldRefresh(false);
       } else {
         throw new Error(response.data.message || 'Failed to fetch employees');
       }
@@ -121,6 +151,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
       if (response.data.status === 'success') {
         setEmployees(prev => [...prev, ...response.data.data.employees]);
+        setShouldRefresh(true);
         showToast('Employees added successfully', 'success');
       } else {
         throw new Error(response.data.message || 'Failed to add employees');
@@ -164,6 +195,46 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     return Math.round((completedTrainings / employees.length) * 100);
   };
 
+  const handleExportPDF = () => {
+    if (tableRef.current && employees.length > 0) {
+      const title = planName;
+      const subtitle = `Implementation Progress: ${progress}%`;
+      exportPdf(
+        PdfType.Reports,
+        tableRef,
+        title,
+        subtitle,
+        '',
+        [0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.1]
+      );
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (employees.length > 0) {
+      const exportData = employees.map(emp => ({
+        'Employee Name': emp.displayName,
+        'Position': emp.jobTitle || '-',
+        'Team': emp.team || '-',
+        'Training Requested': emp.trainingRequested || '-',
+        'Date Requested': emp.dateRequested ? format(new Date(emp.dateRequested), 'MM/dd/yyyy') : '-',
+        'Status': emp.status
+      }));
+
+      // Add a title row at the top
+      const ws = XLSX.utils.aoa_to_sheet([[planName], ['Implementation Progress: ' + progress + '%'], []]);
+      XLSX.utils.sheet_add_json(ws, exportData, { origin: 'A4' });
+
+      // Style the header
+      ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];  // Merge cells for title
+      ws['!rows'] = [{ hpt: 30 }]; // Height for title row
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Training Plan');
+      XLSX.writeFile(wb, `${planName}.xlsx`);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ width: '100%' }}>
@@ -182,7 +253,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         alignItems: 'center',
         mb: 3 
       }}>
-        <Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
             variant="contained"
             startIcon={<PersonAddIcon />}
@@ -196,6 +267,24 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
           >
             Add employees to plan
           </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <ExportButton
+              className="excel"
+              startIcon={<FileDownloadIcon />}
+              onClick={handleExportExcel}
+              size="medium"
+            >
+              Export to Excel
+            </ExportButton>
+            <ExportButton
+              className="pdf"
+              startIcon={<FileDownloadIcon />}
+              onClick={handleExportPDF}
+              size="medium"
+            >
+              Export to PDF
+            </ExportButton>
+          </Box>
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: '200px' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -219,7 +308,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
       </Box>
 
       <TableContainer component={Paper}>
-        <Table>
+        <Table ref={tableRef}>
           <TableHead>
             <TableRow>
               <TableCell>Employee Full Name</TableCell>
@@ -228,7 +317,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
               <TableCell>Training Requested</TableCell>
               <TableCell>Date Requested</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell align="center">Action</TableCell>
+              <TableCell align="center" className="noprint">Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

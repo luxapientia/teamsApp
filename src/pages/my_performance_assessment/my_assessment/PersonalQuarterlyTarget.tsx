@@ -86,6 +86,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const { user } = useAuth();
   const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
 
+  const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+  const annualQuarterlyTarget = annualTarget?.content.quarterlyTarget.quarterlyTargets.find(
+    target => target.quarter === quarter
+  );
+  const isDevelopmentEnabled = annualQuarterlyTarget?.isDevelopmentPlanEnabled && user?.isDevMember;
+
   useEffect(() => {
     fetchCompanyUsers();
   }, []);
@@ -629,7 +635,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Alert>
       )}
 
-      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+      {/* Performance Assessment Block */}
+      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB', mb: 4 }}>
+        <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
+          Employee Performance Assessment
+        </Typography>
         <TableContainer>
           <Table ref={tableRef}>
             <TableHead>
@@ -797,7 +807,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </TableContainer>
       </Paper>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mt: 2, mb: 4 }}>
         <Typography variant="body2" sx={{ color: '#6B7280', fontWeight: 500 }}>
           Overall Rating Score =
         </Typography>
@@ -834,83 +844,89 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           );
         })()}
       </Box>
-      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
-        <Box sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: '#0078D4',
-                '&:hover': {
-                  backgroundColor: '#106EBE'
-                }
-              }}
-              onClick={() => setIsSelectCourseModalOpen(true)}
-              disabled={isNotApplicable || !canEdit()}
-            >
-              Add Personal Development
-            </Button>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Switch
-                checked={isNotApplicable}
-                onChange={handleNotApplicableToggle}
-                size="small"
-                disabled={!canEdit()}
-              />
-              <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                Not Applicable
-              </Typography>
+
+      {/* Personal Development Block */}
+      {isDevelopmentEnabled && canEdit() && (
+        <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+          <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
+            Employee Personal Development Plan
+          </Typography>
+          <Box sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: '#0078D4',
+                  '&:hover': {
+                    backgroundColor: '#106EBE'
+                  },
+                  textTransform: 'none'
+                }}
+                onClick={() => setIsSelectCourseModalOpen(true)}
+                disabled={isNotApplicable || !canEdit()}
+              >
+                Add Personal Development
+              </Button>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Switch
+                  checked={isNotApplicable}
+                  onChange={handleNotApplicableToggle}
+                  size="small"
+                  disabled={!canEdit()}
+                />
+                <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                  Not Applicable
+                </Typography>
+              </Box>
             </Box>
-          </Box>
 
-          {!isNotApplicable && (
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <StyledHeaderCell>Course Name</StyledHeaderCell>
-                    <StyledHeaderCell>Description</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Actions</StyledHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)
-                    ?.personalDevelopment?.map((course: any, index) => {
-                      // Handle both string IDs and populated course objects
-
-                      return (
-                        <TableRow key={course._id}>
-                          <StyledTableCell>{course.name}</StyledTableCell>
-                          <StyledTableCell>{course.description}</StyledTableCell>
-                          <StyledTableCell align="center">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDeleteCourse(course)}
-                              sx={{ color: '#6B7280', ml: 1 }}
-                              disabled={!canEdit()}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
+            {!isNotApplicable && (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <StyledHeaderCell>Course Name</StyledHeaderCell>
+                      <StyledHeaderCell>Description</StyledHeaderCell>
+                      <StyledHeaderCell align="center">Actions</StyledHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)
+                      ?.personalDevelopment?.map((course: any, index) => {
+                        return (
+                          <TableRow key={course._id}>
+                            <StyledTableCell>{course.name}</StyledTableCell>
+                            <StyledTableCell>{course.description}</StyledTableCell>
+                            <StyledTableCell align="center">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeleteCourse(course)}
+                                sx={{ color: '#6B7280', ml: 1 }}
+                                disabled={!canEdit()}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </StyledTableCell>
+                          </TableRow>
+                        );
+                      })}
+                    {(!personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.personalDevelopment ||
+                      personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.personalDevelopment?.length === 0) && (
+                        <TableRow>
+                          <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                            <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                              No personal development courses added
+                            </Typography>
                           </StyledTableCell>
                         </TableRow>
-                      );
-                    })}
-                  {(!personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.personalDevelopment ||
-                    personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.personalDevelopment?.length === 0) && (
-                      <TableRow>
-                        <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
-                          <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                            No personal development courses added
-                          </Typography>
-                        </StyledTableCell>
-                      </TableRow>
-                    )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Box>
-      </Paper>
+                      )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Box>
+        </Paper>
+      )}
       {selectedKPI && (
         <KPIModal
           open={!!selectedKPI}

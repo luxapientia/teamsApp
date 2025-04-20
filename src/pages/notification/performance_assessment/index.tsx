@@ -70,7 +70,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const { showToast } = useToast();
-  
+
   useEffect(() => {
     fetchCompanyUsers();
     fetchPersonalPerformance();
@@ -413,71 +413,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </TableContainer>
       </Paper>
 
-      <Box sx={{ mt: 4, mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, color: '#111827' }}>
-          Personal Development Courses
-        </Typography>
-      </Box>
-
-      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB', mb: 3 }}>
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <StyledHeaderCell>Course Name</StyledHeaderCell>
-                <StyledHeaderCell>Description</StyledHeaderCell>
-                <StyledHeaderCell align="center">Status</StyledHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.map((course, index) => (
-                <TableRow key={course._id}>
-                  <StyledTableCell>
-                    {typeof course === 'string' ? (
-                      <Skeleton variant="text" width={200} />
-                    ) : (
-                      course.name
-                    )}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {typeof course === 'string' ? (
-                      <Skeleton variant="text" width={300} />
-                    ) : (
-                      course.description
-                    )}
-                  </StyledTableCell>
-                  <StyledTableCell align="center">
-                    {typeof course === 'string' ? (
-                      <Skeleton variant="text" width={100} />
-                    ) : (
-                      <Chip
-                        label={course.status}
-                        size="small"
-                        sx={{
-                          backgroundColor: course.status === 'active' ? '#D1FAE5' : '#FEE2E2',
-                          color: course.status === 'active' ? '#059669' : '#DC2626',
-                          fontWeight: 500
-                        }}
-                      />
-                    )}
-                  </StyledTableCell>
-                </TableRow>
-              ))}
-              {(!personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment ||
-                personalPerformance.quarterlyTargets.find(qt => qt.quarter === quarter)?.personalDevelopment.length === 0) && (
-                <TableRow>
-                  <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
-                    <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                      No personal development courses added
-                    </Typography>
-                  </StyledTableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
-
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
         <Typography variant="body2" sx={{ color: '#6B7280', fontWeight: 500 }}>
           Overall Rating Score =
@@ -514,6 +449,73 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             </Typography>
           );
         })()}
+      </Box>
+
+      <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
+        <Box sx={{ mt: 4, mb: 2 }}>
+          <Typography variant="h6">
+            Personal Development Courses
+          </Typography>
+        </Box>
+
+        <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB', mb: 3 }}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <StyledHeaderCell>Course Name</StyledHeaderCell>
+                  <StyledHeaderCell>Description</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Status</StyledHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.map((course, index) => (
+                  <TableRow key={course._id}>
+                    <StyledTableCell>
+                      {typeof course === 'string' ? (
+                        <Skeleton variant="text" width={200} />
+                      ) : (
+                        course.name
+                      )}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {typeof course === 'string' ? (
+                        <Skeleton variant="text" width={300} />
+                      ) : (
+                        course.description
+                      )}
+                    </StyledTableCell>
+                    <StyledTableCell align="center">
+                      {typeof course === 'string' ? (
+                        <Skeleton variant="text" width={100} />
+                      ) : (
+                        <Chip
+                          label={course.status}
+                          size="small"
+                          sx={{
+                            backgroundColor: course.status === 'active' ? '#D1FAE5' : '#FEE2E2',
+                            color: course.status === 'active' ? '#059669' : '#DC2626',
+                            fontWeight: 500
+                          }}
+                        />
+                      )}
+                    </StyledTableCell>
+                  </TableRow>
+                ))}
+                {(!personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment ||
+                  personalPerformance.quarterlyTargets.find(qt => qt.quarter === quarter)?.personalDevelopment.length === 0) && (
+                    <TableRow>
+                      <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                        <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                          No personal development courses added
+                        </Typography>
+                      </StyledTableCell>
+                    </TableRow>
+                  )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       </Box>
 
       {evidenceModalData && (

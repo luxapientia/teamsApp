@@ -117,7 +117,7 @@ const MyTrainingDashboard: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="xl">
+    <Container maxWidth="xl" sx={{ backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{ 
         p: { xs: 2, md: 3 },
         height: '100vh',
@@ -136,6 +136,7 @@ const MyTrainingDashboard: React.FC = () => {
 
         <Box sx={{ 
           display: 'flex', 
+          justifyContent: 'space-between',
           flexDirection: { xs: 'column', md: 'row' },
           gap: 2,
           flex: 1,
