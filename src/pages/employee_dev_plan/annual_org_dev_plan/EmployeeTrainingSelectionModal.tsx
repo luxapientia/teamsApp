@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -70,41 +70,39 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   onSelectEmployees,
 }) => {
   const [selectedEmployees, setSelectedEmployees] = useState<{ [key: string]: SelectedEmployee }>({});
-  const [approvedEmployees, setApprovedEmployees] = useState<(TeamPerformance & { coursesWithQuarters: { quarter: string; courses: Course[] }[] })[]>([]);
   const dispatch = useAppDispatch();
   const { user } = useAuth();
   const { teamPerformances = [], status: teamPerformancesStatus } = useAppSelector((state: RootState) => state.personalPerformance);
   const { annualTargets, status: annualTargetsStatus } = useAppSelector((state: RootState) => state.scorecard);
   const { employees: existingEmployees } = useAppSelector((state: RootState) => state.trainingEmployees);
 
+  // Reset selected employees when modal opens
   useEffect(() => {
     if (open) {
       setSelectedEmployees({});
-      setApprovedEmployees([]);
       dispatch(fetchAnnualTargets());
     }
   }, [open, dispatch]);
 
+  // Fetch team performances when annual targets are loaded
   useEffect(() => {
     if (annualTargets.length > 0) {
+      const currentYear = new Date().getFullYear().toString();
       annualTargets.forEach(target => {
-        dispatch(fetchTeamPerformances(target._id));
+        if (target._id) {
+          dispatch(fetchTeamPerformances(target._id));
+        }
       });
     }
   }, [annualTargets, dispatch]);
 
-  useEffect(() => {
-    const processedEmployees = getApprovedEmployeesWithCourses();
-    setApprovedEmployees(processedEmployees);
-  }, [teamPerformances, existingEmployees]);
-
-  const getApprovedEmployeesWithCourses = () => {
+  const approvedEmployees = useMemo(() => {
     if (!Array.isArray(teamPerformances)) return [];
     
     return (teamPerformances as TeamPerformance[])
       .filter((performance) => {
         // Check if any quarter has approved courses
-        return performance.quarterlyTargets.some(target => 
+        return performance.quarterlyTargets?.some(target => 
           target.assessmentStatus === AssessmentStatus.Approved &&
           target.personalDevelopment &&
           target.personalDevelopment.length > 0
@@ -113,12 +111,12 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
       .map(performance => {
         // Get all approved courses from all quarters
         const coursesWithQuarters = performance.quarterlyTargets
-          .filter(target => target.assessmentStatus === AssessmentStatus.Approved)
+          ?.filter(target => target.assessmentStatus === AssessmentStatus.Approved)
           .map(target => ({
             quarter: target.quarter,
             courses: target.personalDevelopment || []
           }))
-          .filter(item => item.courses.length > 0);
+          .filter(item => item.courses.length > 0) || [];
 
         return {
           ...performance,
@@ -138,7 +136,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
           courses.some(course => !existingTrainings.has(course.name))
         );
       });
-  };
+  }, [teamPerformances, existingEmployees]);
 
   const isTrainingRegistered = (email: string, courseName: string) => {
     return existingEmployees.some(
@@ -184,12 +182,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
 
   const handleConfirm = () => {
     const formattedEmployees = Object.values(selectedEmployees)
-      .filter(employee => {
-        if (!employee.email) {
-          return false;
-        }
-        return true;
-      });
+      .filter(employee => employee.email);
     
     if (formattedEmployees.length === 0) {
       return;
@@ -201,6 +194,14 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
 
   const isLoading = teamPerformancesStatus === 'loading' || annualTargetsStatus === 'loading';
   const hasAvailableEmployees = approvedEmployees.length > 0;
+
+  console.log('Debug Info:', {
+    teamPerformancesLength: teamPerformances.length,
+    approvedEmployeesLength: approvedEmployees.length,
+    existingEmployeesLength: existingEmployees.length,
+    isLoading,
+    hasAvailableEmployees
+  });
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -216,6 +217,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
         ) : !hasAvailableEmployees ? (
           <Typography color="textSecondary" sx={{ p: 2, textAlign: 'center' }}>
             No employees found with approved and unregistered training courses.
+            {teamPerformances.length === 0 && ' (No team performances loaded)'}
           </Typography>
         ) : (
           <TableContainer component={Paper} sx={{ mt: 2 }}>
