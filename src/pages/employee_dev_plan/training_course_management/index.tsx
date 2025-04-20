@@ -19,10 +19,12 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  InputAdornment,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import SearchIcon from '@mui/icons-material/Search';
 import { useAuth } from '../../../contexts/AuthContext';
 import { courseAPI } from '../../../services/api';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
@@ -40,6 +42,7 @@ interface AddCourseFormData {
 const TrainingCoursesManagement: React.FC = () => {
   const { user } = useAuth();
   const [courses, setCourses] = useState<TrainingCourse[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -164,6 +167,12 @@ const TrainingCoursesManagement: React.FC = () => {
     }
   };
 
+  // Filter courses based on search query
+  const filteredCourses = courses.filter(course => 
+    course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   if (loading) {
     return <Box>Loading courses...</Box>;
   }
@@ -174,8 +183,22 @@ const TrainingCoursesManagement: React.FC = () => {
 
   return (
     <Box>
-      {/* Action Buttons Section */}
-      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+      {/* Search and Action Buttons Section */}
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <TextField
+          placeholder="Search courses..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ width: '300px' }}
+          size="small"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
         {(isSuperUser || isAppOwner) && (
           <Button
             variant="contained"
@@ -305,7 +328,7 @@ const TrainingCoursesManagement: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {courses.map((course) => (
+              {filteredCourses.map((course) => (
                 <TableRow key={course._id} hover>
                   <StyledTableCell>{course.name}</StyledTableCell>
                   <StyledTableCell>{course.description}</StyledTableCell>
@@ -338,10 +361,10 @@ const TrainingCoursesManagement: React.FC = () => {
                   )}
                 </TableRow>
               ))}
-              {courses.length === 0 && (
+              {filteredCourses.length === 0 && (
                 <TableRow>
                   <StyledTableCell colSpan={(isSuperUser || isAppOwner) ? 4 : 3} align="center" sx={{ py: 4 }}>
-                    No courses available
+                    {courses.length === 0 ? 'No courses available' : 'No matching courses found'}
                   </StyledTableCell>
                 </TableRow>
               )}
