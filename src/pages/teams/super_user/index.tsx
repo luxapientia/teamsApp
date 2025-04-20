@@ -113,7 +113,8 @@ const SuperUser: React.FC = () => {
                         backgroundColor: '#0078D4',
                         '&:hover': {
                             backgroundColor: '#106EBE'
-                        }
+                        },
+                        textTransform: 'none'
                     }}
                 >
                     Add Super User

@@ -23,6 +23,7 @@ import { api } from '../../../services/api';
 import { useToast } from '../../../contexts/ToastContext';
 import EvidenceModal from './EvidenceModal';
 import SendBackModal from '../../../components/Modal/SendBackModal';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
@@ -37,6 +38,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     onBack,
     userId,
 }) => {
+    const { user } = useAuth();
     const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
     const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
     const [personalPerformance, setPersonalPerformance] = React.useState<PersonalPerformance | null>(null);
@@ -165,7 +167,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignItems: 'center'
             }}>
                 <Typography variant="h6">
-                    {`${annualTarget.name}, ${quarter}`}
+                    {`${annualTarget.name}, ${user?.name} Performance Assessment ${quarter}`}
                 </Typography>
             </Box>
 

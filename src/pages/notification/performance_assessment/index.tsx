@@ -32,7 +32,7 @@ import EvidenceModal from './EvidenceModal';
 import { fetchNotifications } from '../../../store/slices/notificationSlice';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useToast } from '../../../contexts/ToastContext';
-
+import { useAuth } from '../../../contexts/AuthContext';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -58,6 +58,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   onBack,
   notification = null,
 }) => {
+  const { user } = useAuth();
   const dispatch = useAppDispatch();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
@@ -191,7 +192,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${quarter}`}
+          {`${annualTarget.name}, ${user?.name} ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
         </Typography>
 
         <Button

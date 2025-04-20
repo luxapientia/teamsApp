@@ -110,7 +110,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignItems: 'center'
             }}>
                 <Typography variant="h6">
-                    {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
+                    {`${annualTarget.name}, ${user?.name} Performance Agreement ${quarter}`}
                 </Typography>
             </Box>
 
