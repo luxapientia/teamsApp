@@ -94,7 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="mt-auto border-t">
         {isOpen && (
           <div className="px-4 py-3">
-            <div className="text-sm font-medium text-gray-900">{user?.name}</div>
+            <div className="text-sm font-medium text-gray-900">{user?.displayName}</div>
             <div className="text-xs text-gray-500">{user?.email}</div>
           </div>
         )}
