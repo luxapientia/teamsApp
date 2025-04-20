@@ -183,6 +183,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
 
 router.get('/personal-performance', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    console.log(req.user, 'req.user')
     const { userId, annualTargetId } = req.query;
     const personalPerformance = await PersonalPerformance.findOne({ userId, annualTargetId })
       .populate({
@@ -208,14 +209,20 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const personalPerformances = await PersonalPerformance.find({ annualTargetId, userId: dbUser._id })
+    // Create query object based on available parameters
+    const queryParams: any = { userId: dbUser._id };
+    if (annualTargetId) {
+      queryParams.annualTargetId = annualTargetId;
+    }
+
+    const personalPerformances = await PersonalPerformance.find(queryParams)
       .populate({
         path: 'quarterlyTargets.personalDevelopment',
         select: 'name description status',
         model: 'Course'
       }) as PersonalPerformanceDocument[];
 
-    if(personalPerformances.length === 0) {
+    if(personalPerformances.length === 0 && annualTargetId) {
       const newPersonalPerformance = await PersonalPerformance.create({
         annualTargetId,
         quarter,
@@ -238,7 +245,10 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
       personalPerformances.push(newPersonalPerformance);
     }
 
-    return res.json(personalPerformances);
+    return res.json({
+      status: 'success',
+      data: personalPerformances
+    });
   } catch (error) {
     console.error('Annual targets error:', error);
     return res.status(500).json({ error: 'Failed to get annual targets' });

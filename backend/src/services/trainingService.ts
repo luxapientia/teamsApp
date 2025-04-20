@@ -82,24 +82,26 @@ export class TrainingService {
   async addEmployeesToPlan(
     planId: string,
     employees: Array<{
-      microsoftId: string;
+      userId: string;
       displayName: string;
       email: string;
       jobTitle?: string;
       team?: string;
       trainingRequested?: string;
+      description?: string;
       status?: TrainingStatus;
       dateRequested: Date;
     }>
   ): Promise<ITraining[]> {
     const trainings = employees.map(employee => ({
       planId: new Types.ObjectId(planId),
-      microsoftId: employee.microsoftId,
+      userId: employee.userId,
       displayName: employee.displayName,
       email: employee.email,
       jobTitle: employee.jobTitle,
       team: employee.team,
       trainingRequested: employee.trainingRequested || '',
+      description: employee.description || '',
       status: employee.status || TrainingStatus.PLANNED,
       dateRequested: employee.dateRequested
     }));
@@ -143,5 +145,13 @@ export class TrainingService {
       { trainingRequested },
       { new: true }
     );
+  }
+
+  async getTrainingsByUserId(userId: string): Promise<ITraining[]> {
+    return Training.find({ userId }).sort({ createdAt: -1 });
+  }
+
+  async getTrainingsByEmail(email: string): Promise<ITraining[]> {
+    return Training.find({ email }).sort({ createdAt: -1 });
   }
 } 

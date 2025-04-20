@@ -119,8 +119,14 @@ router.post('/update-quarterly-target', authenticateToken, async (req, res, next
 // Get all org development plans
 router.get('/:tenantId', authenticateToken, async (req, res) => {
   try {
+    const { tenantId } = req.params;
+    console.log(tenantId, 'tenantId')
     const plans = await orgDevPlanService.getAllPlans(req.params.tenantId);
-    return res.json(plans);
+    console.log(plans, 'plans')
+    return res.json({
+      status: 'success',
+      data: plans
+    });
   } catch (error) {
     return res.status(500).json({ message: 'Error fetching plans' });
   }

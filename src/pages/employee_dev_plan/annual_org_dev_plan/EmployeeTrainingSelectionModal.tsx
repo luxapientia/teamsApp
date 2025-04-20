@@ -27,7 +27,7 @@ import { RootState } from '../../../store';
 import { TrainingStatus } from './plan_view';
 
 interface Employee {
-  microsoftId: string;
+  userId: string;
   displayName: string;
   email: string;
   jobTitle?: string;
@@ -52,7 +52,7 @@ interface TeamPerformance extends PersonalPerformance {
 }
 
 interface SelectedEmployee {
-  microsoftId: string;
+  userId: string;
   displayName: string;
   email: string;
   jobTitle: string;
@@ -60,6 +60,12 @@ interface SelectedEmployee {
   trainingRequested: string;
   status: TrainingStatus;
   dateRequested: Date;
+  description: string;
+}
+
+interface Course {
+  name: string;
+  description?: string;
 }
 
 interface EmployeeTrainingSelectionModalProps {
@@ -144,13 +150,13 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
     );
   };
 
-  const handleToggleEmployee = (performance: TeamPerformance, course: string, quarter: string) => {
+  const handleToggleEmployee = (performance: TeamPerformance, course: Course, quarter: string) => {
     // Skip if the training is already registered
-    if (isTrainingRegistered(performance.email, course)) {
+    if (isTrainingRegistered(performance.email, course.name)) {
       return;
     }
 
-    const key = `${performance._id}-${course}-${quarter}`;
+    const key = `${performance._id}-${course.name}-${quarter}`;
     
     if (selectedEmployees[key]) {
       const { [key]: removed, ...rest } = selectedEmployees;
@@ -166,14 +172,15 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
       setSelectedEmployees({
         ...selectedEmployees,
         [key]: {
-          microsoftId: typeof performance.userId === 'object' ? performance.userId._id : performance.userId,
+          userId: typeof performance.userId === 'object' ? performance.userId._id : performance.userId,
           displayName: performance.fullName,
           email: email,
           jobTitle: performance.jobTitle || '',
           team: performance.team || '',
-          trainingRequested: course,
+          trainingRequested: course.name,
           status: TrainingStatus.PLANNED,
-          dateRequested: new Date(performance.updatedAt)
+          dateRequested: new Date(performance.updatedAt),
+          description: course.description || course.name || ''
         }
       });
     }
@@ -241,7 +248,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
                         <TableRow
                           key={`${employee._id}-${quarter}-${courseIndex}`}
                           hover
-                          onClick={() => handleToggleEmployee(employee, course.name, quarter)}
+                          onClick={() => handleToggleEmployee(employee, course, quarter)}
                           sx={{
                             cursor: 'pointer',
                             backgroundColor: selectedEmployees[`${employee._id}-${course.name}-${quarter}`] ? 'rgba(25, 118, 210, 0.08)' : 'inherit'
@@ -252,7 +259,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
                               checked={Boolean(selectedEmployees[`${employee._id}-${course.name}-${quarter}`])}
                               onChange={(e) => {
                                 e.stopPropagation();
-                                handleToggleEmployee(employee, course.name, quarter);
+                                handleToggleEmployee(employee, course, quarter);
                               }}
                             />
                           </TableCell>

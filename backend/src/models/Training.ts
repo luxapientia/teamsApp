@@ -8,12 +8,13 @@ export enum TrainingStatus {
 
 export interface ITraining extends Document {
   planId: Schema.Types.ObjectId;
-  microsoftId: string;
+  userId: string;
   displayName: string;
   email: string;
   jobTitle?: string;
   team?: string;
   trainingRequested: string;
+  description?: string;
   status: TrainingStatus;
   dateRequested: Date;
 }
@@ -25,7 +26,7 @@ const trainingSchema = new Schema<ITraining>(
       ref: 'OrgDevPlan',
       required: true
     },
-    microsoftId: {
+    userId: {
       type: String,
       required: true
     },
@@ -43,6 +44,7 @@ const trainingSchema = new Schema<ITraining>(
       type: String,
       required: true
     },
+    description: String,
     status: {
       type: String,
       enum: Object.values(TrainingStatus),

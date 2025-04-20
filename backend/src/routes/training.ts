@@ -1,5 +1,5 @@
-import express from 'express';
-import { authenticateToken } from '../middleware/auth';
+import express, { Response } from 'express';
+import { AuthenticatedRequest, authenticateToken } from '../middleware/auth';
 import { TrainingService } from '../services/trainingService';
 
 const router = express.Router();
@@ -157,6 +157,48 @@ router.patch('/:planId/employees/:email/request', authenticateToken, async (req,
     return res.status(500).json({
       status: 'error',
       message: 'Failed to update training request'
+    });
+  }
+});
+
+// Get trainings by Microsoft ID
+router.get('/user/:userId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req?.user?._id || '';
+    const trainings = await trainingService.getTrainingsByUserId(userId);
+    
+    return res.json({
+      status: 'success',
+      data: {
+        trainings
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching trainings:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch trainings'
+    });
+  }
+});
+
+// Get trainings by email
+router.get('/user/email/:email', authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.params;
+    const trainings = await trainingService.getTrainingsByEmail(email); 
+
+    return res.json({
+      status: 'success',
+      data: {
+        trainings
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching trainings:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch trainings'
     });
   }
 });

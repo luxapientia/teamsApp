@@ -33,7 +33,7 @@ export enum TrainingStatus {
 }
 
 interface Employee {
-  microsoftId: string;
+  userId: string;
   displayName: string;
   email: string;
   jobTitle?: string;
@@ -41,6 +41,7 @@ interface Employee {
   trainingRequested?: string;
   dateRequested?: Date;
   status: TrainingStatus;
+  description?: string;
 }
 
 interface PlanViewProps {

@@ -1,46 +1,120 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
   Container,
+  CircularProgress,
 } from '@mui/material';
 import { TrainingBoard } from './components/TrainingBoard';
 import { Training } from './types';
+import { api } from '../../../services/api';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useToast } from '../../../contexts/ToastContext';
+import { TrainingStatus } from '../annual_org_dev_plan/plan_view';
+import { AssessmentStatus } from '../../../types/personalPerformance';
 
 const MyTrainingDashboard: React.FC = () => {
-  // Mock data - replace with actual API calls
-  const requestedTrainings: Training[] = [
-    { 
-      id: '1', 
-      name: 'Cybersecurity 101', 
-      description: 'Learn the fundamentals of cybersecurity and best practices for protecting digital assets.',
-      date: '17 Mar' 
-    },
-    { 
-      id: '2', 
-      name: 'Set up Microsoft Teams', 
-      description: 'A comprehensive guide to setting up and effectively using Microsoft Teams for collaboration.',
-      date: '17 Mar' 
-    },
-  ];
+  const [requestedTrainings, setRequestedTrainings] = useState<Training[]>([]);
+  const [plannedTrainings, setPlannedTrainings] = useState<Training[]>([]);
+  const [completedTrainings, setCompletedTrainings] = useState<Training[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { showToast } = useToast();
 
-  const plannedTrainings: Training[] = [
-    { 
-      id: '3', 
-      name: 'Emotional Intelligence', 
-      description: 'Develop your emotional intelligence skills to improve workplace relationships and leadership.',
-      date: '17 Mar' 
-    },
-  ];
+  useEffect(() => {
+    fetchAllTrainings();
+  }, []);
 
-  const completedTrainings: Training[] = [
-    { 
-      id: '4', 
-      name: 'Microsoft Excel', 
-      description: 'Master advanced Excel features including pivot tables, macros, and data analysis tools.',
-      date: '17 Mar' 
-    },
-  ];
+  const fetchRequestedTrainings = async (existingTrainings: Training[]) => {
+    try {
+      const response = await api.get(`/personal-performance/personal-performances`);
+      if (response.data.status === 'success') {
+        const approvedCourses = response.data.data
+          .filter((performance: any) => 
+            performance.quarterlyTargets.some((target: any) => 
+              target.assessmentStatus === AssessmentStatus.Approved &&
+              target.personalDevelopment &&
+              target.personalDevelopment.length > 0
+            )
+          )
+          .flatMap((performance: any) => 
+            performance.quarterlyTargets
+              .filter((target: any) => target.assessmentStatus === AssessmentStatus.Approved)
+              .flatMap((target: any) => 
+                (target.personalDevelopment || [])
+                  .map((course: any) => ({
+                    id: `${performance._id}-${course.name}`,
+                    name: course.name,
+                    description: course.description || 'No description available',
+                    date: new Date(performance.updatedAt).toLocaleDateString('en-US', { 
+                      day: '2-digit',
+                      month: 'short'
+                    })
+                  }))
+                  .filter(course => 
+                    !existingTrainings.some(training => training.name === course.name)
+                  )
+              )
+          );
+
+        setRequestedTrainings(approvedCourses);
+      }
+    } catch (error) {
+      showToast('Failed to fetch requested trainings', 'error');
+    }
+  };
+
+  const fetchAllTrainings = async () => {
+    try {
+      // First fetch assigned trainings
+      const response = await api.get(`/training/user/${user?._id}`);
+      if (response.data.status === 'success') {
+        const trainings = response.data.data.trainings;
+        
+        const planned = trainings
+          .filter((training: any) => training.status === TrainingStatus.PLANNED)
+          .map((training: any) => ({
+            id: training._id,
+            name: training.trainingRequested,
+            description: training.description || 'No description available',
+            date: new Date(training.dateRequested).toLocaleDateString('en-US', {
+              day: '2-digit',
+              month: 'short'
+            })
+          }));
+        
+        const completed = trainings
+          .filter((training: any) => training.status === TrainingStatus.COMPLETED)
+          .map((training: any) => ({
+            id: training._id,
+            name: training.trainingRequested,
+            description: training.description || 'No description available',
+            date: new Date(training.dateRequested).toLocaleDateString('en-US', {
+              day: '2-digit',
+              month: 'short'
+            })
+          }));
+
+        setPlannedTrainings(planned);
+        setCompletedTrainings(completed);
+
+        // Then fetch requested trainings with the existing trainings data
+        await fetchRequestedTrainings([...planned, ...completed]);
+      }
+    } catch (error) {
+      showToast('Failed to fetch trainings', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="xl">
