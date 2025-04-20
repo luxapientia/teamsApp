@@ -3,12 +3,15 @@ import {
   PeopleTeamRegular,
   ChevronLeftRegular,
   ChevronRightRegular,
-  GridRegular
+  GridRegular,
+  SignOutRegular
 } from '@fluentui/react-icons';
 import { PageProps } from '../types';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { RootState } from '../store';
-import { Badge } from '@mui/material';
+import { Badge, Divider } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,12 +28,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   onPageChange,
   pagePropsList
 }) => {
-
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const notifications = useAppSelector((state: RootState) => state.notification.notifications);
+
+  const handleLogout = () => {
+    navigate('/logout');
+  };
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 bg-white shadow-ms z-10 transition-all duration-300 ease-in-out ${
+      className={`fixed inset-y-0 left-0 bg-white shadow-ms z-10 transition-all duration-300 ease-in-out flex flex-col ${
         isOpen ? 'w-80' : 'w-16'
       }`}
     >
@@ -42,7 +50,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           {isOpen ? <ChevronLeftRegular /> : <ChevronRightRegular />}
         </button>
       </div>
-      <nav className="mt-4">
+      
+      {/* Main Navigation */}
+      <nav className="mt-4 flex-grow">
         <ul>
           {pagePropsList.map((pageProps, index) => (
             <li key={index}>
@@ -79,6 +89,25 @@ const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </ul>
       </nav>
+
+      {/* User Section */}
+      <div className="mt-auto border-t">
+        {isOpen && (
+          <div className="px-4 py-3">
+            <div className="text-sm font-medium text-gray-900">{user?.name}</div>
+            <div className="text-xs text-gray-500">{user?.email}</div>
+          </div>
+        )}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition-colors"
+        >
+          <span className="inline-flex items-center justify-center w-6 h-6">
+            <SignOutRegular />
+          </span>
+          {isOpen && <span className="ml-3">Sign out</span>}
+        </button>
+      </div>
     </aside>
   );
 };
