@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -70,55 +70,90 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   onSelectEmployees,
 }) => {
   const [selectedEmployees, setSelectedEmployees] = useState<{ [key: string]: SelectedEmployee }>({});
-  const [approvedEmployees, setApprovedEmployees] = useState<(TeamPerformance & { coursesWithQuarters: { quarter: string; courses: Course[] }[] })[]>([]);
+  const [loadedTargetIds, setLoadedTargetIds] = useState<Set<string>>(new Set());
   const dispatch = useAppDispatch();
   const { user } = useAuth();
   const { teamPerformances = [], status: teamPerformancesStatus } = useAppSelector((state: RootState) => state.personalPerformance);
   const { annualTargets, status: annualTargetsStatus } = useAppSelector((state: RootState) => state.scorecard);
   const { employees: existingEmployees } = useAppSelector((state: RootState) => state.trainingEmployees);
 
+  // Reset states when modal opens
   useEffect(() => {
     if (open) {
       setSelectedEmployees({});
-      setApprovedEmployees([]);
+      setLoadedTargetIds(new Set());
       dispatch(fetchAnnualTargets());
     }
   }, [open, dispatch]);
 
+  // Track which target IDs we've already fetched performances for
+  const fetchTeamPerformancesForTarget = useCallback((targetId: string) => {
+    if (!loadedTargetIds.has(targetId)) {
+      setLoadedTargetIds(prev => {
+        const newSet = new Set(prev);
+        newSet.add(targetId);
+        return newSet;
+      });
+      dispatch(fetchTeamPerformances(targetId));
+    }
+  }, [dispatch, loadedTargetIds]);
+
+  // Fetch team performances when annual targets are loaded
   useEffect(() => {
     if (annualTargets.length > 0) {
       annualTargets.forEach(target => {
-        dispatch(fetchTeamPerformances(target._id));
+        if (target._id) {
+          fetchTeamPerformancesForTarget(target._id);
+        }
       });
     }
-  }, [annualTargets, dispatch]);
+  }, [annualTargets, fetchTeamPerformancesForTarget]);
 
-  useEffect(() => {
-    const processedEmployees = getApprovedEmployeesWithCourses();
-    setApprovedEmployees(processedEmployees);
-  }, [teamPerformances, existingEmployees]);
+  const approvedEmployees = useMemo(() => {
+    console.log('Processing team performances:', {
+      teamPerformances,
+      hasQuarterlyTargets: teamPerformances.some(p => p.quarterlyTargets?.length > 0),
+      approvedTargets: teamPerformances.flatMap(p => 
+        p.quarterlyTargets?.filter(t => t.assessmentStatus === AssessmentStatus.Approved) || []
+      )
+    });
 
-  const getApprovedEmployeesWithCourses = () => {
     if (!Array.isArray(teamPerformances)) return [];
     
-    return (teamPerformances as TeamPerformance[])
+    const processed = (teamPerformances as TeamPerformance[])
       .filter((performance) => {
         // Check if any quarter has approved courses
-        return performance.quarterlyTargets.some(target => 
+        const hasApprovedCourses = performance.quarterlyTargets?.some(target => 
           target.assessmentStatus === AssessmentStatus.Approved &&
           target.personalDevelopment &&
           target.personalDevelopment.length > 0
         );
+        console.log('Checking performance:', {
+          employee: performance.fullName,
+          hasApprovedCourses,
+          quarterlyTargets: performance.quarterlyTargets
+        });
+        return hasApprovedCourses;
       })
       .map(performance => {
         // Get all approved courses from all quarters
         const coursesWithQuarters = performance.quarterlyTargets
-          .filter(target => target.assessmentStatus === AssessmentStatus.Approved)
+          ?.filter(target => {
+            const isApproved = target.assessmentStatus === AssessmentStatus.Approved;
+            const hasCourses = target.personalDevelopment && target.personalDevelopment.length > 0;
+            console.log('Processing quarter:', {
+              quarter: target.quarter,
+              isApproved,
+              hasCourses,
+              courses: target.personalDevelopment
+            });
+            return isApproved;
+          })
           .map(target => ({
             quarter: target.quarter,
             courses: target.personalDevelopment || []
           }))
-          .filter(item => item.courses.length > 0);
+          .filter(item => item.courses.length > 0) || [];
 
         return {
           ...performance,
@@ -134,11 +169,30 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
         );
 
         // Check if there are any courses that haven't been registered yet
-        return employee.coursesWithQuarters.some(({ courses }) =>
+        const hasUnregisteredCourses = employee.coursesWithQuarters.some(({ courses }) =>
           courses.some(course => !existingTrainings.has(course.name))
         );
+
+        console.log('Filtering employee:', {
+          employee: employee.fullName,
+          existingTrainings: Array.from(existingTrainings),
+          hasUnregisteredCourses,
+          coursesWithQuarters: employee.coursesWithQuarters
+        });
+
+        return hasUnregisteredCourses;
       });
-  };
+
+    console.log('Processed employees:', {
+      count: processed.length,
+      employees: processed.map(e => ({
+        name: e.fullName,
+        coursesCount: e.coursesWithQuarters.reduce((acc, curr) => acc + curr.courses.length, 0)
+      }))
+    });
+
+    return processed;
+  }, [teamPerformances, existingEmployees]);
 
   const isTrainingRegistered = (email: string, courseName: string) => {
     return existingEmployees.some(
@@ -184,12 +238,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
 
   const handleConfirm = () => {
     const formattedEmployees = Object.values(selectedEmployees)
-      .filter(employee => {
-        if (!employee.email) {
-          return false;
-        }
-        return true;
-      });
+      .filter(employee => employee.email);
     
     if (formattedEmployees.length === 0) {
       return;
@@ -202,10 +251,20 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   const isLoading = teamPerformancesStatus === 'loading' || annualTargetsStatus === 'loading';
   const hasAvailableEmployees = approvedEmployees.length > 0;
 
+  console.log('Debug Info:', {
+    teamPerformancesLength: teamPerformances.length,
+    approvedEmployeesLength: approvedEmployees.length,
+    existingEmployeesLength: existingEmployees.length,
+    isLoading,
+    hasAvailableEmployees,
+    loadedTargetIds: Array.from(loadedTargetIds)
+  });
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         Select Employees with Approved Training Courses
+        {isLoading && <CircularProgress size={20} sx={{ ml: 2 }} />}
       </DialogTitle>
       <DialogContent>
         {isLoading ? (
@@ -216,6 +275,9 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
         ) : !hasAvailableEmployees ? (
           <Typography color="textSecondary" sx={{ p: 2, textAlign: 'center' }}>
             No employees found with approved and unregistered training courses.
+            {teamPerformances.length === 0 && ' (No team performances loaded)'}
+            {teamPerformances.length > 0 && !teamPerformances.some(p => p.quarterlyTargets?.length > 0) && 
+              ' (No quarterly targets found)'}
           </Typography>
         ) : (
           <TableContainer component={Paper} sx={{ mt: 2 }}>
