@@ -846,7 +846,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       </Box>
 
       {/* Personal Development Block */}
-      {isDevelopmentEnabled && canEdit() && (
+      {isDevelopmentEnabled && (
         <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
           <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
             Employee Personal Development Plan
