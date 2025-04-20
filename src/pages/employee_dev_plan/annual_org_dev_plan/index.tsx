@@ -10,17 +10,19 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
   Stack,
   TextField,
-  CircularProgress
+  CircularProgress,
+  styled,
+  Menu,
+  MenuItem,
+  IconButton
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import CheckIcon from '@mui/icons-material/Check';
-import CloseIcon from '@mui/icons-material/Close';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -28,6 +30,16 @@ import type { RootState } from '../../../store';
 import { fetchDevPlans, createDevPlan, deleteDevPlan, updateDevPlan } from '../../../store/slices/devPlanSlice';
 import { useToast } from '../../../contexts/ToastContext';
 import PlanView from './plan_view';
+
+const ViewButton = styled(Button)({
+  backgroundColor: '#0078D4',
+  color: 'white',
+  textTransform: 'none',
+  padding: '6px 16px',
+  '&:hover': {
+    backgroundColor: '#106EBE',
+  },
+});
 
 interface NewPlan {
   name: string;
@@ -43,6 +55,8 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
   const [newPlan, setNewPlan] = useState<NewPlan>({ name: '' });
   const [editingPlan, setEditingPlan] = useState<EditingPlan | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedPlanForMenu, setSelectedPlanForMenu] = useState<string | null>(null);
   
   const dispatch = useAppDispatch();
   const { user } = useAuth();
@@ -123,6 +137,37 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
     }
   };
 
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, planId: string) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedPlanForMenu(planId);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedPlanForMenu(null);
+  };
+
+  const handleMenuAction = (action: 'open' | 'edit' | 'delete') => {
+    if (!selectedPlanForMenu) return;
+
+    const planToEdit = plans.find(p => p._id === selectedPlanForMenu);
+    
+    switch (action) {
+      case 'open':
+        handleView(selectedPlanForMenu);
+        break;
+      case 'edit':
+        if (planToEdit) {
+          handleEdit(planToEdit);
+        }
+        break;
+      case 'delete':
+        handleDelete(selectedPlanForMenu);
+        break;
+    }
+    handleMenuClose();
+  };
+
   if (error) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -164,7 +209,7 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
         mb: 3
       }}>
         <Typography variant="h6">
-          Employees Development Plan
+          Annual Employees Development Plan
         </Typography>
         <Button
           variant="contained"
@@ -176,6 +221,7 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
             '&:hover': {
               backgroundColor: '#106EBE',
             },
+            textTransform: 'none'
           }}
         >
           New Plan
@@ -186,8 +232,9 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Plan Name</TableCell>
-              <TableCell align="center" sx={{ fontWeight: 'bold' }}>Action</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', width: '60%' }}>Plan Name</TableCell>
+              <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}></TableCell>
+              <TableCell align="center" sx={{ fontWeight: 'bold', width: '20%' }}>Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -205,35 +252,39 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
                     />
                   </Box>
                 </TableCell>
+                <TableCell></TableCell>
                 <TableCell align="center">
-                  <Stack direction="row" spacing={1} justifyContent="center">
-                    <IconButton
-                      size="small"
-                      onClick={handleSaveNewPlan}
-                      sx={{ color: '#0078D4' }}
-                    >
-                      <CheckIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
+                  <Stack direction="row" spacing={1} justifyContent="flex-end">
+                    <ViewButton size="small" onClick={handleSaveNewPlan}>
+                      Save
+                    </ViewButton>
+                    <Button
                       size="small"
                       onClick={handleCancelAdd}
-                      sx={{ color: '#d92d20' }}
+                      sx={{
+                        color: '#d92d20',
+                        borderColor: '#d92d20',
+                        '&:hover': {
+                          borderColor: '#b42318',
+                          backgroundColor: 'rgba(217, 45, 32, 0.04)',
+                        },
+                      }}
                     >
-                      <CloseIcon fontSize="small" />
-                    </IconButton>
+                      Cancel
+                    </Button>
                   </Stack>
                 </TableCell>
               </TableRow>
             )}
             {loading ? (
               <TableRow>
-                <TableCell colSpan={2} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={3} align="center" sx={{ py: 3 }}>
                   <CircularProgress size={24} />
                 </TableCell>
               </TableRow>
             ) : plans.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={2} align="center" sx={{ py: 3 }}>
+                <TableCell colSpan={3} align="center" sx={{ py: 3 }}>
                   <Typography color="textSecondary">No development plans found</Typography>
                 </TableCell>
               </TableRow>
@@ -259,50 +310,39 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell align="center">
-                    <Stack direction="row" spacing={1} justifyContent="center">
-                      <IconButton 
-                        size="small" 
-                        onClick={() => handleView(plan._id)}
-                        sx={{ color: '#0078D4' }}
-                      >
-                        <VisibilityIcon fontSize="small" />
-                      </IconButton>
-                      {editingPlan?._id === plan._id ? (
-                        <>
-                          <IconButton
-                            size="small"
-                            onClick={handleSaveEdit}
-                            sx={{ color: '#0078D4' }}
-                          >
-                            <CheckIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={handleCancelEdit}
-                            sx={{ color: '#d92d20' }}
-                          >
-                            <CloseIcon fontSize="small" />
-                          </IconButton>
-                        </>
-                      ) : (
-                        <>
-                          <IconButton 
-                            size="small" 
-                            onClick={() => handleEdit(plan)}
-                            sx={{ color: '#0078D4' }}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton 
-                            size="small" 
-                            onClick={() => handleDelete(plan._id)}
-                            sx={{ color: '#d92d20' }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </>
-                      )}
-                    </Stack>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleMenuOpen(e, plan._id)}
+                    >
+                      <MoreHorizIcon />
+                    </IconButton>
+                  </TableCell>
+                  <TableCell align="center">
+                    {editingPlan?._id === plan._id ? (
+                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <ViewButton size="small" onClick={handleSaveEdit}>
+                          Save
+                        </ViewButton>
+                        <Button
+                          size="small"
+                          onClick={handleCancelEdit}
+                          sx={{
+                            color: '#d92d20',
+                            borderColor: '#d92d20',
+                            '&:hover': {
+                              borderColor: '#b42318',
+                              backgroundColor: 'rgba(217, 45, 32, 0.04)',
+                            },
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </Stack>
+                    ) : (
+                      <ViewButton size="small" onClick={() => handleView(plan._id)}>
+                        View
+                      </ViewButton>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
@@ -310,6 +350,33 @@ const AnnualOrganizationDevelopmentPlans: React.FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={() => handleMenuAction('open')} sx={{ minWidth: 120 }}>
+          <OpenInNewIcon sx={{ mr: 1, fontSize: 20 }} />
+          Open
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('edit')}>
+          <EditOutlinedIcon sx={{ mr: 1, fontSize: 20 }} />
+          Edit
+        </MenuItem>
+        <MenuItem onClick={() => handleMenuAction('delete')} sx={{ color: '#d92d20' }}>
+          <DeleteOutlineIcon sx={{ mr: 1, fontSize: 20 }} />
+          Delete
+        </MenuItem>
+      </Menu>
     </Box>
   );
 };

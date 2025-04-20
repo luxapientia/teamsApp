@@ -83,6 +83,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     try {
       const response = await api.get(`/training/${planId}/employees`);
       if (response.data.status === 'success') {
+        console.log(response.data.data.employees, 'employees');
         setEmployees(response.data.data.employees || []);
       } else {
         throw new Error(response.data.message || 'Failed to fetch employees');
