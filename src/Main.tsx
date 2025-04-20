@@ -55,8 +55,15 @@ function Main() {
   const [isDevMember, setIsDevMember] = useState(false);
   const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
 
+  // Separate effect for isDevMember
   useEffect(() => {
-    setIsDevMember(user?.isDevMember);
+    if (user) {
+      setIsDevMember(!!user.isDevMember);
+    }
+  }, [user]);
+
+  // Separate effect for team owner status
+  useEffect(() => {
     const fetchTeamOwnerFromDB = async () => {
       if (user?.id) {
         try {
@@ -70,7 +77,7 @@ function Main() {
       }
     };
     fetchTeamOwnerFromDB();
-  }, [user?.id, dispatch]);
+  }, [user?.id]);
 
   return (
     <Layout selectedTabChanger={selectedTabChanger}>

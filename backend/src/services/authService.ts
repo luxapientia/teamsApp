@@ -111,9 +111,31 @@ export class AuthService {
           );
         }
       }
-      const token = await this.createAppToken(userProfile);
+      
+      // Get the latest user data from database
+      const dbUser = await roleService.getUser(userProfile.id);
+      if (!dbUser) {
+        throw new Error('Failed to create or retrieve user from database');
+      }
 
-      return { token, user: userProfile };
+      // Create token using database user data
+      const tokenUserProfile: UserProfile = {
+        id: dbUser.MicrosoftId,
+        email: dbUser.email,
+        displayName: dbUser.name,
+        jobTitle: dbUser.jobTitle || '',
+        department: '',
+        organization: '',
+        role: dbUser.role,
+        status: 'active',
+        tenantId: dbUser.tenantId,
+        organizationName: '',
+        isDevMember: dbUser.isDevMember
+      };
+
+      const token = await this.createAppToken(tokenUserProfile);
+
+      return { token, user: tokenUserProfile };
     } catch (error: any) {
       console.error('Authentication error details:', {
         message: error.message,

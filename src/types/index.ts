@@ -55,5 +55,6 @@ export interface UserProfile {
   status?: 'active' | 'inactive';
   tenantId?: string;
   organizationName?: string;
+  isDevMember?: boolean;
 } 
 
