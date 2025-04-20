@@ -57,8 +57,6 @@ function Main() {
 
   useEffect(() => {
     setIsDevMember(user?.isDevMember);
-  }, []);
-  useEffect(() => {
     const fetchTeamOwnerFromDB = async () => {
       if (user?.id) {
         try {

@@ -152,23 +152,23 @@ const SuperUser: React.FC = () => {
                                     </StyledTableCell>
                                 </TableRow>
                             ) : Array.isArray(filteredSuperUsers) && filteredSuperUsers.length > 0 ? (
-                                filteredSuperUsers.map((user) => (
-                                    <TableRow key={user._id}>
-                                        <StyledTableCell>{user.firstName} {user.lastName}</StyledTableCell>
-                                        <StyledTableCell>{user.email}</StyledTableCell>
+                                filteredSuperUsers.map((map_user) => (
+                                    <TableRow key={map_user._id}>
+                                        <StyledTableCell>{map_user.firstName} {map_user.lastName}</StyledTableCell>
+                                        <StyledTableCell>{map_user.email}</StyledTableCell>
                                         <StyledTableCell align="center">
-                                            <Tooltip title={user.email === user?.email ? "You cannot remove yourself" : "Remove super user"}>
+                                            <Tooltip title={map_user.email === user?.email ? "You cannot remove yourself" : "Remove super user"}>
                                                 <span>
                                                     <IconButton
                                                         size="small"
-                                                        onClick={() => handleRemoveSuperUser(user.email)}
+                                                        onClick={() => handleRemoveSuperUser(map_user.email)}
                                                         sx={{
                                                             color: '#DC2626',
                                                             '&.Mui-disabled': {
                                                                 color: 'rgba(220, 38, 38, 0.5)'
                                                             }
                                                         }}
-                                                        disabled={user.email === user?.email}
+                                                        disabled={map_user.email === user?.email}
                                                     >
                                                         <DeleteRegular className="h-5 w-5" />
                                                     </IconButton>
