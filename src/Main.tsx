@@ -120,10 +120,10 @@ function Main() {
         icon={<LearningApp24Regular fontSize={iconSize} />}
         tabs={(isSuperUser || isAppOwner) ?
           (isDevMember ?
-            ['Organization Development Team', 'Enable Employees Development', 'Training & Courses Management', 'Annual Organization Development Plans', 'Employees Training', 'My Training Dashboard'] :
-            ['Organization Development Team', 'My Training Dashboard']) :
+            ['My Training Dashboard', 'Employees Training', 'Enable Employees Development', 'Annual Organization Development Plans', 'Training & Courses Management', 'Organization Development Team'] :
+            ['My Training Dashboard', 'Organization Development Team']) :
           (isDevMember ?
-            ['Enable Employees Development', 'Training & Courses Management', 'Annual Organization Development Plans', 'Employees Training', 'My Training Dashboard'] :
+            ['My Training Dashboard', 'Employees Training', 'Enable Employees Development', 'Annual Organization Development Plans', 'Training & Courses Management'] :
             ['My Training Dashboard'])}
         selectedTab={selectedTab}
       />}
