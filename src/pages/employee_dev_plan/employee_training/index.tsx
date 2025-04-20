@@ -183,8 +183,8 @@ const EmployeesTraining: React.FC = () => {
                   <TableCell>Employee Full Name</TableCell>
                   <TableCell>Position</TableCell>
                   <TableCell>Team</TableCell>
-                  <TableCell>Training Requested</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell>Training/Course</TableCell>
+                  <TableCell>Completed</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -201,7 +201,7 @@ const EmployeesTraining: React.FC = () => {
                       <TableCell>{employee.jobTitle || '-'}</TableCell>
                       <TableCell>{employee.team || '-'}</TableCell>
                       <TableCell>{employee.trainingRequested}</TableCell>
-                      <TableCell>{employee.status}</TableCell>
+                      <TableCell>{employee.status === TrainingStatus.COMPLETED ? 'Yes' : 'No'}</TableCell>
                     </TableRow>
                   ))
                 )}
