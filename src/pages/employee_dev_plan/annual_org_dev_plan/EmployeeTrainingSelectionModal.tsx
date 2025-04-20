@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
+import { fetchTeamPerformances, clearTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { useAuth } from '../../../contexts/AuthContext';
 import { AssessmentStatus, PersonalPerformance } from '../../../types/personalPerformance';
@@ -77,37 +77,31 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   const { annualTargets, status: annualTargetsStatus } = useAppSelector((state: RootState) => state.scorecard);
   const { employees: existingEmployees } = useAppSelector((state: RootState) => state.trainingEmployees);
 
-  // Reset states when modal opens
+  // Reset states and clear team performances when modal opens
   useEffect(() => {
     if (open) {
       setSelectedEmployees({});
       setLoadedTargetIds(new Set());
+      dispatch(clearTeamPerformances());
       dispatch(fetchAnnualTargets());
     }
   }, [open, dispatch]);
-
-  // Track which target IDs we've already fetched performances for
-  const fetchTeamPerformancesForTarget = useCallback((targetId: string) => {
-    if (!loadedTargetIds.has(targetId)) {
-      setLoadedTargetIds(prev => {
-        const newSet = new Set(prev);
-        newSet.add(targetId);
-        return newSet;
-      });
-      dispatch(fetchTeamPerformances(targetId));
-    }
-  }, [dispatch, loadedTargetIds]);
 
   // Fetch team performances when annual targets are loaded
   useEffect(() => {
     if (annualTargets.length > 0) {
       annualTargets.forEach(target => {
-        if (target._id) {
-          fetchTeamPerformancesForTarget(target._id);
+        if (target._id && !loadedTargetIds.has(target._id)) {
+          setLoadedTargetIds(prev => {
+            const newSet = new Set(prev);
+            newSet.add(target._id);
+            return newSet;
+          });
+          dispatch(fetchTeamPerformances(target._id));
         }
       });
     }
-  }, [annualTargets, fetchTeamPerformancesForTarget]);
+  }, [annualTargets, dispatch, loadedTargetIds]);
 
   const approvedEmployees = useMemo(() => {
     console.log('Processing team performances:', {

@@ -2,9 +2,11 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { api } from '../../services/api';
 import { AxiosError } from 'axios';
 import { PersonalPerformance, TeamPerformance } from '@/types';
+
 interface PersonalPerformanceState {
   personalPerformances: PersonalPerformance[];
   teamPerformances: TeamPerformance[];
+  teamPerformancesByTarget: { [targetId: string]: TeamPerformance[] };
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
 }
@@ -12,6 +14,7 @@ interface PersonalPerformanceState {
 const initialState: PersonalPerformanceState = {
   personalPerformances: [],
   teamPerformances: [],
+  teamPerformancesByTarget: {},
   status: 'idle',
   error: null,
 };
@@ -50,14 +53,30 @@ export const fetchTeamPerformances = createAsyncThunk(
         }
       });
       if (response.status === 200) {
-        return response.data.data as TeamPerformance[];
+        return {
+          targetId: annualTargetId,
+          performances: response.data.data as TeamPerformance[]
+        };
       } else {
-        return [];
+        return {
+          targetId: annualTargetId,
+          performances: []
+        };
       }
     } catch (error) {
       console.log('error', error);
-      return [];
+      return {
+        targetId: annualTargetId,
+        performances: []
+      };
     }
+  }
+);
+
+export const clearTeamPerformances = createAsyncThunk(
+  'personalPerformance/clearTeamPerformances',
+  async () => {
+    return true;
   }
 );
 
@@ -127,7 +146,6 @@ const personalPerformanceSlice = createSlice({
       })
       .addCase(fetchPersonalPerformances.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        console.log('action.payload', action.payload);
         state.personalPerformances = action.payload;
       })
       .addCase(fetchPersonalPerformances.rejected, (state, action) => {
@@ -139,7 +157,22 @@ const personalPerformanceSlice = createSlice({
       })
       .addCase(fetchTeamPerformances.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.teamPerformances = action.payload;
+        // Store performances by target ID
+        state.teamPerformancesByTarget[action.payload.targetId] = action.payload.performances;
+        
+        // Combine all performances from all targets
+        const allPerformances = Object.values(state.teamPerformancesByTarget).flat();
+        
+        // Remove duplicates based on _id
+        const uniquePerformances = Array.from(
+          new Map(allPerformances.map(item => [item._id, item])).values()
+        );
+        
+        state.teamPerformances = uniquePerformances;
+      })
+      .addCase(clearTeamPerformances.fulfilled, (state) => {
+        state.teamPerformances = [];
+        state.teamPerformancesByTarget = {};
       })
       .addCase(createPersonalPerformance.fulfilled, (state, action) => {
         // if (action.payload) {
