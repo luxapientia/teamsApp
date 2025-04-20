@@ -27,6 +27,7 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { RootState } from '../../../store';
+import { useAuth } from '../../../contexts/AuthContext';
 import { api } from '../../../services/api';
 import EvidenceModal from './EvidenceModal';
 import html2canvas from 'html2canvas';
@@ -66,6 +67,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   userId = '',
   teamId = ''
 }) => {
+  const { user } = useAuth();
   const [selectedSupervisor, setSelectedSupervisor] = useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
@@ -156,7 +158,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${quarter}`}
+          {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
         </Typography>
       </Box>
 
