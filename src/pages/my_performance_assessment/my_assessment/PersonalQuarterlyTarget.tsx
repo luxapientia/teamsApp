@@ -90,7 +90,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const annualQuarterlyTarget = annualTarget?.content.quarterlyTarget.quarterlyTargets.find(
     target => target.quarter === quarter
   );
-  const isDevelopmentEnabled = annualQuarterlyTarget?.isDevelopmentPlanEnabled && user?.isDevMember;
+  const isDevelopmentEnabled = annualQuarterlyTarget?.isDevelopmentPlanEnabled;
 
   useEffect(() => {
     fetchCompanyUsers();
