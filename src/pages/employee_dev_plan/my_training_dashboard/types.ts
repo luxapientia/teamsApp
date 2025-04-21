@@ -3,6 +3,8 @@ export interface Training {
   name: string;
   description: string;
   date: string;
+  annualTargetId: string;
+  quarter: string;
 }
 
 export interface TrainingBoardProps {

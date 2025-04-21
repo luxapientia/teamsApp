@@ -17,6 +17,8 @@ export interface ITraining extends Document {
   description?: string;
   status: TrainingStatus;
   dateRequested: Date;
+  annualTargetId: Schema.Types.ObjectId;
+  quarter: string;
 }
 
 const trainingSchema = new Schema<ITraining>(
@@ -53,6 +55,15 @@ const trainingSchema = new Schema<ITraining>(
     dateRequested: {
       type: Date,
       default: Date.now
+    },
+    annualTargetId: {
+      type: Schema.Types.ObjectId,
+      ref: 'AnnualTarget',
+      required: true
+    },
+    quarter: {
+      type: String,
+      required: true
     }
   },
   { timestamps: true }

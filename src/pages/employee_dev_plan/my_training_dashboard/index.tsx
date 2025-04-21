@@ -49,14 +49,19 @@ const MyTrainingDashboard: React.FC = () => {
                     date: new Date(performance.updatedAt).toLocaleDateString('en-US', { 
                       day: '2-digit',
                       month: 'short'
-                    })
+                    }),
+                    annualTargetId: performance.annualTargetId,
+                    quarter: target.quarter
                   }))
                   .filter(course => 
-                    !existingTrainings.some(training => training.name === course.name)
+                    !existingTrainings.some(training => 
+                      training.name === course.name && 
+                      training.quarter === course.quarter && 
+                      training.annualTargetId === course.annualTargetId
+                    )
                   )
               )
           );
-
         setRequestedTrainings(approvedCourses);
       }
     } catch (error) {
@@ -70,13 +75,14 @@ const MyTrainingDashboard: React.FC = () => {
       const response = await api.get(`/training/user/${user?._id}`);
       if (response.data.status === 'success') {
         const trainings = response.data.data.trainings;
-        
         const planned = trainings
           .filter((training: any) => training.status === TrainingStatus.PLANNED)
           .map((training: any) => ({
             id: training._id,
             name: training.trainingRequested,
             description: training.description || 'No description available',
+            annualTargetId: training.annualTargetId,
+            quarter: training.quarter,
             date: new Date(training.dateRequested).toLocaleDateString('en-US', {
               day: '2-digit',
               month: 'short'
@@ -89,6 +95,8 @@ const MyTrainingDashboard: React.FC = () => {
             id: training._id,
             name: training.trainingRequested,
             description: training.description || 'No description available',
+            annualTargetId: training.annualTargetId,
+            quarter: training.quarter,
             date: new Date(training.dateRequested).toLocaleDateString('en-US', {
               day: '2-digit',
               month: 'short'

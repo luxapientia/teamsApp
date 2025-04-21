@@ -91,6 +91,8 @@ export class TrainingService {
       description?: string;
       status?: TrainingStatus;
       dateRequested: Date;
+      annualTargetId: string;
+      quarter: string;
     }>
   ): Promise<ITraining[]> {
     const trainings = employees.map(employee => ({
@@ -103,7 +105,9 @@ export class TrainingService {
       trainingRequested: employee.trainingRequested || '',
       description: employee.description || '',
       status: employee.status || TrainingStatus.PLANNED,
-      dateRequested: employee.dateRequested
+      dateRequested: employee.dateRequested,
+      annualTargetId: new Types.ObjectId(employee.annualTargetId),
+      quarter: employee.quarter
     }));
 
     const docs = await Training.insertMany(trainings);
@@ -153,5 +157,22 @@ export class TrainingService {
 
   async getTrainingsByEmail(email: string): Promise<ITraining[]> {
     return Training.find({ email }).sort({ createdAt: -1 });
+  }
+
+  async getTrainingsByAnnualTarget(annualTargetId: string): Promise<ITraining[]> {
+    if (!Types.ObjectId.isValid(annualTargetId)) {
+      throw new Error('Invalid annual target ID');
+    }
+    return Training.find({ annualTargetId: new Types.ObjectId(annualTargetId) }).sort({ createdAt: -1 });
+  }
+
+  async getTrainingsByQuarter(annualTargetId: string, quarter: string): Promise<ITraining[]> {
+    if (!Types.ObjectId.isValid(annualTargetId)) {
+      throw new Error('Invalid annual target ID');
+    }
+    return Training.find({
+      annualTargetId: new Types.ObjectId(annualTargetId),
+      quarter
+    }).sort({ createdAt: -1 });
   }
 } 

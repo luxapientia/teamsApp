@@ -41,6 +41,20 @@ interface TeamPerformance extends PersonalPerformance {
   updatedAt: string;
 }
 
+interface Employee {
+  userId: string;
+  displayName: string;
+  email: string;
+  jobTitle?: string;
+  team?: string;
+  trainingRequested: string;
+  status: TrainingStatus;
+  dateRequested: Date;
+  description?: string;
+  annualTargetId: string;
+  quarter: string;
+}
+
 interface SelectedEmployee {
   userId: string;
   displayName: string;
@@ -51,6 +65,8 @@ interface SelectedEmployee {
   status: TrainingStatus;
   dateRequested: Date;
   description: string;
+  annualTargetId: string;
+  quarter: string;
 }
 
 interface Course {
@@ -73,7 +89,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   const [loadedTargetIds, setLoadedTargetIds] = useState<Set<string>>(new Set());
   const dispatch = useAppDispatch();
   const { user } = useAuth();
-  const { teamPerformances = [], status: teamPerformancesStatus } = useAppSelector((state: RootState) => state.personalPerformance);
+  const { teamPerformances = [], teamPerformancesByTarget = {}, status: teamPerformancesStatus } = useAppSelector((state: RootState) => state.personalPerformance);
   const { annualTargets, status: annualTargetsStatus } = useAppSelector((state: RootState) => state.scorecard);
   const { employees: existingEmployees } = useAppSelector((state: RootState) => state.trainingEmployees);
 
@@ -141,7 +157,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
               hasCourses,
               courses: target.personalDevelopment
             });
-            return isApproved;
+            return isApproved && hasCourses;
           })
           .map(target => ({
             quarter: target.quarter,
@@ -188,15 +204,28 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
     return processed;
   }, [teamPerformances, existingEmployees]);
 
-  const isTrainingRegistered = (email: string, courseName: string) => {
+  const isTrainingRegistered = (email: string, courseName: string, annualTargetId: string, quarter: string) => {
     return existingEmployees.some(
-      emp => emp.email === email && emp.trainingRequested === courseName
+      emp => emp.email === email && 
+             emp.trainingRequested === courseName &&
+             emp.annualTargetId === annualTargetId &&
+             emp.quarter === quarter
     );
   };
 
   const handleToggleEmployee = (performance: TeamPerformance, course: Course, quarter: string) => {
+    // Find the annual target ID for this performance
+    const annualTargetId = Object.entries(teamPerformancesByTarget).find(
+      ([_, performances]) => performances.some(p => p._id === performance._id)
+    )?.[0];
+
+    if (!annualTargetId) {
+      console.error('Could not find annual target ID for performance:', performance);
+      return;
+    }
+
     // Skip if the training is already registered
-    if (isTrainingRegistered(performance.email, course.name)) {
+    if (isTrainingRegistered(performance.email, course.name, annualTargetId, quarter)) {
       return;
     }
 
@@ -213,20 +242,24 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
         return;
       }
 
-      setSelectedEmployees({
-        ...selectedEmployees,
-        [key]: {
-          userId: typeof performance.userId === 'object' ? performance.userId._id : performance.userId,
-          displayName: performance.fullName,
-          email: email,
-          jobTitle: performance.jobTitle || '',
-          team: performance.team || '',
-          trainingRequested: course.name,
-          status: TrainingStatus.PLANNED,
-          dateRequested: new Date(performance.updatedAt),
-          description: course.description || course.name || ''
-        }
-      });
+      const newEmployee: SelectedEmployee = {
+        userId: typeof performance.userId === 'object' ? performance.userId._id : performance.userId,
+        displayName: performance.fullName,
+        email: email,
+        jobTitle: performance.jobTitle || '',
+        team: performance.team || '',
+        trainingRequested: course.name,
+        status: TrainingStatus.PLANNED,
+        dateRequested: new Date(performance.updatedAt),
+        description: course.description || course.name || '',
+        annualTargetId: annualTargetId,
+        quarter: quarter
+      };
+
+      setSelectedEmployees(prev => ({
+        ...prev,
+        [key]: newEmployee
+      }));
     }
   };
 
@@ -290,7 +323,14 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
                 {approvedEmployees.map((employee) => (
                   employee.coursesWithQuarters.map(({ quarter, courses }) => (
                     courses
-                      .filter(course => !isTrainingRegistered(employee.email, course.name))
+                      .filter(course => !isTrainingRegistered(
+                        employee.email, 
+                        course.name,
+                        Object.entries(teamPerformancesByTarget).find(
+                          ([_, performances]) => performances.some(p => p._id === employee._id)
+                        )?.[0] || '',
+                        quarter
+                      ))
                       .map((course: any, courseIndex: number) => (
                         <TableRow
                           key={`${employee._id}-${quarter}-${courseIndex}`}

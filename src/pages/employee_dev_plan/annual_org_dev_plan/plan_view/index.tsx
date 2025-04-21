@@ -53,6 +53,8 @@ interface Employee {
   dateRequested?: Date;
   status: TrainingStatus;
   description?: string;
+  annualTargetId: string;
+  quarter: string;
 }
 
 interface PlanViewProps {

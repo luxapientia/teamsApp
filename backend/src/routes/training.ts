@@ -204,4 +204,46 @@ router.get('/user/email/:email', authenticateToken, async (req, res) => {
   }
 });
 
+// Get trainings by annual target
+router.get('/annual-target/:annualTargetId', authenticateToken, async (req, res) => {
+  try {
+    const { annualTargetId } = req.params;
+    const trainings = await trainingService.getTrainingsByAnnualTarget(annualTargetId);
+
+    return res.json({
+      status: 'success',
+      data: {
+        trainings
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching trainings:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch trainings'
+    });
+  }
+});
+
+// Get trainings by annual target and quarter
+router.get('/annual-target/:annualTargetId/quarter/:quarter', authenticateToken, async (req, res) => {
+  try {
+    const { annualTargetId, quarter } = req.params;
+    const trainings = await trainingService.getTrainingsByQuarter(annualTargetId, quarter);
+
+    return res.json({
+      status: 'success',
+      data: {
+        trainings
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching trainings:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch trainings'
+    });
+  }
+});
+
 export default router;
