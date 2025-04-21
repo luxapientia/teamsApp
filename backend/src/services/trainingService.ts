@@ -1,5 +1,7 @@
-import { Training, ITraining } from '../models/Training';
 import { Types } from 'mongoose';
+import { Training, ITraining } from '../models/Training';
+import OrgDevPlan from '../models/OrgDevPlan';
+import { IOrgDevPlan } from '../models/OrgDevPlan';
 
 export enum TrainingStatus {
   PLANNED = 'Planned',
@@ -187,5 +189,25 @@ export class TrainingService {
       annualTargetId: new Types.ObjectId(annualTargetId),
       quarter
     }).sort({ createdAt: -1 });
+  }
+
+  async getAllEmployeesAcrossPlans(tenantId: string) {
+    try {
+      // First get all plans for this tenant
+      const plans = await OrgDevPlan.find({ tenantId });
+      const planIds = plans.map((plan: IOrgDevPlan) => plan._id);
+      
+      // Then get all trainings for these plans
+      const allTrainings = await Training.find({
+        planId: { $in: planIds }
+      }).select('userId displayName email jobTitle team trainingRequested dateRequested status description annualTargetId quarter planId')
+        .sort({ dateRequested: -1 })
+        .lean();
+
+      return allTrainings;
+    } catch (error) {
+      console.error('Error in getAllEmployeesAcrossPlans:', error);
+      throw error;
+    }
   }
 } 

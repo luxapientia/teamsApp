@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
 
-interface IOrgDevPlan {
+export interface IOrgDevPlan {
+  _id: string;
   name: string;
   tenantId: string;
   trainings: Schema.Types.ObjectId[];

@@ -23,8 +23,10 @@ import { fetchTeamPerformances, clearTeamPerformances } from '../../../store/sli
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { useAuth } from '../../../contexts/AuthContext';
 import { AssessmentStatus, PersonalPerformance } from '../../../types/personalPerformance';
+import { fetchDevPlans } from '../../../store/slices/devPlanSlice';
 import { RootState } from '../../../store';
 import { TrainingStatus } from './plan_view';
+import { api } from '../../../services/api';
 
 interface UserData {
   _id: string;
@@ -87,26 +89,44 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
 }) => {
   const [selectedEmployees, setSelectedEmployees] = useState<{ [key: string]: SelectedEmployee }>({});
   const [loadedTargetIds, setLoadedTargetIds] = useState<Set<string>>(new Set());
+  const [allEmployees, setAllEmployees] = useState<any[]>([]);
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
   const dispatch = useAppDispatch();
   const { user } = useAuth();
+  const { plans, loading: plansLoading } = useAppSelector((state: RootState) => state.devPlan);
   const { teamPerformances = [], teamPerformancesByTarget = {}, status: teamPerformancesStatus } = useAppSelector((state: RootState) => state.personalPerformance);
   const { annualTargets, status: annualTargetsStatus } = useAppSelector((state: RootState) => state.scorecard);
-  const { employees: existingEmployees } = useAppSelector((state: RootState) => state.trainingEmployees);
+  // const { employees: existingEmployees } = useAppSelector((state: RootState) => state.trainingEmployees);
 
   const getAnnualTargetName = (targetId: string) => {
     const target = annualTargets.find(t => t._id === targetId);
     return target?.name || '-';
   };
 
-  // Reset states and clear team performances when modal opens
+  // Reset states and fetch data when modal opens
   useEffect(() => {
     if (open) {
       setSelectedEmployees({});
       setLoadedTargetIds(new Set());
+      dispatch(fetchDevPlans(user?.tenantId || ''));
       dispatch(clearTeamPerformances());
       dispatch(fetchAnnualTargets());
+
+      // Fetch all employees
+      const fetchAllEmployees = async () => {
+        setIsLoadingEmployees(true);
+        try {
+          const response = await api.get('/training/all-employees');
+          setAllEmployees(response.data.data.employees || []);
+        } catch (error) {
+          console.error('Error fetching all employees:', error);
+        } finally {
+          setIsLoadingEmployees(false);
+        }
+      };
+      fetchAllEmployees();
     }
-  }, [open, dispatch]);
+  }, [open, dispatch, user?.tenantId]);
 
   // Fetch team performances when annual targets are loaded
   useEffect(() => {
@@ -124,51 +144,39 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
     }
   }, [annualTargets, dispatch, loadedTargetIds]);
 
-  const approvedEmployees = useMemo(() => {
-    console.log('Processing team performances:', {
-      teamPerformances,
-      hasQuarterlyTargets: teamPerformances.some(p => p.quarterlyTargets?.length > 0),
-      approvedTargets: teamPerformances.flatMap(p => 
-        p.quarterlyTargets?.filter(t => t.assessmentStatus === AssessmentStatus.Approved) || []
-      )
-    });
 
+  const isTrainingRegistered = useCallback((email: string, courseName: string, annualTargetId: string, quarter: string) => {
+    return allEmployees.some(emp => 
+      emp.email === email && 
+      emp.trainingRequested === courseName &&
+      emp.annualTargetId === annualTargetId &&
+      emp.quarter === quarter
+    );
+  }, [allEmployees]);
+
+  const approvedEmployees = useMemo(() => {
     if (!Array.isArray(teamPerformances)) return [];
     
-    const processed = (teamPerformances as TeamPerformance[])
+    return (teamPerformances as TeamPerformance[])
       .filter((performance) => {
-        // Check if any quarter has approved courses
         const hasApprovedCourses = performance.quarterlyTargets?.some(target => 
           target.assessmentStatus === AssessmentStatus.Approved &&
           target.personalDevelopment &&
           target.personalDevelopment.length > 0
         );
-        console.log('Checking performance:', {
-          employee: performance.fullName,
-          hasApprovedCourses,
-          quarterlyTargets: performance.quarterlyTargets
-        });
         return hasApprovedCourses;
       })
       .map(performance => {
-        // Get all approved courses from all quarters
         const coursesWithQuarters = performance.quarterlyTargets
-          ?.filter(target => {
-            const isApproved = target.assessmentStatus === AssessmentStatus.Approved;
-            const hasCourses = target.personalDevelopment && target.personalDevelopment.length > 0;
-            console.log('Processing quarter:', {
-              quarter: target.quarter,
-              isApproved,
-              hasCourses,
-              courses: target.personalDevelopment
-            });
-            return isApproved && hasCourses;
-          })
+          ?.filter(target => 
+            target.assessmentStatus === AssessmentStatus.Approved &&
+            target.personalDevelopment &&
+            target.personalDevelopment.length > 0
+          )
           .map(target => ({
             quarter: target.quarter,
             courses: target.personalDevelopment || []
-          }))
-          .filter(item => item.courses.length > 0) || [];
+          })) || [];
 
         return {
           ...performance,
@@ -176,47 +184,19 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
         };
       })
       .filter(employee => {
-        // Filter out employees who have all their courses already registered
-        const existingTrainings = new Set(
-          existingEmployees
-            .filter(e => e.email === employee.email)
-            .map(e => e.trainingRequested)
+        const annualTargetId = Object.entries(teamPerformancesByTarget)
+          .find(([_, performances]) => performances.some(p => p._id === employee._id))?.[0];
+
+        if (!annualTargetId) return false;
+
+        // Check if there are any unregistered courses
+        return employee.coursesWithQuarters.some(({ quarter, courses }) =>
+          courses.some(course => 
+            !isTrainingRegistered(employee.email, course.name, annualTargetId, quarter)
+          )
         );
-
-        // Check if there are any courses that haven't been registered yet
-        const hasUnregisteredCourses = employee.coursesWithQuarters.some(({ courses }) =>
-          courses.some(course => !existingTrainings.has(course.name))
-        );
-
-        console.log('Filtering employee:', {
-          employee: employee.fullName,
-          existingTrainings: Array.from(existingTrainings),
-          hasUnregisteredCourses,
-          coursesWithQuarters: employee.coursesWithQuarters
-        });
-
-        return hasUnregisteredCourses;
       });
-
-    console.log('Processed employees:', {
-      count: processed.length,
-      employees: processed.map(e => ({
-        name: e.fullName,
-        coursesCount: e.coursesWithQuarters.reduce((acc, curr) => acc + curr.courses.length, 0)
-      }))
-    });
-
-    return processed;
-  }, [teamPerformances, existingEmployees]);
-
-  const isTrainingRegistered = (email: string, courseName: string, annualTargetId: string, quarter: string) => {
-    return existingEmployees.some(
-      emp => emp.email === email && 
-             emp.trainingRequested === courseName &&
-             emp.annualTargetId === annualTargetId &&
-             emp.quarter === quarter
-    );
-  };
+  }, [teamPerformances, teamPerformancesByTarget, isTrainingRegistered]);
 
   const handleToggleEmployee = (performance: TeamPerformance, course: Course, quarter: string) => {
     // Find the annual target ID for this performance
@@ -280,13 +260,14 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
     onClose();
   };
 
-  const isLoading = teamPerformancesStatus === 'loading' || annualTargetsStatus === 'loading';
+  const isLoading = teamPerformancesStatus === 'loading' || 
+                   annualTargetsStatus === 'loading' || 
+                   isLoadingEmployees;
   const hasAvailableEmployees = approvedEmployees.length > 0;
 
   console.log('Debug Info:', {
     teamPerformancesLength: teamPerformances.length,
     approvedEmployeesLength: approvedEmployees.length,
-    existingEmployeesLength: existingEmployees.length,
     isLoading,
     hasAvailableEmployees,
     loadedTargetIds: Array.from(loadedTargetIds)
