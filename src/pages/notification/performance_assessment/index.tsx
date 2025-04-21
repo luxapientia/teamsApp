@@ -15,6 +15,8 @@ import {
   SelectChangeEvent,
   IconButton,
   styled,
+  Chip,
+  Skeleton,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, QuarterlyTargetKPI } from '@/types';
@@ -30,7 +32,7 @@ import EvidenceModal from './EvidenceModal';
 import { fetchNotifications } from '../../../store/slices/notificationSlice';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useToast } from '../../../contexts/ToastContext';
-
+import { useAuth } from '../../../contexts/AuthContext';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -56,6 +58,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   onBack,
   notification = null,
 }) => {
+  const { user } = useAuth();
   const dispatch = useAppDispatch();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
@@ -68,7 +71,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const { showToast } = useToast();
-  
+
   useEffect(() => {
     fetchCompanyUsers();
     fetchPersonalPerformance();
@@ -127,8 +130,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     return Math.round(totalWeightedScore / totalWeight);
   };
 
-  // Add function to get rating scale info
-  const getRatingScaleInfo = (score: number | null) => {
+  // Add function to get rating score info
+  const getRatingScoreInfo = (score: number | null) => {
     if (!score || !annualTarget) return null;
 
     return annualTarget.content.ratingScales.find(
@@ -189,7 +192,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${quarter}`}
+          {`${annualTarget.name}, ${user?.displayName} ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
         </Typography>
 
         <Button
@@ -285,7 +288,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
-                <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
+                <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                 <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
               </TableRow>
             </TableHead>
@@ -417,9 +420,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Typography>
         {(() => {
           const score = calculateOverallScore(personalQuarterlyObjectives);
-          const ratingScale = getRatingScaleInfo(score);
+          const ratingScore = getRatingScoreInfo(score);
 
-          if (!score || !ratingScale) {
+          if (!score || !ratingScore) {
             return (
               <Typography variant="body2" sx={{
                 color: '#DC2626',
@@ -436,17 +439,84 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
           return (
             <Typography variant="body2" sx={{
-              color: ratingScale.color,
+              color: ratingScore.color,
               fontWeight: 600,
               backgroundColor: '#E5E7EB',
               px: 2,
               py: 0.5,
               borderRadius: 1
             }}>
-              {`${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`}
+              {`${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`}
             </Typography>
           );
         })()}
+      </Box>
+
+      <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
+        <Box sx={{ mt: 4, mb: 2 }}>
+          <Typography variant="h6">
+            Personal Development Courses
+          </Typography>
+        </Box>
+
+        <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB', mb: 3 }}>
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <StyledHeaderCell>Course Name</StyledHeaderCell>
+                  <StyledHeaderCell>Description</StyledHeaderCell>
+                  <StyledHeaderCell align="center">Status</StyledHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.map((course, index) => (
+                  <TableRow key={course._id}>
+                    <StyledTableCell>
+                      {typeof course === 'string' ? (
+                        <Skeleton variant="text" width={200} />
+                      ) : (
+                        course.name
+                      )}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {typeof course === 'string' ? (
+                        <Skeleton variant="text" width={300} />
+                      ) : (
+                        course.description
+                      )}
+                    </StyledTableCell>
+                    <StyledTableCell align="center">
+                      {typeof course === 'string' ? (
+                        <Skeleton variant="text" width={100} />
+                      ) : (
+                        <Chip
+                          label={course.status}
+                          size="small"
+                          sx={{
+                            backgroundColor: course.status === 'active' ? '#D1FAE5' : '#FEE2E2',
+                            color: course.status === 'active' ? '#059669' : '#DC2626',
+                            fontWeight: 500
+                          }}
+                        />
+                      )}
+                    </StyledTableCell>
+                  </TableRow>
+                ))}
+                {(!personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment ||
+                  personalPerformance.quarterlyTargets.find(qt => qt.quarter === quarter)?.personalDevelopment.length === 0) && (
+                    <TableRow>
+                      <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                        <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                          No personal development courses added
+                        </Typography>
+                      </StyledTableCell>
+                    </TableRow>
+                  )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
       </Box>
 
       {evidenceModalData && (

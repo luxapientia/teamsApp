@@ -3,6 +3,7 @@ export * from './page';
 export * from './personalPerformance';
 export * from './notification';
 export * from './pdf'
+export * from './course';
 
 export type BaseEntity = {
   _id: string;
@@ -54,5 +55,6 @@ export interface UserProfile {
   status?: 'active' | 'inactive';
   tenantId?: string;
   organizationName?: string;
+  isDevMember?: boolean;
 } 
 

@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
-import User from '../models/User';
 import { dUser } from '../types/user';
-import { UserRole } from '../types/user';
 export interface AuthenticatedRequest extends Request {
   user?: dUser;
 }
@@ -22,24 +20,23 @@ export const authenticateToken = async (
   }
 
   
-  const user = authService.verifyToken(token);
+  const user = await authService.verifyToken(token);
   if (!user) {
     console.log('Token verification failed');
     res.status(401).json({ error: 'Invalid token' });
     return;
   }
-  const result = await User.findOne({ email: user.email }) as dUser;
   const duser = {
-    MicrosoftId: user.id, // Microsoft ID
-    name: user.displayName,
+    _id: user._id,
+    MicrosoftId: user.MicrosoftId, // Microsoft ID
+    name: user.name,
     email: user.email,
     role: user.role,
     tenantId: user.tenantId,
-    jobTitle: user.jobTitle
+    jobTitle: user.jobTitle,
+    teamId: user.teamId,
+    isDevMember: user.isDevMember
   }
-  req.user = result ? result : {
-    ...duser,
-    role: duser.role as UserRole
-  };
+  req.user = duser;
   next();
 }; 

@@ -4,6 +4,7 @@ import { authenticateToken } from '../middleware/auth';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { roleService } from '../services/roleService';
 import { UserRole } from '../types/user';
+import { UserProfile } from '../types';
 
 const router = express.Router();
 
@@ -49,17 +50,35 @@ router.post('/callback', async (req: Request, res: Response) => {
               }
             );
           }
-        }
 
-        const appToken = await authService.createAppToken(userProfile);
+          // Get the latest user data from database
+          const dbUser = await roleService.getUser(userProfile.id);
+          if (!dbUser) {
+            throw new Error('Failed to create or retrieve user from database');
+          }
+
+          // Create token using database user data
+          const tokenUserProfile: UserProfile = {
+            id: dbUser.MicrosoftId,
+            email: dbUser.email,
+            displayName: dbUser.name,
+            jobTitle: dbUser.jobTitle || '',
+            department: '',
+            organization: '',
+            role: dbUser.role,
+            status: 'active',
+            tenantId: dbUser.tenantId,
+            organizationName: '',
+            isDevMember: dbUser.isDevMember
+          };
+          const appToken = await authService.createAppToken(tokenUserProfile);
         console.log('App token created successfully');
         
-        const response = { 
+          return res.json({ 
           token: appToken, 
-          user: userProfile 
-        };
-        
-        return res.json(response);
+            user: tokenUserProfile 
+          });
+        }
       } catch (error: any) {
         // Check if this is a consent required error
         if (error.consentRequired && error.tenantId) {

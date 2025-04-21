@@ -15,4 +15,5 @@ export interface dUser {
   tenantId?: string;
   teamId?: ObjectId;
   jobTitle?: string;
+  isDevMember?: boolean;
 }

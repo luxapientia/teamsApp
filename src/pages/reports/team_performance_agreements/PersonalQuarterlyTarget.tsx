@@ -23,6 +23,7 @@ import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTab
 import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget } from '@/types/personalPerformance';
 import RatingScalesModal from '../../../components/RatingScalesModal';
 import { api } from '../../../services/api';
+import { useAuth } from '../../../contexts/AuthContext';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -41,6 +42,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     userId,
     teamId
 }) => {
+    const { user } = useAuth();
     const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
     const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
     const [personalPerformance, setPersonalPerformance] = React.useState<PersonalPerformance | null>(null);
@@ -108,7 +110,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignItems: 'center'
             }}>
                 <Typography variant="h6">
-                    {`${annualTarget.name}, ${quarter}`}
+                    {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
                 </Typography>
             </Box>
 

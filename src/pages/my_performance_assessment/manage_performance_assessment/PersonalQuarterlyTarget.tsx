@@ -23,6 +23,7 @@ import { api } from '../../../services/api';
 import { useToast } from '../../../contexts/ToastContext';
 import EvidenceModal from './EvidenceModal';
 import SendBackModal from '../../../components/Modal/SendBackModal';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
@@ -37,6 +38,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     onBack,
     userId,
 }) => {
+    const { user } = useAuth();
     const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
     const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
     const [personalPerformance, setPersonalPerformance] = React.useState<PersonalPerformance | null>(null);
@@ -121,7 +123,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return Math.round(totalWeightedScore / totalWeight);
     };
 
-    // Add function to get rating scale info
+    // Add function to get rating score info
     const getRatingScaleInfo = (score: number | null) => {
         if (!score || !annualTarget) return null;
 
@@ -165,7 +167,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignItems: 'center'
             }}>
                 <Typography variant="h6">
-                    {`${annualTarget.name}, ${quarter}`}
+                    {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
                 </Typography>
             </Box>
 
@@ -294,7 +296,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
-                                <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
+                                <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
                             </TableRow>
                         </TableHead>

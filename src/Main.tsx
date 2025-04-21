@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import Layout from './layouts/Layout';
 import './styles/globals.css';
 import AnnualCorporateScorecard from './pages/scorecards';
-import Teams from './pages/teams';
 import { ManagePage } from './pages/manage';
-import { GridRegular, Alert24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular, Home24Regular } from '@fluentui/react-icons';
+import { GridRegular, Alert24Regular, LearningApp24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular, Home24Regular } from '@fluentui/react-icons';
 import { useAuth } from './contexts/AuthContext';
 import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
@@ -19,6 +18,8 @@ import { SocketEvent } from './types/socket';
 import { fetchTeams, fetchTeamOwner } from './store/slices/teamsSlice';
 import { api } from './services/api';
 import Dashboard from './pages/dashboard';
+import EmployeeDevPlan from './pages/employee_dev_plan';
+import TeamsPage from './pages/teams';
 const iconSize = 24;
 
 function Main() {
@@ -51,14 +52,21 @@ function Main() {
 
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
+  const [isDevMember, setIsDevMember] = useState(false);
   const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
-  const [isTeamOwner, setisTeamOwner] = useState(false);
 
+  // Separate effect for isDevMember
+  useEffect(() => {
+    if (user) {
+      setIsDevMember(!!user.isDevMember);
+    }
+  }, [user]);
+
+  // Separate effect for team owner status
   useEffect(() => {
     const fetchTeamOwnerFromDB = async () => {
       if (user?.id) {
         try {
-          const response = await api.get(`/users/${user.id}`);
           const teamInfo = await api.get(`/users/is_team_owner/${user.id}`);
           const result = teamInfo.data.data;
           setTeamOwnerStatus(result.isTeamOwner);
@@ -69,11 +77,11 @@ function Main() {
       }
     };
     fetchTeamOwnerFromDB();
-  }, [user?.id, dispatch]);
+  }, [user?.id]);
 
   return (
     <Layout selectedTabChanger={selectedTabChanger}>
-      {(TeamOwnerStatus || isAppOwner || isSuperUser) &&<Dashboard
+      {(TeamOwnerStatus || isAppOwner || isSuperUser) && <Dashboard
         title="Dashboard"
         icon={<Home24Regular fontSize={iconSize} />}
         tabs={['Dashboard']}
@@ -88,13 +96,13 @@ function Main() {
       <MyPerformanceAssessment
         title="My Performance Assessment"
         icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-        tabs={TeamOwnerStatus ? 
-          (isAppOwner || isSuperUser ? 
-            ['My Assessments', 'My Performances', 'Team Performances', 'Manage Performance Assessment'] : 
+        tabs={TeamOwnerStatus ?
+          (isAppOwner || isSuperUser ?
+            ['My Assessments', 'My Performances', 'Team Performances', 'Manage Performance Assessment'] :
             ['My Assessments', 'My Performances', 'Team Performances']
-          ) : 
-          (isAppOwner || isSuperUser ? 
-            ['My Assessments', 'My Performances', 'Manage Performance Assessment'] : 
+          ) :
+          (isAppOwner || isSuperUser ?
+            ['My Assessments', 'My Performances', 'Manage Performance Assessment'] :
             ['My Assessments', 'My Performances']
           )}
         selectedTab={selectedTab}
@@ -102,23 +110,35 @@ function Main() {
       <MyPerformanceAgreement
         title="My Performance Agreement"
         icon={<Handshake24Regular fontSize={iconSize} />}
-        tabs={isAppOwner || isSuperUser ? 
-          ['My Performance Agreements', 'Manage Performance Agreement'] : 
+        tabs={isAppOwner || isSuperUser ?
+          ['My Performance Agreements', 'Manage Performance Agreement'] :
           ['My Performance Agreements']}
         selectedTab={selectedTab}
       />
+      {<EmployeeDevPlan
+        title="Employee Development Plan"
+        icon={<LearningApp24Regular fontSize={iconSize} />}
+        tabs={(isSuperUser || isAppOwner) ?
+          (isDevMember ?
+            ['My Training Dashboard', 'Employees Training', 'Enable Employees Development', 'Annual Organization Development Plans', 'Training & Courses Management', 'Organization Development Team'] :
+            ['My Training Dashboard', 'Organization Development Team']) :
+          (isDevMember ?
+            ['My Training Dashboard', 'Employees Training', 'Enable Employees Development', 'Annual Organization Development Plans', 'Training & Courses Management'] :
+            ['My Training Dashboard'])}
+        selectedTab={selectedTab}
+      />}
       {(isAppOwner || isSuperUser) && (
         <OrganizationPerformance
-        title="Organization Performance"
-        icon={<DataTrending24Regular fontSize={iconSize} />}
-        tabs={['Performance Evaluations', 'Organization Performance']}
-        selectedTab={selectedTab}
-      />)}
+          title="Organization Performance"
+          icon={<DataTrending24Regular fontSize={iconSize} />}
+          tabs={['Performance Evaluations', 'Organization Performance']}
+          selectedTab={selectedTab}
+        />)}
       {(isAppOwner || isSuperUser) && (
-      <AnnualCorporateScorecard
-        title="Annual Corporate Scorecard"
-        icon={<Globe24Regular fontSize={iconSize} />}
-        tabs={['Quarterly Corporate Scorecards', 'Annual Corporate Scorecards']}
+        <AnnualCorporateScorecard
+          title="Annual Corporate Scorecard"
+          icon={<Globe24Regular fontSize={iconSize} />}
+          tabs={['Quarterly Corporate Scorecards', 'Annual Corporate Scorecards']}
           selectedTab={selectedTab}
         />
       )}
@@ -131,10 +151,10 @@ function Main() {
         />
       )}
       {(isAppOwner || isSuperUser) && (
-        <Teams
+        <TeamsPage
           title='Teams'
           icon={<PeopleTeam24Regular fontSize={iconSize} />}
-          tabs={['Teams']}
+          tabs={['Teams', 'Super User']}
           selectedTab={selectedTab}
         />
       )}

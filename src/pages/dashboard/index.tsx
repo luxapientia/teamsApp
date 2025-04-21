@@ -511,7 +511,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   <TableCell>
                     <Typography sx={{ color: scale.color, fontWeight: 500 }}>
                       {scale.name} ({scale.min}-{scale.max})
-                    </Typography>
+        </Typography>
                   </TableCell>
                   <TableCell>{count}</TableCell>
                   <TableCell>{percentage}%</TableCell>
@@ -762,12 +762,12 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   onClick={() => setShowPendingTargetsTable(!showPendingTargetsTable)}
                   sx={{ cursor: 'pointer' }}
                 >
-                  <HalfDoughnutCard
+          <HalfDoughnutCard
                     title={viewMode === 'team' ? `${userOwnedTeam} Pending Agreements` : "Pending Agreements - Company Wide"}
                     chartData={chartData(pendingTargetsData)}
                     metrics={pendingTargetsData.metrics}
-                  />
-                </Box>
+          />
+        </Box>
                 {showPendingTargetsTable && (
                   <Box sx={{
                     overflowX: 'auto',
@@ -794,7 +794,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   onClick={() => setShowPendingAssessmentsTable(!showPendingAssessmentsTable)}
                   sx={{ cursor: 'pointer' }}
                 >
-                  <HalfDoughnutCard
+          <HalfDoughnutCard
                     title={viewMode === 'team' ? `${userOwnedTeam} Pending Assessments` : "Pending Assessments - Company Wide"}
                     chartData={chartData(pendingAssessmentsData)}
                     metrics={pendingAssessmentsData.metrics}

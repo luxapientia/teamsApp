@@ -40,7 +40,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
   }, [dispatch]);
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       {showTable && (
         <TableContainer component={Paper} variant="outlined">
           <Table>

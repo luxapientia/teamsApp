@@ -75,6 +75,45 @@ export class SuperUserService {
   async getByEmail(email: string): Promise<SuperUser | null> {
     return SuperUserModel.findOne({ email }).populate('companyId', 'name');
   }
+
+  async getByTenantId(tenantId: string): Promise<SuperUser[]> {
+    return SuperUserModel.find()
+      .populate({
+        path: 'companyId',
+        match: { tenantId: tenantId },
+        select: 'name tenantId'
+      })
+      .then(superUsers => superUsers.filter(user => user.companyId))
+      .then(superUsers => superUsers.sort((a, b) => {
+        if (a.firstName < b.firstName) return -1;
+        if (a.firstName > b.firstName) return 1;
+        if (a.lastName < b.lastName) return -1;
+        if (a.lastName > b.lastName) return 1;
+        return 0;
+      }));
+  }
+
+  async deleteByEmail(email: string): Promise<SuperUser | null> {
+    const superUser = await SuperUserModel.findOne({ email });
+    
+    if (!superUser) {
+      return null;
+    }
+
+    // Check if this is the only SuperUser record with this email
+    const otherSuperUserRecords = await SuperUserModel.findOne({ 
+      email: email,
+      _id: { $ne: superUser._id } 
+    });
+    
+    // If no other records exist with this email, downgrade the role to USER
+    if (!otherSuperUserRecords) {
+      await this.syncUserRole(email, UserRole.USER);
+    }
+    
+    await SuperUserModel.findByIdAndDelete(superUser._id);
+    return superUser;
+  }
   
   // Helper method to sync user roles
   private async syncUserRole(email: string, role: UserRole): Promise<void> {

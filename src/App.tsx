@@ -16,6 +16,7 @@ const ConsentPage = lazy(() => import('./components/ConsentPage').then(module =>
 const AuthCallback = lazy(() => import('./pages/auth/AuthCallback').then(module => ({ default: module.AuthCallback })));
 const Login = lazy(() => import('./pages/auth/Login').then(module => ({ default: module.Login })));
 const Unauthorized = lazy(() => import('./pages/auth/Unauthorized').then(module => ({ default: module.Unauthorized })));
+const LogoutPage = lazy(() => import('./pages/logout/index').then(module => ({ default: module.default })));
 
 // Loading component
 const LoadingSpinner = () => (
@@ -50,6 +51,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
               <Route path="/license-error" element={<LicenseError />} />
+              <Route path="/logout" element={<LogoutPage />} />
 
               {/* Protected routes - Main component remains non-lazy */}
               <Route

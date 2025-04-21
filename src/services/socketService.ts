@@ -35,7 +35,6 @@ class SocketService {
 
     this.socket.on('connect', () => {
       if (authService.isAuthenticated()) {
-        console.log('Socket connected successfully------');
         this.reconnectAttempts = 0;
         if (this.reconnectInterval) {
           clearInterval(this.reconnectInterval);

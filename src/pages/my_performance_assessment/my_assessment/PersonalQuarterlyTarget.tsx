@@ -19,6 +19,7 @@ import {
   styled,
   Chip,
   Alert,
+  Switch,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '../../../types/annualCorporateScorecard';
@@ -26,7 +27,7 @@ import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTab
 import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, PdfType } from '../../../types';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
+import { fetchPersonalPerformances, updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { RootState } from '../../../store';
 import { api } from '../../../services/api';
 import KPIModal from './KPIModal';
@@ -38,6 +39,11 @@ import { ExportButton } from '../../../components/Buttons';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { exportPdf } from '../../../utils/exportPdf';
+
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import SelectCourseModal from './SelectCourseModal';
+import { Course } from '../../../types/course';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -75,9 +81,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [isApproved, setIsApproved] = useState(false);
   const [status, setStatus] = useState<AssessmentStatus | null>(null);
+  const [isNotApplicable, setIsNotApplicable] = useState(false);
   const tableRef = useRef();
   const { user } = useAuth();
+  const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
 
+  const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+  const annualQuarterlyTarget = annualTarget?.content.quarterlyTarget.quarterlyTargets.find(
+    target => target.quarter === quarter
+  );
+  const isDevelopmentEnabled = annualQuarterlyTarget?.isDevelopmentPlanEnabled;
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -158,8 +171,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     return Math.round(totalWeightedScore / totalWeight);
   };
 
-  // Add function to get rating scale info
-  const getRatingScaleInfo = (score: number | null) => {
+  // Add function to get rating score info
+  const getRatingScoreInfo = (score: number | null) => {
     if (!score || !annualTarget) return null;
 
     return annualTarget.content.ratingScales.find(
@@ -299,8 +312,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && quarterlyTarget?.agreementStatus === 'Approved' && areAllKPIsEvaluated();
   };
 
-
-
   const handleSave = async (newKPI: QuarterlyTargetKPI) => {
     if (selectedKPI) {
       const newPersonalQuarterlyObjectives = personalQuarterlyObjectives.map(objective => {
@@ -353,13 +364,93 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const handleExportPDF = async () => {
     if (personalQuarterlyObjectives.length > 0) {
       const score = calculateOverallScore(personalQuarterlyObjectives);
-      const ratingScale = getRatingScaleInfo(score);
-      const title = `${user.displayName} Performance Assessment - ${annualTarget?.name} ${quarter}`;
+      const ratingScore = getRatingScoreInfo(score);
+      const title = `${user.name} Performance Assessment - ${annualTarget?.name} ${quarter}`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
-        { score: `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`, color: ratingScale.color });
+        { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
     }
   }
 
+  const handleNotApplicableToggle = async () => {
+    const newValue = !isNotApplicable;
+    setIsNotApplicable(newValue);
+
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          isPersonalDevelopmentNotApplicable: newValue
+        }
+      }
+      return target;
+    });
+
+    await dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
+  };
+
+  const handleAddPersonalDevelopment = async (selectedCourses: Course[]) => {
+    console.log(selectedCourses, 'selectedCourses');
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          personalDevelopment: [...target.personalDevelopment, ...selectedCourses].filter((course, index, self) =>
+            index === self.findIndex((c) => c._id === course._id)
+          )
+        }
+      }
+      return target;
+    });
+
+    const updatedPersonalPerformance = await dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
+
+    console.log(updatedPersonalPerformance, 'updatedPersonalPerformance');
+
+    await dispatch(fetchPersonalPerformances({
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarter: quarter
+    }));
+
+    console.log(personalPerformance, 'new personalPerformance');
+  };
+
+  const handleDeleteCourse = async (courseToDelete: Course) => {
+    console.log(courseToDelete, 'courseToDelete');
+
+    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+      if (target.quarter === quarter) {
+        return {
+          ...target,
+          personalDevelopment: target.personalDevelopment.filter(course => course._id !== courseToDelete._id)
+        }
+      }
+      return target;
+    });
+
+    const updatedPersonalPerformance = await dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
+
+    console.log(updatedPersonalPerformance, 'deleted course');
+
+    dispatch(fetchPersonalPerformances({
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarter: quarter
+    }));
+  };
   return (
     <Box>
       <Box sx={{
@@ -393,7 +484,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
       <Typography variant="h6">
-        {`${annualTarget.name}, ${quarter}`}
+        {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
       </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl
@@ -544,7 +635,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Alert>
       )}
 
-      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+      {/* Performance Assessment Block */}
+      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB', mb: 4 }}>
+        <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
+          Employee Performance Assessment
+        </Typography>
         <TableContainer>
           <Table ref={tableRef}>
             <TableHead>
@@ -557,7 +652,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
-                <StyledHeaderCell align="center">Performance Rating Scale</StyledHeaderCell>
+                <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Evidence</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Evaluate</StyledHeaderCell>
               </TableRow>
@@ -712,15 +807,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </TableContainer>
       </Paper>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1, mt: 2, mb: 4 }}>
         <Typography variant="body2" sx={{ color: '#6B7280', fontWeight: 500 }}>
           Overall Rating Score =
         </Typography>
         {(() => {
           const score = calculateOverallScore(personalQuarterlyObjectives);
-          const ratingScale = getRatingScaleInfo(score);
+          const ratingScore = getRatingScoreInfo(score);
 
-          if (!score || !ratingScale) {
+          if (!score || !ratingScore) {
             return (
               <Typography variant="body2" sx={{
                 color: '#DC2626',
@@ -737,19 +832,101 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
           return (
             <Typography variant="body2" sx={{
-              color: ratingScale.color,
+              color: ratingScore.color,
               fontWeight: 600,
               backgroundColor: '#E5E7EB',
               px: 2,
               py: 0.5,
               borderRadius: 1
             }}>
-              {`${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`}
+              {`${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`}
             </Typography>
           );
         })()}
       </Box>
 
+      {/* Personal Development Block */}
+      {isDevelopmentEnabled && (
+        <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+          <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
+            Employee Personal Development Plan
+          </Typography>
+          <Box sx={{ p: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: '#0078D4',
+                  '&:hover': {
+                    backgroundColor: '#106EBE'
+                  },
+                  textTransform: 'none'
+                }}
+                onClick={() => setIsSelectCourseModalOpen(true)}
+                disabled={isNotApplicable || !canEdit()}
+              >
+                Add Personal Development
+              </Button>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Switch
+                  checked={isNotApplicable}
+                  onChange={handleNotApplicableToggle}
+                  size="small"
+                  disabled={!canEdit()}
+                />
+                <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                  Not Applicable
+                </Typography>
+              </Box>
+            </Box>
+
+            {!isNotApplicable && (
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <StyledHeaderCell>Course Name</StyledHeaderCell>
+                      <StyledHeaderCell>Description</StyledHeaderCell>
+                      <StyledHeaderCell align="center">Actions</StyledHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)
+                      ?.personalDevelopment?.map((course: any, index) => {
+                        return (
+                          <TableRow key={course._id}>
+                            <StyledTableCell>{course.name}</StyledTableCell>
+                            <StyledTableCell>{course.description}</StyledTableCell>
+                            <StyledTableCell align="center">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeleteCourse(course)}
+                                sx={{ color: '#6B7280', ml: 1 }}
+                                disabled={!canEdit()}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </StyledTableCell>
+                          </TableRow>
+                        );
+                      })}
+                    {(!personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.personalDevelopment ||
+                      personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.personalDevelopment?.length === 0) && (
+                        <TableRow>
+                          <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
+                            <Typography variant="body2" sx={{ color: '#6B7280' }}>
+                              No personal development courses added
+                            </Typography>
+                          </StyledTableCell>
+                        </TableRow>
+                      )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Box>
+        </Paper>
+      )}
       {selectedKPI && (
         <KPIModal
           open={!!selectedKPI}
@@ -769,6 +946,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           attachments={evidenceModalData.attachments}
         />
       )}
+
+      <SelectCourseModal
+        open={isSelectCourseModalOpen}
+        onClose={() => setIsSelectCourseModalOpen(false)}
+        onSelect={handleAddPersonalDevelopment}
+        tenantId={user?.tenantId || ''}
+      />
     </Box >
   );
 };

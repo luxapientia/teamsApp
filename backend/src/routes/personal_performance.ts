@@ -183,8 +183,14 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
 
 router.get('/personal-performance', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    console.log(req.user, 'req.user')
     const { userId, annualTargetId } = req.query;
-    const personalPerformance = await PersonalPerformance.findOne({ userId, annualTargetId }) as PersonalPerformanceDocument;
+    const personalPerformance = await PersonalPerformance.findOne({ userId, annualTargetId })
+      .populate({
+        path: 'quarterlyTargets.personalDevelopment',
+        select: 'name description status',
+        model: 'Course'
+      }) as PersonalPerformanceDocument;
     return res.json(personalPerformance);
   } catch (error) {
     console.error('Personal performance error:', error);
@@ -196,21 +202,41 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
   try {
     const annualTargetId = req.query.annualTargetId as string;
     const quarter = req.query.quarter as string;
-    const personalPerformances = await PersonalPerformance.find({ annualTargetId, userId: req.user?._id }) as PersonalPerformanceDocument[];
+    
+    // Get the user from the database to ensure we have the correct _id
+    const dbUser = await User.findOne({ MicrosoftId: req.user?.MicrosoftId });
+    if (!dbUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-    if(personalPerformances.length === 0) {
+    // Create query object based on available parameters
+    const queryParams: any = { userId: dbUser._id };
+    if (annualTargetId) {
+      queryParams.annualTargetId = annualTargetId;
+    }
+
+    const personalPerformances = await PersonalPerformance.find(queryParams)
+      .populate({
+        path: 'quarterlyTargets.personalDevelopment',
+        select: 'name description status',
+        model: 'Course'
+      }) as PersonalPerformanceDocument[];
+
+    if(personalPerformances.length === 0 && annualTargetId) {
       const newPersonalPerformance = await PersonalPerformance.create({
         annualTargetId,
         quarter,
-        userId: req.user?._id,
-        teamId: req.user?.teamId || annualTargetId,
-        tenantId: req.user?.tenantId,
+        userId: dbUser._id,
+        teamId: dbUser.teamId || annualTargetId,
+        tenantId: dbUser.tenantId,
         quarterlyTargets: ['Q1', 'Q2', 'Q3', 'Q4'].map(quarter => {
           return {
             quarter,
             agreementStatus: AgreementStatus.Draft,
             assessmentStatus: AssessmentStatus.Draft,
             isEditable: quarter === 'Q1' ? true : false,
+            isPersonalDevelopmentNotApplicable: false,
+            personalDevelopment: [],
             supervisorId: '',
             objectives: []
           }
@@ -219,7 +245,10 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
       personalPerformances.push(newPersonalPerformance);
     }
 
-    return res.json(personalPerformances);
+    return res.json({
+      status: 'success',
+      data: personalPerformances
+    });
   } catch (error) {
     console.error('Annual targets error:', error);
     return res.status(500).json({ error: 'Failed to get annual targets' });
@@ -229,20 +258,49 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
 router.get('/team-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId } = req.query;
-    const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId }).populate('userId').populate('teamId') as any[];
+    console.log('Fetching team performances for annualTargetId:', annualTargetId);
+    
+    const allPersonalPerformances = await PersonalPerformance.find({ 
+      annualTargetId, 
+      tenantId: req.user?.tenantId 
+    })
+    .populate({
+      path: 'userId',
+      select: 'name email jobTitle MicrosoftId',
+      model: 'User'
+    })
+    .populate('teamId')
+    .populate('quarterlyTargets.personalDevelopment') as any[];
+
+    console.log('Raw performances:', allPersonalPerformances.map(p => ({
+      userId: p.userId,
+      teamId: p.teamId
+    })));
+    
     const isTeamOwner = true;
 
+    const teamPerformances = allPersonalPerformances
+      .filter(performance => performance.userId && (
+        performance.quarterlyTargets[0].supervisorId === req.user?._id || isTeamOwner
+      ))
+      .map(performance => ({
+        ...performance._doc,
+        fullName: performance.userId.name,
+        jobTitle: performance.userId.jobTitle,
+        email: performance.userId.email,
+        microsoftId: performance.userId.MicrosoftId,
+        team: performance.teamId?.name,
+        quarterlyTargets: performance.quarterlyTargets.map((target: any) => ({
+          ...target._doc,
+          personalDevelopment: target.personalDevelopment || []
+        }))
+      }));
 
-    const teamPerformances: any[] = [];
-    allPersonalPerformances.forEach(performance => {
-      if(performance.quarterlyTargets[0].supervisorId === req.user?._id) {
-        teamPerformances.push({...performance._doc, fullName: performance.userId.name, jobTitle: performance.userId.jobTitle, team: performance.teamId?.name});
-      } else {
-        if(isTeamOwner) {
-          teamPerformances.push({...performance._doc, fullName: performance.userId.name, jobTitle: performance.userId.jobTitle, team: performance.teamId?.name});
-        }
-      }
-    });
+    console.log('Processed performances:', teamPerformances.map(p => ({
+      fullName: p.fullName,
+      email: p.email,
+      microsoftId: p.microsoftId
+    })));
 
     return res.json(teamPerformances);
   } catch (error) {
@@ -256,7 +314,20 @@ router.put('/update-personal-performance/:id', authenticateToken, async (req: Au
     const { id } = req.params;
     const { personalPerformance } = req.body;
 
-    const updatedPersonalPerformance = await PersonalPerformance.findByIdAndUpdate(id, personalPerformance, { new: true });
+    const updatedPersonalPerformance = await PersonalPerformance.findByIdAndUpdate(
+      id, 
+      personalPerformance, 
+      { new: true }
+    ).populate({
+      path: 'quarterlyTargets.personalDevelopment',
+      select: 'name description status',
+      model: 'Course'
+    });
+
+    if (!updatedPersonalPerformance) {
+      return res.status(404).json({ error: 'Personal performance not found' });
+    }
+
     return res.json(updatedPersonalPerformance);
   } catch (error) {
     console.error('Update personal performance error:', error);
@@ -265,7 +336,6 @@ router.put('/update-personal-performance/:id', authenticateToken, async (req: Au
 });
 
 router.post('/upload', authenticateToken, upload.single('file'), async (req: AuthenticatedRequest, res: Response) => {
-  console.log(req.file, '-------------------------');
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });

@@ -4,7 +4,7 @@ import { config } from '../config';
 import * as dotenv from 'dotenv';
 import { UserProfile } from '../types';
 import { roleService } from './roleService';
-import { UserRole } from '../types/user';
+import { dUser, UserRole } from '../types/user';
 
 dotenv.config();
 
@@ -111,9 +111,31 @@ export class AuthService {
           );
         }
       }
-      const token = await this.createAppToken(userProfile);
+      
+      // Get the latest user data from database
+      const dbUser = await roleService.getUser(userProfile.id);
+      if (!dbUser) {
+        throw new Error('Failed to create or retrieve user from database');
+      }
 
-      return { token, user: userProfile };
+      // Create token using database user data
+      const tokenUserProfile: UserProfile = {
+        id: dbUser.MicrosoftId,
+        email: dbUser.email,
+        displayName: dbUser.name,
+        jobTitle: dbUser.jobTitle || '',
+        department: '',
+        organization: '',
+        role: dbUser.role,
+        status: 'active',
+        tenantId: dbUser.tenantId,
+        organizationName: '',
+        isDevMember: dbUser.isDevMember
+      };
+
+      const token = await this.createAppToken(tokenUserProfile);
+
+      return { token, user: tokenUserProfile };
     } catch (error: any) {
       console.error('Authentication error details:', {
         message: error.message,
@@ -124,7 +146,8 @@ export class AuthService {
     }
   }
 
-  verifyToken(token: string): UserProfile | null {
+  // verifyToken(token: string): UserProfile | null {
+  async verifyToken(token: string): Promise<Promise<dUser | null> | null> {
     try {
       // Verify the JWT token using the secret
       const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
@@ -135,10 +158,12 @@ export class AuthService {
         return null;
       }
       
+      const dbUser = await roleService.getUser(decoded.id);
       // Check if token has expired - not needed as jwt.verify already checks this
       // but we could add custom expiration logic here if needed
-      
-      return decoded;
+
+      // return decoded;
+      return dbUser;
     } catch (error) {
       console.error('Token verification failed:', error);
       return null;

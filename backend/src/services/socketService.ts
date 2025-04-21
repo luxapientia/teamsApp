@@ -27,13 +27,13 @@ class SocketService {
       console.log('Client connected:', socket.id);
 
       // Handle user authentication
-      socket.on('authenticate', (token: string) => {
-        const decoded = authService.verifyToken(token);
-        if (!decoded) {
+      socket.on('authenticate', async (token: string) => {
+        const dbUser = await authService.verifyToken(token);
+        if (!dbUser) {
           socket.disconnect();
           return;
         }
-        const microsoftId = decoded.id;
+        const microsoftId = dbUser.MicrosoftId;
         console.log('User authenticated:', microsoftId);
         this.handleUserConnection(socket, microsoftId);
       });
