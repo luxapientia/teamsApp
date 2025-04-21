@@ -91,6 +91,8 @@ export class TrainingService {
       description?: string;
       status?: TrainingStatus;
       dateRequested: Date;
+      annualTargetId: string;
+      quarter: string;
     }>
   ): Promise<ITraining[]> {
     const trainings = employees.map(employee => ({
@@ -103,17 +105,28 @@ export class TrainingService {
       trainingRequested: employee.trainingRequested || '',
       description: employee.description || '',
       status: employee.status || TrainingStatus.PLANNED,
-      dateRequested: employee.dateRequested
+      dateRequested: employee.dateRequested,
+      annualTargetId: new Types.ObjectId(employee.annualTargetId),
+      quarter: employee.quarter
     }));
 
     const docs = await Training.insertMany(trainings);
     return docs.map(doc => doc.toObject());
   }
 
-  async removeEmployeeFromPlan(planId: string, email: string): Promise<boolean> {
+  async removeEmployeeFromPlan(
+    planId: string, 
+    email: string,
+    trainingRequested: string,
+    annualTargetId: string,
+    quarter: string
+  ): Promise<boolean> {
     const result = await Training.deleteOne({
       planId: new Types.ObjectId(planId),
-      email
+      email,
+      trainingRequested,
+      annualTargetId: new Types.ObjectId(annualTargetId),
+      quarter
     });
     return result.deletedCount > 0;
   }
@@ -122,13 +135,17 @@ export class TrainingService {
     planId: string,
     email: string,
     trainingRequested: string,
+    annualTargetId: string,
+    quarter: string,
     status: TrainingStatus
   ): Promise<ITraining | null> {
     return Training.findOneAndUpdate(
       { 
         planId: new Types.ObjectId(planId), 
         email,
-        trainingRequested
+        trainingRequested,
+        annualTargetId: new Types.ObjectId(annualTargetId),
+        quarter
       },
       { $set: { status } },
       { new: true }
@@ -153,5 +170,22 @@ export class TrainingService {
 
   async getTrainingsByEmail(email: string): Promise<ITraining[]> {
     return Training.find({ email }).sort({ createdAt: -1 });
+  }
+
+  async getTrainingsByAnnualTarget(annualTargetId: string): Promise<ITraining[]> {
+    if (!Types.ObjectId.isValid(annualTargetId)) {
+      throw new Error('Invalid annual target ID');
+    }
+    return Training.find({ annualTargetId: new Types.ObjectId(annualTargetId) }).sort({ createdAt: -1 });
+  }
+
+  async getTrainingsByQuarter(annualTargetId: string, quarter: string): Promise<ITraining[]> {
+    if (!Types.ObjectId.isValid(annualTargetId)) {
+      throw new Error('Invalid annual target ID');
+    }
+    return Training.find({
+      annualTargetId: new Types.ObjectId(annualTargetId),
+      quarter
+    }).sort({ createdAt: -1 });
   }
 } 

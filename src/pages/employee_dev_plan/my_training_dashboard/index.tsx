@@ -12,6 +12,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { TrainingStatus } from '../annual_org_dev_plan/plan_view';
 import { AssessmentStatus } from '../../../types/personalPerformance';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 
 const MyTrainingDashboard: React.FC = () => {
   const [requestedTrainings, setRequestedTrainings] = useState<Training[]>([]);
@@ -20,10 +22,12 @@ const MyTrainingDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { showToast } = useToast();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
+    dispatch(fetchAnnualTargets());
     fetchAllTrainings();
-  }, []);
+  }, [dispatch]);
 
   const fetchRequestedTrainings = async (existingTrainings: Training[]) => {
     try {
@@ -49,14 +53,19 @@ const MyTrainingDashboard: React.FC = () => {
                     date: new Date(performance.updatedAt).toLocaleDateString('en-US', { 
                       day: '2-digit',
                       month: 'short'
-                    })
+                    }),
+                    annualTargetId: performance.annualTargetId,
+                    quarter: target.quarter
                   }))
                   .filter(course => 
-                    !existingTrainings.some(training => training.name === course.name)
+                    !existingTrainings.some(training => 
+                      training.name === course.name && 
+                      training.quarter === course.quarter && 
+                      training.annualTargetId === course.annualTargetId
+                    )
                   )
               )
           );
-
         setRequestedTrainings(approvedCourses);
       }
     } catch (error) {
@@ -70,13 +79,14 @@ const MyTrainingDashboard: React.FC = () => {
       const response = await api.get(`/training/user/${user?._id}`);
       if (response.data.status === 'success') {
         const trainings = response.data.data.trainings;
-        
         const planned = trainings
           .filter((training: any) => training.status === TrainingStatus.PLANNED)
           .map((training: any) => ({
             id: training._id,
             name: training.trainingRequested,
             description: training.description || 'No description available',
+            annualTargetId: training.annualTargetId,
+            quarter: training.quarter,
             date: new Date(training.dateRequested).toLocaleDateString('en-US', {
               day: '2-digit',
               month: 'short'
@@ -89,6 +99,8 @@ const MyTrainingDashboard: React.FC = () => {
             id: training._id,
             name: training.trainingRequested,
             description: training.description || 'No description available',
+            annualTargetId: training.annualTargetId,
+            quarter: training.quarter,
             date: new Date(training.dateRequested).toLocaleDateString('en-US', {
               day: '2-digit',
               month: 'short'
