@@ -37,6 +37,7 @@ import {
   updateEmployeeStatus, 
   removeEmployee 
 } from '../../../../store/slices/trainingEmployeesSlice';
+import { fetchAnnualTargets } from '../../../../store/slices/scorecardSlice';
 
 export enum TrainingStatus {
   PLANNED = 'Planned',
@@ -69,10 +70,11 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
   const dispatch = useAppDispatch();
   
   const { employees, loading, error } = useAppSelector((state: RootState) => state.trainingEmployees);
+  const { annualTargets } = useAppSelector((state: RootState) => state.scorecard);
 
-  // Initial load and refresh trigger
   useEffect(() => {
     dispatch(fetchEmployees(planId));
+    dispatch(fetchAnnualTargets());
     fetchPlanDetails();
   }, [planId, dispatch]);
 
@@ -96,9 +98,16 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     setIsAddingEmployees(false);
   };
 
-  const handleStatusChange = async (email: string, trainingRequested: string, newStatus: TrainingStatus) => {
+  const handleStatusChange = async (email: string, trainingRequested: string, annualTargetId: string, quarter: string, newStatus: TrainingStatus) => {
     try {
-      await dispatch(updateEmployeeStatus({ planId, email, trainingRequested, status: newStatus })).unwrap();
+      await dispatch(updateEmployeeStatus({ 
+        planId, 
+        email, 
+        trainingRequested, 
+        annualTargetId,
+        quarter,
+        status: newStatus 
+      })).unwrap();
       showToast('Status updated successfully', 'success');
     } catch (error) {
       console.error('Error updating status:', error);
@@ -117,9 +126,15 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     setIsAddingEmployees(false);
   };
 
-  const handleRemoveEmployee = async (email: string, trainingRequested: string) => {
+  const handleRemoveEmployee = async (email: string, trainingRequested: string, annualTargetId: string, quarter: string) => {
     try {
-      await dispatch(removeEmployee({ planId, email, trainingRequested })).unwrap();
+      await dispatch(removeEmployee({ 
+        planId, 
+        email, 
+        trainingRequested,
+        annualTargetId,
+        quarter 
+      })).unwrap();
       showToast('Employee removed successfully', 'success');
     } catch (error) {
       console.error('Error removing employee:', error);
@@ -143,7 +158,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         title,
         subtitle,
         '',
-        [0.15, 0.15, 0.15, 0.15, 0.15, 0.15, 0.1]
+        [0.12, 0.12, 0.12, 0.12, 0.12, 0.08, 0.12, 0.12, 0.08]
       );
     }
   };
@@ -155,6 +170,8 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         'Position': emp.jobTitle || '-',
         'Team': emp.team || '-',
         'Training Requested': emp.trainingRequested || '-',
+        'Annual Target': getAnnualTargetName(emp.annualTargetId),
+        'Quarter': emp.quarter || '-',
         'Date Requested': emp.dateRequested ? format(new Date(emp.dateRequested), 'MM/dd/yyyy') : '-',
         'Status': emp.status
       }));
@@ -164,13 +181,18 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
       XLSX.utils.sheet_add_json(ws, exportData, { origin: 'A4' });
 
       // Style the header
-      ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 5 } }];  // Merge cells for title
+      ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];  // Merge cells for title
       ws['!rows'] = [{ hpt: 30 }]; // Height for title row
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Training Plan');
       XLSX.writeFile(wb, `${planName}.xlsx`);
     }
+  };
+
+  const getAnnualTargetName = (targetId: string) => {
+    const target = annualTargets.find(t => t._id === targetId);
+    return target?.name || '-';
   };
 
   if (loading) {
@@ -261,6 +283,8 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
               <TableCell>Position</TableCell>
               <TableCell>Team</TableCell>
               <TableCell>Training Requested</TableCell>
+              <TableCell>Annual Target</TableCell>
+              <TableCell>Quarter</TableCell>
               <TableCell>Date Requested</TableCell>
               <TableCell>Status</TableCell>
               <TableCell align="center" className="noprint">Action</TableCell>
@@ -269,17 +293,19 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
           <TableBody>
             {employees.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={9} align="center">
                   <Typography color="textSecondary">No employees added to this plan</Typography>
                 </TableCell>
               </TableRow>
             ) : (
               employees.map((employee) => (
-                <TableRow key={`${employee.email}-${employee.trainingRequested}`}>
+                <TableRow key={`${employee.email}-${employee.trainingRequested}-${employee.annualTargetId}-${employee.quarter}`}>
                   <TableCell>{employee.displayName}</TableCell>
                   <TableCell>{employee.jobTitle || '-'}</TableCell>
                   <TableCell>{employee.team || '-'}</TableCell>
                   <TableCell>{employee.trainingRequested || '-'}</TableCell>
+                  <TableCell>{getAnnualTargetName(employee.annualTargetId)}</TableCell>
+                  <TableCell>{employee.quarter || '-'}</TableCell>
                   <TableCell>
                     {employee.dateRequested 
                       ? format(new Date(employee.dateRequested), 'MM/dd/yyyy')
@@ -293,6 +319,8 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
                         onChange={(e) => handleStatusChange(
                           employee.email,
                           employee.trainingRequested || '',
+                          employee.annualTargetId,
+                          employee.quarter,
                           e.target.value as TrainingStatus
                         )}
                         sx={{ minWidth: 120 }}
@@ -308,7 +336,12 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
                   <TableCell align="center">
                     <IconButton
                       size="small"
-                      onClick={() => handleRemoveEmployee(employee.email, employee.trainingRequested || '')}
+                      onClick={() => handleRemoveEmployee(
+                        employee.email, 
+                        employee.trainingRequested || '',
+                        employee.annualTargetId,
+                        employee.quarter
+                      )}
                       sx={{ color: '#d92d20' }}
                     >
                       <DeleteIcon fontSize="small" />

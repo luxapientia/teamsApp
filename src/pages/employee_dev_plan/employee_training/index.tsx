@@ -20,6 +20,10 @@ import { api } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { TrainingStatus } from '../annual_org_dev_plan/plan_view';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
+import { RootState } from '../../../store';
 
 interface OrgDevPlan {
   _id: string;
@@ -36,6 +40,8 @@ interface Employee {
   trainingRequested: string;
   dateRequested: Date;
   status: TrainingStatus;
+  annualTargetId: string;
+  quarter: string;
 }
 
 const EmployeesTraining: React.FC = () => {
@@ -46,10 +52,13 @@ const EmployeesTraining: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
   const { user } = useAuth();
+  const dispatch = useAppDispatch();
+  const { annualTargets } = useAppSelector((state: RootState) => state.scorecard);
 
   useEffect(() => {
     fetchPlans();
-  }, []);
+    dispatch(fetchAnnualTargets());
+  }, [dispatch]);
 
   useEffect(() => {
     if (selectedPlan) {
@@ -98,6 +107,11 @@ const EmployeesTraining: React.FC = () => {
     if (employees.length === 0) return 0;
     const completedTrainings = employees.filter(emp => emp.status === TrainingStatus.COMPLETED).length;
     return Math.round((completedTrainings / employees.length) * 100);
+  };
+
+  const getAnnualTargetName = (targetId: string) => {
+    const target = annualTargets.find(t => t._id === targetId);
+    return target?.name || '-';
   };
 
   if (loading && !selectedPlan) {
@@ -184,23 +198,27 @@ const EmployeesTraining: React.FC = () => {
                   <TableCell>Position</TableCell>
                   <TableCell>Team</TableCell>
                   <TableCell>Training/Course</TableCell>
+                  <TableCell>Annual Target</TableCell>
+                  <TableCell>Quarter</TableCell>
                   <TableCell>Completed</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {employees.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={7} align="center">
                       <Typography color="textSecondary">No employees found in this plan</Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
                   employees.map((employee) => (
-                    <TableRow key={`${employee.email}-${employee.trainingRequested}`}>
+                    <TableRow key={`${employee.email}-${employee.trainingRequested}-${employee.annualTargetId}-${employee.quarter}`}>
                       <TableCell>{employee.displayName}</TableCell>
                       <TableCell>{employee.jobTitle || '-'}</TableCell>
                       <TableCell>{employee.team || '-'}</TableCell>
                       <TableCell>{employee.trainingRequested}</TableCell>
+                      <TableCell>{getAnnualTargetName(employee.annualTargetId)}</TableCell>
+                      <TableCell>{employee.quarter || '-'}</TableCell>
                       <TableCell>{employee.status === TrainingStatus.COMPLETED ? 'Yes' : 'No'}</TableCell>
                     </TableRow>
                   ))

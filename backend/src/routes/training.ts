@@ -64,7 +64,22 @@ router.post('/:planId/employees', authenticateToken, async (req, res) => {
 router.delete('/:planId/employees/:email', authenticateToken, async (req, res) => {
   try {
     const { planId, email } = req.params;
-    const removed = await trainingService.removeEmployeeFromPlan(planId, email);
+    const { trainingRequested, annualTargetId, quarter } = req.body;
+
+    if (!trainingRequested || !annualTargetId || !quarter) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Training requested, annual target ID, and quarter are required'
+      });
+    }
+
+    const removed = await trainingService.removeEmployeeFromPlan(
+      planId, 
+      email, 
+      trainingRequested,
+      annualTargetId,
+      quarter
+    );
     
     if (!removed) {
       return res.status(404).json({
@@ -90,16 +105,23 @@ router.delete('/:planId/employees/:email', authenticateToken, async (req, res) =
 router.patch('/:planId/employees/:email/status', authenticateToken, async (req, res) => {
   try {
     const { planId, email } = req.params;
-    const { trainingRequested, status } = req.body;
+    const { trainingRequested, annualTargetId, quarter, status } = req.body;
 
-    if (!trainingRequested || !status) {
+    if (!trainingRequested || !status || !annualTargetId || !quarter) {
       return res.status(400).json({
         status: 'error',
-        message: 'Training requested and status are required'
+        message: 'Training requested, status, annual target ID, and quarter are required'
       });
     }
 
-    const training = await trainingService.updateTrainingStatus(planId, email, trainingRequested, status);
+    const training = await trainingService.updateTrainingStatus(
+      planId, 
+      email, 
+      trainingRequested,
+      annualTargetId,
+      quarter,
+      status
+    );
     
     if (!training) {
       return res.status(404).json({

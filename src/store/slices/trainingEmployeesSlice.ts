@@ -57,19 +57,25 @@ export const updateEmployeeStatus = createAsyncThunk(
     planId, 
     email, 
     trainingRequested, 
+    annualTargetId,
+    quarter,
     status 
   }: { 
     planId: string; 
     email: string; 
     trainingRequested: string; 
+    annualTargetId: string;
+    quarter: string;
     status: TrainingStatus 
   }) => {
     const response = await api.patch(`/training/${planId}/employees/${email}/status`, {
       trainingRequested,
+      annualTargetId,
+      quarter,
       status
     });
     if (response.data.status === 'success') {
-      return { email, trainingRequested, status };
+      return { email, trainingRequested, annualTargetId, quarter, status };
     }
     throw new Error(response.data.message || 'Failed to update status');
   }
@@ -80,16 +86,20 @@ export const removeEmployee = createAsyncThunk(
   async ({ 
     planId, 
     email, 
-    trainingRequested 
+    trainingRequested,
+    annualTargetId,
+    quarter 
   }: { 
     planId: string; 
     email: string; 
-    trainingRequested: string 
+    trainingRequested: string;
+    annualTargetId: string;
+    quarter: string;
   }) => {
     await api.delete(`/training/${planId}/employees/${email}`, {
-      data: { trainingRequested }
+      data: { trainingRequested, annualTargetId, quarter }
     });
-    return { email, trainingRequested };
+    return { email, trainingRequested, annualTargetId, quarter };
   }
 );
 
@@ -123,18 +133,24 @@ const trainingEmployeesSlice = createSlice({
       })
       // Update employee status
       .addCase(updateEmployeeStatus.fulfilled, (state, action) => {
-        const { email, trainingRequested, status } = action.payload;
+        const { email, trainingRequested, annualTargetId, quarter, status } = action.payload;
         state.employees = state.employees.map(emp => 
-          emp.email === email && emp.trainingRequested === trainingRequested
+          emp.email === email && 
+          emp.trainingRequested === trainingRequested &&
+          emp.annualTargetId === annualTargetId &&
+          emp.quarter === quarter
             ? { ...emp, status }
             : emp
         );
       })
       // Remove employee
       .addCase(removeEmployee.fulfilled, (state, action) => {
-        const { email, trainingRequested } = action.payload;
+        const { email, trainingRequested, annualTargetId, quarter } = action.payload;
         state.employees = state.employees.filter(emp => 
-          !(emp.email === email && emp.trainingRequested === trainingRequested)
+          !(emp.email === email && 
+            emp.trainingRequested === trainingRequested &&
+            emp.annualTargetId === annualTargetId &&
+            emp.quarter === quarter)
         );
       });
   },

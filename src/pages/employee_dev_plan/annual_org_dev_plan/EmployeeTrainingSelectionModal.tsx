@@ -93,6 +93,11 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   const { annualTargets, status: annualTargetsStatus } = useAppSelector((state: RootState) => state.scorecard);
   const { employees: existingEmployees } = useAppSelector((state: RootState) => state.trainingEmployees);
 
+  const getAnnualTargetName = (targetId: string) => {
+    const target = annualTargets.find(t => t._id === targetId);
+    return target?.name || '-';
+  };
+
   // Reset states and clear team performances when modal opens
   useEffect(() => {
     if (open) {
@@ -316,6 +321,8 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
                   <TableCell>Position</TableCell>
                   <TableCell>Team</TableCell>
                   <TableCell>Training Requested</TableCell>
+                  <TableCell>Annual Target</TableCell>
+                  <TableCell>Quarter</TableCell>
                   <TableCell>Date Requested</TableCell>
                 </TableRow>
               </TableHead>
@@ -354,6 +361,10 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
                           <TableCell>{employee.jobTitle}</TableCell>
                           <TableCell>{employee.team}</TableCell>
                           <TableCell>{course.name}</TableCell>
+                          <TableCell>{getAnnualTargetName(Object.entries(teamPerformancesByTarget).find(
+                            ([_, performances]) => performances.some(p => p._id === employee._id)
+                          )?.[0] || '')}</TableCell>
+                          <TableCell>{quarter}</TableCell>
                           <TableCell>
                             {new Date(employee.updatedAt).toLocaleDateString('en-US', {
                               year: 'numeric',

@@ -114,10 +114,19 @@ export class TrainingService {
     return docs.map(doc => doc.toObject());
   }
 
-  async removeEmployeeFromPlan(planId: string, email: string): Promise<boolean> {
+  async removeEmployeeFromPlan(
+    planId: string, 
+    email: string,
+    trainingRequested: string,
+    annualTargetId: string,
+    quarter: string
+  ): Promise<boolean> {
     const result = await Training.deleteOne({
       planId: new Types.ObjectId(planId),
-      email
+      email,
+      trainingRequested,
+      annualTargetId: new Types.ObjectId(annualTargetId),
+      quarter
     });
     return result.deletedCount > 0;
   }
@@ -126,13 +135,17 @@ export class TrainingService {
     planId: string,
     email: string,
     trainingRequested: string,
+    annualTargetId: string,
+    quarter: string,
     status: TrainingStatus
   ): Promise<ITraining | null> {
     return Training.findOneAndUpdate(
       { 
         planId: new Types.ObjectId(planId), 
         email,
-        trainingRequested
+        trainingRequested,
+        annualTargetId: new Types.ObjectId(annualTargetId),
+        quarter
       },
       { $set: { status } },
       { new: true }

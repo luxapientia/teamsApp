@@ -12,6 +12,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
 import { TrainingStatus } from '../annual_org_dev_plan/plan_view';
 import { AssessmentStatus } from '../../../types/personalPerformance';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 
 const MyTrainingDashboard: React.FC = () => {
   const [requestedTrainings, setRequestedTrainings] = useState<Training[]>([]);
@@ -20,10 +22,12 @@ const MyTrainingDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { showToast } = useToast();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
+    dispatch(fetchAnnualTargets());
     fetchAllTrainings();
-  }, []);
+  }, [dispatch]);
 
   const fetchRequestedTrainings = async (existingTrainings: Training[]) => {
     try {
