@@ -195,6 +195,18 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     return target?.name || '-';
   };
 
+  const getProgressColor = (progress: number) => {
+    if (progress >= 80) return '#22C55E'; // Green
+    if (progress >= 50) return '#F59E0B'; // Amber
+    return '#DC2626'; // Red
+  };
+
+  const getProgressBackgroundColor = (progress: number) => {
+    if (progress >= 80) return 'rgba(34, 197, 94, 0.12)'; // Light Green
+    if (progress >= 50) return 'rgba(245, 158, 11, 0.12)'; // Light Amber
+    return 'rgba(220, 38, 38, 0.12)'; // Light Red
+  };
+
   if (loading) {
     return (
       <Box sx={{ width: '100%' }}>
@@ -265,9 +277,9 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
             sx={{
               height: 8,
               borderRadius: 4,
-              backgroundColor: 'rgba(0, 120, 212, 0.12)',
+              backgroundColor: getProgressBackgroundColor(progress),
               '& .MuiLinearProgress-bar': {
-                backgroundColor: '#0078D4',
+                backgroundColor: getProgressColor(progress),
                 borderRadius: 4,
               },
             }}
