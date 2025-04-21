@@ -257,7 +257,7 @@ const EmployeesTraining: React.FC = () => {
                 maxWidth: '300px'
               }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" color="textSecondary">Implementation Progress</Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ whiteSpace: 'pre' }}>Implementation Progress </Typography>
                   <Typography variant="body2" color="textSecondary">{calculateProgress()}%</Typography>
                 </Box>
                 <LinearProgress 

@@ -150,12 +150,11 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   const handleExportPDF = () => {
     if (tableRef.current && employees.length > 0) {
-      const title = planName;
       const subtitle = `Implementation Progress: ${progress}%`;
       exportPdf(
         PdfType.Reports,
         tableRef,
-        title,
+        '',
         subtitle,
         '',
         [0.12, 0.12, 0.12, 0.12, 0.12, 0.08, 0.12, 0.12, 0.08]
@@ -227,6 +226,16 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   return (
     <Box>
+      <Typography 
+        variant="h5" 
+        sx={{ 
+          mb: 3,
+          color: '#101828'
+        }}
+        className="noprint"
+      >
+        {planName}
+      </Typography>
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
