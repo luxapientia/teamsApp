@@ -5,8 +5,36 @@ import { TrainingService } from '../services/trainingService';
 const router = express.Router();
 const trainingService = new TrainingService();
 
+// Get all employees across all plans
+router.get('/all-employees', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Tenant ID is required'
+      });
+    }
+
+    const allEmployees = await trainingService.getAllEmployeesAcrossPlans(tenantId);
+    
+    return res.json({
+      status: 'success',
+      data: {
+        employees: allEmployees
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching all employees:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch all employees'
+    });
+  }
+});
+
 // Get all trainings for a plan
-router.get('/:planId/employees', authenticateToken, async (req, res) => {
+router.get('/:planId/employees', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { planId } = req.params;
     const trainings = await trainingService.getTrainingsByPlanId(planId);
@@ -28,7 +56,7 @@ router.get('/:planId/employees', authenticateToken, async (req, res) => {
 });
 
 // Add employees to a plan
-router.post('/:planId/employees', authenticateToken, async (req, res) => {
+router.post('/:planId/employees', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { planId } = req.params;
     const { employees } = req.body;
@@ -61,7 +89,7 @@ router.post('/:planId/employees', authenticateToken, async (req, res) => {
 });
 
 // Remove an employee from a plan
-router.delete('/:planId/employees/:email', authenticateToken, async (req, res) => {
+router.delete('/:planId/employees/:email', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { planId, email } = req.params;
     const { trainingRequested, annualTargetId, quarter } = req.body;
@@ -102,7 +130,7 @@ router.delete('/:planId/employees/:email', authenticateToken, async (req, res) =
 });
 
 // Update training status
-router.patch('/:planId/employees/:email/status', authenticateToken, async (req, res) => {
+router.patch('/:planId/employees/:email/status', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { planId, email } = req.params;
     const { trainingRequested, annualTargetId, quarter, status } = req.body;
@@ -147,7 +175,7 @@ router.patch('/:planId/employees/:email/status', authenticateToken, async (req, 
 });
 
 // Update training request
-router.patch('/:planId/employees/:email/request', authenticateToken, async (req, res) => {
+router.patch('/:planId/employees/:email/request', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { planId, email } = req.params;
     const { trainingRequested } = req.body;
@@ -206,7 +234,7 @@ router.get('/user/:userId', authenticateToken, async (req: AuthenticatedRequest,
 });
 
 // Get trainings by email
-router.get('/user/email/:email', authenticateToken, async (req, res) => {
+router.get('/user/email/:email', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { email } = req.params;
     const trainings = await trainingService.getTrainingsByEmail(email); 
@@ -227,7 +255,7 @@ router.get('/user/email/:email', authenticateToken, async (req, res) => {
 });
 
 // Get trainings by annual target
-router.get('/annual-target/:annualTargetId', authenticateToken, async (req, res) => {
+router.get('/annual-target/:annualTargetId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId } = req.params;
     const trainings = await trainingService.getTrainingsByAnnualTarget(annualTargetId);
@@ -248,7 +276,7 @@ router.get('/annual-target/:annualTargetId', authenticateToken, async (req, res)
 });
 
 // Get trainings by annual target and quarter
-router.get('/annual-target/:annualTargetId/quarter/:quarter', authenticateToken, async (req, res) => {
+router.get('/annual-target/:annualTargetId/quarter/:quarter', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId, quarter } = req.params;
     const trainings = await trainingService.getTrainingsByQuarter(annualTargetId, quarter);

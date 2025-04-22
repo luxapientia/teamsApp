@@ -29,13 +29,15 @@ interface SelectCourseModalProps {
   onClose: () => void;
   onSelect: (selectedCourses: Course[]) => void;
   tenantId: string;
+  validateCourse?: (course: Course) => boolean;
 }
 
 const SelectCourseModal: React.FC<SelectCourseModalProps> = ({
   open,
   onClose,
   onSelect,
-  tenantId
+  tenantId,
+  validateCourse
 }) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,12 +63,11 @@ const SelectCourseModal: React.FC<SelectCourseModalProps> = ({
     }
   };
 
-  const filteredCourses = courses.filter(course =>
-    course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    course.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const handleToggleCourse = (course: Course) => {
+    if (validateCourse && !validateCourse(course)) {
+      return;
+    }
+
     setSelectedCourses(prev => {
       const isSelected = prev.some(c => c._id === course._id);
       if (isSelected) {
@@ -76,6 +77,12 @@ const SelectCourseModal: React.FC<SelectCourseModalProps> = ({
       }
     });
   };
+
+  const filteredCourses = courses.filter(course =>
+    (course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.description.toLowerCase().includes(searchQuery.toLowerCase())) &&
+    (!validateCourse || validateCourse(course))
+  );
 
   const handleAdd = () => {
     onSelect(selectedCourses);

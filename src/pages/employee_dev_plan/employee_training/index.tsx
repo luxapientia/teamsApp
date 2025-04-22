@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -24,6 +24,13 @@ import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { RootState } from '../../../store';
+import { ExportButton } from '../../../components/Buttons';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import { exportPdf } from '../../../utils/exportPdf';
+import { PdfType } from '../../../types';
+import { format } from 'date-fns';
 
 interface OrgDevPlan {
   _id: string;
@@ -54,6 +61,7 @@ const EmployeesTraining: React.FC = () => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
   const { annualTargets } = useAppSelector((state: RootState) => state.scorecard);
+  const tableRef = useRef();
 
   useEffect(() => {
     fetchPlans();
@@ -114,6 +122,61 @@ const EmployeesTraining: React.FC = () => {
     return target?.name || '-';
   };
 
+  const handleExportExcel = () => {
+    if (employees.length > 0) {
+      const selectedPlanName = plans.find(plan => plan._id === selectedPlan)?.name || 'Training Plan';
+      const progress = calculateProgress();
+
+      const exportData = employees.map(employee => ({
+        'Employee Name': employee.displayName,
+        'Position': employee.jobTitle || '-',
+        'Team': employee.team || '-',
+        'Training/Course': employee.trainingRequested,
+        'Annual Target': getAnnualTargetName(employee.annualTargetId),
+        'Quarter': employee.quarter || '-',
+        'Date Requested': employee.dateRequested ? format(new Date(employee.dateRequested), 'MM/dd/yyyy') : '-',
+        'Status': employee.status
+      }));
+
+      // Add a title row at the top
+      const ws = XLSX.utils.aoa_to_sheet([[selectedPlanName], ['Implementation Progress: ' + progress + '%'], []]);
+      XLSX.utils.sheet_add_json(ws, exportData, { origin: 'A4' });
+
+      // Style the header
+      ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];  // Merge cells for title
+      ws['!rows'] = [{ hpt: 30 }]; // Height for title row
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Training Plan');
+
+      // Generate buffer
+      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+      saveAs(dataBlob, `${selectedPlanName}_Training_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    if (employees.length > 0) {
+      const selectedPlanName = plans.find(plan => plan._id === selectedPlan)?.name || 'Training Plan';
+      const title = `${selectedPlanName} - Employee Training Status`;
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Implementation Progress: ${calculateProgress()}%`, '', [0.2, 0.15, 0.15, 0.15, 0.15, 0.1, 0.1]);
+    }
+  };
+
+  const getProgressColor = (progress: number) => {
+    if (progress >= 80) return '#22C55E'; // Green
+    if (progress >= 50) return '#F59E0B'; // Amber
+    return '#DC2626'; // Red
+  };
+
+  const getProgressBackgroundColor = (progress: number) => {
+    if (progress >= 80) return 'rgba(34, 197, 94, 0.12)'; // Light Green
+    if (progress >= 50) return 'rgba(245, 158, 11, 0.12)'; // Light Amber
+    return 'rgba(220, 38, 38, 0.12)'; // Light Red
+  };
+
   if (loading && !selectedPlan) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
@@ -165,33 +228,57 @@ const EmployeesTraining: React.FC = () => {
           <Box sx={{ mb: 3 }}>
             <Box sx={{ 
               display: 'flex', 
-              flexDirection: 'column', 
-              gap: 1, 
-              maxWidth: '300px',
-              marginLeft: 'auto'
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 2
             }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="body2" color="textSecondary">Implementation Progress</Typography>
-                <Typography variant="body2" color="textSecondary">{calculateProgress()}%</Typography>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <ExportButton
+                  className="excel"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={handleExportExcel}
+                  size="small"
+                >
+                  Export to Excel
+                </ExportButton>
+                <ExportButton
+                  className="pdf"
+                  startIcon={<FileDownloadIcon />}
+                  onClick={handleExportPDF}
+                  size="small"
+                >
+                  Export to PDF
+                </ExportButton>
               </Box>
-              <LinearProgress 
-                variant="determinate" 
-                value={calculateProgress()}
-                sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: 'rgba(0, 120, 212, 0.12)',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: '#0078D4',
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: 1, 
+                maxWidth: '300px'
+              }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="textSecondary" sx={{ whiteSpace: 'pre' }}>Implementation Progress </Typography>
+                  <Typography variant="body2" color="textSecondary">{calculateProgress()}%</Typography>
+                </Box>
+                <LinearProgress 
+                  variant="determinate" 
+                  value={calculateProgress()}
+                  sx={{
+                    height: 8,
                     borderRadius: 4,
-                  },
-                }}
-              />
+                    bgcolor: getProgressBackgroundColor(calculateProgress()),
+                    '& .MuiLinearProgress-bar': {
+                      bgcolor: getProgressColor(calculateProgress()),
+                      borderRadius: 4,
+                    },
+                  }}
+                />
+              </Box>
             </Box>
           </Box>
 
           <TableContainer component={Paper}>
-            <Table>
+            <Table ref={tableRef}>
               <TableHead>
                 <TableRow>
                   <TableCell>Employee Full Name</TableCell>

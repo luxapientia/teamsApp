@@ -41,7 +41,8 @@ import { fetchAnnualTargets } from '../../../../store/slices/scorecardSlice';
 
 export enum TrainingStatus {
   PLANNED = 'Planned',
-  COMPLETED = 'Completed'
+  COMPLETED = 'Completed',
+  NOT_COMPLETED = 'Not Completed'
 }
 
 interface Employee {
@@ -71,6 +72,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
   
   const { employees, loading, error } = useAppSelector((state: RootState) => state.trainingEmployees);
   const { annualTargets } = useAppSelector((state: RootState) => state.scorecard);
+  const [isFinalizingPlan, setIsFinalizingPlan] = useState(false);
 
   useEffect(() => {
     dispatch(fetchEmployees(planId));
@@ -100,6 +102,8 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   const handleStatusChange = async (email: string, trainingRequested: string, annualTargetId: string, quarter: string, newStatus: TrainingStatus) => {
     try {
+      if(!isTrainingAvailableForPlan(email, trainingRequested)) {
+      // Update the status in the plan
       await dispatch(updateEmployeeStatus({ 
         planId, 
         email, 
@@ -109,6 +113,10 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         status: newStatus 
       })).unwrap();
       showToast('Status updated successfully', 'success');
+      } else {
+        showToast('Training already registered in other plan', 'error');
+      }
+
     } catch (error) {
       console.error('Error updating status:', error);
       showToast('Failed to update status', 'error');
@@ -117,8 +125,19 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   const handlePeopleSelected = async (selectedPeople: Employee[]) => {
     try {
-      await dispatch(addEmployees({ planId, employees: selectedPeople })).unwrap();
-      showToast('Employees added successfully', 'success');
+      // Filter out trainings that are already planned or completed in this or other plans
+      const validEmployees = selectedPeople.filter(emp => 
+        isTrainingAvailableForPlan(emp.email, emp.trainingRequested || '')
+      );
+
+      if (validEmployees.length < selectedPeople.length) {
+        showToast('Some trainings could not be added as they are already planned or completed in another plan', 'warning');
+      }
+
+      if (validEmployees.length > 0) {
+        await dispatch(addEmployees({ planId, employees: validEmployees })).unwrap();
+        showToast('Employees added successfully', 'success');
+      }
     } catch (error) {
       console.error('Error adding employees:', error);
       showToast('Failed to add employees', 'error');
@@ -150,12 +169,11 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   const handleExportPDF = () => {
     if (tableRef.current && employees.length > 0) {
-      const title = planName;
       const subtitle = `Implementation Progress: ${progress}%`;
       exportPdf(
         PdfType.Reports,
         tableRef,
-        title,
+        '',
         subtitle,
         '',
         [0.12, 0.12, 0.12, 0.12, 0.12, 0.08, 0.12, 0.12, 0.08]
@@ -195,6 +213,56 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     return target?.name || '-';
   };
 
+  const getProgressColor = (progress: number) => {
+    if (progress >= 80) return '#22C55E'; // Green
+    if (progress >= 50) return '#F59E0B'; // Amber
+    return '#DC2626'; // Red
+  };
+
+  const getProgressBackgroundColor = (progress: number) => {
+    if (progress >= 80) return 'rgba(34, 197, 94, 0.12)'; // Light Green
+    if (progress >= 50) return 'rgba(245, 158, 11, 0.12)'; // Light Amber
+    return 'rgba(220, 38, 38, 0.12)'; // Light Red
+  };
+
+  const handleFinalizePlan = async () => {
+    try {
+      setIsFinalizingPlan(true);
+      const updatedEmployees = employees.map(emp => ({
+        ...emp,
+        status: emp.status === TrainingStatus.PLANNED ? TrainingStatus.NOT_COMPLETED : emp.status
+      }));
+
+      // Update all employees statuses
+      for (const emp of updatedEmployees) {
+        await dispatch(updateEmployeeStatus({
+          planId,
+          email: emp.email,
+          trainingRequested: emp.trainingRequested || '',
+          annualTargetId: emp.annualTargetId,
+          quarter: emp.quarter,
+          status: emp.status
+        })).unwrap();
+      }
+
+      showToast('Plan finalized successfully', 'success');
+      dispatch(fetchEmployees(planId));
+    } catch (error) {
+      console.error('Error finalizing plan:', error);
+      showToast('Failed to finalize plan', 'error');
+    } finally {
+      setIsFinalizingPlan(false);
+    }
+  };
+
+  const isTrainingAvailableForPlan = (email: string, trainingRequested: string) => {
+    return !employees.some(emp => 
+      emp.email === email && 
+      emp.trainingRequested === trainingRequested && 
+      (emp.status === TrainingStatus.PLANNED || emp.status === TrainingStatus.COMPLETED)
+    );
+  };
+
   if (loading) {
     return (
       <Box sx={{ width: '100%' }}>
@@ -215,6 +283,16 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   return (
     <Box>
+      <Typography 
+        variant="h5" 
+        sx={{ 
+          mb: 3,
+          color: '#101828'
+        }}
+        className="noprint"
+      >
+        {planName}
+      </Typography>
       <Box sx={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -254,24 +332,43 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
             </ExportButton>
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: '200px' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" color="textSecondary">Implementation Progress</Typography>
-            <Typography variant="body2" color="textSecondary">{progress}%</Typography>
-          </Box>
-          <LinearProgress 
-            variant="determinate" 
-            value={progress}
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button
+            variant="contained"
+            onClick={handleFinalizePlan}
+            disabled={isFinalizingPlan || employees.length === 0 || !employees.some(emp => emp.status === TrainingStatus.PLANNED)}
             sx={{
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: 'rgba(0, 120, 212, 0.12)',
-              '& .MuiLinearProgress-bar': {
-                backgroundColor: '#0078D4',
-                borderRadius: 4,
+              backgroundColor: '#059669',
+              '&:hover': {
+                backgroundColor: '#047857',
               },
+              '&.Mui-disabled': {
+                backgroundColor: '#E5E7EB',
+                color: '#9CA3AF'
+              }
             }}
-          />
+          >
+            {isFinalizingPlan ? 'Finalizing...' : 'Finalize Plan'}
+          </Button>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: '200px' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="body2" color="textSecondary">Implementation Progress</Typography>
+              <Typography variant="body2" color="textSecondary">{progress}%</Typography>
+            </Box>
+            <LinearProgress 
+              variant="determinate" 
+              value={progress}
+              sx={{
+                height: 8,
+                borderRadius: 4,
+                backgroundColor: getProgressBackgroundColor(progress),
+                '& .MuiLinearProgress-bar': {
+                  backgroundColor: getProgressColor(progress),
+                  borderRadius: 4,
+                },
+              }}
+            />
+          </Box>
         </Box>
       </Box>
 
@@ -326,7 +423,13 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
                         sx={{ minWidth: 120 }}
                       >
                         {Object.values(TrainingStatus).map((status) => (
-                          <MenuItem key={status} value={status}>
+                          <MenuItem 
+                            key={status} 
+                            value={status}
+                            sx={{
+                              color: status === TrainingStatus.NOT_COMPLETED ? '#DC2626' : 'inherit'
+                            }}
+                          >
                             {status}
                           </MenuItem>
                         ))}
@@ -357,6 +460,8 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         open={isAddingEmployees}
         onClose={handleCloseModal}
         onSelectEmployees={handlePeopleSelected}
+        validateTraining={isTrainingAvailableForPlan}
+        planId={planId}
       />
     </Box>
   );

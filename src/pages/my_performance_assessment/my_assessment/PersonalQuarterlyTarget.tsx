@@ -393,13 +393,27 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }));
   };
 
+  // Add new function to check if course is already requested in any quarter
+  const isCourseAlreadyRequested = (courseName: string) => {
+    return personalPerformance?.quarterlyTargets.some(target => 
+      target.personalDevelopment?.some(course => course.name === courseName)
+    ) || false;
+  };
+
   const handleAddPersonalDevelopment = async (selectedCourses: Course[]) => {
-    console.log(selectedCourses, 'selectedCourses');
+    // Filter out courses that are already requested in any quarter
+    const newCourses = selectedCourses.filter(course => !isCourseAlreadyRequested(course.name));
+    
+    if (newCourses.length < selectedCourses.length) {
+      // Some courses were filtered out because they were already requested
+      console.warn('Some courses were already requested in other quarters and were filtered out');
+    }
+
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
       if (target.quarter === quarter) {
         return {
           ...target,
-          personalDevelopment: [...target.personalDevelopment, ...selectedCourses].filter((course, index, self) =>
+          personalDevelopment: [...target.personalDevelopment, ...newCourses].filter((course, index, self) =>
             index === self.findIndex((c) => c._id === course._id)
           )
         }
@@ -414,14 +428,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       quarterlyTargets: newPersonalQuarterlyTargets || []
     }));
 
-    console.log(updatedPersonalPerformance, 'updatedPersonalPerformance');
-
     await dispatch(fetchPersonalPerformances({
       annualTargetId: personalPerformance?.annualTargetId || '',
       quarter: quarter
     }));
-
-    console.log(personalPerformance, 'new personalPerformance');
   };
 
   const handleDeleteCourse = async (courseToDelete: Course) => {
@@ -952,6 +962,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onClose={() => setIsSelectCourseModalOpen(false)}
         onSelect={handleAddPersonalDevelopment}
         tenantId={user?.tenantId || ''}
+        validateCourse={(course) => !isCourseAlreadyRequested(course.name)}
       />
     </Box >
   );
