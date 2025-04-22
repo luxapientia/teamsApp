@@ -102,6 +102,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   const handleStatusChange = async (email: string, trainingRequested: string, annualTargetId: string, quarter: string, newStatus: TrainingStatus) => {
     try {
+      if(!isTrainingAvailableForPlan(email, trainingRequested)) {
       // Update the status in the plan
       await dispatch(updateEmployeeStatus({ 
         planId, 
@@ -112,6 +113,10 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         status: newStatus 
       })).unwrap();
       showToast('Status updated successfully', 'success');
+      } else {
+        showToast('Training already registered in other plan', 'error');
+      }
+
     } catch (error) {
       console.error('Error updating status:', error);
       showToast('Failed to update status', 'error');
