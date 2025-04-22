@@ -80,12 +80,16 @@ interface EmployeeTrainingSelectionModalProps {
   open: boolean;
   onClose: () => void;
   onSelectEmployees: (employees: SelectedEmployee[]) => void;
+  validateTraining?: (email: string, trainingRequested: string) => boolean;
+  planId: string;
 }
 
 const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalProps> = ({
   open,
   onClose,
   onSelectEmployees,
+  validateTraining,
+  planId
 }) => {
   const [selectedEmployees, setSelectedEmployees] = useState<{ [key: string]: SelectedEmployee }>({});
   const [loadedTargetIds, setLoadedTargetIds] = useState<Set<string>>(new Set());
@@ -150,7 +154,8 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
       emp.email === email && 
       emp.trainingRequested === courseName &&
       emp.annualTargetId === annualTargetId &&
-      emp.quarter === quarter
+      emp.quarter === quarter &&
+      (emp.planId !== planId && emp.status !== TrainingStatus.NOT_COMPLETED || emp.planId === planId)
     );
   }, [allEmployees]);
 
@@ -189,14 +194,15 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
 
         if (!annualTargetId) return false;
 
-        // Check if there are any unregistered courses
+        // Check if there are any unregistered and valid courses
         return employee.coursesWithQuarters.some(({ quarter, courses }) =>
           courses.some(course => 
-            !isTrainingRegistered(employee.email, course.name, annualTargetId, quarter)
+            !isTrainingRegistered(employee.email, course.name, annualTargetId, quarter) &&
+            (!validateTraining || validateTraining(employee.email, course.name))
           )
         );
       });
-  }, [teamPerformances, teamPerformancesByTarget, isTrainingRegistered]);
+  }, [teamPerformances, teamPerformancesByTarget, isTrainingRegistered, validateTraining]);
 
   const handleToggleEmployee = (performance: TeamPerformance, course: Course, quarter: string) => {
     // Find the annual target ID for this performance
@@ -209,8 +215,9 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
       return;
     }
 
-    // Skip if the training is already registered
-    if (isTrainingRegistered(performance.email, course.name, annualTargetId, quarter)) {
+    // Skip if the training is already registered or not valid
+    if (isTrainingRegistered(performance.email, course.name, annualTargetId, quarter) ||
+        (validateTraining && !validateTraining(performance.email, course.name))) {
       return;
     }
 
