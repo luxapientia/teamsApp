@@ -331,7 +331,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
           <Button
             variant="contained"
             onClick={handleFinalizePlan}
-            disabled={isFinalizingPlan || employees.length === 0}
+            disabled={isFinalizingPlan || employees.length === 0 || !employees.some(emp => emp.status === TrainingStatus.PLANNED)}
             sx={{
               backgroundColor: '#059669',
               '&:hover': {
