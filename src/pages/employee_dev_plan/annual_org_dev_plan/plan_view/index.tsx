@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -69,15 +69,31 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
   const { showToast } = useToast();
   const tableRef = useRef<any>(null);
   const dispatch = useAppDispatch();
+  const [isLoadingEmployees, setIsLoadingEmployees] = useState(false);
+
   
   const { employees, loading, error } = useAppSelector((state: RootState) => state.trainingEmployees);
   const { annualTargets } = useAppSelector((state: RootState) => state.scorecard);
   const [isFinalizingPlan, setIsFinalizingPlan] = useState(false);
+  const [allEmployees, setAllEmployees] = useState<any[]>([]);
 
   useEffect(() => {
     dispatch(fetchEmployees(planId));
     dispatch(fetchAnnualTargets());
     fetchPlanDetails();
+    // Fetch all employees
+    const fetchAllEmployees = async () => {
+      setIsLoadingEmployees(true);
+      try {
+        const response = await api.get('/training/all-employees');
+        setAllEmployees(response.data.data.employees || []);
+      } catch (error) {
+        console.error('Error fetching all employees:', error);
+      } finally {
+        setIsLoadingEmployees(false);
+      }
+    };
+    fetchAllEmployees();
   }, [planId, dispatch]);
 
   const fetchPlanDetails = async () => {
@@ -102,7 +118,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   const handleStatusChange = async (email: string, trainingRequested: string, annualTargetId: string, quarter: string, newStatus: TrainingStatus) => {
     try {
-      if(!isTrainingAvailableForPlan(email, trainingRequested)) {
+      if(!isTrainingRegistered(email, trainingRequested, annualTargetId, quarter)) {
       // Update the status in the plan
       await dispatch(updateEmployeeStatus({ 
         planId, 
@@ -126,10 +142,10 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
   const handlePeopleSelected = async (selectedPeople: Employee[]) => {
     try {
       // Filter out trainings that are already planned or completed in this or other plans
-      const validEmployees = selectedPeople.filter(emp => 
-        isTrainingAvailableForPlan(emp.email, emp.trainingRequested || '')
-      );
-
+      // const validEmployees = selectedPeople.filter(emp => 
+      //   isTrainingRegistered(emp.email, emp.trainingRequested || '', emp.annualTargetId, emp.quarter)
+      // );
+      const validEmployees = selectedPeople;
       if (validEmployees.length < selectedPeople.length) {
         showToast('Some trainings could not be added as they are already planned or completed in another plan', 'warning');
       }
@@ -255,13 +271,15 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     }
   };
 
-  const isTrainingAvailableForPlan = (email: string, trainingRequested: string) => {
-    return !employees.some(emp => 
+  const isTrainingRegistered = useCallback((email: string, courseName: string, annualTargetId: string, quarter: string) => {
+    return allEmployees.some(emp => 
       emp.email === email && 
-      emp.trainingRequested === trainingRequested && 
-      (emp.status === TrainingStatus.PLANNED || emp.status === TrainingStatus.COMPLETED)
+      emp.trainingRequested === courseName &&
+      emp.annualTargetId === annualTargetId &&
+      emp.quarter === quarter &&
+      (emp.planId !== planId && emp.status !== TrainingStatus.NOT_COMPLETED)
     );
-  };
+  }, [allEmployees]);
 
   if (loading) {
     return (
@@ -460,7 +478,6 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         open={isAddingEmployees}
         onClose={handleCloseModal}
         onSelectEmployees={handlePeopleSelected}
-        validateTraining={isTrainingAvailableForPlan}
         planId={planId}
       />
     </Box>
