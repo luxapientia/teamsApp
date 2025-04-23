@@ -237,4 +237,24 @@ router.put('/:planId', authenticateToken, async (req, res) => {
   }
 });
 
+// Finalize org development plan
+router.post('/:planId/finalize', authenticateToken, async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const finalizedPlan = await orgDevPlanService.finalizePlan(planId);
+    
+    if (!finalizedPlan) {
+      return res.status(404).json({ message: 'Plan not found' });
+    }
+
+    return res.json({
+      status: 'success',
+      message: 'Plan finalized successfully',
+      data: finalizedPlan
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error finalizing plan' });
+  }
+});
+
 export default router; 

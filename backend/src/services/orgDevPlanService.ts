@@ -93,4 +93,13 @@ export class OrgDevPlanService {
     ).lean();
     return updatedPlan as unknown as IOrgDevPlan | null;
   }
+
+  async finalizePlan(planId: string): Promise<IOrgDevPlan | null> {
+    const updatedPlan = await OrgDevPlan.findByIdAndUpdate(
+      planId,
+      { $set: { isFinalized: true } },
+      { new: true }
+    ).lean();
+    return updatedPlan as unknown as IOrgDevPlan | null;
+  }
 } 

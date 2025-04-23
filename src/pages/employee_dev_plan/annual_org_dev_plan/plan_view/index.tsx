@@ -66,6 +66,7 @@ interface PlanViewProps {
 const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
   const [isAddingEmployees, setIsAddingEmployees] = useState(false);
   const [planName, setPlanName] = useState('');
+  const [isFinalized, setIsFinalized] = useState(false);
   const { showToast } = useToast();
   const tableRef = useRef<any>(null);
   const dispatch = useAppDispatch();
@@ -101,6 +102,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
       const response = await api.get(`/users/org-dev-plan/plan/${planId}`);
       if (response.data) {
         setPlanName(response.data.data.name || 'Training Plan');
+        setIsFinalized(response.data.data.isFinalized || false);
       }
     } catch (error) {
       console.error('Error fetching plan details:', error);
@@ -118,21 +120,24 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
 
   const handleStatusChange = async (email: string, trainingRequested: string, annualTargetId: string, quarter: string, newStatus: TrainingStatus) => {
     try {
+      if (isFinalized) {
+        showToast('Cannot modify status in a finalized plan', 'error');
+        return;
+      }
+
       if(!isTrainingRegistered(email, trainingRequested, annualTargetId, quarter)) {
-      // Update the status in the plan
-      await dispatch(updateEmployeeStatus({ 
-        planId, 
-        email, 
-        trainingRequested, 
-        annualTargetId,
-        quarter,
-        status: newStatus 
-      })).unwrap();
-      showToast('Status updated successfully', 'success');
+        await dispatch(updateEmployeeStatus({ 
+          planId, 
+          email, 
+          trainingRequested, 
+          annualTargetId,
+          quarter,
+          status: newStatus 
+        })).unwrap();
+        showToast('Status updated successfully', 'success');
       } else {
         showToast('Training already registered in other plan', 'error');
       }
-
     } catch (error) {
       console.error('Error updating status:', error);
       showToast('Failed to update status', 'error');
@@ -261,6 +266,9 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         })).unwrap();
       }
 
+      // Call the finalize endpoint
+      await api.post(`/users/org-dev-plan/${planId}/finalize`);
+      setIsFinalized(true);
       showToast('Plan finalized successfully', 'success');
       dispatch(fetchEmployees(planId));
     } catch (error) {
@@ -354,7 +362,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
           <Button
             variant="contained"
             onClick={handleFinalizePlan}
-            disabled={isFinalizingPlan || employees.length === 0 || !employees.some(emp => emp.status === TrainingStatus.PLANNED)}
+            disabled={isFinalizingPlan || employees.length === 0 || !employees.some(emp => emp.status === TrainingStatus.PLANNED) || isFinalized}
             sx={{
               backgroundColor: '#059669',
               '&:hover': {
@@ -366,7 +374,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
               }
             }}
           >
-            {isFinalizingPlan ? 'Finalizing...' : 'Finalize Plan'}
+            {isFinalized ? 'Plan Finalized' : isFinalizingPlan ? 'Finalizing...' : 'Finalize Plan'}
           </Button>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: '200px' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -438,6 +446,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
                           employee.quarter,
                           e.target.value as TrainingStatus
                         )}
+                        disabled={isFinalized}
                         sx={{ minWidth: 120 }}
                       >
                         {Object.values(TrainingStatus).map((status) => (
@@ -463,6 +472,7 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
                         employee.annualTargetId,
                         employee.quarter
                       )}
+                      disabled={isFinalized}
                       sx={{ color: '#d92d20' }}
                     >
                       <DeleteIcon fontSize="small" />
