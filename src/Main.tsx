@@ -81,12 +81,13 @@ function Main() {
 
   return (
     <Layout selectedTabChanger={selectedTabChanger}>
-      {(TeamOwnerStatus || isAppOwner || isSuperUser) && <Dashboard
-        title="Dashboard"
-        icon={<Home24Regular fontSize={iconSize} />}
-        tabs={['Dashboard']}
-        selectedTab={selectedTab}
-      />}
+      {(TeamOwnerStatus || isAppOwner || isSuperUser) &&
+        <Dashboard
+          title="Dashboard"
+          icon={<Home24Regular fontSize={iconSize} />}
+          tabs={['Dashboard']}
+          selectedTab={selectedTab}
+        />}
       <NotificationPage
         title="Notifications"
         icon={<Alert24Regular fontSize={iconSize} />}

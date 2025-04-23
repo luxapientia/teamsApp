@@ -577,7 +577,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           return quarterlyTarget ? getPersonalPerformanceScore(quarterlyTarget.objectives) : null;
         })
         .filter((score): score is number => score !== null);
-      
+
       return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
     });
 
@@ -637,27 +637,27 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                 <TableCell sx={{ fontWeight: 500 }}>
                   {teamsRow.teamName}
                 </TableCell>
-                <TableCell 
+                <TableCell
                   align="center"
                   sx={{ fontWeight: 500 }}
                 >
                   {teamsRow.agreement}%
                 </TableCell>
-                <TableCell 
+                <TableCell
                   align="center"
                   sx={{ fontWeight: 500 }}
                 >
                   {teamsRow.assessment}%
                 </TableCell>
-                <TableCell 
+                <TableCell
                   align="center"
-                  sx={{ 
+                  sx={{
                     color: getRatingScaleInfo(teamsRow.performance).color,
                     fontWeight: 500
                   }}
                 >
-                  {teamsRow.performance !== null ? 
-                    `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)` 
+                  {teamsRow.performance !== null ?
+                    `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)`
                     : 'N/A'
                   }
                 </TableCell>
