@@ -129,12 +129,21 @@ const MyTrainingDashboard: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
+    <Container 
+      maxWidth={false} 
+      sx={{ 
+        backgroundColor: '#F9FAFB', 
+        borderRadius: '8px',
+        py: 3,
+        px: { xs: 2, sm: 3 },
+        maxWidth: '100%',
+        overflow: 'hidden'
+      }}
+    >
       <Box sx={{ 
-        p: { xs: 2, md: 3 },
-        height: '100vh',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        width: '100%'
       }}>
         <Typography 
           variant="h6" 
@@ -149,10 +158,13 @@ const MyTrainingDashboard: React.FC = () => {
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'space-between',
-          flexDirection: { xs: 'column', md: 'row' },
-          gap: 2,
-          flex: 1,
-          overflow: 'hidden'
+          flexDirection: { xs: 'column', xl: 'row' },
+          gap: 3,
+          width: '100%',
+          '& > *': {
+            flex: { xs: '1 1 100%', xl: '1 1 0%' },
+            minWidth: { xs: '100%', xl: '300px' }
+          }
         }}>
           <TrainingBoard
             title="Requested"
