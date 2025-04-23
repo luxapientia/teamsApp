@@ -23,7 +23,7 @@ interface PersonalQuarterlyTargetObjective {
   KPIs: QuarterlyTargetKPI[];
 }
 
-interface PersonalQuarterlyTarget {
+export interface PersonalQuarterlyTarget {
   quarter: string;
   isEditable: boolean;
   agreementStatus: AgreementStatus;

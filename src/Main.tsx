@@ -20,6 +20,7 @@ import { api } from './services/api';
 import Dashboard from './pages/dashboard';
 import EmployeeDevPlan from './pages/employee_dev_plan';
 import TeamsPage from './pages/teams';
+import Feedback from './pages/Feedback';
 const iconSize = 24;
 
 function Main() {
@@ -147,7 +148,7 @@ function Main() {
         <Reports
           title='Reports'
           icon={<DocumentText24Regular fontSize={iconSize} />}
-          tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
+          tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Performance Distribution Report']}
           selectedTab={selectedTab}
         />
       )}
@@ -159,11 +160,20 @@ function Main() {
           selectedTab={selectedTab}
         />
       )}
+      {(isAppOwner || isSuperUser) && (
+        <Feedback
+          title="Feedback"
+          icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
+          tabs={[]}
+          selectedTab={selectedTab}
+        />
+      )}
+      
       {isAppOwner && (
         <ManagePage
           title="Manage Companies"
           icon={<GridRegular fontSize={iconSize} />}
-          tabs={['Companies', 'Companies Super Users', 'Companies Licenses']}
+          tabs={['Companies', 'Companies Super Users', 'Companies Licenses', 'Modules']}
           selectedTab={selectedTab}
         />
       )}

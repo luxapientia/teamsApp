@@ -8,6 +8,7 @@ import TeamPerformanceAssessment from './team_performance_assessment';
 import TeamPerformances from './team_performances';
 import TeamPerformanceAgreementsCompletions from './team_performance_agreements_completions';
 import TeamPerformanceAssessmentsCompletions from './team_performance_assessments_completions';
+import PerformanceDistributionReport from './performance_distribution_report';
 
 const MyPerformanceAssessment: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
   const dispatch = useAppDispatch();
@@ -28,6 +29,8 @@ const MyPerformanceAssessment: React.FC<PageProps> = ({ title, icon, tabs, selec
         return <TeamPerformanceAgreementsCompletions />;
       case 'Teams Performance Assessments Completions':
         return <TeamPerformanceAssessmentsCompletions />;
+      case 'Performance Distribution Report':
+        return <PerformanceDistributionReport />;
       default:
         return null;
     }

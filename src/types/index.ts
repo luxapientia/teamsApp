@@ -4,6 +4,7 @@ export * from './personalPerformance';
 export * from './notification';
 export * from './pdf'
 export * from './course';
+export * from './feedback';
 
 export type BaseEntity = {
   _id: string;
