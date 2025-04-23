@@ -20,14 +20,23 @@ import {
 import {
   Chart as ChartJS,
   ArcElement,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend,
   CategoryScale,
   LinearScale,
   BarElement,
   ChartData,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell
+} from 'recharts';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { RootState } from '../../store';
@@ -106,10 +115,7 @@ const CardContent = styled(Box)(({ theme }) => ({
 
 ChartJS.register(
   ArcElement,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Tooltip,
+  ChartTooltip,
   Legend
 );
 
@@ -327,62 +333,11 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     ],
   });
 
-  const performanceChartData = {
-    labels: performanceData.metrics.map(m => m.label),
-    datasets: [
-      {
-        data: performanceData.metrics.map(m => m.percentage),
-        backgroundColor: performanceData.metrics.map(m => m.color),
-        borderWidth: 0,
-        borderRadius: 4,
-        barThickness: 40,
-        maxBarThickness: 50,
-      },
-    ],
-  };
-
-  const performanceChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        callbacks: {
-          label: (context: any) => {
-            return `${context.formattedValue}%`;
-          },
-        },
-      },
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false,
-        },
-        ticks: {
-          font: {
-            size: 11
-          }
-        }
-      },
-      y: {
-        beginAtZero: true,
-        max: 100,
-        grid: {
-          display: true,
-          color: '#f0f0f0',
-        },
-        ticks: {
-          callback: (value: number) => `${value}%`,
-          font: {
-            size: 11
-          }
-        },
-      },
-    },
-  };
+  const performanceChartData = performanceData.metrics.map(metric => ({
+    name: metric.label,
+    value: metric.percentage,
+    color: metric.color
+  }));
 
   const PendingTargetsTable = () => (
     <TableContainer component={Paper}>
@@ -835,10 +790,52 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     </Typography>
                   </CardHeader>
                   <CardContent>
-                    <Bar
-                      data={performanceChartData}
-                      options={performanceChartOptions}
-                    />
+                    <Box sx={{ width: '100%', height: 300 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={performanceChartData}
+                          margin={{
+                            top: 20,
+                            right: 30,
+                            left: 20,
+                            bottom: 5,
+                          }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="name"
+                            tick={{ fontSize: 12 }}
+                            interval={0}
+                          />
+                          <YAxis
+                            tick={{ fontSize: 12 }}
+                            domain={[0, 100]}
+                            tickFormatter={(value) => `${value}%`}
+                          />
+                          <Tooltip
+                            formatter={(value) => [`${value}%`, 'Percentage']}
+                            contentStyle={{
+                              backgroundColor: '#fff',
+                              border: '1px solid #ccc',
+                              borderRadius: '4px',
+                              padding: '10px'
+                            }}
+                          />
+                          <Bar 
+                            dataKey="value" 
+                            fill="#8884d8"
+                            radius={[4, 4, 0, 0]}
+                            barSize={40}
+                          >
+                            {
+                              performanceChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))
+                            }
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Box>
                   </CardContent>
                 </DashboardCard>
               </Box>
