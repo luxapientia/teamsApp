@@ -102,4 +102,13 @@ export class OrgDevPlanService {
     ).lean();
     return updatedPlan as unknown as IOrgDevPlan | null;
   }
+
+  async unfinalizePlan(planId: string): Promise<IOrgDevPlan | null> {
+    const updatedPlan = await OrgDevPlan.findByIdAndUpdate(
+      planId,
+      { $set: { isFinalized: false } },
+      { new: true }
+    ).lean();
+    return updatedPlan as unknown as IOrgDevPlan | null;
+  }
 } 

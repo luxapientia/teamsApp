@@ -279,6 +279,22 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
     }
   };
 
+  const handleUnfinalizePlan = async () => {
+    try {
+      setIsFinalizingPlan(true);
+      // Call the unfinalize endpoint
+      await api.post(`/users/org-dev-plan/${planId}/unfinalize`);
+      setIsFinalized(false);
+      showToast('Plan unfinalized successfully', 'success');
+      dispatch(fetchEmployees(planId));
+    } catch (error) {
+      console.error('Error unfinalizing plan:', error);
+      showToast('Failed to unfinalize plan', 'error');
+    } finally {
+      setIsFinalizingPlan(false);
+    }
+  };
+
   const isTrainingRegistered = useCallback((email: string, courseName: string, annualTargetId: string, quarter: string) => {
     return allEmployees.some(emp => 
       emp.email === email && 
@@ -361,12 +377,12 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Button
             variant="contained"
-            onClick={handleFinalizePlan}
-            disabled={isFinalizingPlan || employees.length === 0 || !employees.some(emp => emp.status === TrainingStatus.PLANNED) || isFinalized}
+            onClick={isFinalized ? handleUnfinalizePlan : handleFinalizePlan}
+            disabled={isFinalizingPlan || (!isFinalized && (employees.length === 0 || !employees.some(emp => emp.status === TrainingStatus.PLANNED)))}
             sx={{
-              backgroundColor: '#059669',
+              backgroundColor: isFinalized ? '#DC2626' : '#059669',
               '&:hover': {
-                backgroundColor: '#047857',
+                backgroundColor: isFinalized ? '#B91C1C' : '#047857',
               },
               '&.Mui-disabled': {
                 backgroundColor: '#E5E7EB',
@@ -374,7 +390,10 @@ const PlanView: React.FC<PlanViewProps> = ({ planId }) => {
               }
             }}
           >
-            {isFinalized ? 'Plan Finalized' : isFinalizingPlan ? 'Finalizing...' : 'Finalize Plan'}
+            {isFinalizingPlan 
+              ? (isFinalized ? 'Unfinalizing...' : 'Finalizing...') 
+              : (isFinalized ? 'Unfinalize Plan' : 'Finalize Plan')
+            }
           </Button>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: '200px' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
