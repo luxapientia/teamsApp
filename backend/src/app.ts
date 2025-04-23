@@ -18,6 +18,7 @@ import userRoutes from './routes/User';
 import orgDevPlanRoutes from './routes/orgDevPlan';
 import trainingCoursesRoutes from './routes/trainingCourses';
 import trainingRoutes from './routes/training';
+import feedbackRoutes from './routes/feedback';
 const app = express();
 
 // Middleware
@@ -48,7 +49,7 @@ app.use('/api/users', authenticateToken, checkLicenseStatus, userRoutes);
 app.use('/api/users/org-dev-plan', orgDevPlanRoutes);
 app.use('/api/training-courses', trainingCoursesRoutes);
 app.use('/api/training', trainingRoutes);
-
+app.use('/api/feedback', authenticateToken, checkLicenseStatus, feedbackRoutes);
 
 // Connect to MongoDB
 mongoose.connect(config.mongoUri)

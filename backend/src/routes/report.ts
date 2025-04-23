@@ -16,6 +16,24 @@ router.get('/company-users', authenticateToken, async (req: AuthenticatedRequest
   }
 });
 
+router.get('/personal-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { annualTargetId } = req.query;
+    const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId }).populate('userId').populate('teamId') as any[];
+    return res.json(allPersonalPerformances.map((performance: any) => ({
+      _id: performance._id,
+      fullName: performance.userId.name,
+      jobTitle: performance.userId.jobTitle,
+      team: performance.teamId?.name,
+      teamId: performance.teamId?._id,
+      quarterlyTargets: performance.quarterlyTargets
+    })));
+  } catch (error) {
+    console.error('Personal performances error:', error);
+    return res.status(500).json({ error: 'Failed to get personal performances' });
+  }
+})
+
 router.get('/team-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId } = req.query;
@@ -47,7 +65,7 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
         }
       }
     }
-  );
+    );
 
     return res.json(teamPerformances);
   } catch (error) {
