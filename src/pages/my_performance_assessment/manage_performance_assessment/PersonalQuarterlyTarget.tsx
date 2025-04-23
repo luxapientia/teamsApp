@@ -435,7 +435,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             <Typography variant="body2" sx={{
                                 color: '#DC2626',
                                 fontWeight: 600,
-                                backgroundColor: '#E5E7EB',
                                 px: 2,
                                 py: 0.5,
                                 borderRadius: 1
@@ -449,7 +448,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                         <Typography variant="body2" sx={{
                             color: ratingScale.color,
                             fontWeight: 600,
-                            backgroundColor: '#E5E7EB',
                             px: 2,
                             py: 0.5,
                             borderRadius: 1
