@@ -228,7 +228,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
       try {
         const response = await dispatch(fetchTeamPerformances(selectedAnnualTargetId));
 
-        const performances = response.payload as TeamPerformance[];
+        const performances = (response.payload as { performances: TeamPerformance[] }).performances;
 
         const filteredPerformances = (viewMode === 'team' && userOwnedTeam)
           ? performances.filter(p => p.team === userOwnedTeam)
