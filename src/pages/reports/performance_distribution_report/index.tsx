@@ -53,6 +53,7 @@ const PerformanceDistributionReport: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [showReport, setShowReport] = useState(false);
   const [personalPerformances, setPersonalPerformances] = useState<PersonalPerformance[]>([]);
+  const teams = useAppSelector((state: RootState) => state.teams.teams);
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const selectedAnnualTarget = useAppSelector((state: RootState) =>
@@ -71,7 +72,14 @@ const PerformanceDistributionReport: React.FC = () => {
         }
       });
       if (response.status === 200) {
-        setPersonalPerformances(response.data.data);
+        const newPersonalPerformances = [];
+        console.log(response.data.data);
+        response.data.data.forEach((item: any) => {
+          if(item.quarterlyTargets.find((quarter: any) => quarter.quarter === selectedQuarter).assessmentStatus === 'Approved') {
+            newPersonalPerformances.push(item);
+          }
+        });
+        setPersonalPerformances(newPersonalPerformances);
 
       }
     } catch (error) {
@@ -172,24 +180,17 @@ const PerformanceDistributionReport: React.FC = () => {
       }
     });
 
-    const teamIds = [];
-    personalPerformances.forEach((personalPerformance) => {
-      const teamId = personalPerformance.teamId;
-      if (!teamIds.includes(teamId)) teamIds.push(teamId);
-    })
-
     doc.setFontSize(13);
     doc.text('Team Performance Distribution', 10, finalY + 10, { align: 'left' });
 
     doc.setLineWidth(0.5);
     doc.line(10, finalY + 15, pageWidth - 10, finalY + 15);
     
-    teamIds.map((id, index) => {
-      const teamName = (personalPerformances.find((personalPerformance) =>
-        personalPerformance.teamId === id) as any).team;
+    teams.map((team, index) => {
+      const teamName = team.name;
 
       const teamChartData = getChartData(personalPerformances.filter((personalPerformance) =>
-        personalPerformance.teamId === id))
+        personalPerformance.teamId === team._id))
 
       finalY = addNewPageIfNeeded(finalY + 25, 30);
 
@@ -294,22 +295,15 @@ const PerformanceDistributionReport: React.FC = () => {
             </StyledTitle>
             {
               (() => {
-                const teamIds = [];
-                personalPerformances.forEach((personalPerformance) => {
-                  const teamId = personalPerformance.teamId;
-                  if (!teamIds.includes(teamId)) teamIds.push(teamId);
-                })
-
-                return teamIds.map((id, index) => {
-                  const teamName = (personalPerformances.find((personalPerformance) =>
-                    personalPerformance.teamId === id) as any).team;
+                return teams.map((team, index) => {
+                  const teamName = team.name;
                   return (
                     <PerformanceDistributionChart
                       key={index}
                       title={teamName}
                       annualTarget={selectedAnnualTarget}
                       chartData={getChartData(personalPerformances.filter((personalPerformance) =>
-                        personalPerformance.teamId === id))}
+                        personalPerformance.teamId === team._id))}
                     />
                   );
                 })

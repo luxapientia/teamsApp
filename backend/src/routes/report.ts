@@ -2,7 +2,7 @@ import express, { Response } from 'express';
 import { AuthenticatedRequest, authenticateToken } from '../middleware/auth';
 import User from '../models/User';
 import Team from '../models/Team';
-import PersonalPerformance, { AssessmentStatus } from '../models/PersonalPerformance';
+import PersonalPerformance from '../models/PersonalPerformance';
 import { UserRole } from '../types/user';
 const router = express.Router();
 
@@ -19,7 +19,7 @@ router.get('/company-users', authenticateToken, async (req: AuthenticatedRequest
 router.get('/personal-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId } = req.query;
-    const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId, assessmentStatus: AssessmentStatus.Approved }).populate('userId').populate('teamId') as any[];
+    const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId }).populate('userId').populate('teamId') as any[];
     return res.json(allPersonalPerformances.map((performance: any) => ({
       _id: performance._id,
       fullName: performance.userId.name,
