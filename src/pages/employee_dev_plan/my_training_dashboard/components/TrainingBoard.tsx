@@ -14,20 +14,13 @@ export const TrainingBoard: React.FC<TrainingBoardProps> = ({
   backgroundColor,
   chipColor,
 }) => (
-  <Box sx={{ 
-    flex: 1, 
-    width: '100%',
-    minWidth: { xs: '100%', sm: '300px' },
-    maxWidth: { xs: '100%', lg: '400px' }
-  }}>
+  <Box>
     <Paper 
       sx={{ 
         p: 2,
-        height: { xs: 'auto', md: '600px' },
         backgroundColor,
         borderRadius: 2,
-        display: 'flex',
-        flexDirection: 'column'
+        height: '100%'
       }}
     >
       <Typography 
@@ -40,35 +33,27 @@ export const TrainingBoard: React.FC<TrainingBoardProps> = ({
       >
         {title}
       </Typography>
-      <Box
-        sx={{
-          flex: 1,
-          overflowY: 'auto',
-          '&::-webkit-scrollbar': {
-            width: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: 'transparent',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: 'rgba(0,0,0,0.1)',
-            borderRadius: '4px',
-          },
-          '&::-webkit-scrollbar-thumb:hover': {
-            backgroundColor: 'rgba(0,0,0,0.2)',
-          }
-        }}
-      >
-        <Stack spacing={2} sx={{ px: 1 }}>
-          {trainings.map(training => (
-            <TrainingCard
-              key={training.id}
-              training={training}
-              chipColor={chipColor}
-            />
-          ))}
-        </Stack>
-      </Box>
+      <Stack spacing={2} sx={{ px: 1 }}>
+        {trainings.map(training => (
+          <TrainingCard
+            key={training.id}
+            training={training}
+            chipColor={chipColor}
+          />
+        ))}
+        {trainings.length === 0 && (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            height: '100px'
+          }}>
+            <Typography color="text.secondary">
+              No trainings found
+            </Typography>
+          </Box>
+        )}
+      </Stack>
     </Paper>
   </Box>
 ); 
