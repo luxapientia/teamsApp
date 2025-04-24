@@ -167,7 +167,7 @@ const PerformanceDistributionReport: React.FC = () => {
 
     autoTable(doc, {
       head: [['Performance Rating Score', 'Description', 'No of Employees', '%']],
-      body: selectedAnnualTarget?.content.ratingScales.map(scale => [scale.score, scale.name, organizationChartData.find(data => data.rating === scale.score)?.count, ((organizationChartData.find(data => data.rating === scale.score)?.count / (organizationChartData.length || 1)) * 100).toFixed(2)]),
+      body: selectedAnnualTarget?.content.ratingScales.map(scale => [scale.score, scale.name, organizationChartData.find(data => data.rating === scale.score)?.count, ((organizationChartData.find(data => data.rating === scale.score)?.count / (organizationChartData.reduce((prev, current) => prev + current.count, 0))) * 100).toFixed(2)]),
       startY: finalY,
       columnStyles: {
         0: { cellWidth: tableWidth * 0.2 },
