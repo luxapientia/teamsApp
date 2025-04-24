@@ -7,32 +7,22 @@ export interface Feedback {
   annualTargetId: string;
   tenantId: string;
   hasContent?: boolean;
-  dimensions: FeedbackDemension[];
-  questions: FeedbackQuestion[];
+  dimensions: FeedbackDimension[];
   responses: FeedbackResponse[];
-  contributionScores: ContributionScore[];
+  contributionScorePercentage?: number;
   enableFeedback: EnableFeedback[];
 }
 
-export interface FeedbackDemension {
+export interface FeedbackDimension {
     index: number;
     name: string;
     weight: number;
-}
-
-export interface FeedbackQuestion {
-    dimensionIndex: number;
-    question: string;
+    questions: string[];
 }
 
 export interface FeedbackResponse {
     score: number;
     response: string;
-}
-
-export interface ContributionScore {
-    contribution: string;
-    score: number;
 }
 
 export interface EnableFeedback {

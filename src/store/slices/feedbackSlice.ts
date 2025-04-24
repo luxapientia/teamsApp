@@ -3,13 +3,13 @@ import { api } from '../../services/api';
 import { AxiosError } from 'axios';
 import { Feedback } from '@/types';
 interface FeedbackState {
-    feedback: Feedback[];
+    feedbacks: Feedback[];
     status: 'idle' | 'loading' | 'succeeded' | 'failed';
     error: string | null;
 }
 
 const initialState: FeedbackState = {
-    feedback: [],
+    feedbacks: [],
     status: 'idle',
     error: null,
 };
@@ -20,7 +20,7 @@ export const fetchFeedback = createAsyncThunk(
     async () => {
         try {
             const response = await api.get(`/feedback`);
-
+            console.log('response', response);
             if (response.status === 200) {
                 return response.data.data as Feedback[];
             } else {
@@ -52,9 +52,7 @@ export const updateFeedback = createAsyncThunk(
     'feedback/updateFeedback',
     async (feedback: Feedback) => {
         try {
-            const response = await api.put(`/feedback/update-feedback/${feedback._id}`, {
-                feedback
-            });
+            const response = await api.put('/feedback/update-feedback', feedback);
             if (response.status === 200) {
                 return response.data.data as Feedback;
             } else {
@@ -96,7 +94,7 @@ const feedbackSlice = createSlice({
             .addCase(fetchFeedback.fulfilled, (state, action) => {
                 state.status = 'succeeded';
                 console.log('action.payload', action.payload);
-                state.feedback = action.payload;
+                state.feedbacks = action.payload;
             })
             .addCase(fetchFeedback.rejected, (state, action) => {
                 state.status = 'failed';
@@ -107,7 +105,9 @@ const feedbackSlice = createSlice({
             })
             .addCase(createFeedback.fulfilled, (state, action) => {
                 state.status = 'succeeded';
-                state.feedback.push(action.payload);
+                if (action.payload) {
+                    state.feedbacks.push(action.payload);
+                }
             })
             .addCase(createFeedback.rejected, (state, action) => {
                 state.status = 'failed';
@@ -118,7 +118,9 @@ const feedbackSlice = createSlice({
             })
             .addCase(updateFeedback.fulfilled, (state, action) => {
                 state.status = 'succeeded';
-                state.feedback.push(action.payload);
+                if (action.payload) {
+                    state.feedbacks = state.feedbacks.map(feedback => feedback._id === action.payload._id ? action.payload : feedback);
+                }
             })
     },
 });

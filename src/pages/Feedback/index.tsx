@@ -37,23 +37,9 @@ import { fetchAnnualTargets } from '../../store/slices/scorecardSlice';
 import { RootState } from '../../store';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import FeedbackDetails from './FeedbackDetails';
-// import { FeedbackForm } from './types';
 import { Feedback as FeedbackType } from '../../types';
-// import { StyledTableCell, StyledHeaderCell } from '../../components/StyledTableComponents';
-
-const StyledTableCell = styled(TableCell)({
-    borderBottom: '1px solid #E5E7EB',
-    padding: '16px',
-    color: '#374151',
-});
-
-const StyledHeaderCell = styled(TableCell)({
-    borderBottom: '1px solid #E5E7EB',
-    padding: '16px',
-    color: '#6B7280',
-    fontWeight: 500,
-    backgroundColor: '#F9FAFB',
-});
+import { deleteFeedback, updateFeedback, createFeedback, fetchFeedback } from '../../store/slices/feedbackSlice';
+import { StyledTableCell, StyledHeaderCell } from '../../components/StyledTableComponents';
 
 const ViewButton = styled(Button)({
     textTransform: 'none',
@@ -78,12 +64,27 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
         annualTargetId: '',
         tenantId: '',
         dimensions: [],
-        questions: [],
         responses: [],
-        contributionScores: [],
-        enableFeedback: [],
+        enableFeedback: [
+            {
+                quarter: 'Q1',
+                enable: false,
+            },
+            {
+                quarter: 'Q2',
+                enable: false,
+            },
+            {
+                quarter: 'Q3',
+                enable: false,
+            },
+            {
+                quarter: 'Q4',
+                enable: false,
+            },
+        ],
     });
-    const [feedbackList, setFeedbackList] = useState<FeedbackType[]>([]);
+    const feedbackList = useAppSelector((state: RootState) => state.feedback.feedbacks.filter((feedback) => feedback.annualTargetId === selectedAnnualTargetId));
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedFeedback, setSelectedFeedback] = useState<FeedbackType | null>(null);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -91,6 +92,7 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
 
     useEffect(() => {
         dispatch(fetchAnnualTargets());
+        dispatch(fetchFeedback());
     }, [dispatch]);
 
     const handleScorecardChange = (event: SelectChangeEvent) => {
@@ -100,6 +102,7 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
 
     const handleView = (feedback: FeedbackType) => {
         setSelectedFeedback(feedback);
+        setShowTable(false);
         setShowDetails(true);
     };
 
@@ -132,7 +135,7 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
 
     const handleDelete = () => {
         if (selectedFeedback && !selectedFeedback.hasContent) {
-            setFeedbackList(feedbackList.filter(f => f._id !== selectedFeedback._id));
+            dispatch(deleteFeedback(selectedFeedback._id));
             handleMenuClose();
         }
     };
@@ -140,15 +143,10 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
     const handleSave = () => {
         if (feedback.name.trim()) {
             if (isEditMode) {
-                setFeedbackList(feedbackList.map(f =>
-                    f._id === feedback._id ? feedback : f
-                ));
+                console.log('feedback', feedback);
+                dispatch(updateFeedback({...feedback, annualTargetId: selectedAnnualTargetId}));
             } else {
-                setFeedbackList([...feedbackList, {
-                    ...feedback,
-                    _id: Math.random().toString(36).substr(2, 9),
-                    hasContent: false
-                }]);
+                dispatch(createFeedback({...feedback, annualTargetId: selectedAnnualTargetId}));
             }
             handleCloseModal();
         }
@@ -156,18 +154,42 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
 
     const handleCloseModal = () => {
         setIsModalOpen(false);
-        setFeedback(null);
+        setFeedback({
+            _id: '',
+            name: '',
+            status: 'Active',
+            hasContent: false,
+            annualTargetId: '',
+            tenantId: '',
+            dimensions: [],
+            responses: [],
+            enableFeedback: [
+                {
+                    quarter: 'Q1',
+                    enable: false,
+                },
+                {
+                    quarter: 'Q2',
+                    enable: false,
+                },
+                {
+                    quarter: 'Q3',
+                    enable: false,
+                },
+                {
+                    quarter: 'Q4',
+                    enable: false,
+                },
+            ],
+        });
         setIsEditMode(false);
     };
 
     const handleBack = () => {
         setShowDetails(false);
         setSelectedFeedback(null);
+        setShowTable(true);
     };
-
-    // if (showDetails && selectedFeedback) {
-    //     return <FeedbackDetails feedback={selectedFeedback} onBack={handleBack} />;
-    // }
 
     return (
         <Box sx={{ p: 3 }}>
@@ -179,9 +201,6 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
                         displayEmpty
                         sx={{ backgroundColor: '#fff' }}
                     >
-                        <MenuItem value="" disabled>
-                            Annual Corporate Scorecard
-                        </MenuItem>
                         {annualTargets.map((target) => (
                             <MenuItem key={target._id} value={target._id}>
                                 {target.name}
@@ -230,8 +249,8 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {feedbackList.map((feedback) => (
-                                    <TableRow key={feedback._id}>
+                                {feedbackList.map((feedback, index) => (
+                                    <TableRow key={index}>
                                         <StyledTableCell>
                                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                 {feedback.name}
@@ -318,12 +337,16 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
                             fullWidth
                             label="Employee 360 Degree Feedback"
                             value={feedback.name}
-                            onChange={(e) => setFeedback({ ...feedback, name: e.target.value })}
+                            onChange={(e) => {
+                                setFeedback({ ...feedback, name: e.target.value });
+                            }}
                         />
                         <FormControl fullWidth>
                             <Select
                                 value={feedback.status}
-                                onChange={(e) => setFeedback({ ...feedback, status: e.target.value as 'Active' | 'Not Active' })}
+                                onChange={(e) => {
+                                    setFeedback({ ...feedback, status: e.target.value as 'Active' | 'Not Active' });
+                                }}
                             >
                                 <MenuItem value="Active">Active</MenuItem>
                                 <MenuItem value="Not Active">Not Active</MenuItem>
@@ -345,6 +368,9 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
+            {showDetails && selectedFeedback && (
+                <FeedbackDetails feedbackId={selectedFeedback._id} onBack={handleBack} />
+            )}
         </Box>
     );
 };

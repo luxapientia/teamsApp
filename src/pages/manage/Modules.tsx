@@ -22,6 +22,8 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { Company } from '../../types';
 import { companyAPI } from '../../services/api';
+import { api } from '../../services/api';
+import { StyledTableCell, StyledHeaderCell } from '../../components/StyledTableComponents';
 
 const StyledTab = styled(Tab)({
   textTransform: 'none',
@@ -32,20 +34,6 @@ const StyledTab = styled(Tab)({
     color: 'white',
     borderRadius: '4px',
   },
-});
-
-const StyledTableCell = styled(TableCell)({
-  borderBottom: '1px solid #E5E7EB',
-  padding: '16px',
-  color: '#374151',
-});
-
-const StyledHeaderCell = styled(TableCell)({
-  borderBottom: '1px solid #E5E7EB',
-  padding: '16px',
-  color: '#6B7280',
-  fontWeight: 500,
-  backgroundColor: '#F9FAFB',
 });
 
 const ViewButton = styled(Button)({
@@ -77,35 +65,55 @@ const Modules: React.FC = () => {
     },
   ]);
   const [companies, setCompanies] = useState<Company[]>([]);
+  const [feedbackCompanyIds, setFeedbackCompanyIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const response = await companyAPI.getAll();
-        setCompanies(response.data.data);
-      } catch (error) {
-        console.error('Error fetching companies:', error);
-      }
-    };
     fetchCompanies();
+    fetchFeedbackCompanies();
   }, []);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue);
+  const fetchCompanies = async () => {
+    try {
+      const response = await companyAPI.getAll();
+      setCompanies(response.data.data);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
+  };
+
+  const fetchFeedbackCompanies = async () => {
+    try {
+      const response = await api.get('/module/feedback-companies');
+      if (response.status === 200) {
+        setFeedbackCompanyIds(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching feedback companies:', error);
+    }
   };
 
   const toggleModuleExpansion = (moduleId: string) => {
-    setModules(modules.map(module => 
-      module.id === moduleId 
+    setModules(modules.map(module =>
+      module.id === moduleId
         ? { ...module, isExpanded: !module.isExpanded }
         : module
     ));
   };
 
-  const handleCompanySelection = (companyId: string, moduleId: string) => {
-    // Handle company selection logic here
+  const handleCompanySelection = async (companyId: string) => {
+    console.log('companyId', companyId);
+    const isChecked = feedbackCompanyIds.some(fc => fc === companyId);
+    const newFeedbackCompanyIds = isChecked ? feedbackCompanyIds.filter(fc => fc !== companyId) : [...feedbackCompanyIds, companyId];
+    try {
+      const response = await api.post('/module/update-feedback-companies', { feedbackCompanies: newFeedbackCompanyIds });
+      if (response.status === 200) {
+        console.log('newFeedbackCompanyIds', newFeedbackCompanyIds);
+        setFeedbackCompanyIds(newFeedbackCompanyIds);
+      }
+    } catch (error) {
+      console.error('Error updating feedback companies:', error);
+    }
   };
-
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 3 }}>
@@ -148,9 +156,9 @@ const Modules: React.FC = () => {
             {modules.map((module) => (
               <React.Fragment key={module.id}>
                 <TableRow>
-                  <StyledTableCell 
-                    sx={{ 
-                      display: 'flex', 
+                  <StyledTableCell
+                    sx={{
+                      display: 'flex',
                       alignItems: 'center',
                       gap: 1,
                       cursor: 'pointer',
@@ -161,7 +169,7 @@ const Modules: React.FC = () => {
                     {module.name}
                   </StyledTableCell>
                   <StyledTableCell align="right">
-                    <ViewButton 
+                    <ViewButton
                       variant="outlined"
                       size="small"
                       onClick={() => toggleModuleExpansion(module.id)}
@@ -170,13 +178,13 @@ const Modules: React.FC = () => {
                     </ViewButton>
                   </StyledTableCell>
                 </TableRow>
-                {module.isExpanded && companies.map((company) => (
+                {module.isExpanded && module.id === '1' && companies.map((company) => (
                   <TableRow key={company._id}>
                     <StyledTableCell sx={{ pl: 8 }}>{company.name}</StyledTableCell>
                     <StyledTableCell align="right">
-                      <Checkbox 
-                        checked={false}
-                        onChange={() => handleCompanySelection(company._id, module.id)}
+                      <Checkbox
+                        checked={feedbackCompanyIds.some(fc => fc === company._id)}
+                        onChange={() => handleCompanySelection(company._id)}
                       />
                     </StyledTableCell>
                   </TableRow>

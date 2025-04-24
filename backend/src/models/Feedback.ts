@@ -4,21 +4,11 @@ export interface FeedbackDimension {
   index: number;
   name: string;
   weight: number;
+  questions: string[];
 }
-
-export interface FeedbackQuestion {
-  dimensionIndex: number;
-  question: string;
-}
-
 export interface FeedbackResponse {
   score: number;
   response: string;
-}
-
-export interface ContributionScore {
-  contribution: string;
-  score: number;
 }
 
 export interface EnableFeedback {
@@ -36,9 +26,8 @@ export interface FeedbackDocument extends Document {
   status: string;
   hasContent: boolean;
   dimensions: FeedbackDimension[];
-  questions: FeedbackQuestion[];
   responses: FeedbackResponse[];
-  contributionScores: ContributionScore[];
+  contributionScorePercentage?: number;
   enableFeedback: EnableFeedback[];
 }
 
@@ -69,13 +58,7 @@ const feedbackSchema = new Schema<FeedbackDocument>({
       index: Number,
       name: String,
       weight: Number,
-    }],
-    required: true,
-  },
-  questions: {
-    type: [{
-      dimensionIndex: Number,
-      question: String,
+      questions: [String],
     }],
     required: true,
   },
@@ -86,12 +69,9 @@ const feedbackSchema = new Schema<FeedbackDocument>({
     }],
     required: true,
   },
-  contributionScores: {
-    type: [{
-      contribution: String,
-      score: Number,
-    }],
-    required: true,
+  contributionScorePercentage: {
+    type: Number,
+    required: false,
   },
   enableFeedback: {
     type: [{

@@ -1,15 +1,15 @@
 import express, { Response } from 'express';
 import { authenticateToken } from '../middleware/auth';
 import { AuthenticatedRequest } from '../middleware/auth';
-import Feedback from '../models/Feedback';
-
+import Feedback, { FeedbackDocument } from '../models/Feedback';
+import { omit } from 'lodash';
 const router = express.Router();
 
 // Get all companies
 router.get('/', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
   try {
     const tenantId = _req.user?.tenantId;
-    const feedback = await Feedback.find({ tenantId });
+    const feedback = await Feedback.find({ tenantId }) as FeedbackDocument[];
     return res.json({ 
       data: feedback,
       status: 200,
@@ -17,7 +17,7 @@ router.get('/', authenticateToken, async (_req: AuthenticatedRequest, res: Respo
     });
   } catch (error) {
     return res.status(500).json({ 
-      data: null,
+      data: [],
       status: 500,
       message: 'Failed to fetch feedback'
     });
@@ -27,9 +27,11 @@ router.get('/', authenticateToken, async (_req: AuthenticatedRequest, res: Respo
 router.post('/create-feedback', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
   try {
     const tenantId = _req.user?.tenantId;
-    const feedback = await Feedback.create({ ..._req.body, tenantId });
+    const newFeedback = { ..._req.body, tenantId };
+    const feedback = await Feedback.create(omit(newFeedback, '_id')) as FeedbackDocument;
     return res.json({ data: feedback, status: 200, message: 'Feedback created successfully' });
   } catch (error) {
+    console.log('error', error);
     return res.status(500).json({ 
       data: null,
       status: 500,
@@ -38,10 +40,11 @@ router.post('/create-feedback', authenticateToken, async (_req: AuthenticatedReq
   }
 });
 
-router.put('/update-feedback/:id', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+router.put('/update-feedback', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id } = _req.params;
-    const feedback = await Feedback.findByIdAndUpdate(id, _req.body, { new: true });
+    const newFeedback = { ..._req.body, tenantId: _req.user?.tenantId };
+    const feedback = await Feedback.findByIdAndUpdate(newFeedback._id, newFeedback, { new: true });
+    console.log('feedback', feedback);
     return res.json({ data: feedback, status: 200, message: 'Feedback updated successfully' });
   } catch (error) {
     return res.status(500).json({ 

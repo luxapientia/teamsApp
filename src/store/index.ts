@@ -5,7 +5,7 @@ import personalPerformanceReducer from './slices/personalPerformanceSlice';
 import notificationReducer from './slices/notificationSlice';
 import devPlanReducer from './slices/devPlanSlice';
 import trainingEmployeesReducer from './slices/trainingEmployeesSlice';
-
+import feedbackReducer from './slices/feedbackSlice';
 export const store = configureStore({
   reducer: {
     scorecard: scorecardReducer,
@@ -13,7 +13,8 @@ export const store = configureStore({
     personalPerformance: personalPerformanceReducer,
     notification: notificationReducer,
     devPlan: devPlanReducer,
-    trainingEmployees: trainingEmployeesReducer
+    trainingEmployees: trainingEmployeesReducer,
+    feedback: feedbackReducer
   },
 });
 
