@@ -258,7 +258,7 @@ const PerformanceDistributionReport: React.FC = () => {
         </Button>
       </Box>
 
-      {showReport && personalPerformances.length > 0 && (
+      {showReport && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
             <Button
