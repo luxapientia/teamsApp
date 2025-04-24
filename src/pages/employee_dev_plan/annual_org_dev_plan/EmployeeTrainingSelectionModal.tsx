@@ -80,7 +80,6 @@ interface EmployeeTrainingSelectionModalProps {
   open: boolean;
   onClose: () => void;
   onSelectEmployees: (employees: SelectedEmployee[]) => void;
-  validateTraining?: (email: string, trainingRequested: string) => boolean;
   planId: string;
 }
 
@@ -88,7 +87,6 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
   open,
   onClose,
   onSelectEmployees,
-  validateTraining,
   planId
 }) => {
   const [selectedEmployees, setSelectedEmployees] = useState<{ [key: string]: SelectedEmployee }>({});
@@ -197,12 +195,11 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
         // Check if there are any unregistered and valid courses
         return employee.coursesWithQuarters.some(({ quarter, courses }) =>
           courses.some(course => 
-            !isTrainingRegistered(employee.email, course.name, annualTargetId, quarter) &&
-            (!validateTraining || validateTraining(employee.email, course.name))
+            !isTrainingRegistered(employee.email, course.name, annualTargetId, quarter)
           )
         );
       });
-  }, [teamPerformances, teamPerformancesByTarget, isTrainingRegistered, validateTraining]);
+  }, [teamPerformances, teamPerformancesByTarget, isTrainingRegistered]);
 
   const handleToggleEmployee = (performance: TeamPerformance, course: Course, quarter: string) => {
     // Find the annual target ID for this performance
@@ -216,8 +213,7 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
     }
 
     // Skip if the training is already registered or not valid
-    if (isTrainingRegistered(performance.email, course.name, annualTargetId, quarter) ||
-        (validateTraining && !validateTraining(performance.email, course.name))) {
+    if (isTrainingRegistered(performance.email, course.name, annualTargetId, quarter)) {
       return;
     }
 

@@ -5,6 +5,7 @@ export interface IOrgDevPlan {
   name: string;
   tenantId: string;
   trainings: Schema.Types.ObjectId[];
+  isFinalized: boolean;
 }
 
 const orgDevPlanSchema = new Schema<IOrgDevPlan>({
@@ -19,7 +20,11 @@ const orgDevPlanSchema = new Schema<IOrgDevPlan>({
   trainings: [{
     type: Schema.Types.ObjectId,
     ref: 'Training'
-  }]
+  }],
+  isFinalized: {
+    type: Boolean,
+    default: false
+  }
 });
 
 const OrgDevPlan = model('OrgDevPlan', orgDevPlanSchema);
