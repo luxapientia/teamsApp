@@ -50,4 +50,29 @@ router.post('/update-feedback-companies', authenticateToken, async (_req: Authen
     }
 });
 
+//check if module is enabled for company
+router.get('/is-feedback-module-enabled', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+        const tenantId = _req.user?.tenantId;
+        const module = await Module.findOne({ moduleName: 'Feedback' }).populate('companies') as ModuleDocument;
+        if (!module) {
+            return res.status(404).json({
+                status: 404,
+                message: 'Module not found'
+            });
+        }
+        const isEnabled = module.companies.some((company: any) => company.tenantId === tenantId);
+        return res.json({
+            status: 200,
+            message: 'Module enabled for company',
+            isEnabled
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: 'Failed to check if module is enabled for company'
+        });
+    }
+});
+
 export default router; 

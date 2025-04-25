@@ -30,6 +30,7 @@ function Main() {
   const selectedTabChanger = (tab: string) => {
     setSelectedTab(tab);
   }
+  const [isFeedbackModuleEnabled, setIsFeedbackModuleEnabled] = useState(false);
 
   // Add socket subscription
   const { subscribe, unsubscribe } = useSocket(SocketEvent.NOTIFICATION, (data) => {
@@ -45,11 +46,20 @@ function Main() {
       dispatch(fetchNotifications());
     });
 
+    //check if feedback module is enabled for company
+    const checkFeedbackModule = async () => {
+      const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+      if (isModuleEnabled.data.data.isEnabled) {
+        setIsFeedbackModuleEnabled(true);
+      }
+    }
+    checkFeedbackModule();
+
     // Cleanup subscription
     return () => {
       unsubscribe(SocketEvent.NOTIFICATION);
     };
-  }, [dispatch, subscribe, unsubscribe]);
+  }, [dispatch, subscribe, unsubscribe, isFeedbackModuleEnabled]);
 
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
@@ -160,7 +170,7 @@ function Main() {
           selectedTab={selectedTab}
         />
       )}
-      {(isAppOwner || isSuperUser) && (
+      {(isAppOwner || isSuperUser) && isFeedbackModuleEnabled && (
         <Feedback
           title="Feedback"
           icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
