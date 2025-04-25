@@ -139,6 +139,16 @@ function Main() {
             ['My Training Dashboard'])}
         selectedTab={selectedTab}
       />}
+
+      {(isAppOwner || isSuperUser) && isFeedbackModuleEnabled && (
+        <Feedback
+          title="Employee 360 Degree Feedback"
+          icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
+          tabs={[]}
+          selectedTab={selectedTab}
+        />
+      )}
+
       {(isAppOwner || isSuperUser) && (
         <OrganizationPerformance
           title="Organization Performance"
@@ -170,15 +180,8 @@ function Main() {
           selectedTab={selectedTab}
         />
       )}
-      {(isAppOwner || isSuperUser) && isFeedbackModuleEnabled && (
-        <Feedback
-          title="Employee 360 Degree Feedback"
-          icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-          tabs={[]}
-          selectedTab={selectedTab}
-        />
-      )}
-      
+
+
       {isAppOwner && (
         <ManagePage
           title="Manage Companies"
