@@ -104,7 +104,6 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
         setSelectedFeedback(feedback);
         setShowTable(false);
         setShowDetails(true);
-        handleMenuClose();
     };
 
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, feedback: FeedbackType) => {
