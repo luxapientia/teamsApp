@@ -32,13 +32,12 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { PageProps } from '../../types';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchAnnualTargets } from '../../store/slices/scorecardSlice';
 import { RootState } from '../../store';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import FeedbackDetails from './FeedbackDetails';
-import { Feedback as FeedbackType } from '../../types';
+import { Feedback as FeedbackType, PageProps } from '../../types';
 import { deleteFeedback, updateFeedback, createFeedback, fetchFeedback } from '../../store/slices/feedbackSlice';
 import { StyledTableCell, StyledHeaderCell } from '../../components/StyledTableComponents';
 
