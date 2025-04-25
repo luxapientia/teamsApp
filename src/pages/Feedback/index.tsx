@@ -31,6 +31,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { PageProps } from '../../types';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchAnnualTargets } from '../../store/slices/scorecardSlice';
@@ -55,8 +56,8 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
     const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
     const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
     const [showTable, setShowTable] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [feedback, setFeedback] = useState<FeedbackType>({
+    const [isNewFeedbackModalOpen, setIsNewFeedbackModalOpen] = useState(false);
+    const [newFeedbackData, setNewFeedbackData] = useState<FeedbackType>({
         _id: '',
         name: '',
         status: 'Active',
@@ -84,6 +85,36 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
             },
         ],
     });
+    const [isCreateFromExistingModalOpen, setIsCreateFromExistingModalOpen] = useState(false);
+    const [createFromExistingData, setCreateFromExistingData] = useState<FeedbackType>({
+        _id: '',
+        name: '',
+        status: 'Active',
+        hasContent: false,
+        annualTargetId: '',
+        tenantId: '',
+        dimensions: [],
+        responses: [],
+        enableFeedback: [
+            {
+                quarter: 'Q1',
+                enable: false,
+            },
+            {
+                quarter: 'Q2',
+                enable: false,
+            },
+            {
+                quarter: 'Q3',
+                enable: false,
+            },
+            {
+                quarter: 'Q4',
+                enable: false,
+            },
+        ],
+    });
+    const [selectedExistingFeedbackId, setSelectedExistingFeedbackId] = useState('');
     const feedbackList = useAppSelector((state: RootState) => state.feedback.feedbacks.filter((feedback) => feedback.annualTargetId === selectedAnnualTargetId));
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedFeedback, setSelectedFeedback] = useState<FeedbackType | null>(null);
@@ -127,9 +158,9 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
 
     const handleEdit = () => {
         if (selectedFeedback) {
-            setFeedback(selectedFeedback);
+            setNewFeedbackData(selectedFeedback);
             setIsEditMode(true);
-            setIsModalOpen(true);
+            setIsNewFeedbackModalOpen(true);
             handleMenuClose();
         }
     };
@@ -143,20 +174,20 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
     };
 
     const handleSave = () => {
-        if (feedback.name.trim()) {
+        if (newFeedbackData.name.trim()) {
             if (isEditMode) {
-                console.log('feedback', feedback);
-                dispatch(updateFeedback({...feedback, annualTargetId: selectedAnnualTargetId}));
+                console.log('feedback', newFeedbackData);
+                dispatch(updateFeedback({ ...newFeedbackData, annualTargetId: selectedAnnualTargetId }));
             } else {
-                dispatch(createFeedback({...feedback, annualTargetId: selectedAnnualTargetId}));
+                dispatch(createFeedback({ ...newFeedbackData, annualTargetId: selectedAnnualTargetId }));
             }
-            handleCloseModal();
+            handleCloseNewFeedback();
         }
     };
 
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        setFeedback({
+    const handleCloseNewFeedback = () => {
+        setIsNewFeedbackModalOpen(false);
+        setNewFeedbackData({
             _id: '',
             name: '',
             status: 'Active',
@@ -191,6 +222,46 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
         setShowDetails(false);
         setSelectedFeedback(null);
         setShowTable(true);
+    };
+
+    const handleSaveCreateFromExisting = () => {
+        if (createFromExistingData.name.trim()) {
+            dispatch(createFeedback({ ...createFromExistingData, annualTargetId: selectedAnnualTargetId }));
+            handleCloseCreateFromExisting();
+        }
+    };
+
+    const handleCloseCreateFromExisting = () => {
+        setIsCreateFromExistingModalOpen(false);
+        setSelectedExistingFeedbackId('');
+        setCreateFromExistingData({
+            _id: '',
+            name: '',
+            status: 'Active',
+            hasContent: false,
+            annualTargetId: '',
+            tenantId: '',
+            dimensions: [],
+            responses: [],
+            enableFeedback: [
+                {
+                    quarter: 'Q1',
+                    enable: false,
+                },
+                {
+                    quarter: 'Q2',
+                    enable: false,
+                },
+                {
+                    quarter: 'Q3',
+                    enable: false,
+                },
+                {
+                    quarter: 'Q4',
+                    enable: false,
+                },
+            ],
+        });
     };
 
     return (
@@ -228,17 +299,30 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
                 <Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                         <Typography variant="h6">Employee 360 Degree Feedback Name</Typography>
-                        <Button
-                            variant="contained"
-                            startIcon={<AddIcon />}
-                            onClick={() => setIsModalOpen(true)}
-                            sx={{
-                                backgroundColor: '#0078D4',
-                                '&:hover': { backgroundColor: '#106EBE' },
-                            }}
-                        >
-                            New
-                        </Button>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                                variant="contained"
+                                startIcon={<ContentCopyIcon />}
+                                onClick={() => setIsCreateFromExistingModalOpen(true)}
+                                sx={{
+                                    backgroundColor: '#0078D4',
+                                    '&:hover': { backgroundColor: '#106EBE' },
+                                }}
+                            >
+                                Create From Existing 360 Degree Feedback
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={() => setIsNewFeedbackModalOpen(true)}
+                                sx={{
+                                    backgroundColor: '#0078D4',
+                                    '&:hover': { backgroundColor: '#106EBE' },
+                                }}
+                            >
+                                New
+                            </Button>
+                        </Box>
                     </Box>
 
                     <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #E5E7EB' }}>
@@ -311,8 +395,8 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
             )}
 
             <Dialog
-                open={isModalOpen}
-                onClose={handleCloseModal}
+                open={isNewFeedbackModalOpen}
+                onClose={handleCloseNewFeedback}
                 maxWidth="sm"
                 fullWidth
             >
@@ -327,7 +411,7 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
                         {isEditMode ? 'Edit Employee 360 Degree Feedback' : 'Employee 360 Degree Feedback'}
                     </Typography>
                     <Button
-                        onClick={handleCloseModal}
+                        onClick={handleCloseNewFeedback}
                         sx={{ minWidth: 'auto', p: 1 }}
                     >
                         <CloseIcon />
@@ -338,16 +422,16 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
                         <TextField
                             fullWidth
                             label="Employee 360 Degree Feedback"
-                            value={feedback.name}
+                            value={newFeedbackData.name}
                             onChange={(e) => {
-                                setFeedback({ ...feedback, name: e.target.value });
+                                setNewFeedbackData({ ...newFeedbackData, name: e.target.value });
                             }}
                         />
                         <FormControl fullWidth>
                             <Select
-                                value={feedback.status}
+                                value={newFeedbackData.status}
                                 onChange={(e) => {
-                                    setFeedback({ ...feedback, status: e.target.value as 'Active' | 'Not Active' });
+                                    setNewFeedbackData({ ...newFeedbackData, status: e.target.value as 'Active' | 'Not Active' });
                                 }}
                             >
                                 <MenuItem value="Active">Active</MenuItem>
@@ -360,7 +444,7 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
                     <Button
                         variant="contained"
                         onClick={handleSave}
-                        disabled={!feedback.name.trim()}
+                        disabled={!newFeedbackData.name.trim()}
                         sx={{
                             backgroundColor: '#0078D4',
                             '&:hover': { backgroundColor: '#106EBE' },
@@ -370,6 +454,87 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <Dialog
+                open={isCreateFromExistingModalOpen}
+                onClose={handleCloseCreateFromExisting}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                        <Typography variant="h6">Create from another 360 Degree Feedback</Typography>
+                        <IconButton onClick={handleCloseCreateFromExisting} size="small">
+                            <CloseIcon />
+                        </IconButton>
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+                        <TextField
+                            fullWidth
+                            label="Name"
+                            value={createFromExistingData.name}
+                            onChange={(e) => setCreateFromExistingData(prev => ({ ...prev, name: e.target.value }))}
+                            required
+                        />
+                        <FormControl fullWidth required>
+                            <Select
+                                value={selectedExistingFeedbackId}
+                                onChange={(e) => {
+                                    const selectedId = e.target.value;
+                                    setSelectedExistingFeedbackId(selectedId);
+                                    const selectedFeedback = feedbackList.find(f => f._id === selectedId);
+                                    if (selectedFeedback) {
+                                        setCreateFromExistingData({
+                                            ...selectedFeedback,
+                                            _id: '',
+                                            name: createFromExistingData.name
+                                        });
+                                    }
+                                }}
+                                displayEmpty
+                            >
+                                <MenuItem value="" disabled>Select 360 Degree Feedback to create from</MenuItem>
+                                {feedbackList.map((feedback) => (
+                                    <MenuItem key={feedback._id} value={feedback._id}>
+                                        {feedback.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <FormControl fullWidth>
+                            <Select
+                                value={createFromExistingData.status}
+                                onChange={(e) => setCreateFromExistingData(prev => ({ ...prev, status: e.target.value as 'Active' | 'Not Active' }))}
+                            >
+                                <MenuItem value="Active">Active</MenuItem>
+                                <MenuItem value="Not Active">Not Active</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, borderTop: '1px solid #E5E7EB' }}>
+                    <Button
+                        onClick={handleCloseCreateFromExisting}
+                        sx={{ color: 'text.secondary' }}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleSaveCreateFromExisting}
+                        disabled={!createFromExistingData.name.trim() || !selectedExistingFeedbackId}
+                        sx={{
+                            backgroundColor: '#0078D4',
+                            '&:hover': { backgroundColor: '#106EBE' },
+                        }}
+                    >
+                        Create
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {showDetails && selectedFeedback && (
                 <FeedbackDetails feedbackId={selectedFeedback._id} onBack={handleBack} />
             )}
