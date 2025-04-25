@@ -55,4 +55,19 @@ router.put('/update-feedback', authenticateToken, async (_req: AuthenticatedRequ
   }
 });
 
+router.delete('/delete-feedback/:id', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log(_req.params, 'params');
+    const { id } = _req.params;
+    await Feedback.findByIdAndDelete(id);
+    return res.json({ status: 200, message: 'Feedback deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ 
+      data: null,
+      status: 500,
+      message: 'Failed to delete feedback'
+    });
+  }
+});
+
 export default router; 
