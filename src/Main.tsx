@@ -172,7 +172,7 @@ function Main() {
       )}
       {(isAppOwner || isSuperUser) && isFeedbackModuleEnabled && (
         <Feedback
-          title="Feedback"
+          title="Employee 360 Degree Feedback"
           icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
           tabs={[]}
           selectedTab={selectedTab}
