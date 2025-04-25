@@ -10,6 +10,7 @@ import {
     MenuItem,
     FormControl,
     TextField,
+    FormHelperText,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { FeedbackDimension } from '../../../../types/feedback';
@@ -40,6 +41,10 @@ const AddFeedbackQuestion: React.FC<AddFeedbackQuestionProps> = ({
     const [selectedDimension, setSelectedDimension] = useState<FeedbackDimension | null>(null);
     const [questions, setQuestions] = useState<string[]>([]);
     const [newQuestion, setNewQuestion] = useState('');
+    const [errors, setErrors] = useState({
+        dimension: false,
+        question: false
+    });
 
     useEffect(() => {
         if (editMode && initialDimension && initialQuestion) {
@@ -52,6 +57,7 @@ const AddFeedbackQuestion: React.FC<AddFeedbackQuestionProps> = ({
         setSelectedDimension(null);
         setQuestions([]);
         setNewQuestion('');
+        setErrors({ dimension: false, question: false });
         onClose();
     };
 
@@ -63,6 +69,18 @@ const AddFeedbackQuestion: React.FC<AddFeedbackQuestionProps> = ({
     };
 
     const handleSave = () => {
+        const hasValidDimension = !!selectedDimension;
+        const hasValidQuestion = editMode ? !!newQuestion.trim() : (questions.length > 0 || !!newQuestion.trim());
+
+        setErrors({
+            dimension: !hasValidDimension,
+            question: !hasValidQuestion
+        });
+
+        if (!hasValidDimension || !hasValidQuestion) {
+            return;
+        }
+
         if (editMode && selectedDimension && onEdit && questionIndex !== undefined) {
             onEdit(selectedDimension.index, questionIndex, newQuestion.trim());
         } else if (selectedDimension && (questions.length > 0 || newQuestion.trim())) {
@@ -91,12 +109,13 @@ const AddFeedbackQuestion: React.FC<AddFeedbackQuestionProps> = ({
             </DialogTitle>
             <DialogContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <FormControl fullWidth>
+                    <FormControl fullWidth error={errors.dimension}>
                         <Select
                             value={selectedDimension?.name || ''}
                             onChange={(e) => {
                                 const dimension = dimensions.find(d => d.name === e.target.value);
                                 setSelectedDimension(dimension || null);
+                                setErrors(prev => ({ ...prev, dimension: false }));
                             }}
                             displayEmpty
                             disabled={editMode}
@@ -112,6 +131,9 @@ const AddFeedbackQuestion: React.FC<AddFeedbackQuestionProps> = ({
                                 </MenuItem>
                             ))}
                         </Select>
+                        {errors.dimension && (
+                            <FormHelperText>Please select a feedback dimension</FormHelperText>
+                        )}
                     </FormControl>
 
                     {!editMode && (
@@ -145,7 +167,12 @@ const AddFeedbackQuestion: React.FC<AddFeedbackQuestionProps> = ({
                         multiline
                         rows={3}
                         value={newQuestion}
-                        onChange={(e) => setNewQuestion(e.target.value)}
+                        onChange={(e) => {
+                            setNewQuestion(e.target.value);
+                            setErrors(prev => ({ ...prev, question: false }));
+                        }}
+                        error={errors.question}
+                        helperText={errors.question ? "Please enter a feedback question" : ""}
                         sx={{ 
                             backgroundColor: '#f5f5f5',
                             '& .MuiOutlinedInput-root': {
