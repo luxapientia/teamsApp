@@ -20,7 +20,7 @@ import { api } from './services/api';
 import Dashboard from './pages/dashboard';
 import EmployeeDevPlan from './pages/employee_dev_plan';
 import TeamsPage from './pages/teams';
-import Feedback from './pages/Feedback';
+import Feedback from './pages/feedback';
 const iconSize = 24;
 
 function Main() {
