@@ -121,6 +121,7 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
         if (selectedFeedback) {
             // Handle open action
             handleMenuClose();
+            handleView(selectedFeedback);
         }
     };
 

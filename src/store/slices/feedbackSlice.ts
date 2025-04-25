@@ -122,6 +122,15 @@ const feedbackSlice = createSlice({
                     state.feedbacks = state.feedbacks.map(feedback => feedback._id === action.payload._id ? action.payload : feedback);
                 }
             })
+            .addCase(deleteFeedback.pending, (state) => {
+                state.status = 'loading';
+            })
+            .addCase(deleteFeedback.fulfilled, (state, action) => {
+                state.status = 'succeeded';
+                if (action.payload) {
+                    state.feedbacks = state.feedbacks.filter(feedback => feedback._id !== action.payload);
+                }
+            })
     },
 });
 
