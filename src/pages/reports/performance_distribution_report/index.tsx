@@ -167,7 +167,7 @@ const PerformanceDistributionReport: React.FC = () => {
 
     autoTable(doc, {
       head: [['Performance Rating Score', 'Description', 'No of Employees', '%']],
-      body: selectedAnnualTarget?.content.ratingScales.map(scale => [scale.score, scale.name, organizationChartData.find(data => data.rating === scale.score)?.count, ((organizationChartData.find(data => data.rating === scale.score)?.count / (organizationChartData.reduce((prev, current) => prev + current.count, 0))) * 100).toFixed(2)]),
+      body: selectedAnnualTarget?.content.ratingScales.map(scale => [scale.score, scale.name, organizationChartData.find(data => data.rating === scale.score)?.count, ((organizationChartData.find(data => data.rating === scale.score)?.count / (organizationChartData.reduce((prev, current) => prev + current.count, 0) || 1)) * 100).toFixed(2)]),
       startY: finalY,
       columnStyles: {
         0: { cellWidth: tableWidth * 0.2 },
@@ -199,7 +199,7 @@ const PerformanceDistributionReport: React.FC = () => {
       autoTable(doc, {
         head: [['Performance Rating Score', 'Description', 'No of Employees', '%']],
         startY: finalY + 5,
-        body: selectedAnnualTarget?.content.ratingScales.map(scale => [scale.score, scale.name, teamChartData.find(data => data.rating === scale.score)?.count, ((teamChartData.find(data => data.rating === scale.score)?.count / (teamChartData.length || 1)) * 100).toFixed(2)]),
+        body: selectedAnnualTarget?.content.ratingScales.map(scale => [scale.score, scale.name, teamChartData.find(data => data.rating === scale.score)?.count, ((teamChartData.find(data => data.rating === scale.score)?.count / (teamChartData.reduce((prev, current) => prev + current.count, 0) || 1)) * 100).toFixed(2)]),
         didDrawPage: (data) => {
           finalY = data.cursor.y;
         }

@@ -165,7 +165,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
                   <StyledTableCell>
                     {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.endDate}
                   </StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget?.status}</StyledTableCell>
+                  <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatus}</StyledTableCell>
                   <StyledTableCell>{teams.find(team => team._id === personalPerformance.teamId)?.name}</StyledTableCell>
                   <StyledTableCell align="center">
                     <ViewButton

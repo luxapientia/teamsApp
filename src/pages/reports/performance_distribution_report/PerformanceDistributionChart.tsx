@@ -53,7 +53,7 @@ const PerformanceDistributionChart: React.FC<PerformanceDistributionChartProps> 
                   <StyledTableCell align="center">{ratingScale.score}</StyledTableCell>
                   <StyledTableCell>{ratingScale.name}</StyledTableCell>
                   <StyledTableCell align="center">{chartData.find(data => data.rating === ratingScale.score)?.count}</StyledTableCell>
-                  <StyledTableCell align="center">{((chartData.find(data => data.rating === ratingScale.score)?.count / (chartData.reduce((prev, current) => prev + current.count, 0))) * 100).toFixed(2)}</StyledTableCell>
+                  <StyledTableCell align="center">{((chartData.find(data => data.rating === ratingScale.score)?.count / (chartData.reduce((prev, current) => prev + current.count, 0) || 1)) * 100).toFixed(2)}</StyledTableCell>
                 </TableRow>
               ))}
             </TableBody>
