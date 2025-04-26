@@ -29,6 +29,7 @@ import { fetchPersonalPerformances } from '../../../store/slices/personalPerform
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 import { PersonalPerformance } from '../../../types';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
+import { format } from 'date-fns';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -166,7 +167,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
                     {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.endDate}
                   </StyledTableCell>
                   <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatus}</StyledTableCell>
-                  <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatusUpdatedAt.toLocaleString()}</StyledTableCell>
+                  <StyledTableCell>{format(personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatusUpdatedAt || new Date(), 'yyyy-MM-dd HH:mm:ss')}</StyledTableCell>
                   <StyledTableCell align="center">
                     <ViewButton
                       size="small"

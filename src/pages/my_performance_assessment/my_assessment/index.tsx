@@ -29,7 +29,7 @@ import { fetchPersonalPerformances } from '../../../store/slices/personalPerform
 import { StyledHeaderCell, StyledTableCell, StyledMenuItem, StyledListItemIcon } from '../../../components/StyledTableComponents';
 import { PersonalPerformance, PersonalQuarterlyTarget } from '../../../types';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
-
+import { format } from 'date-fns';
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
   borderRadius: '8px',
@@ -177,7 +177,7 @@ const PerformanceAssessment: React.FC = () => {
                     {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.endDate}
                   </StyledTableCell>
                   <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatus}</StyledTableCell>
-                  <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatusUpdatedAt.toLocaleString()}</StyledTableCell>
+                  <StyledTableCell>{format(personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatusUpdatedAt || new Date(), 'yyyy-MM-dd HH:mm:ss')}</StyledTableCell>
                   <StyledTableCell align="center">
                     <ViewButton
                       size="small"
