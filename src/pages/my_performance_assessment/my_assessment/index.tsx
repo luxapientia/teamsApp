@@ -162,7 +162,7 @@ const PerformanceAssessment: React.FC = () => {
                   <StyledHeaderCell>Start Date</StyledHeaderCell>
                   <StyledHeaderCell>End Date</StyledHeaderCell>
                   <StyledHeaderCell>Status</StyledHeaderCell>
-                  <StyledHeaderCell>Team</StyledHeaderCell>
+                  <StyledHeaderCell>Date, Time</StyledHeaderCell>
                   <StyledHeaderCell align="center">Actions</StyledHeaderCell>
                 </TableRow>
               </TableHead>
@@ -176,8 +176,8 @@ const PerformanceAssessment: React.FC = () => {
                   <StyledTableCell>
                     {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.endDate}
                   </StyledTableCell>
-                  <StyledTableCell>{selectedAnnualTarget?.status}</StyledTableCell>
-                  <StyledTableCell>{teams.find(team => team._id === personalPerformance.teamId)?.name}</StyledTableCell>
+                  <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatus}</StyledTableCell>
+                  <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatusUpdatedAt.toLocaleString()}</StyledTableCell>
                   <StyledTableCell align="center">
                     <ViewButton
                       size="small"

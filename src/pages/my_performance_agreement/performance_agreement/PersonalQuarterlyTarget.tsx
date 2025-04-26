@@ -116,6 +116,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           ...target,
           supervisorId: event.target.value,
           agreementStatus: AgreementStatus.Draft,
+          agreementStatusUpdatedAt: new Date(),
         }
       }
 
@@ -124,6 +125,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           ...target,
           supervisorId: event.target.value,
           agreementStatus: AgreementStatus.Draft,
+          agreementStatusUpdatedAt: new Date(),
         }
       }
       return target;
@@ -181,6 +183,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return {
           ...target,
           agreementStatus: AgreementStatus.Draft,
+          agreementStatusUpdatedAt: new Date(),
           supervisorId: selectedSupervisor,
           objectives: newPersonalQuarterlyObjectives
         }
@@ -190,6 +193,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return {
           ...target,
           agreementStatus: AgreementStatus.Draft,
+          agreementStatusUpdatedAt: new Date(),
           isEditable: calculateTotalWeight(newPersonalQuarterlyObjectives) === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: newPersonalQuarterlyObjectives
@@ -226,6 +230,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return {
           ...target,
           agreementStatus: AgreementStatus.Submitted,
+          agreementStatusUpdatedAt: new Date(),
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -235,6 +240,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return {
           ...target,
           agreementStatus: AgreementStatus.Draft,
+          agreementStatusUpdatedAt: new Date(),
           isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -273,6 +279,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return {
           ...target,
           agreementStatus: AgreementStatus.Draft,
+          agreementStatusUpdatedAt: new Date(),
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }

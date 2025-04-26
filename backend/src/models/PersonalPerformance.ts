@@ -27,7 +27,9 @@ export interface PersonalQuarterlyTarget {
   quarter: string;
   isEditable: boolean;
   agreementStatus: AgreementStatus;
+  agreementStatusUpdatedAt: Date;
   assessmentStatus: AssessmentStatus;
+  assessmentStatusUpdatedAt: Date;
   supervisorId?: string;
   objectives: PersonalQuarterlyTargetObjective[];
   isPersonalDevelopmentNotApplicable?: boolean;
@@ -76,11 +78,19 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
       required: true,
       default: AgreementStatus.Draft,
     },
+    agreementStatusUpdatedAt: {
+      type: Date,
+      default: new Date(),
+    },
     assessmentStatus: {
       type: String,
       enum: Object.values(AssessmentStatus),
       required: true,
       default: AssessmentStatus.Draft,
+    },
+    assessmentStatusUpdatedAt: {
+      type: Date,
+      default: new Date(),
     },
     isPersonalDevelopmentNotApplicable: {
       type: Boolean,

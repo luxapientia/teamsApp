@@ -114,6 +114,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return {
           ...target,
           assessmentStatus: AssessmentStatus.Draft,
+          assessmentStatusUpdatedAt: new Date(),
           supervisorId: event.target.value,
         }
       }
@@ -122,6 +123,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return {
           ...target,
           assessmentStatus: AssessmentStatus.Draft,
+          assessmentStatusUpdatedAt: new Date(),
           supervisorId: event.target.value,
         }
 
@@ -195,6 +197,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return {
           ...target,
           assessmentStatus: AssessmentStatus.Submitted,
+          assessmentStatusUpdatedAt: new Date(),
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -204,6 +207,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return {
           ...target,
           assessmentStatus: AssessmentStatus.Draft,
+          assessmentStatusUpdatedAt: new Date(),
           isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -332,6 +336,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           return {
             ...target,
             assessmentStatus: AssessmentStatus.Draft,
+            assessmentStatusUpdatedAt: new Date(),
             supervisorId: selectedSupervisor,
             objectives: newPersonalQuarterlyObjectives
           }
@@ -341,6 +346,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           return {
             ...target,
             assessmentStatus: AssessmentStatus.Draft,
+            assessmentStatusUpdatedAt: new Date(),
             isEditable: calculateTotalWeight(newPersonalQuarterlyObjectives) === 100 ? true : false,
             supervisorId: selectedSupervisor,
             objectives: newPersonalQuarterlyObjectives

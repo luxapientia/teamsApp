@@ -259,12 +259,14 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
           if (notification.type === 'agreement') {
             return {
               ...quarterlyTarget._doc,
-              agreementStatus: 'Approved'
+              agreementStatus: 'Approved',
+              agreementStatusUpdatedAt: new Date()
             };
           } else {
             return {
               ...quarterlyTarget._doc,
-              assessmentStatus: 'Approved'
+              assessmentStatus: 'Approved',
+              assessmentStatusUpdatedAt: new Date()
             };
           }
         }
@@ -306,12 +308,14 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
           if (notification.type === 'agreement') {
             return {
               ...quarterlyTarget._doc,
-              agreementStatus: 'Send Back'
+              agreementStatus: 'Send Back',
+              agreementStatusUpdatedAt: new Date()
             };
           } else {
             return {
               ...quarterlyTarget._doc,
-              assessmentStatus: 'Send Back'
+              assessmentStatus: 'Send Back',
+              assessmentStatusUpdatedAt: new Date()
             };
           }
         }

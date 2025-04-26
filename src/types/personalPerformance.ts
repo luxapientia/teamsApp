@@ -22,7 +22,9 @@ export enum AssessmentStatus {
 export interface PersonalQuarterlyTarget {
     quarter: string;
     agreementStatus: AgreementStatus;
+    agreementStatusUpdatedAt: Date;
     assessmentStatus: AssessmentStatus;
+    assessmentStatusUpdatedAt: Date;
     isEditable: boolean;
     supervisorId?: string;
     objectives: PersonalQuarterlyTargetObjective[];

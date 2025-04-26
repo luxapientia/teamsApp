@@ -151,7 +151,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
                   <StyledHeaderCell>Start Date</StyledHeaderCell>
                   <StyledHeaderCell>End Date</StyledHeaderCell>
                   <StyledHeaderCell>Status</StyledHeaderCell>
-                  <StyledHeaderCell>Team</StyledHeaderCell>
+                  <StyledHeaderCell>Date, Time</StyledHeaderCell>
                   <StyledHeaderCell align="center">Actions</StyledHeaderCell>
                 </TableRow>
               </TableHead>
@@ -166,7 +166,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
                     {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.endDate}
                   </StyledTableCell>
                   <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatus}</StyledTableCell>
-                  <StyledTableCell>{teams.find(team => team._id === personalPerformance.teamId)?.name}</StyledTableCell>
+                  <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatusUpdatedAt.toLocaleString()}</StyledTableCell>
                   <StyledTableCell align="center">
                     <ViewButton
                       size="small"

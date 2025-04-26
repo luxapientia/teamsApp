@@ -109,12 +109,14 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
           if (manageType === 'Agreement') {
             return {
               ...quarterlyTarget._doc,
-              agreementStatus: 'Send Back'
+              agreementStatus: 'Send Back',
+              agreementStatusUpdatedAt: new Date()
             };
           } else {
             return {
               ...quarterlyTarget._doc,
-              assessmentStatus: 'Send Back'
+              assessmentStatus: 'Send Back',
+              assessmentStatusUpdatedAt: new Date()
             };
           }
         }
@@ -313,7 +315,6 @@ router.put('/update-personal-performance/:id', authenticateToken, async (req: Au
   try {
     const { id } = req.params;
     const { personalPerformance } = req.body;
-
     const updatedPersonalPerformance = await PersonalPerformance.findByIdAndUpdate(
       id, 
       personalPerformance, 
