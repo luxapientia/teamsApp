@@ -223,6 +223,10 @@ const annualTargetSchema = new Schema<AnnualTargetDocument>({
           type: String,
           enum: ['Q1', 'Q2', 'Q3', 'Q4']
         },
+        editable: {
+          type: Boolean,
+          default: true
+        },
         isDevelopmentPlanEnabled: {
           type: Boolean,
           require: false,

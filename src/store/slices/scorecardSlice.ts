@@ -69,18 +69,22 @@ const initialState: ScorecardState = {
           quarterlyTargets: [
             {
               quarter: 'Q1',
+              editable: true,
               objectives: []
             },
             {
               quarter: 'Q2',
+              editable: true,
               objectives: []
             },
             {
               quarter: 'Q3',
+              editable: true,
               objectives: []
             },
             {
               quarter: 'Q4',
+              editable: true,
               objectives: []
             },
           ],

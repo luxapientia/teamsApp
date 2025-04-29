@@ -281,9 +281,11 @@ const PerformanceEvaluations: React.FC = () => {
             onChange={handleQuarterChange}
           >
             {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                {quarter.quarter}
-              </MenuItem>
+              quarter.editable && (
+                <MenuItem key={quarter.quarter} value={quarter.quarter}>
+                  {quarter.quarter}
+                </MenuItem>
+              )
             ))}
           </Select>
         </StyledFormControl>

@@ -176,7 +176,10 @@ const TeamPerformances: React.FC = () => {
             <TableBody>
               {teamPerformances.map((performance: TeamPerformance, index: number) => {
                 const quarterScores = performance.quarterlyTargets.map(quarter => {
-                  return calculateQuarterScore(quarter.objectives)
+                  if (annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable) {
+                    return calculateQuarterScore(quarter.objectives)
+                  }
+                  return null
                 });
 
                 const validScores = quarterScores.filter(score => score !== null) as number[];

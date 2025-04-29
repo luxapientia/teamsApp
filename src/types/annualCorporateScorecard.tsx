@@ -99,6 +99,7 @@ export type QuarterType = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 
 export interface QuarterlyTarget {
     quarter: QuarterType;
+    editable: boolean;
     isDevelopmentPlanEnabled?: boolean;
     objectives: QuarterlyTargetObjective[];
 }

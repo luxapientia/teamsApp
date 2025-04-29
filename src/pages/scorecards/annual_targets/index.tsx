@@ -56,6 +56,7 @@ import { fetchTeams } from '../../../store/slices/teamsSlice';
 import { useAuth } from '../../../contexts/AuthContext';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
 import { StyledTabs, StyledTab } from '../../../components/StyledTab';
+import SetAssessmentPeriodTab from './tabs/enable_period';
 const ViewButton = styled(Button)({
     textTransform: 'none',
     backgroundColor: '#0078D4',
@@ -117,10 +118,12 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
             case 1:
                 return <AssessmentsPeriodTab targetName={target.name} />;
             case 2:
-                return <StrategicObjectiveTab targetName={target.name} />;
+                return <SetAssessmentPeriodTab targetName={target.name} />;
             case 3:
-                return <RatingScaleTab targetName={target.name} />;
+                return <StrategicObjectiveTab targetName={target.name} />;
             case 4:
+                return <RatingScaleTab targetName={target.name} />;
+            case 5:
                 return <PerspectiveTab targetName={target.name} />;
             default:
                 return null;
@@ -184,6 +187,11 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
                                         label="Performance Assessments Period"
                                         disableRipple
                                         aria-label="View performance assessments period"
+                                    />
+                                    <StyledTab
+                                        label="Set Assessment Period"
+                                        disableRipple
+                                        aria-label="View set assessment period"
                                     />
                                     <StyledTab
                                         label="Strategic Objectives"
