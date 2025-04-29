@@ -122,6 +122,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
                   </StyledTableCell>
                   <StyledTableCell align="right">
                     <StyledSwitch
+                      disabled={quarter === 'Q1'}
                       checked={isEnabled}
                       onChange={() => handleToggleEnabled(quarter)}
                       inputProps={{ 'aria-label': `Toggle ${quarter}` }}
