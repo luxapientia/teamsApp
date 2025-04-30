@@ -23,7 +23,7 @@ export interface PersonalQuarterlyTargetFeedbackProvider {
     name: string;
     email: string;
     category: string;
-    status: 'Pending' | 'Completed';
+    status: 'Not Shared' | 'Pending' | 'Completed';
 }
 
 export interface PersonalQuarterlyTargetFeedback {

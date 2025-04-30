@@ -21,6 +21,7 @@ import trainingRoutes from './routes/training';
 import feedbackRoutes from './routes/feedback';
 import moduleRoutes from './routes/module';
 import submitFeedbackRoutes from './routes/submit-feedback';
+import { checkFeedbackMail } from './services/feedbackService';
 const app = express();
 
 // Middleware
@@ -59,6 +60,7 @@ app.use('/api/submit-feedback', submitFeedbackRoutes);
 mongoose.connect(config.mongoUri)
   .then(() => {
     console.log('Connected to MongoDB');
+    setInterval(checkFeedbackMail, 1000 * 60 * 60 * 1);
   })
   .catch((error) => {
     console.error('MongoDB connection error:', error);

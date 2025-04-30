@@ -26,12 +26,12 @@ interface PersonalQuarterlyTargetObjective {
 export interface PersonalQuarterlyTargetFeedback {
   _id: string;
   feedbackId: string;
-  submittedAt: Date;
   provider: {
     name: string;
     email: string;
     category: string;
-    status: 'Pending' | 'Completed';
+    status: 'Not Shared' | 'Pending' | 'Completed';
+    pendingTime?: Date;
   };
   feedbacks: {
     dimension: string;
@@ -106,19 +106,20 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
           ref: 'Feedback',
           required: true,
         },
-        submittedAt: {
-          type: Date,
-          required: true,
-          default: new Date(),
-        },
+
         provider: {
           type: {
             name: String,
             email: String,
             category: String,
+            pendingTime: {
+              type: Date,
+              default: null,
+            },
             status: {
               type: String,
-              enum: ['Pending', 'Completed'],
+              enum: ['Not Shared', 'Pending', 'Completed'],
+              default: 'Not Shared',
               required: true,
             },
           },

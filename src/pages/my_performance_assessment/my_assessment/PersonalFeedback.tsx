@@ -97,6 +97,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     const [organizationMembers, setOrganizationMembers] = useState<{ name: string, email: string }[]>([]);
     const [emailError, setEmailError] = useState<string>('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const annualTarget = useAppSelector((state: RootState) => state.scorecard.annualTargets.find(at => at._id === annualTargetId));
 
     const feedbacks = useAppSelector((state: RootState) =>
         state.feedback.feedbacks.filter(f =>
@@ -181,7 +182,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                     name: providerForm.name,
                     email: providerForm.email,
                     category: providerForm.category,
-                    status: 'Pending'
+                    status: 'Not Shared'
                 },
                 feedbacks: []
             };
@@ -309,6 +310,27 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         return (totalScore / totalResponses).toFixed(1);
     };
 
+    const handleShareFeedback = () => {
+        const personalFeedbacks = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId);
+        try {
+            personalFeedbacks.forEach(async (feedback) => {
+                if(feedback.provider.status === 'Not Shared') {
+                    // const feedbackLink = `${window.location.origin}/feedback/submit?id=${feedback._id}`;
+                    const provider = feedback.provider;
+                    await api.post('/feedback/share-feedback', { feedbackId: feedback._id, provider});
+                }
+            });
+        } catch (error) {
+            console.error('Error sharing feedback:', error);
+        }
+    };
+
+    const isWithinAssessmentPeriod = () => {
+        const endDate = annualTarget?.content.assessmentPeriod[quarter as keyof typeof annualTarget.content.assessmentPeriod].endDate;
+        const currentDate = new Date();
+        return currentDate <= new Date(endDate);
+    }
+
     if (feedbacks.length === 0) {
         return (
             <Box sx={{ p: 3 }}>
@@ -357,6 +379,8 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                             backgroundColor: 'rgba(0, 120, 212, 0.04)',
                         },
                     }}
+                    disabled={!isWithinAssessmentPeriod()}
+                    onClick={() => handleShareFeedback()}   
                 >
                     Share
                 </Button>
@@ -380,7 +404,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                                 <StyledTableCell align="center">{feedback.provider.status}</StyledTableCell>
                                 <StyledTableCell align="center">
                                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                                        <Tooltip title="Copy feedback link">
+                                        {/* <Tooltip title="Copy feedback link">
                                             <IconButton
                                                 size="small"
                                                 onClick={() => handleCopyLink(feedback._id)}
@@ -388,7 +412,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                                             >
                                                 <ContentCopyIcon fontSize="small" />
                                             </IconButton>
-                                        </Tooltip>
+                                        </Tooltip> */}
                                         <IconButton
                                             size="small"
                                             onClick={() => handleDeleteProvider(feedback.feedbackId, feedback.provider.email)}
