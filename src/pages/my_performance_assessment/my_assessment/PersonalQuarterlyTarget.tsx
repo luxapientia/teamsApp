@@ -24,7 +24,7 @@ import {
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '../../../types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, PdfType } from '../../../types';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, PdfType, Feedback } from '../../../types';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { fetchPersonalPerformances, updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
@@ -44,6 +44,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SelectCourseModal from './SelectCourseModal';
 import { Course } from '../../../types/course';
+import { fetchFeedback } from '../../../store/slices/feedbackSlice';
+import PersonalFeedback from './PersonalFeedback';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -85,8 +87,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const tableRef = useRef();
   const { user } = useAuth();
   const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
+  const feedback = useAppSelector((state) => state.feedback.feedbacks);
 
-  const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
   const annualQuarterlyTarget = annualTarget?.content.quarterlyTarget.quarterlyTargets.find(
     target => target.quarter === quarter
   );
@@ -94,6 +96,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   useEffect(() => {
     fetchCompanyUsers();
+    dispatch(fetchFeedback());
   }, []);
 
   useEffect(() => {
@@ -858,6 +861,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           );
         })()}
       </Box>
+
+      {/* Feedback Block */}
+      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+        <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
+          Feedback
+        </Typography>
+
+        <PersonalFeedback
+          quarter={quarter}
+          annualTargetId={personalPerformance?.annualTargetId || ''}
+          personalPerformance={personalPerformance}
+        />  
+        
+      </Paper>
 
       {/* Personal Development Block */}
       {isDevelopmentEnabled && (

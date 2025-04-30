@@ -20,7 +20,6 @@ export const fetchFeedback = createAsyncThunk(
     async () => {
         try {
             const response = await api.get(`/feedback`);
-            console.log('response', response);
             if (response.status === 200) {
                 return response.data.data as Feedback[];
             } else {

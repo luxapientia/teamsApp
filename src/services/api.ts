@@ -17,6 +17,9 @@ export const getAPIBaseURL = () => {
 
 const API_BASE_URL = getAPIBaseURL();
 
+
+
+
 interface ApiInstance extends AxiosInstance {
   // ... existing interface properties ...
   
@@ -33,6 +36,12 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 }) as ApiInstance;
+
+// Public API instance without auth requirements
+export const publicApi = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: false
+});
 
 // Implement training course methods
 api.getCourses = (tenantId: string) => api.get<ApiResponse<Course[]>>(`/training-courses/${tenantId}`);

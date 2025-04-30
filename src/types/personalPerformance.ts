@@ -19,6 +19,28 @@ export enum AssessmentStatus {
     SendBack = 'Send Back'
 }
 
+export interface PersonalQuarterlyTargetFeedbackProvider {
+    name: string;
+    email: string;
+    category: string;
+    status: 'Pending' | 'Completed';
+}
+
+export interface PersonalQuarterlyTargetFeedback {
+    _id?: string;
+    feedbackId: string;
+    provider: PersonalQuarterlyTargetFeedbackProvider;
+    feedbacks: {
+        dimension: string;
+        question: string;
+        response: {
+            score: number;
+            response: string;
+        };
+        reason: string;
+    }[];
+}
+
 export interface PersonalQuarterlyTarget {
     quarter: string;
     agreementStatus: AgreementStatus;
@@ -30,6 +52,7 @@ export interface PersonalQuarterlyTarget {
     objectives: PersonalQuarterlyTargetObjective[];
     personalDevelopment?: Array<Course>;
     isPersonalDevelopmentNotApplicable?: boolean;
+    feedbacks: PersonalQuarterlyTargetFeedback[];
 }
 
 export interface PersonalPerformance {

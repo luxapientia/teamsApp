@@ -20,6 +20,7 @@ import trainingCoursesRoutes from './routes/trainingCourses';
 import trainingRoutes from './routes/training';
 import feedbackRoutes from './routes/feedback';
 import moduleRoutes from './routes/module';
+import submitFeedbackRoutes from './routes/submit-feedback';
 const app = express();
 
 // Middleware
@@ -52,7 +53,7 @@ app.use('/api/training-courses', trainingCoursesRoutes);
 app.use('/api/training', trainingRoutes);
 app.use('/api/feedback', authenticateToken, checkLicenseStatus, feedbackRoutes);
 app.use('/api/module', authenticateToken, checkLicenseStatus, moduleRoutes);
-
+app.use('/api/submit-feedback', submitFeedbackRoutes);
 
 // Connect to MongoDB
 mongoose.connect(config.mongoUri)

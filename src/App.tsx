@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { AuthProvider } from './contexts/AuthContext';
@@ -10,6 +10,7 @@ import Main from './Main';
 import { initializeTeams } from './utils/teamsUtils';
 import { SocketProvider } from './contexts/SocketContext';
 import LicenseError from './pages/LicenseError';
+import FeedbackSubmission from './pages/feedback/submit';
 
 // Lazy load components
 const ConsentPage = lazy(() => import('./components/ConsentPage').then(module => ({ default: module.ConsentPage })));
@@ -52,10 +53,13 @@ const App: React.FC = () => {
               <Route path="/unauthorized" element={<Unauthorized />} />
               <Route path="/license-error" element={<LicenseError />} />
               <Route path="/logout" element={<LogoutPage />} />
+              
+              {/* Feedback submission - no auth required */}
+              <Route path="/feedback/submit" element={<FeedbackSubmission />} />
 
-              {/* Protected routes - Main component remains non-lazy */}
+              {/* Protected routes */}
               <Route
-                path="/"
+                path="/*"
                 element={
                   <ProtectedRoute>
                     <SocketProvider>

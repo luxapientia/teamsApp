@@ -1,6 +1,6 @@
 import { Schema, model, Document } from 'mongoose';
 import { QuarterlyTargetKPI } from './AnnualTarget';
-
+import mongoose from 'mongoose';
 
 export enum AgreementStatus {
   Draft = 'Draft',
@@ -19,8 +19,29 @@ export enum AssessmentStatus {
 interface PersonalQuarterlyTargetObjective {
   perspectiveId: number;
   name: string;
-  initiativeName: string; 
+  initiativeName: string;
   KPIs: QuarterlyTargetKPI[];
+}
+
+export interface PersonalQuarterlyTargetFeedback {
+  _id: string;
+  feedbackId: string;
+  submittedAt: Date;
+  provider: {
+    name: string;
+    email: string;
+    category: string;
+    status: 'Pending' | 'Completed';
+  };
+  feedbacks: {
+    dimension: string;
+    question: string;
+    response: {
+      score: number;
+      response: string;
+    };
+    reason: string;
+  }[];
 }
 
 export interface PersonalQuarterlyTarget {
@@ -34,6 +55,7 @@ export interface PersonalQuarterlyTarget {
   objectives: PersonalQuarterlyTargetObjective[];
   isPersonalDevelopmentNotApplicable?: boolean;
   personalDevelopment?: string[]; // Array of course IDs
+  feedbacks: PersonalQuarterlyTargetFeedback[];
 }
 
 
@@ -71,6 +93,51 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
       type: String,
       enum: ['Q1', 'Q2', 'Q3', 'Q4'],
       required: true
+    },
+    feedbacks: {
+      type: [{
+        _id: {
+          type: String,
+          default: () => new mongoose.Types.ObjectId().toString(),
+          required: true,
+        },
+        feedbackId: {
+          type: String,
+          ref: 'Feedback',
+          required: true,
+        },
+        submittedAt: {
+          type: Date,
+          required: true,
+          default: new Date(),
+        },
+        provider: {
+          type: {
+            name: String,
+            email: String,
+            category: String,
+            status: {
+              type: String,
+              enum: ['Pending', 'Completed'],
+              required: true,
+            },
+          },
+          required: true,
+        },
+        feedbacks: {
+          type: [{
+            dimension: String,
+            question: String,
+            response: {
+              score: Number,
+              response: String,
+            },
+            reason: String,
+          }],
+          required: true,
+        },
+      }],
+      default: [],
     },
     agreementStatus: {
       type: String,
