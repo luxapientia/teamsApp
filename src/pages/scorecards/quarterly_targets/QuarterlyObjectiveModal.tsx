@@ -413,8 +413,8 @@ const QuarterlyObjectiveModal: React.FC<QuarterlyObjectiveModalProps> = ({
                           <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                             <Collapse in={expandedKPI === index} timeout="auto" unmountOnExit>
                               <Box sx={{ py: 2 }}>
-                                <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                                  Performance Rating Scale
+                                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                                  Set Key Performance Indicator Rating Agreement
                                 </Typography>
                                 <Table size="small">
                                   <TableHead>

@@ -181,7 +181,7 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
       <DialogContent sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h6">
-            {editingObjective ? 'Edit Initiative' : 'Add Initiative'}
+            {editingObjective ? 'Edit Initiative / KPA' : 'Add Initiative / KPA'}
           </Typography>
           <IconButton onClick={onClose} size="small">
             <CloseIcon />
@@ -369,8 +369,8 @@ const AddInitiativeModal: React.FC<AddInitiativeModalProps> = ({
                     <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
                       <Collapse in={expandedKPI === index} timeout="auto" unmountOnExit>
                         <Box sx={{ py: 2 }}>
-                          <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                            Performance Rating Scale
+                          <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
+                            Set Key Performance Indicator Rating Agreement
                           </Typography>
                           <Table size="small">
                             <TableHead>
