@@ -71,7 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log('Initializing auth...');
       setIsLoading(true);
       const teamsCheck = isInTeams();
       setIsTeams(teamsCheck);
@@ -80,7 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const existingToken = sessionStorage.getItem('auth_token');
       
       if (existingToken) {
-        console.log('Found existing token in session storage');
         try {
           // Validate the token with the server
           const response = await api.get('/auth/verify');
@@ -89,8 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Token is valid, update auth state
           setUser(userData.user);
           setIsAuthenticated(true);
-          console.log('Session restored from token');
-        } catch (error) {
+          } catch (error) {
           console.error('Error validating existing token:', error);
           // Token validation failed, clear it
           sessionStorage.removeItem('auth_token');
@@ -102,7 +99,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (teamsCheck) {
         try {
           await initializeTeams();
-          console.log('Teams SDK initialized');
           setIsTeamsInitialized(true);
         } catch (error) {
           console.error('Teams initialization failed:', error);
@@ -119,10 +115,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleTeamsSSO = async () => {
     try {
-      console.log('Starting Teams SSO process...');
       const authTokenRequest = {
         successCallback: (token: string) => {
-          console.log('Teams SSO token received');
           handleToken(token);
         },
         failureCallback: (error: string) => {
@@ -131,7 +125,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
         resources: [`api://app.teamscorecards.online/${authConfig.clientId}`]
       };
-      console.log('authTokenRequest', authTokenRequest.resources);
       await microsoftTeams.authentication.getAuthToken(authTokenRequest);
     } catch (error) {
       console.error('Teams SSO error:', error);
@@ -140,7 +133,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const handleStandardLogin = () => {
-    console.log('Starting standard Azure AD login...');
     const loginUrl = authConfig.getLoginUrl();
     window.location.href = loginUrl;
   };
@@ -180,7 +172,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error.response.data && 
         error.response.data.error === 'consent_required'
       ) {
-        console.log('Admin consent required for Teams SSO');
         setIsLoading(false);
         navigate('/consent', { 
           state: { 
@@ -211,13 +202,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async () => {
-    console.log('Login initiated...');
     setIsLoading(true);
     if (isTeams && isTeamsInitialized) {
-      console.log('Running in Teams, using Teams SSO...');
       await handleTeamsSSO();
     } else {
-      console.log('Not in Teams, using standard login...');
       handleStandardLogin();
     }
   };

@@ -65,7 +65,6 @@ api.interceptors.request.use(
       
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('Authorization header set:', config.headers.Authorization);
       } else {
         console.warn(`No auth token available for request to: ${config.url}`);
       }

@@ -44,7 +44,6 @@ const notificationSlice = createSlice({
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        console.log('action.payload', action.payload);
         state.notifications = action.payload;
       })
       .addCase(fetchNotifications.rejected, (state, action) => {

@@ -44,7 +44,6 @@ export const AuthCallback: React.FC = () => {
 
         // Store token in sessionStorage
         sessionStorage.setItem('auth_token', response.data.token);
-        console.log('Token stored in sessionStorage', 'standard login');
         
         // Update auth context
         if (response.data.user) {

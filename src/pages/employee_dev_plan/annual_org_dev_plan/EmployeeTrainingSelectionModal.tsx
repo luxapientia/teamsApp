@@ -268,14 +268,6 @@ const EmployeeTrainingSelectionModal: React.FC<EmployeeTrainingSelectionModalPro
                    isLoadingEmployees;
   const hasAvailableEmployees = approvedEmployees.length > 0;
 
-  console.log('Debug Info:', {
-    teamPerformancesLength: teamPerformances.length,
-    approvedEmployeesLength: approvedEmployees.length,
-    isLoading,
-    hasAvailableEmployees,
-    loadedTargetIds: Array.from(loadedTargetIds)
-  });
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>

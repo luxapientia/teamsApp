@@ -204,7 +204,6 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
           tenantId: tenantId
         }))
       });
-      console.log('selectedPeople', selectedPeople);
       // Proceed with the original selection
       onSelectPeople(selectedPeople);
       onClose();

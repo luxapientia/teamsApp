@@ -175,7 +175,7 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
     const handleSave = () => {
         if (newFeedbackData.name.trim()) {
             if (isEditMode) {
-                console.log('feedback', newFeedbackData);
+                // console.log('feedback', newFeedbackData);
                 dispatch(updateFeedback({ ...newFeedbackData, annualTargetId: selectedAnnualTargetId }));
             } else {
                 dispatch(createFeedback({ ...newFeedbackData, annualTargetId: selectedAnnualTargetId }));

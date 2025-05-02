@@ -77,9 +77,6 @@ const PerformanceAssessment: React.FC = () => {
     state.teams.teams
   );
 
-  console.log('teams', teams);
-  console.log('personalPerformances', personalPerformances);
-
   useEffect(() => {
     dispatch(fetchAnnualTargets());
   }, [dispatch]);
