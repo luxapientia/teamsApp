@@ -504,7 +504,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   }
                 }}
               >
-                Add Initiative
+                Add Initiative / KPA
               </Button>
               {canAddFromExisting && (
                 <Button

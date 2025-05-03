@@ -101,13 +101,11 @@ const Modules: React.FC = () => {
   };
 
   const handleCompanySelection = async (companyId: string) => {
-    console.log('companyId', companyId);
     const isChecked = feedbackCompanyIds.some(fc => fc === companyId);
     const newFeedbackCompanyIds = isChecked ? feedbackCompanyIds.filter(fc => fc !== companyId) : [...feedbackCompanyIds, companyId];
     try {
       const response = await api.post('/module/update-feedback-companies', { feedbackCompanies: newFeedbackCompanyIds });
       if (response.status === 200) {
-        console.log('newFeedbackCompanyIds', newFeedbackCompanyIds);
         setFeedbackCompanyIds(newFeedbackCompanyIds);
       }
     } catch (error) {

@@ -40,6 +40,7 @@ import FeedbackDetails from './FeedbackDetails';
 import { Feedback as FeedbackType, PageProps } from '../../types';
 import { deleteFeedback, updateFeedback, createFeedback, fetchFeedback } from '../../store/slices/feedbackSlice';
 import { StyledTableCell, StyledHeaderCell } from '../../components/StyledTableComponents';
+import { selectFeedbacksByAnnualTargetId } from '../../store/selectors/feedbackSelectors';
 
 const ViewButton = styled(Button)({
     textTransform: 'none',
@@ -114,7 +115,9 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
         ],
     });
     const [selectedExistingFeedbackId, setSelectedExistingFeedbackId] = useState('');
-    const feedbackList = useAppSelector((state: RootState) => state.feedback.feedbacks.filter((feedback) => feedback.annualTargetId === selectedAnnualTargetId));
+    const feedbackList = useAppSelector(state => 
+        selectFeedbacksByAnnualTargetId(state, selectedAnnualTargetId)
+    );
     const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedFeedback, setSelectedFeedback] = useState<FeedbackType | null>(null);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -175,7 +178,7 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
     const handleSave = () => {
         if (newFeedbackData.name.trim()) {
             if (isEditMode) {
-                console.log('feedback', newFeedbackData);
+                // console.log('feedback', newFeedbackData);
                 dispatch(updateFeedback({ ...newFeedbackData, annualTargetId: selectedAnnualTargetId }));
             } else {
                 dispatch(createFeedback({ ...newFeedbackData, annualTargetId: selectedAnnualTargetId }));

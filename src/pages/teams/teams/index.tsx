@@ -52,7 +52,6 @@ const Teams: React.FC = () => {
   }, [teamMembers]);
 
   const handleViewClick = (teamId: string) => {
-    console.log('handleViewClick', teamId);
     setStatus(ViewStatus.MEMBER_LIST);
     setSelectedTeamId(teamId);
     // Fetch the team owner when viewing team members

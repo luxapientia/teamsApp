@@ -92,7 +92,6 @@ const feedbackSlice = createSlice({
             })
             .addCase(fetchFeedback.fulfilled, (state, action) => {
                 state.status = 'succeeded';
-                console.log('action.payload', action.payload);
                 state.feedbacks = action.payload;
             })
             .addCase(fetchFeedback.rejected, (state, action) => {
