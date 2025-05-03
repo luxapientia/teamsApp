@@ -44,6 +44,7 @@ import { RootState } from '../../../store';
 import { ViewButton, StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
 import { api } from '../../../services/api';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
+import { useToast } from '../../../contexts/ToastContext';
 
 interface Props {
     quarter: QuarterType;
@@ -70,6 +71,7 @@ interface AddProviderForm {
 
 const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance }) => {
     const dispatch = useAppDispatch();
+    const { showToast } = useToast();
     const [selectedFeedbackId, setSelectedFeedbackId] = useState<string>('');
     const [isAddProviderOpen, setIsAddProviderOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -97,6 +99,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     const [organizationMembers, setOrganizationMembers] = useState<{ name: string, email: string }[]>([]);
     const [emailError, setEmailError] = useState<string>('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
     const annualTarget = useAppSelector((state: RootState) => state.scorecard.annualTargets.find(at => at._id === annualTargetId));
 
     const feedbacks = useAppSelector((state: RootState) =>
@@ -245,15 +248,6 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         dispatch(updatePersonalPerformance(updatedPersonalPerformance));
     };
 
-    const handleCopyLink = (id: string) => {
-        const baseUrl = window.location.origin;
-        const feedbackUrl = `${baseUrl}/feedback/submit?id=${id}`;
-        
-        navigator.clipboard.writeText(feedbackUrl).then(() => {
-            setSnackbarOpen(true);
-        });
-    };
-
     const handleViewFeedback = (dimension: string, question: string) => {
         const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
         const feedbacks = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
@@ -310,18 +304,26 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         return (totalScore / totalResponses).toFixed(1);
     };
 
-    const handleShareFeedback = () => {
+    const handleShareFeedback = async () => {
+        setIsSharing(true);
         const personalFeedbacks = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId);
         try {
-            personalFeedbacks.forEach(async (feedback) => {
+            await Promise.all(personalFeedbacks.map(async (feedback) => {
                 if(feedback.provider.status === 'Not Shared') {
-                    // const feedbackLink = `${window.location.origin}/feedback/submit?id=${feedback._id}`;
                     const provider = feedback.provider;
-                    await api.post('/feedback/share-feedback', { feedbackId: feedback._id, provider});
+                    const response = await api.post('/feedback/share-feedback', { feedbackId: feedback._id, provider});
+                    if(response.status === 200) {
+                        showToast('360 Degree Feedback has been shared.', 'success');
+                    } else {
+                        showToast('Failed to share feedback', 'error');
+                    }
                 }
-            });
+            }));
         } catch (error) {
             console.error('Error sharing feedback:', error);
+            showToast('Failed to share feedback', 'error');
+        } finally {
+            setIsSharing(false);
         }
     };
 
@@ -379,10 +381,10 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                             backgroundColor: 'rgba(0, 120, 212, 0.04)',
                         },
                     }}
-                    disabled={!isWithinAssessmentPeriod()}
-                    onClick={() => handleShareFeedback()}   
+                    disabled={!isWithinAssessmentPeriod() || isSharing}
+                    onClick={handleShareFeedback}   
                 >
-                    Share
+                    {isSharing ? 'Sharing...' : 'Share'}
                 </Button>
             </Box>
 
