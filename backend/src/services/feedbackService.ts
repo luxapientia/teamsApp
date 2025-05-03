@@ -12,7 +12,8 @@ export const sendFeedbackEmail = async (feedbackId: string, provider: { name: st
                     $elemMatch: {
                         'feedbacks._id': feedbackId
                     }
-                }
+                },
+                'annualTargetId': 1
             })
             .populate('quarterlyTargets.feedbacks.feedbackId') as any;
 
