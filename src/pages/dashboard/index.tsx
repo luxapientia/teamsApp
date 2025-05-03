@@ -48,6 +48,10 @@ import { TeamPerformance, AgreementStatus, AssessmentStatus } from '../../types/
 import HalfDoughnutCard from '../../components/HalfDoughnutCard';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
+import { PendingTargetsTable } from './components/PendingTargetsTable';
+import { PendingAssessmentsTable } from './components/PendingAssessmentsTable';
+import { PerformanceTable } from './components/PerformanceTable';
+import { HeatmapByTeam } from './components/HeatmapByTeam';
 
 interface DashboardProps {
   title?: string;
