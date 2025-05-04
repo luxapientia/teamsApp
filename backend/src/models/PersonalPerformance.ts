@@ -55,6 +55,7 @@ export interface PersonalQuarterlyTarget {
   objectives: PersonalQuarterlyTargetObjective[];
   isPersonalDevelopmentNotApplicable?: boolean;
   personalDevelopment?: string[]; // Array of course IDs
+  selectedFeedbackId?: string;
   feedbacks: PersonalQuarterlyTargetFeedback[];
 }
 
@@ -93,6 +94,11 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
       type: String,
       enum: ['Q1', 'Q2', 'Q3', 'Q4'],
       required: true
+    },
+    selectedFeedbackId: {
+      type: String,
+      ref: 'Feedback',
+      required: false
     },
     feedbacks: {
       type: [{
