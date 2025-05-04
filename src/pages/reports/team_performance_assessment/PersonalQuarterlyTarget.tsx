@@ -20,30 +20,15 @@ import {
   Skeleton,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
-import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
+import { AnnualTarget, QuarterType, QuarterlyTargetObjective } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget } from '@/types/personalPerformance';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
-import { RootState } from '../../../store';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance } from '@/types/personalPerformance';
 import { useAuth } from '../../../contexts/AuthContext';
 import { api } from '../../../services/api';
 import EvidenceModal from './EvidenceModal';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-
-
-const AccessButton = styled(Button)({
-  backgroundColor: '#0078D4',
-  color: 'white',
-  textTransform: 'none',
-  padding: '6px 16px',
-  minWidth: 'unset',
-  '&:hover': {
-    backgroundColor: '#106EBE',
-  },
-});
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { fetchFeedback } from '../../../store/slices/feedbackSlice';
+import PersonalFeedback from './PersonalFeedback';
 
 interface Supervisor {
   id: string;
@@ -68,10 +53,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   teamId = ''
 }) => {
   const { user } = useAuth();
+  const dispatch = useAppDispatch();
+  
   const [selectedSupervisor, setSelectedSupervisor] = useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
+  const [enableFeedback, setEnableFeedback] = useState(false);
+
 
   const [evidenceModalData, setEvidenceModalData] = useState<{
     evidence: string;
@@ -81,6 +70,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   useEffect(() => {
     fetchPersonalPerformance();
     fetchCompanyUsers();
+    checkFeedbackModule();
+    dispatch(fetchFeedback());
   }, []);
 
   useEffect(() => {
@@ -89,6 +80,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
     }
   }, [personalPerformance]);
+
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
+    }
+  }
 
   const fetchCompanyUsers = async () => {
     try {
@@ -391,6 +389,26 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           );
         })()}
       </Box>
+
+      {/* Feedback Block */}
+      {enableFeedback && (
+        <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+          <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
+            Feedback
+          </Typography>
+
+          <PersonalFeedback
+            quarter={quarter}
+            annualTargetId={personalPerformance?.annualTargetId || ''}
+            personalPerformance={personalPerformance}
+            overallScore={{
+              score: calculateOverallScore(personalQuarterlyObjectives),
+              name: getRatingScoreInfo(calculateOverallScore(personalQuarterlyObjectives))?.name
+            }}
+          />
+
+        </Paper>
+      )}
 
       <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
         <Box sx={{ mt: 4, mb: 2 }}>
