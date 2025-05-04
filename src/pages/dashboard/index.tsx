@@ -41,6 +41,7 @@ import { PendingTargetsTable } from './components/PendingTargetsTable';
 import { PendingAssessmentsTable } from './components/PendingAssessmentsTable';
 import { PerformanceTable } from './components/PerformanceTable';
 import { HeatmapByTeam } from './components/HeatmapByTeam';
+import StrategyMap from './components/strategyMap';
 
 interface DashboardProps {
   title?: string;
@@ -147,7 +148,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     }>
   });
 
-  const [viewMode, setViewMode] = useState<'org' | 'team' | ''>('');
+  const [viewMode, setViewMode] = useState<'org' | 'team' | 'strategyMap' | ''>('');
 
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
@@ -165,7 +166,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         try {
           const teamInfo = await api.get(`/users/is_team_owner/${user.id}`);
           const result = teamInfo.data.data;
-          setUserOwnedTeam(result.team.name);
+          setUserOwnedTeam(result.team?.name || null);
         } catch (error) {
           console.error('Error fetching team owner:', error);
           setUserOwnedTeam(null);
@@ -351,9 +352,9 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           >
             {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
               quarter.editable && (
-              <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                {quarter.quarter}
-              </MenuItem>
+                <MenuItem key={quarter.quarter} value={quarter.quarter}>
+                  {quarter.quarter}
+                </MenuItem>
               )
             ))}
           </Select>
@@ -366,13 +367,14 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               value={viewMode}
               label="View Mode"
               onChange={(e) => {
-                setViewMode(e.target.value as 'org' | 'team');
+                setViewMode(e.target.value as 'org' | 'team' | 'strategyMap');
                 setShowDashboard(false);
                 resetTables();
               }}
             >
               {(isSuperUser || isAppOwner) && <MenuItem value="org">Organization Wide</MenuItem>}
               {userOwnedTeam && <MenuItem value="team">Team View</MenuItem>}
+              <MenuItem value="strategyMap">Strategy Map</MenuItem>
             </Select>
           </StyledFormControl>
         )}
@@ -387,7 +389,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         </ViewButton>
       </Box>
 
-      {showDashboard && (
+      {showDashboard && viewMode !== 'strategyMap' && (
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -414,12 +416,12 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   onClick={() => setShowPendingTargetsTable(!showPendingTargetsTable)}
                   sx={{ cursor: 'pointer' }}
                 >
-          <HalfDoughnutCard
+                  <HalfDoughnutCard
                     title={viewMode === 'team' ? `${userOwnedTeam} Pending Agreements` : "Pending Agreements - Company Wide"}
                     chartData={chartData(pendingTargetsData)}
                     metrics={pendingTargetsData.metrics}
-          />
-        </Box>
+                  />
+                </Box>
                 {showPendingTargetsTable && (
                   <Box sx={{
                     overflowX: 'auto',
@@ -430,7 +432,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     <Typography variant="h6" sx={{ mb: 2 }}>
                       {viewMode === 'team' ? `${userOwnedTeam} Pending Agreements Details` : "Pending Agreements Details"}
                     </Typography>
-                    <PendingTargetsTable 
+                    <PendingTargetsTable
                       teamPerformances={teamPerformances}
                       selectedQuarter={selectedQuarter}
                       viewMode={viewMode}
@@ -451,7 +453,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   onClick={() => setShowPendingAssessmentsTable(!showPendingAssessmentsTable)}
                   sx={{ cursor: 'pointer' }}
                 >
-          <HalfDoughnutCard
+                  <HalfDoughnutCard
                     title={viewMode === 'team' ? `${userOwnedTeam} Pending Assessments` : "Pending Assessments - Company Wide"}
                     chartData={chartData(pendingAssessmentsData)}
                     metrics={pendingAssessmentsData.metrics}
@@ -467,7 +469,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     <Typography variant="h6" sx={{ mb: 2 }}>
                       {viewMode === 'team' ? `${userOwnedTeam} Pending Assessments Details` : "Pending Assessments Details"}
                     </Typography>
-                    <PendingAssessmentsTable 
+                    <PendingAssessmentsTable
                       teamPerformances={teamPerformances}
                       selectedQuarter={selectedQuarter}
                       viewMode={viewMode}
@@ -500,7 +502,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     <Box sx={{ width: '100%', height: 300 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
-                      data={performanceChartData}
+                          data={performanceChartData}
                           margin={{
                             top: 20,
                             right: 30,
@@ -509,7 +511,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                           }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis 
+                          <XAxis
                             dataKey="name"
                             tick={{ fontSize: 12 }}
                             interval={0}
@@ -528,8 +530,8 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                               padding: '10px'
                             }}
                           />
-                          <Bar 
-                            dataKey="value" 
+                          <Bar
+                            dataKey="value"
                             fill="#8884d8"
                             radius={[4, 4, 0, 0]}
                             barSize={40}
@@ -557,7 +559,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   <Typography variant="h6" sx={{ mb: 2 }}>
                     {viewMode === 'team' ? `${userOwnedTeam} Performance Details` : "Performance Details"}
                   </Typography>
-                  <PerformanceTable 
+                  <PerformanceTable
                     teamPerformances={teamPerformances}
                     selectedQuarter={selectedQuarter}
                     viewMode={viewMode}
@@ -586,7 +588,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     </Typography>
                   </CardHeader>
                   <CardContent>
-                    <HeatmapByTeam 
+                    <HeatmapByTeam
                       teamPerformances={teamPerformances}
                       selectedQuarter={selectedQuarter}
                       selectedAnnualTarget={selectedAnnualTarget}
@@ -596,6 +598,11 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               </Box>}
             </Box>
           )}
+        </Box>
+      )}
+      {showDashboard && viewMode === 'strategyMap' && (
+        <Box>
+          <StrategyMap annualTargetId={selectedAnnualTargetId} quarter={selectedQuarter || undefined} />
         </Box>
       )}
     </Box>
