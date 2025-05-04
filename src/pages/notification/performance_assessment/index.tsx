@@ -33,6 +33,8 @@ import { fetchNotifications } from '../../../store/slices/notificationSlice';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useToast } from '../../../contexts/ToastContext';
 import { useAuth } from '../../../contexts/AuthContext';
+import PersonalFeedback from './PersonalFeedback';
+import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -60,43 +62,29 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 }) => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
-  const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [evidenceModalData, setEvidenceModalData] = useState<{
     evidence: string;
     attachments: Array<{ name: string; url: string }>;
   } | null>(null);
-  const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
+  const [enableFeedback, setEnableFeedback] = useState(false);
+
   const { showToast } = useToast();
 
   useEffect(() => {
-    fetchCompanyUsers();
     fetchPersonalPerformance();
+    checkFeedbackModule();
+    dispatch(fetchFeedback());
+
   }, []);
 
   useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
-      setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
-      setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === 'Submitted');
     }
   }, [personalPerformance]);
-
-  const fetchCompanyUsers = async () => {
-    try {
-      const response = await api.get('/personal-performance/company-users');
-      if (response.status === 200) {
-        setCompanyUsers(response.data.data);
-      } else {
-        setCompanyUsers([]);
-      }
-    } catch (error) {
-      setCompanyUsers([]);
-    }
-  }
 
   const fetchPersonalPerformance = async () => {
     try {
@@ -108,6 +96,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       }
     } catch (error) {
       console.error('Error fetching personal performance:', error);
+    }
+  }
+
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
     }
   }
 
@@ -449,6 +444,26 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           );
         })()}
       </Box>
+
+      {/* Feedback Block */}
+      {enableFeedback && (
+        <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+          <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
+            Feedback
+          </Typography>
+
+          <PersonalFeedback
+            quarter={quarter}
+            annualTargetId={personalPerformance?.annualTargetId || ''}
+            personalPerformance={personalPerformance}
+            overallScore={{
+              score: calculateOverallScore(personalQuarterlyObjectives),
+              name: getRatingScoreInfo(calculateOverallScore(personalQuarterlyObjectives))?.name
+            }}
+          />
+
+        </Paper>
+      )}
 
       <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
         <Box sx={{ mt: 4, mb: 2 }}>
