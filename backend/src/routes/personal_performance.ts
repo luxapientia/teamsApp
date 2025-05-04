@@ -245,6 +245,8 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
       personalPerformances.push(newPersonalPerformance);
     }
 
+    console.log(personalPerformances, 'personalPerformances');
+
     return res.json({
       status: 'success',
       data: personalPerformances

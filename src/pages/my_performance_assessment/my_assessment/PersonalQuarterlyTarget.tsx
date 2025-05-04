@@ -439,7 +439,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
     await dispatch(fetchPersonalPerformances({
       annualTargetId: personalPerformance?.annualTargetId || '',
-      quarter: quarter
     }));
   };
 
@@ -463,11 +462,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       quarterlyTargets: newPersonalQuarterlyTargets || []
     }));
 
-    console.log(updatedPersonalPerformance, 'deleted course');
-
     dispatch(fetchPersonalPerformances({
       annualTargetId: personalPerformance?.annualTargetId || '',
-      quarter: quarter
     }));
   };
   return (

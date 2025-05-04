@@ -1,4 +1,4 @@
-import { QuarterlyTargetObjective } from "./annualCorporateScorecard";
+import { QuarterlyTargetObjective, QuarterType } from "./annualCorporateScorecard";
 import { Course } from "./course";
 
 export interface PersonalQuarterlyTargetObjective extends QuarterlyTargetObjective {
@@ -42,7 +42,7 @@ export interface PersonalQuarterlyTargetFeedback {
 }
 
 export interface PersonalQuarterlyTarget {
-    quarter: string;
+    quarter: QuarterType;
     agreementStatus: AgreementStatus;
     agreementStatusUpdatedAt: Date;
     assessmentStatus: AssessmentStatus;

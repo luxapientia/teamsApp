@@ -21,7 +21,7 @@ import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
-import { TeamPerformance, PersonalQuarterlyTargetObjective, PdfType, AnnualTarget } from '../../../types';
+import { TeamPerformance, PersonalQuarterlyTargetObjective, PdfType, AnnualTarget, QuarterType, PersonalPerformance } from '../../../types';
 
 import { ExportButton } from '../../../components/Buttons';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -53,6 +53,7 @@ const TeamPerformances: React.FC = () => {
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
+  const feedbackTemplates = useAppSelector((state: RootState) => state.feedback.feedbacks);
   const tableRef = useRef();
   const { user } = useAuth();
 
@@ -79,6 +80,57 @@ const TeamPerformances: React.FC = () => {
       setShowTable(true);
     }
   };
+
+  const calculateFeedbackOverallScore = (quarter: QuarterType, performance: TeamPerformance) => {
+    const target = performance.quarterlyTargets.find(t => t.quarter === quarter);
+    const selectedFeedbackId = target?.selectedFeedbackId;
+    const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
+    const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
+
+    if (!feedbackTemplate || feedbackResponses.length === 0) return '-';
+
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    feedbackTemplate.dimensions.forEach(dimension => {
+      let totalDimensionScore = 0;
+      let totalDimensionResponses = 0;
+      // Get all questions for this dimension
+      const dimensionQuestions = feedbackTemplate.dimensions
+        .find(d => d.name === dimension.name)?.questions || [];
+
+      // For each question in the dimension
+      dimensionQuestions.forEach(question => {
+        feedbackResponses.forEach(feedback => {
+          const response = feedback.feedbacks.find(f =>
+            f.dimension === dimension.name && f.question === question
+          );
+          if (response?.response.score) {
+            totalDimensionScore += response.response.score;
+            totalDimensionResponses++;
+          }
+        });
+      });
+      const dimensionScore = totalDimensionScore / totalDimensionResponses;
+      totalWeightedScore += dimensionScore * (dimension.weight / 100);
+      totalWeight += dimension.weight / 100;
+    });
+
+
+    if (totalWeight === 0) return '-';
+    return totalWeightedScore.toFixed(2);
+  };
+
+  const calculateFinalScore = (quarter: QuarterType, overallScore: number, performance: TeamPerformance) => {
+    const target = performance.quarterlyTargets.find(t => t.quarter === quarter);
+    const selectedFeedbackId = target?.selectedFeedbackId;
+    const feedbackOverallScore = calculateFeedbackOverallScore(quarter, performance);
+    const selectedFeedback = feedbackTemplates.find(f => f._id === selectedFeedbackId);
+    const contributionScorePercentage = selectedFeedback?.contributionScorePercentage || 0;
+    const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore) * (1 - contributionScorePercentage / 100));
+
+    return finalScore.toFixed(0);
+  }
 
   const calculateQuarterScore = (objectives: PersonalQuarterlyTargetObjective[]) => {
     let totalWeightedScore = 0;
@@ -173,7 +225,7 @@ const TeamPerformances: React.FC = () => {
               {teamPerformances.map((performance: TeamPerformance, index: number) => {
                 const quarterScores = performance.quarterlyTargets.map(quarter => {
                   if (annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable) {
-                    return calculateQuarterScore(quarter.objectives)
+                    return enableFeedback ? calculateFinalScore(quarter.quarter, calculateQuarterScore(quarter.objectives), performance) : calculateQuarterScore(quarter.objectives)
                   }
                   return null
                 });
@@ -189,7 +241,7 @@ const TeamPerformances: React.FC = () => {
                     <StyledTableCell>{performance.jobTitle}</StyledTableCell>
                     <StyledTableCell>{performance.team}</StyledTableCell>
                     {quarterScores.map((score, idx) => {
-                      const ratingScale = getRatingScaleInfo(score, annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
+                      const ratingScale = getRatingScaleInfo(Number(score), annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
                       return (
                         <StyledTableCell key={idx}
                           data-color={ratingScale?.color || '#DC2626'}

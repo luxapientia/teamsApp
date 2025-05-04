@@ -93,7 +93,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
 
   const handleView = () => {
     if (selectedAnnualTarget && selectedQuarter) {
-      dispatch(fetchPersonalPerformances({ annualTargetId: selectedAnnualTargetId, quarter: selectedQuarter }));
+      dispatch(fetchPersonalPerformances({ annualTargetId: selectedAnnualTargetId }));
       setShowQuarterlyTargets(true);
       setShowPersonalQuarterlyTarget(false);
     }
