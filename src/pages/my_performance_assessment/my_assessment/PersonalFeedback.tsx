@@ -76,7 +76,7 @@ interface AddProviderForm {
 const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance, overallScore }) => {
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
-    const [selectedFeedbackId, setSelectedFeedbackId] = useState<string>('');
+    const [selectedFeedbackId, setSelectedFeedbackId] = useState<string>(personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId || '');
     const [isAddProviderOpen, setIsAddProviderOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedQuestion, setSelectedQuestion] = useState<{
@@ -131,6 +131,12 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     }, []);
 
     useEffect(() => {
+        if (personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId) {
+            setSelectedFeedbackId(personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId || '');
+        }
+    }, [personalPerformance]);
+
+    useEffect(() => {
         if (feedbacks.length > 0 && !selectedFeedbackId) {
             const firstFeedback = feedbacks[0];
             setSelectedFeedbackId(firstFeedback._id);
@@ -139,7 +145,20 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
 
     const handleFeedbackChange = (event: SelectChangeEvent<string>) => {
         const newValue = event.target.value;
-        setSelectedFeedbackId(newValue);
+        const updatedPersonalPerformance = {
+            ...personalPerformance,
+            quarterlyTargets: personalPerformance.quarterlyTargets.map(target =>
+                target.quarter === quarter
+                    ? {
+                        ...target,
+                        selectedFeedbackId: newValue
+                    }
+                    : target
+            )
+        };
+
+        dispatch(updatePersonalPerformance(updatedPersonalPerformance));
+        // setSelectedFeedbackId(newValue);
     };
 
     const handleAddProviderClose = () => {

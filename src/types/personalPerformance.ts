@@ -52,6 +52,7 @@ export interface PersonalQuarterlyTarget {
     objectives: PersonalQuarterlyTargetObjective[];
     personalDevelopment?: Array<Course>;
     isPersonalDevelopmentNotApplicable?: boolean;
+    selectedFeedbackId?: string;
     feedbacks: PersonalQuarterlyTargetFeedback[];
 }
 
