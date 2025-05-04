@@ -602,7 +602,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
       )}
       {showDashboard && viewMode === 'strategyMap' && (
         <Box>
-          <StrategyMap />
+          <StrategyMap annualTargetId={selectedAnnualTargetId} quarter={selectedQuarter || undefined} />
         </Box>
       )}
     </Box>
