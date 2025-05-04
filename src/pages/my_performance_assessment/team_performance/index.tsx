@@ -29,21 +29,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { exportPdf } from '../../../utils/exportPdf';
-
-const StyledTableCell = styled(TableCell)(({ theme }) => ({
-  borderBottom: '1px solid #E5E7EB',
-  padding: '16px',
-  color: '#374151',
-  backgroundColor: 'white',
-}));
-
-const StyledHeaderCell = styled(TableCell)(({ theme }) => ({
-  borderBottom: '1px solid #E5E7EB',
-  padding: '16px',
-  color: '#6B7280',
-  fontWeight: 500,
-  backgroundColor: '#F9FAFB',
-}));
+import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
+import { api } from '../../../services/api';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -61,6 +48,7 @@ const StyledFormControl = styled(FormControl)({
 const TeamPerformances: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
+  const [enableFeedback, setEnableFeedback] = useState(false);
   const [showTable, setShowTable] = useState(false);
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
@@ -70,7 +58,15 @@ const TeamPerformances: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
+    checkFeedbackModule();
   }, [dispatch]);
+
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
+    }
+  }
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);

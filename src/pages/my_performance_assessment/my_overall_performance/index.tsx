@@ -20,10 +20,12 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
+import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective, QuarterType } from '../../../types/annualCorporateScorecard';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
-import { TeamPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
+import { TeamPerformance, PersonalPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
+import { api } from '../../../services/api';
+
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -57,6 +59,7 @@ const MyPerformances: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showTable, setShowTable] = useState(false);
+  const [enableFeedback, setEnableFeedback] = useState(false);
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
@@ -65,12 +68,20 @@ const MyPerformances: React.FC = () => {
   );
   useEffect(() => {
     dispatch(fetchAnnualTargets());
+    checkFeedbackModule();
   }, [dispatch]);
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
     setShowTable(false);
   };
+
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
+    }
+  }
 
   const handleView = () => {
     if (selectedAnnualTargetId) {
@@ -103,6 +114,30 @@ const MyPerformances: React.FC = () => {
       scale => scale.score === score
     );
   };
+
+//   const calculateFeedbackOverallScore = (quarter: QuarterType) => {
+//     const personalPerformance = personalPerformances.find(performance => performance.annualTargetId === selectedAnnualTargetId);
+//     const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
+//     const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
+//     const feedbackTemplate = feedbacks.find(f => f._id === selectedFeedbackId);
+
+//     if (!feedbackTemplate || feedbackResponses.length === 0) return '-';
+
+//     let totalWeightedScore = 0;
+//     let totalWeight = 0;
+
+//     feedbackTemplate.dimensions.forEach(dimension => {
+//         const dimensionScore = calculateAverageScore(dimension.name);
+//         if (dimensionScore !== '-') {
+//             const score = parseFloat(dimensionScore);
+//             totalWeightedScore += score * (dimension.weight / 100);
+//             totalWeight += dimension.weight / 100;
+//         }
+//     });
+
+//     if (totalWeight === 0) return '-';
+//     return totalWeightedScore.toFixed(2);
+// };
 
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
@@ -176,7 +211,7 @@ const MyPerformances: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {personalPerformances.map((performance: TeamPerformance, index: number) => {
+                {personalPerformances.map((performance: PersonalPerformance, index: number) => {
                   const quarterScores = performance.quarterlyTargets.map(quarter => {
                     if (annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable) {
                       return calculateQuarterScore(quarter.objectives)
