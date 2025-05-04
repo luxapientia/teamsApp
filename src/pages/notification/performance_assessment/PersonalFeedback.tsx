@@ -75,7 +75,6 @@ interface AddProviderForm {
 
 const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance, overallScore }) => {
     const dispatch = useAppDispatch();
-    const { showToast } = useToast();
     const [selectedFeedbackId, setSelectedFeedbackId] = useState<string>(personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId || '');
     const [isAddProviderOpen, setIsAddProviderOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -103,8 +102,6 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     const [organizationMembers, setOrganizationMembers] = useState<{ name: string, email: string }[]>([]);
     const [emailError, setEmailError] = useState<string>('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [isSharing, setIsSharing] = useState(false);
-    const annualTarget = useAppSelector((state: RootState) => state.scorecard.annualTargets.find(at => at._id === annualTargetId));
 
     const feedbacks = useAppSelector((state: RootState) =>
         state.feedback.feedbacks.filter(f =>
@@ -142,24 +139,6 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
             setSelectedFeedbackId(firstFeedback._id);
         }
     }, [feedbacks]);
-
-    const handleFeedbackChange = (event: SelectChangeEvent<string>) => {
-        const newValue = event.target.value;
-        const updatedPersonalPerformance = {
-            ...personalPerformance,
-            quarterlyTargets: personalPerformance.quarterlyTargets.map(target =>
-                target.quarter === quarter
-                    ? {
-                        ...target,
-                        selectedFeedbackId: newValue
-                    }
-                    : target
-            )
-        };
-
-        dispatch(updatePersonalPerformance(updatedPersonalPerformance));
-        // setSelectedFeedbackId(newValue);
-    };
 
     const handleAddProviderClose = () => {
         setIsAddProviderOpen(false);
@@ -253,24 +232,6 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         return totalWeightedScore.toFixed(2);
     };
 
-    const handleDeleteProvider = (feedbackId: string, providerEmail: string) => {
-        const updatedPersonalPerformance = {
-            ...personalPerformance,
-            quarterlyTargets: personalPerformance.quarterlyTargets.map(target =>
-                target.quarter === quarter
-                    ? {
-                        ...target,
-                        feedbacks: target.feedbacks.filter(feedback =>
-                            !(feedback.feedbackId === feedbackId && feedback.provider.email === providerEmail)
-                        )
-                    }
-                    : target
-            )
-        };
-
-        dispatch(updatePersonalPerformance(updatedPersonalPerformance));
-    };
-
     const handleViewFeedback = (dimension: string, question: string) => {
         const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
         const feedbacks = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
@@ -335,35 +296,6 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         return finalScore.toFixed(0);
     }
 
-    const handleShareFeedback = async () => {
-        setIsSharing(true);
-        const personalFeedbacks = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId);
-        try {
-            await Promise.all(personalFeedbacks.map(async (feedback) => {
-                if (feedback.provider.status === 'Not Shared') {
-                    const provider = feedback.provider;
-                    const response = await api.post('/feedback/share-feedback', { feedbackId: feedback._id, provider });
-                    if (response.status === 200) {
-                        showToast('360 Degree Feedback has been shared.', 'success');
-                    } else {
-                        showToast('Failed to share feedback', 'error');
-                    }
-                }
-            }));
-        } catch (error) {
-            console.error('Error sharing feedback:', error);
-            showToast('Failed to share feedback', 'error');
-        } finally {
-            setIsSharing(false);
-        }
-    };
-
-    const isWithinAssessmentPeriod = () => {
-        const endDate = annualTarget?.content.assessmentPeriod[quarter as keyof typeof annualTarget.content.assessmentPeriod].endDate;
-        const currentDate = new Date();
-        return currentDate <= new Date(endDate);
-    }
-
     if (feedbacks.length === 0) {
         return (
             <Box sx={{ p: 3 }}>
@@ -379,7 +311,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
             <Box sx={{ mb: 3 }}>
                 <Select
                     value={selectedFeedbackId}
-                    onChange={handleFeedbackChange}
+                    disabled={true}
                     fullWidth
                     sx={{ backgroundColor: '#fff' }}
                 >
@@ -391,34 +323,6 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                 </Select>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Button
-                    variant="contained"
-                    onClick={() => setIsAddProviderOpen(true)}
-                    sx={{
-                        backgroundColor: '#0078D4',
-                        '&:hover': { backgroundColor: '#106EBE' },
-                    }}
-                >
-                    + Add Feedback Provider
-                </Button>
-                <Button
-                    variant="outlined"
-                    sx={{
-                        color: '#0078D4',
-                        borderColor: '#0078D4',
-                        '&:hover': {
-                            borderColor: '#106EBE',
-                            backgroundColor: 'rgba(0, 120, 212, 0.04)',
-                        },
-                    }}
-                    disabled={!isWithinAssessmentPeriod() || isSharing}
-                    onClick={handleShareFeedback}
-                >
-                    {isSharing ? 'Sharing...' : 'Share'}
-                </Button>
-            </Box>
-
             <Paper sx={{ mb: 3, boxShadow: 'none', border: '1px solid #E5E7EB' }}>
                 <Table>
                     <TableHead>
@@ -426,7 +330,6 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                             <StyledHeaderCell align="center">Name</StyledHeaderCell>
                             <StyledHeaderCell align="center">Category</StyledHeaderCell>
                             <StyledHeaderCell align="center">Status</StyledHeaderCell>
-                            <StyledHeaderCell align="center">Actions</StyledHeaderCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -435,26 +338,6 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                                 <StyledTableCell>{feedback.provider.name}</StyledTableCell>
                                 <StyledTableCell align="center">{feedback.provider.category}</StyledTableCell>
                                 <StyledTableCell align="center">{feedback.provider.status}</StyledTableCell>
-                                <StyledTableCell align="center">
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                                        {/* <Tooltip title="Copy feedback link">
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleCopyLink(feedback._id)}
-                                                sx={{ color: '#0078D4' }}
-                                            >
-                                                <ContentCopyIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip> */}
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => handleDeleteProvider(feedback.feedbackId, feedback.provider.email)}
-                                            sx={{ color: '#DC2626' }}
-                                        >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
-                                </StyledTableCell>
                             </TableRow>
                         ))}
                     </TableBody>

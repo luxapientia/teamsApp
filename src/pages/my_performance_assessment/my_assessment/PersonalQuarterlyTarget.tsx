@@ -73,6 +73,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 }) => {
   const dispatch = useAppDispatch();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
+  const [enableFeedback, setEnableFeedback] = useState(false);
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [selectedKPI, setSelectedKPI] = useState<{ kpi: QuarterlyTargetKPI, perspectiveId: number, objectiveName: string, initiativeName: string, kpiIndex: number } | null>(null);
@@ -87,7 +88,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const tableRef = useRef();
   const { user } = useAuth();
   const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
-  const feedback = useAppSelector((state) => state.feedback.feedbacks);
+
 
   const annualQuarterlyTarget = annualTarget?.content.quarterlyTarget.quarterlyTargets.find(
     target => target.quarter === quarter
@@ -96,6 +97,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   useEffect(() => {
     fetchCompanyUsers();
+    checkFeedbackModule();
     dispatch(fetchFeedback());
   }, []);
 
@@ -108,6 +110,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setStatus(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus);
     }
   }, [personalPerformance]);
+
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
+    }
+  }
 
   const handleSupervisorChange = (event: SelectChangeEvent) => {
     setSelectedSupervisor(event.target.value);
@@ -404,7 +413,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   // Add new function to check if course is already requested in any quarter
   const isCourseAlreadyRequested = (courseName: string) => {
-    return personalPerformance?.quarterlyTargets.some(target => 
+    return personalPerformance?.quarterlyTargets.some(target =>
       target.personalDevelopment?.some(course => course.name === courseName)
     ) || false;
   };
@@ -412,7 +421,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const handleAddPersonalDevelopment = async (selectedCourses: Course[]) => {
     // Filter out courses that are already requested in any quarter
     const newCourses = selectedCourses.filter(course => !isCourseAlreadyRequested(course.name));
-    
+
     if (newCourses.length < selectedCourses.length) {
       // Some courses were filtered out because they were already requested
       console.warn('Some courses were already requested in other quarters and were filtered out');
@@ -439,7 +448,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
     await dispatch(fetchPersonalPerformances({
       annualTargetId: personalPerformance?.annualTargetId || '',
-      quarter: quarter
     }));
   };
 
@@ -463,11 +471,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       quarterlyTargets: newPersonalQuarterlyTargets || []
     }));
 
-    console.log(updatedPersonalPerformance, 'deleted course');
-
     dispatch(fetchPersonalPerformances({
       annualTargetId: personalPerformance?.annualTargetId || '',
-      quarter: quarter
     }));
   };
   return (
@@ -863,18 +868,24 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       </Box>
 
       {/* Feedback Block */}
-      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
-        <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
-          Feedback
-        </Typography>
+      {enableFeedback && (
+        <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+          <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
+            Feedback
+          </Typography>
 
-        <PersonalFeedback
-          quarter={quarter}
-          annualTargetId={personalPerformance?.annualTargetId || ''}
-          personalPerformance={personalPerformance}
-        />  
-        
-      </Paper>
+          <PersonalFeedback
+            quarter={quarter}
+            annualTargetId={personalPerformance?.annualTargetId || ''}
+            personalPerformance={personalPerformance}
+            overallScore={{
+              score: calculateOverallScore(personalQuarterlyObjectives),
+              name: getRatingScoreInfo(calculateOverallScore(personalQuarterlyObjectives))?.name
+            }}
+          />
+
+        </Paper>
+      )}
 
       {/* Personal Development Block */}
       {isDevelopmentEnabled && (

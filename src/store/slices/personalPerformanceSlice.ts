@@ -22,12 +22,11 @@ const initialState: PersonalPerformanceState = {
 // Async thunks
 export const fetchPersonalPerformances = createAsyncThunk(
   'personalPerformance/fetchPersonalPerformances',
-  async (payload: { annualTargetId: string, quarter: string }) => {
+  async (payload: { annualTargetId: string}) => {
     try {
       const response = await api.get(`/personal-performance/personal-performances`, {
         params: {
           annualTargetId: payload.annualTargetId,
-          quarter: payload.quarter
         }
       });
 

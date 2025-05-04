@@ -12,7 +12,8 @@ export const sendFeedbackEmail = async (feedbackId: string, provider: { name: st
                     $elemMatch: {
                         'feedbacks._id': feedbackId
                     }
-                }
+                },
+                'annualTargetId': 1
             })
             .populate('quarterlyTargets.feedbacks.feedbackId') as any;
 
@@ -36,6 +37,8 @@ export const sendFeedbackEmail = async (feedbackId: string, provider: { name: st
           </body>
         </html>
       `;
+
+      console.log(feedbackLink, 'feedbackLink');
 
         // Use the current user's ID (req.user.MicrosoftId) to send the email
         await graphService.sendMail(

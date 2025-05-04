@@ -24,7 +24,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useSearchParams } from 'react-router-dom';
 import { publicApi } from '../../../services/api';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
-import { Feedback, PersonalQuarterlyTargetFeedback } from '../../../types';
+import { Feedback, PersonalQuarterlyTargetFeedback, PersonalQuarterlyTargetFeedbackProvider } from '../../../types';
 
 interface FeedbackResponse {
     dimension: string;
@@ -54,6 +54,7 @@ interface FeedbackTemplate {
 interface FeedbackData {
     feedbackTemplate: FeedbackTemplate;
     feedback: PersonalQuarterlyTargetFeedback[];
+    provider: PersonalQuarterlyTargetFeedbackProvider;
 }
 
 const FeedbackSubmission = () => {
@@ -66,6 +67,8 @@ const FeedbackSubmission = () => {
     const [previousResponses, setPreviousResponses] = useState<FeedbackResponse[]>([]);
     const [errors, setErrors] = useState<{ [key: string]: string }>({});
     const [showValidationAlert, setShowValidationAlert] = useState(false);
+    const [provider, setProvider] = useState<PersonalQuarterlyTargetFeedbackProvider | null>(null);
+    const [isCompleted, setIsCompleted] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -78,9 +81,8 @@ const FeedbackSubmission = () => {
             const response = await publicApi.get(`/submit-feedback/${id}`);
             if (response.data.status === 200) {
                 setFeedbackData(response.data.data);
-                console.log(response.data.data);
                 // Initialize responses based on feedback dimensions
-                const initialResponses = response.data.data.feedbackTemplate.dimensions.flatMap(dimension =>
+                const feedbackTemplate = response.data.data.feedbackTemplate.dimensions.flatMap(dimension =>
                     dimension.questions.map(question => ({
                         dimension: dimension.name,
                         question,
@@ -91,8 +93,20 @@ const FeedbackSubmission = () => {
                         reason: ''
                     }))
                 ) as FeedbackResponse[];
-                setResponses(initialResponses);
-                setPreviousResponses(initialResponses);
+                
+                const initialResponses = response.data.data.feedback;
+                initialResponses.forEach(response => {
+                    const feedbackTemplateResponse = feedbackTemplate.find(template => template.dimension === response.dimension && template.question === response.question);
+                    if (feedbackTemplateResponse) {
+                        feedbackTemplateResponse.response.score = response.response.score;
+                        feedbackTemplateResponse.response.response = response.response.response;
+                        feedbackTemplateResponse.reason = response.reason;
+                    }
+                });
+                setResponses(feedbackTemplate);
+                setPreviousResponses(feedbackTemplate);
+                setProvider(response.data.data.provider);
+                setIsCompleted(response.data.data.provider.status === 'Completed');
             }
         } catch (error) {
             console.error('Error fetching feedback data:', error);
@@ -197,6 +211,20 @@ const FeedbackSubmission = () => {
                 >
                     {feedbackData.feedbackTemplate.name}
                 </Typography>
+
+                {isCompleted && (
+                    <Alert 
+                        severity="info" 
+                        sx={{ 
+                            mb: 3,
+                            '& .MuiAlert-message': {
+                                fontSize: '0.875rem'
+                            }
+                        }}
+                    >
+                        This feedback has already been submitted and cannot be modified.
+                    </Alert>
+                )}
 
                 <Collapse in={showValidationAlert}>
                     <Alert 
@@ -483,6 +511,7 @@ const FeedbackSubmission = () => {
                     <Button
                         variant="contained"
                         onClick={handleSubmit}
+                        disabled={isCompleted || !validateResponses()}
                         sx={{
                             backgroundColor: '#0078D4',
                             '&:hover': { 

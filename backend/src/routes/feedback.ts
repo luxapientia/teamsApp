@@ -125,12 +125,12 @@ router.post('/share-feedback', authenticateToken, async (_req: AuthenticatedRequ
     const feedback = await sendFeedbackEmail(feedbackId, provider, { tenantId: user?.tenantId || '', MicrosoftId: user?.MicrosoftId || '', name: user?.name || '' });
 
     if (feedback.success) {
-      return res.json({ data: null, status: 200, message: 'Feedback shared successfully' });
+      return res.status(200).json({ data: null, message: 'Feedback shared successfully' });
     } else {
-      return res.status(500).json({ data: null, status: 500, message: 'Failed to share feedback' });
+      return res.status(500).json({ data: null, message: 'Failed to share feedback' });
     }
   } catch (error) {
-    return res.status(500).json({ data: null, status: 500, message: 'Failed to share feedback' });
+    return res.status(500).json({ data: null, message: 'Failed to share feedback' });
   }
 });
 

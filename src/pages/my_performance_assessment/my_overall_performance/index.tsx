@@ -20,10 +20,12 @@ import {
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { RootState } from '../../../store';
-import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective } from '../../../types/annualCorporateScorecard';
+import { AnnualTarget, AnnualTargetRatingScale, QuarterlyTargetObjective, QuarterType } from '../../../types/annualCorporateScorecard';
 import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
-import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
-import { TeamPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
+import { fetchTeamPerformances, fetchPersonalPerformances } from '../../../store/slices/personalPerformanceSlice';
+import { TeamPerformance, PersonalPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
+import { api } from '../../../services/api';
+
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -57,20 +59,31 @@ const MyPerformances: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showTable, setShowTable] = useState(false);
+  const [enableFeedback, setEnableFeedback] = useState(false);
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
   const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
+  const feedbackTemplates = useAppSelector((state: RootState) => state.feedback.feedbacks);
   useEffect(() => {
     dispatch(fetchAnnualTargets());
+    checkFeedbackModule();
   }, [dispatch]);
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
+    dispatch(fetchPersonalPerformances({ annualTargetId: event.target.value }));
     setShowTable(false);
   };
+
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
+    }
+  }
 
   const handleView = () => {
     if (selectedAnnualTargetId) {
@@ -103,6 +116,61 @@ const MyPerformances: React.FC = () => {
       scale => scale.score === score
     );
   };
+
+  const calculateFeedbackOverallScore = (quarter: QuarterType) => {
+    const personalPerformance = personalPerformances.find(performance => performance.annualTargetId === selectedAnnualTargetId);
+    const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
+    const selectedFeedbackId = target?.selectedFeedbackId;
+    const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
+    const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
+
+    if (!feedbackTemplate || feedbackResponses.length === 0) return '-';
+
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    feedbackTemplate.dimensions.forEach(dimension => {
+      let totalDimensionScore = 0;
+      let totalDimensionResponses = 0;
+      // Get all questions for this dimension
+      const dimensionQuestions = feedbackTemplate.dimensions
+        .find(d => d.name === dimension.name)?.questions || [];
+
+      // For each question in the dimension
+      dimensionQuestions.forEach(question => {
+        feedbackResponses.forEach(feedback => {
+          const response = feedback.feedbacks.find(f =>
+            f.dimension === dimension.name && f.question === question
+          );
+          if (response?.response.score) {
+            totalDimensionScore += response.response.score;
+            totalDimensionResponses++;
+          }
+        });
+      });
+      const dimensionScore = totalDimensionScore / totalDimensionResponses;
+      totalWeightedScore += dimensionScore * (dimension.weight / 100);
+      totalWeight += dimension.weight / 100;
+    });
+
+
+    if (totalWeight === 0) return '-';
+    return totalWeightedScore.toFixed(2);
+  };
+
+
+  const calculateFinalScore = (quarter: QuarterType, overallScore: number) => {
+    const personalPerformance = personalPerformances.find(performance => performance.annualTargetId === selectedAnnualTargetId);
+    if (!personalPerformance) return '-';
+    const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
+    const selectedFeedbackId = target?.selectedFeedbackId;
+    const feedbackOverallScore = calculateFeedbackOverallScore(quarter);
+    const selectedFeedback = feedbackTemplates.find(f => f._id === selectedFeedbackId);
+    const contributionScorePercentage = selectedFeedback?.contributionScorePercentage || 0;
+    const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore) * (1 - contributionScorePercentage / 100));
+
+    return finalScore.toFixed(0);
+  }
 
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
@@ -176,10 +244,10 @@ const MyPerformances: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {personalPerformances.map((performance: TeamPerformance, index: number) => {
+                {personalPerformances.map((performance: PersonalPerformance, index: number) => {
                   const quarterScores = performance.quarterlyTargets.map(quarter => {
                     if (annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable) {
-                      return calculateQuarterScore(quarter.objectives)
+                      return enableFeedback ? calculateFinalScore(quarter.quarter, calculateQuarterScore(quarter.objectives)) : calculateQuarterScore(quarter.objectives)
                     }
                     return null
                   });
@@ -192,7 +260,7 @@ const MyPerformances: React.FC = () => {
                   return (
                     <TableRow key={performance._id}>
                       {quarterScores.map((score, idx) => {
-                        const ratingScale = getRatingScaleInfo(score, annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
+                        const ratingScale = getRatingScaleInfo(Number(score), annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
                         return (
                           <StyledTableCell key={idx}>
                             <Typography sx={{ color: ratingScale?.color }}>

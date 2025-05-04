@@ -30,7 +30,8 @@ router.get('/:id', async (_req: Request, res: Response) => {
     return res.json({
       data: {
         feedbackTemplate: feedbackData.quarterlyTargets[0].feedbacks[0].feedbackId,
-        feedback: feedbackData.quarterlyTargets[0].feedbacks[0].feedbacks
+        feedback: feedbackData.quarterlyTargets[0].feedbacks[0].feedbacks,
+        provider: feedbackData.quarterlyTargets[0].feedbacks[0].provider
       },
       status: 200,
       message: 'Feedback retrieved successfully'
