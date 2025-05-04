@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -8,7 +8,13 @@ import {
   TableRow,
   Paper
 } from '@mui/material';
-import { TeamPerformance, AnnualTarget, QuarterlyTargetObjective } from '../../../types';
+import { TeamPerformance, AnnualTarget, QuarterlyTargetObjective, QuarterType } from '../../../types';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { useAppDispatch } from '../../../hooks/useAppDispatch';
+import { RootState } from '../../../store';
+import { PersonalPerformance } from '../../../types/personalPerformance';
+import { api } from '../../../services/api';
+import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 
 interface HeatmapByTeamProps {
   teamPerformances: TeamPerformance[];
@@ -35,6 +41,16 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
   selectedQuarter,
   selectedAnnualTarget
 }) => {
+  const feedbackTemplates = useAppSelector((state: RootState) => state.feedback.feedbacks);
+  const [enableFeedback, setEnableFeedback] = useState(false);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    checkFeedbackModule();
+    dispatch(fetchFeedback());
+
+  }, []);
+
   if (!selectedQuarter || !selectedAnnualTarget) {
     return null;
   }
@@ -61,6 +77,13 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     return totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
   });
 
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
+    }
+  }
+
   // Calculate performance scores
   const getPersonalPerformanceScore = (objectives: QuarterlyTargetObjective[]) => {
     let totalWeightedScore = 0;
@@ -79,16 +102,62 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     return Math.round(totalWeightedScore / totalWeight);
   };
 
-  const performanceResult = teams.map(team => {
-    const teamMembers = teamPerformances.filter(p => p.team === team);
-    const scores = teamMembers
-      .map(performance => {
-        const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-        return quarterlyTarget ? getPersonalPerformanceScore(quarterlyTarget.objectives) : null;
-      })
-      .filter((score): score is number => score !== null);
+  const calculateFeedbackOverallScore = (quarter: QuarterType, performance: TeamPerformance) => {
+    const target = performance.quarterlyTargets.find(t => t.quarter === quarter);
+    const selectedFeedbackId = target?.selectedFeedbackId;
+    const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
+    const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
 
-    return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
+    console.log('feedbackTemplate', feedbackTemplates);
+
+    if (!feedbackTemplate || feedbackResponses.length === 0) return null;
+
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    feedbackTemplate.dimensions.forEach(dimension => {
+      let totalDimensionScore = 0;
+      let totalDimensionResponses = 0;
+      // Get all questions for this dimension
+      const dimensionQuestions = feedbackTemplate.dimensions
+        .find(d => d.name === dimension.name)?.questions || [];
+
+      // For each question in the dimension
+      dimensionQuestions.forEach(question => {
+        feedbackResponses.forEach(feedback => {
+          const response = feedback.feedbacks.find(f =>
+            f.dimension === dimension.name && f.question === question
+          );
+          if (response?.response.score) {
+            totalDimensionScore += response.response.score;
+            totalDimensionResponses++;
+          }
+        });
+      });
+      const dimensionScore = totalDimensionScore / totalDimensionResponses;
+      totalWeightedScore += dimensionScore * (dimension.weight / 100);
+      totalWeight += dimension.weight / 100;
+    });
+
+
+    return totalWeightedScore;
+  };
+
+  const performanceResult = teams.map(team => {
+    const ownerPerformance = teamPerformances.find(p => p.team === team && p.isTeamOwner);
+    const quarterlyTarget = ownerPerformance?.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
+    const overallScore = quarterlyTarget ? getPersonalPerformanceScore(quarterlyTarget.objectives) : null;
+
+    if (enableFeedback) {
+      const selectedFeedbackId = quarterlyTarget?.selectedFeedbackId;
+      const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
+      const contribution = feedbackTemplate?.contributionScorePercentage;
+      const feedbackOverallScore = calculateFeedbackOverallScore(selectedQuarter as QuarterType, ownerPerformance as TeamPerformance);
+      const finalScore = (overallScore * (1 - contribution / 100)) + (feedbackOverallScore * (contribution / 100));
+      return Number(finalScore.toFixed(0));
+    }
+
+    return overallScore;
   });
 
   const getRatingScaleInfo = (score: number | null): RatingScaleInfo => {
@@ -128,6 +197,8 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     assessment: assessmentResult[index],
     performance: performanceResult[index]
   }));
+
+  console.log('teamsTable', teams);
 
   return (
     <TableContainer component={Paper} sx={{ maxHeight: 400, overflowY: 'auto' }}>

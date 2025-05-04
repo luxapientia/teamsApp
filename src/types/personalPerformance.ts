@@ -69,5 +69,6 @@ export interface TeamPerformance extends PersonalPerformance {
     jobTitle: string;
     team: string;
     email?: string;
+    isTeamOwner?: boolean;
 }
 

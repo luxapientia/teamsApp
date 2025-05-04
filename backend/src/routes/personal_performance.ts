@@ -16,7 +16,7 @@ const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     const uploadDir = path.join(__dirname, '../../public/uploads');
     console.log('Upload directory:', uploadDir);
-    
+
     try {
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
@@ -132,7 +132,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
       if (!userEmail) {
         return res.status(404).json({ error: 'Sender email not found' });
       }
-      if(!supervisorEmail) {
+      if (!supervisorEmail) {
         return res.status(404).json({ error: 'Supervisor email not found' });
       }
       // Send email notification using the provided subject
@@ -175,7 +175,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
         emailContent
       );
     }
-    
+
     return res.status(200).json({ message: 'email sent back successfully' });
   } catch (error) {
     console.error('Send back error:', error);
@@ -203,7 +203,7 @@ router.get('/personal-performance', authenticateToken, async (req: Authenticated
 router.get('/personal-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const annualTargetId = req.query.annualTargetId as string;
-    
+
     // Get the user from the database to ensure we have the correct _id
     const dbUser = await User.findOne({ MicrosoftId: req.user?.MicrosoftId });
     if (!dbUser) {
@@ -223,7 +223,7 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
         model: 'Course'
       }) as PersonalPerformanceDocument[];
 
-    if(personalPerformances.length === 0 && annualTargetId) {
+    if (personalPerformances.length === 0 && annualTargetId) {
       const newPersonalPerformance = await PersonalPerformance.create({
         annualTargetId,
         userId: dbUser._id,
@@ -261,42 +261,45 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
   try {
     const { annualTargetId } = req.query;
     console.log('Fetching team performances for annualTargetId:', annualTargetId);
-    
-    const allPersonalPerformances = await PersonalPerformance.find({ 
-      annualTargetId, 
-      tenantId: req.user?.tenantId 
+
+    const allPersonalPerformances = await PersonalPerformance.find({
+      annualTargetId,
+      tenantId: req.user?.tenantId
     })
-    .populate({
-      path: 'userId',
-      select: 'name email jobTitle MicrosoftId',
-      model: 'User'
-    })
-    .populate('teamId')
-    .populate('quarterlyTargets.personalDevelopment') as any[];
+      .populate({
+        path: 'userId',
+        select: 'name email jobTitle MicrosoftId',
+        model: 'User'
+      })
+      .populate('teamId')
+      .populate('quarterlyTargets.personalDevelopment') as any[];
 
     console.log('Raw performances:', allPersonalPerformances.map(p => ({
       userId: p.userId,
       teamId: p.teamId
     })));
-    
+
     const isTeamOwner = true;
 
     const teamPerformances = allPersonalPerformances
       .filter(performance => performance.userId && (
         performance.quarterlyTargets[0].supervisorId === req.user?._id || isTeamOwner
       ))
-      .map(performance => ({
-        ...performance._doc,
-        fullName: performance.userId.name,
-        jobTitle: performance.userId.jobTitle,
-        email: performance.userId.email,
-        microsoftId: performance.userId.MicrosoftId,
-        team: performance.teamId?.name,
-        quarterlyTargets: performance.quarterlyTargets.map((target: any) => ({
-          ...target._doc,
-          personalDevelopment: target.personalDevelopment || []
-        }))
-      }));
+      .map(performance => {
+        return {
+          ...performance._doc,
+          fullName: performance.userId.name,
+          jobTitle: performance.userId.jobTitle,
+          email: performance.userId.email,
+          microsoftId: performance.userId.MicrosoftId,
+          team: performance.teamId?.name,
+          quarterlyTargets: performance.quarterlyTargets.map((target: any) => ({
+            ...target._doc,
+            personalDevelopment: target.personalDevelopment || []
+          })),
+          isTeamOwner: performance.userId.MicrosoftId == performance.teamId?.owner
+        }
+      });
 
     console.log('Processed performances:', teamPerformances.map(p => ({
       fullName: p.fullName,
@@ -316,8 +319,8 @@ router.put('/update-personal-performance/:id', authenticateToken, async (req: Au
     const { id } = req.params;
     const { personalPerformance } = req.body;
     const updatedPersonalPerformance = await PersonalPerformance.findByIdAndUpdate(
-      id, 
-      personalPerformance, 
+      id,
+      personalPerformance,
       { new: true }
     ).populate({
       path: 'quarterlyTargets.personalDevelopment',
@@ -348,7 +351,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req: Aut
 
   } catch (error) {
     console.error('Upload file error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to upload file',
       details: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -403,7 +406,7 @@ router.post('/copy-initiatives', authenticateToken, async (req: AuthenticatedReq
     const updatedQuarterlyTargets = targetPerformance.quarterlyTargets.map(target => {
       // Create a deep copy of q1Objectives to avoid reference issues
       const objectives = JSON.parse(JSON.stringify(q1Objectives));
-      
+
       return {
         quarter: target.quarter,
         agreementStatus: target.quarter === 'Q1' ? AgreementStatus.Draft : target.agreementStatus,
@@ -417,12 +420,12 @@ router.post('/copy-initiatives', authenticateToken, async (req: AuthenticatedReq
     // Update the personal performance document with proper MongoDB update operators
     const updatedPerformance = await PersonalPerformance.findByIdAndUpdate(
       targetPerformanceId,
-      { 
-        $set: { 
+      {
+        $set: {
           quarterlyTargets: updatedQuarterlyTargets
         }
       },
-      { 
+      {
         new: true,
         runValidators: true
       }
