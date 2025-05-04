@@ -511,7 +511,7 @@ const FeedbackSubmission = () => {
                     <Button
                         variant="contained"
                         onClick={handleSubmit}
-                        disabled={isCompleted}
+                        disabled={isCompleted || !validateResponses()}
                         sx={{
                             backgroundColor: '#0078D4',
                             '&:hover': { 
