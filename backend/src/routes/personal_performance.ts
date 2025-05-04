@@ -203,7 +203,6 @@ router.get('/personal-performance', authenticateToken, async (req: Authenticated
 router.get('/personal-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const annualTargetId = req.query.annualTargetId as string;
-    const quarter = req.query.quarter as string;
     
     // Get the user from the database to ensure we have the correct _id
     const dbUser = await User.findOne({ MicrosoftId: req.user?.MicrosoftId });
@@ -227,7 +226,6 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
     if(personalPerformances.length === 0 && annualTargetId) {
       const newPersonalPerformance = await PersonalPerformance.create({
         annualTargetId,
-        quarter,
         userId: dbUser._id,
         teamId: dbUser.teamId || annualTargetId,
         tenantId: dbUser.tenantId,
