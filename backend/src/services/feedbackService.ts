@@ -38,6 +38,8 @@ export const sendFeedbackEmail = async (feedbackId: string, provider: { name: st
         </html>
       `;
 
+      console.log(feedbackLink, 'feedbackLink');
+
         // Use the current user's ID (req.user.MicrosoftId) to send the email
         await graphService.sendMail(
             user?.tenantId || '',

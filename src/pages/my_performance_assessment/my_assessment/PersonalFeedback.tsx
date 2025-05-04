@@ -50,6 +50,10 @@ interface Props {
     quarter: QuarterType;
     annualTargetId: string;
     personalPerformance: PersonalPerformance;
+    overallScore: {
+        score: number;
+        name: string;
+    };
 }
 
 type ProviderType = 'Internal' | 'External';
@@ -69,7 +73,7 @@ interface AddProviderForm {
     category: FeedbackProvider['category'];
 }
 
-const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance }) => {
+const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance, overallScore }) => {
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
     const [selectedFeedbackId, setSelectedFeedbackId] = useState<string>('');
@@ -207,18 +211,18 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         }
     };
 
-    const calculateOverallScore = () => {
+    const calculateFeedbackOverallScore = () => {
         const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
         const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
         const feedbackTemplate = feedbacks.find(f => f._id === selectedFeedbackId);
-        
+
         if (!feedbackTemplate || feedbackResponses.length === 0) return '-';
 
         let totalWeightedScore = 0;
         let totalWeight = 0;
 
         feedbackTemplate.dimensions.forEach(dimension => {
-            const dimensionScore =  calculateAverageScore(dimension.name);
+            const dimensionScore = calculateAverageScore(dimension.name);
             if (dimensionScore !== '-') {
                 const score = parseFloat(dimensionScore);
                 totalWeightedScore += score * (dimension.weight / 100);
@@ -227,17 +231,17 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         });
 
         if (totalWeight === 0) return '-';
-        return totalWeightedScore.toFixed(1);
+        return totalWeightedScore.toFixed(2);
     };
 
     const handleDeleteProvider = (feedbackId: string, providerEmail: string) => {
         const updatedPersonalPerformance = {
             ...personalPerformance,
-            quarterlyTargets: personalPerformance.quarterlyTargets.map(target => 
+            quarterlyTargets: personalPerformance.quarterlyTargets.map(target =>
                 target.quarter === quarter
                     ? {
                         ...target,
-                        feedbacks: target.feedbacks.filter(feedback => 
+                        feedbacks: target.feedbacks.filter(feedback =>
                             !(feedback.feedbackId === feedbackId && feedback.provider.email === providerEmail)
                         )
                     }
@@ -251,16 +255,16 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     const handleViewFeedback = (dimension: string, question: string) => {
         const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
         const feedbacks = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
-        
+
         const responses = feedbacks.map(feedback => ({
             provider: {
                 name: feedback.provider.name,
                 category: feedback.provider.category
             },
-            response: feedback.feedbacks.find(f => 
+            response: feedback.feedbacks.find(f =>
                 f.dimension === dimension && f.question === question
             )?.response || { score: 0, response: '' },
-            reason: feedback.feedbacks.find(f => 
+            reason: feedback.feedbacks.find(f =>
                 f.dimension === dimension && f.question === question
             )?.reason || ''
         }));
@@ -277,7 +281,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
         const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
         const feedbackTemplate = feedbacks.find(f => f._id === selectedFeedbackId);
-        
+
         if (!feedbackTemplate || feedbackResponses.length === 0) return '-';
 
         let totalScore = 0;
@@ -290,7 +294,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         // For each question in the dimension
         dimensionQuestions.forEach(question => {
             feedbackResponses.forEach(feedback => {
-                const response = feedback.feedbacks.find(f => 
+                const response = feedback.feedbacks.find(f =>
                     f.dimension === dimension && f.question === question
                 );
                 if (response?.response.score) {
@@ -304,15 +308,23 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         return (totalScore / totalResponses).toFixed(1);
     };
 
+    const calculateFinalScore = () => {
+        const feedbackOverallScore = calculateFeedbackOverallScore();
+        const selectedFeedback = feedbacks.find(f => f._id === selectedFeedbackId);
+        const contributionScorePercentage = selectedFeedback?.contributionScorePercentage || 0;
+        const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore.score) * (1 - contributionScorePercentage / 100));
+        return finalScore.toFixed(0);
+    }
+
     const handleShareFeedback = async () => {
         setIsSharing(true);
         const personalFeedbacks = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId);
         try {
             await Promise.all(personalFeedbacks.map(async (feedback) => {
-                if(feedback.provider.status === 'Not Shared') {
+                if (feedback.provider.status === 'Not Shared') {
                     const provider = feedback.provider;
-                    const response = await api.post('/feedback/share-feedback', { feedbackId: feedback._id, provider});
-                    if(response.status === 200) {
+                    const response = await api.post('/feedback/share-feedback', { feedbackId: feedback._id, provider });
+                    if (response.status === 200) {
                         showToast('360 Degree Feedback has been shared.', 'success');
                     } else {
                         showToast('Failed to share feedback', 'error');
@@ -382,7 +394,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                         },
                     }}
                     disabled={!isWithinAssessmentPeriod() || isSharing}
-                    onClick={handleShareFeedback}   
+                    onClick={handleShareFeedback}
                 >
                     {isSharing ? 'Sharing...' : 'Share'}
                 </Button>
@@ -479,11 +491,39 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                                 Overall 360 Degree Feedback Score
                             </StyledTableCell>
                             <StyledTableCell colSpan={3} align="center">
-                                {calculateOverallScore()}
+                                {calculateFeedbackOverallScore()}
                             </StyledTableCell>
                         </TableRow>
                     </TableBody>
                 </Table>
+
+            </Paper>
+
+            <Paper sx={{ boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+                <Box sx={{ mt: 4 }}>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <StyledHeaderCell>Overall Rating Score</StyledHeaderCell>
+                                <StyledHeaderCell>Overall 360 Degree Feedback Score</StyledHeaderCell>
+                                <StyledHeaderCell>Final Score</StyledHeaderCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            <TableRow>
+                                <StyledTableCell>
+                                    {overallScore.score} {overallScore.name}
+                                </StyledTableCell>
+                                <StyledTableCell>
+                                    {calculateFeedbackOverallScore()}
+                                </StyledTableCell>
+                                <StyledTableCell>
+                                    {calculateFinalScore()}
+                                </StyledTableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </Box>
             </Paper>
 
             <Dialog
@@ -626,17 +666,13 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                             <Table>
                                 <TableHead>
                                     <TableRow>
-                                        <StyledHeaderCell>Provider</StyledHeaderCell>
-                                        <StyledHeaderCell>Category</StyledHeaderCell>
                                         <StyledHeaderCell>Response</StyledHeaderCell>
                                         <StyledHeaderCell>Reason</StyledHeaderCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
                                     {selectedQuestion.responses.map((response, index) => (
-                                        <TableRow key={index}>
-                                            <StyledTableCell>{response.provider.name}</StyledTableCell>
-                                            <StyledTableCell>{response.provider.category}</StyledTableCell>
+                                        response.response.score !== 0 && <TableRow key={index}>
                                             <StyledTableCell>
                                                 {response.response.score} - {response.response.response}
                                             </StyledTableCell>
@@ -649,7 +685,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button 
+                    <Button
                         onClick={() => setIsViewModalOpen(false)}
                         sx={{
                             color: '#374151',

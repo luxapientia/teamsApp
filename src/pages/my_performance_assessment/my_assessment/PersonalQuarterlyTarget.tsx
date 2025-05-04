@@ -872,6 +872,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           quarter={quarter}
           annualTargetId={personalPerformance?.annualTargetId || ''}
           personalPerformance={personalPerformance}
+          overallScore={{
+            score: calculateOverallScore(personalQuarterlyObjectives),
+            name: getRatingScoreInfo(calculateOverallScore(personalQuarterlyObjectives))?.name
+          }}
         />  
         
       </Paper>
