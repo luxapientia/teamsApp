@@ -14,7 +14,7 @@ interface PendingAssessmentsTableProps {
   teamPerformances: TeamPerformance[];
   selectedQuarter: string;
   viewMode: string;
-  userOwnedTeam?: string;
+  userOwnedTeam?: string | null;
 }
 
 export const PendingAssessmentsTable: React.FC<PendingAssessmentsTableProps> = ({

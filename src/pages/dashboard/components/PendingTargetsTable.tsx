@@ -14,7 +14,7 @@ interface PendingTargetsTableProps {
   teamPerformances: TeamPerformance[];
   selectedQuarter: string;
   viewMode: string;
-  userOwnedTeam?: string;
+  userOwnedTeam?: string | null;
 }
 
 export const PendingTargetsTable: React.FC<PendingTargetsTableProps> = ({
