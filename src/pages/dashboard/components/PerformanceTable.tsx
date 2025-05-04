@@ -15,7 +15,7 @@ interface PerformanceTableProps {
   teamPerformances: TeamPerformance[];
   selectedQuarter: string;
   viewMode: string;
-  userOwnedTeam?: string;
+  userOwnedTeam?: string | null;
   selectedAnnualTarget?: AnnualTarget;
 }
 
@@ -27,7 +27,7 @@ const calculateAggregatePerformance = (performances: TeamPerformance[], quarter:
     if (quarterlyTarget) {
       quarterlyTarget.objectives.forEach(objective => {
         objective.KPIs.forEach(kpi => {
-          if (kpi.ratingScore !== -1) {
+          if (kpi.ratingScore) {
             ratingCounts.set(kpi.ratingScore, (ratingCounts.get(kpi.ratingScore) || 0) + 1);
           }
         });

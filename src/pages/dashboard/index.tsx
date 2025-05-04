@@ -8,12 +8,6 @@ import {
   SelectChangeEvent,
   styled,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
   Typography,
 } from '@mui/material';
@@ -22,10 +16,6 @@ import {
   ArcElement,
   Tooltip as ChartTooltip,
   Legend,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ChartData,
 } from 'chart.js';
 import {
   BarChart,
@@ -42,8 +32,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { RootState } from '../../store';
 import { fetchAnnualTargets } from '../../store/slices/scorecardSlice';
 import { fetchTeamPerformances } from '../../store/slices/personalPerformanceSlice';
-import { fetchTeams, fetchTeamOwner } from '../../store/slices/teamsSlice';
-import { AnnualTarget, QuarterType, AnnualTargetStatus, QuarterlyTargetObjective } from '../../types/annualCorporateScorecard';
+import { AnnualTarget, QuarterType, QuarterlyTargetObjective } from '../../types/annualCorporateScorecard';
 import { TeamPerformance, AgreementStatus, AssessmentStatus } from '../../types/personalPerformance';
 import HalfDoughnutCard from '../../components/HalfDoughnutCard';
 import { useAuth } from '../../contexts/AuthContext';
@@ -198,19 +187,6 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     });
   };
 
-  const calculateAggregatePerformance = (performances: TeamPerformance[], quarter: QuarterType) => {
-    const aggregateRatingCounts = new Map<number, number>();
-
-    performances.forEach(performance => {
-      const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === quarter);
-      if (quarterlyTarget) {
-        calculatePersonalPerformanceScore(quarterlyTarget.objectives, aggregateRatingCounts);
-      }
-    });
-
-    return aggregateRatingCounts;
-  };
-
   useEffect(() => {
     dispatch(fetchAnnualTargets());
   }, [dispatch]);
@@ -343,291 +319,6 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     color: metric.color
   }));
 
-  const PendingTargetsTable = () => (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Full Name</TableCell>
-            <TableCell>Team</TableCell>
-            <TableCell>Position</TableCell>
-            <TableCell>Quarter</TableCell>
-            <TableCell>Status</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {viewMode == 'team' &&
-            teamPerformances
-              .filter(p => !userOwnedTeam || p.team === userOwnedTeam)
-              .map((performance: TeamPerformance) => {
-                const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-                return (
-                  <TableRow key={performance._id}>
-                    <TableCell>{performance.fullName}</TableCell>
-                    <TableCell>{performance.team}</TableCell>
-                    <TableCell>{performance.jobTitle}</TableCell>
-                    <TableCell>{selectedQuarter}</TableCell>
-                    <TableCell>{quarterlyTarget?.agreementStatus}</TableCell>
-                  </TableRow>
-                );
-              })}
-          {viewMode != 'team' &&
-            teamPerformances
-              .map((performance: TeamPerformance) => {
-                const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-                return (
-                  <TableRow key={performance._id}>
-                    <TableCell>{performance.fullName}</TableCell>
-                    <TableCell>{performance.team}</TableCell>
-                    <TableCell>{performance.jobTitle}</TableCell>
-                    <TableCell>{selectedQuarter}</TableCell>
-                    <TableCell>{quarterlyTarget?.agreementStatus}</TableCell>
-                  </TableRow>
-                );
-              })}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-
-  const PendingAssessmentsTable = () => (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Full Name</TableCell>
-            <TableCell>Team</TableCell>
-            <TableCell>Position</TableCell>
-            <TableCell>Quarter</TableCell>
-            <TableCell>Assessment Status</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {viewMode == 'team' &&
-            teamPerformances
-              .filter(p => !userOwnedTeam || p.team === userOwnedTeam)
-              .map((performance: TeamPerformance) => {
-                const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-                return (
-                  <TableRow key={performance._id}>
-                    <TableCell>{performance.fullName}</TableCell>
-                    <TableCell>{performance.team}</TableCell>
-                    <TableCell>{performance.jobTitle}</TableCell>
-                    <TableCell>{selectedQuarter}</TableCell>
-                    <TableCell>{quarterlyTarget?.assessmentStatus || 'Pending'}</TableCell>
-                  </TableRow>
-                );
-              })}
-          {viewMode != 'team' &&
-            teamPerformances
-              .map((performance: TeamPerformance) => {
-                const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-                return (
-                  <TableRow key={performance._id}>
-                    <TableCell>{performance.fullName}</TableCell>
-                    <TableCell>{performance.team}</TableCell>
-                    <TableCell>{performance.jobTitle}</TableCell>
-                    <TableCell>{selectedQuarter}</TableCell>
-                    <TableCell>{quarterlyTarget?.assessmentStatus || 'Pending'}</TableCell>
-                  </TableRow>
-                );
-              })}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-
-  const PerformanceTable = () => {
-    const filteredPerformances = viewMode === 'team'
-      ? teamPerformances.filter(p => p.team === userOwnedTeam)
-      : teamPerformances;
-
-    // Only calculate if we have a valid quarter selected
-    if (!selectedQuarter) {
-      return null;
-    }
-
-    const aggregateRatingCounts = calculateAggregatePerformance(filteredPerformances, selectedQuarter);
-    const totalRatings = Array.from(aggregateRatingCounts.values()).reduce((sum, count) => sum + count, 0);
-
-    return (
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Rating Scale</TableCell>
-              <TableCell>Count</TableCell>
-              <TableCell>Percentage</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {selectedAnnualTarget?.content.ratingScales.map(scale => {
-              const count = aggregateRatingCounts.get(scale.score) || 0;
-              const percentage = totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0;
-
-              return (
-                <TableRow key={scale.score}>
-                  <TableCell>
-                    <Typography sx={{ color: scale.color, fontWeight: 500 }}>
-                      {scale.name} ({scale.min}-{scale.max})
-        </Typography>
-                  </TableCell>
-                  <TableCell>{count}</TableCell>
-                  <TableCell>{percentage}%</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
-  };
-
-  const HeatmapByTeam = () => {
-    if (!selectedQuarter || !selectedAnnualTarget) {
-      return null;
-    }
-
-    const teams = Array.from(new Set(teamPerformances.map(performance => performance.team))).sort();
-
-    // Calculate agreement percentages
-    const agreementResult = teams.map(team => {
-      const agreementStatus = teamPerformances
-        .filter(p => p.team === team)
-        .map(performance => performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatus);
-      const approvedCount = agreementStatus.filter(tmp => tmp === 'Approved').length;
-      const totalCount = agreementStatus.length;
-      return totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
-    });
-
-    // Calculate assessment percentages
-    const assessmentResult = teams.map(team => {
-      const assessmentStatus = teamPerformances
-        .filter(p => p.team === team)
-        .map(performance => performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatus);
-      const approvedCount = assessmentStatus.filter(tmp => tmp === 'Approved').length;
-      const totalCount = assessmentStatus.length;
-      return totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
-    });
-
-    // Calculate performance scores
-    const getPersonalPerformanceScore = (objectives: QuarterlyTargetObjective[]) => {
-      let totalWeightedScore = 0;
-      let totalWeight = 0;
-
-      objectives.forEach(objective => {
-        objective.KPIs.forEach(kpi => {
-          if (kpi.ratingScore !== -1) {
-            totalWeightedScore += (kpi.ratingScore * kpi.weight);
-            totalWeight += kpi.weight;
-          }
-        });
-      });
-
-      if (totalWeight === 0) return null;
-      return Math.round(totalWeightedScore / totalWeight);
-    };
-
-    const performanceResult = teams.map(team => {
-      const teamMembers = teamPerformances.filter(p => p.team === team);
-      const scores = teamMembers
-        .map(performance => {
-          const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-          return quarterlyTarget ? getPersonalPerformanceScore(quarterlyTarget.objectives) : null;
-        })
-        .filter((score): score is number => score !== null);
-
-      return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
-    });
-
-    const getRatingScaleInfo = (score: number | null) => {
-      if (score === null) {
-        return {
-          color: '#666666',
-          min: '0',
-          max: '0',
-          name: 'N/A'
-        };
-      }
-
-      const ratingScale = selectedAnnualTarget.content.ratingScales.find(
-        scale => scale.score === score
-      );
-
-      if (!ratingScale) {
-        return {
-          color: '#666666',
-          min: '0',
-          max: '0',
-          name: 'N/A'
-        };
-      }
-
-      return {
-        color: ratingScale.color,
-        min: ratingScale.min,
-        max: ratingScale.max,
-        name: ratingScale.name
-      };
-    };
-
-    const teamsTable = teams.map((team, index) => ({
-      teamName: team,
-      agreement: agreementResult[index],
-      assessment: assessmentResult[index],
-      performance: performanceResult[index]
-    }));
-
-    console.log(teamsTable, 'teamstable')
-    return (
-      <TableContainer component={Paper} sx={{ maxHeight: 400, overflowY: 'auto' }}>
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Team</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Agreements</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Assessments</TableCell>
-              <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Performance</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {teamsTable.map(teamsRow => (
-              <TableRow key={teamsRow.teamName} hover>
-                <TableCell sx={{ fontWeight: 500 }}>
-                  {teamsRow.teamName}
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: 500 }}
-                >
-                  {teamsRow.agreement}%
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{ fontWeight: 500 }}
-                >
-                  {teamsRow.assessment}%
-                </TableCell>
-                <TableCell
-                  align="center"
-                  sx={{
-                    color: getRatingScaleInfo(teamsRow.performance).color,
-                    fontWeight: 500
-                  }}
-                >
-                  {teamsRow.performance !== null ?
-                    `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)`
-                    : 'N/A'
-                  }
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    );
-  };
-
   return (
     <Box sx={{ p: { xs: 2, sm: 3 } }}>
       <Box sx={{
@@ -660,9 +351,9 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           >
             {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
               quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
-                </MenuItem>
+              <MenuItem key={quarter.quarter} value={quarter.quarter}>
+                {quarter.quarter}
+              </MenuItem>
               )
             ))}
           </Select>
@@ -739,7 +430,12 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     <Typography variant="h6" sx={{ mb: 2 }}>
                       {viewMode === 'team' ? `${userOwnedTeam} Pending Agreements Details` : "Pending Agreements Details"}
                     </Typography>
-                    <PendingTargetsTable />
+                    <PendingTargetsTable 
+                      teamPerformances={teamPerformances}
+                      selectedQuarter={selectedQuarter}
+                      viewMode={viewMode}
+                      userOwnedTeam={userOwnedTeam}
+                    />
                   </Box>
                 )}
               </Box>
@@ -771,7 +467,12 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     <Typography variant="h6" sx={{ mb: 2 }}>
                       {viewMode === 'team' ? `${userOwnedTeam} Pending Assessments Details` : "Pending Assessments Details"}
                     </Typography>
-                    <PendingAssessmentsTable />
+                    <PendingAssessmentsTable 
+                      teamPerformances={teamPerformances}
+                      selectedQuarter={selectedQuarter}
+                      viewMode={viewMode}
+                      userOwnedTeam={userOwnedTeam}
+                    />
                   </Box>
                 )}
               </Box>
@@ -799,7 +500,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     <Box sx={{ width: '100%', height: 300 }}>
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart
-                          data={performanceChartData}
+                      data={performanceChartData}
                           margin={{
                             top: 20,
                             right: 30,
@@ -856,7 +557,13 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   <Typography variant="h6" sx={{ mb: 2 }}>
                     {viewMode === 'team' ? `${userOwnedTeam} Performance Details` : "Performance Details"}
                   </Typography>
-                  <PerformanceTable />
+                  <PerformanceTable 
+                    teamPerformances={teamPerformances}
+                    selectedQuarter={selectedQuarter}
+                    viewMode={viewMode}
+                    userOwnedTeam={userOwnedTeam}
+                    selectedAnnualTarget={selectedAnnualTarget}
+                  />
                 </Box>
               )}
             </Box>
@@ -879,7 +586,11 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     </Typography>
                   </CardHeader>
                   <CardContent>
-                    <HeatmapByTeam />
+                    <HeatmapByTeam 
+                      teamPerformances={teamPerformances}
+                      selectedQuarter={selectedQuarter}
+                      selectedAnnualTarget={selectedAnnualTarget}
+                    />
                   </CardContent>
                 </DashboardCard>
               </Box>}
