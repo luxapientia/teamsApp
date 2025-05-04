@@ -54,6 +54,7 @@ interface Props {
         score: number;
         name: string;
     };
+    editable: boolean;
 }
 
 type ProviderType = 'Internal' | 'External';
@@ -73,7 +74,7 @@ interface AddProviderForm {
     category: FeedbackProvider['category'];
 }
 
-const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance, overallScore }) => {
+const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance, overallScore, editable }) => {
     const dispatch = useAppDispatch();
     const { showToast } = useToast();
     const [selectedFeedbackId, setSelectedFeedbackId] = useState<string>(personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId || '');
@@ -382,6 +383,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                     onChange={handleFeedbackChange}
                     fullWidth
                     sx={{ backgroundColor: '#fff' }}
+                    disabled={!editable}
                 >
                     {feedbacks.map(feedback => (
                         <MenuItem key={feedback._id} value={feedback._id}>
@@ -399,6 +401,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                         backgroundColor: '#0078D4',
                         '&:hover': { backgroundColor: '#106EBE' },
                     }}
+                    disabled={!editable}
                 >
                     + Add Feedback Provider
                 </Button>
@@ -412,7 +415,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                             backgroundColor: 'rgba(0, 120, 212, 0.04)',
                         },
                     }}
-                    disabled={!isWithinAssessmentPeriod() || isSharing}
+                    disabled={!isWithinAssessmentPeriod() || isSharing || !editable}
                     onClick={handleShareFeedback}
                 >
                     {isSharing ? 'Sharing...' : 'Share'}
@@ -450,6 +453,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                                             size="small"
                                             onClick={() => handleDeleteProvider(feedback.feedbackId, feedback.provider.email)}
                                             sx={{ color: '#DC2626' }}
+                                            disabled={!editable}
                                         >
                                             <DeleteIcon fontSize="small" />
                                         </IconButton>

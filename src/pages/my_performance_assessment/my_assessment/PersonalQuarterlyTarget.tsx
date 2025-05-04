@@ -882,6 +882,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               score: calculateOverallScore(personalQuarterlyObjectives),
               name: getRatingScoreInfo(calculateOverallScore(personalQuarterlyObjectives))?.name
             }}
+            editable={canEdit()}
           />
 
         </Paper>
