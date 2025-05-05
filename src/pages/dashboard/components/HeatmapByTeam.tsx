@@ -191,7 +191,7 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     };
   };
 
-  const teamsTable: TeamTableRow[] = teams.map((team, index) => ({
+  const teamsTable: TeamTableRow[] = teams.filter(team => team !== undefined).map((team, index) => ({
     teamName: team,
     agreement: agreementResult[index],
     assessment: assessmentResult[index],
