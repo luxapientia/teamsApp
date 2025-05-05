@@ -75,11 +75,11 @@ router.get('/is-feedback-module-enabled', authenticateToken, async (_req: Authen
     }
 });
 
-router.get('/pm-committee-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+router.get('/pm-calibration-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
     try {
-        let modules = await Module.findOne({ moduleName: 'PM Committee' }) as ModuleDocument;
+        let modules = await Module.findOne({ moduleName: 'Performance Calibration' }) as ModuleDocument;
         if (!modules) {
-            modules = new Module({ moduleName: 'PM Committee', companies: [] });
+            modules = new Module({ moduleName: 'Performance Calibration', companies: [] });
             await modules.save();
         }
         return res.json({
@@ -96,10 +96,10 @@ router.get('/pm-committee-companies', authenticateToken, async (_req: Authentica
     }
 });
 
-router.post('/update-pm-committee-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+router.post('/update-pm-calibration-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
     try {
         const pmCommitteeCompanies = _req.body.pmCommitteeCompanies;
-        const module = await Module.findOne({ moduleName: 'PM Committee' }) as ModuleDocument;
+        const module = await Module.findOne({ moduleName: 'Performance Calibration' }) as ModuleDocument;
         if (!module) {
             return res.status(404).json({
                 status: 404,
@@ -121,10 +121,10 @@ router.post('/update-pm-committee-companies', authenticateToken, async (_req: Au
 });
 
 //check if module is enabled for company
-router.get('/is-pm-committee-module-enabled', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+router.get('/is-pm-calibration-module-enabled', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
     try {
         const tenantId = _req.user?.tenantId;
-        const module = await Module.findOne({ moduleName: 'PM Committee' }).populate('companies') as ModuleDocument;
+        const module = await Module.findOne({ moduleName: 'Performance Calibration' }).populate('companies') as ModuleDocument;
         if (!module) {
             return res.status(404).json({
                 status: 404,

@@ -66,7 +66,7 @@ const Modules: React.FC = () => {
 
     {
       id: '2',
-      name: 'PM Committee',
+      name: 'Performance Calibration',
       isExpanded: false,
       companies: [],
     },
@@ -104,12 +104,12 @@ const Modules: React.FC = () => {
 
   const fetchPmCommitteeCompanies = async () => {
     try {
-      const response = await api.get('/module/pm-committee-companies');
+      const response = await api.get('/module/pm-calibration-companies');
       if (response.status === 200) {
         setPmCommitteeCompanyIds(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching PM committee companies:', error);
+      console.error('Error fetching Performance Calibration companies:', error);
     }
   };
 
@@ -137,12 +137,12 @@ const Modules: React.FC = () => {
       const isChecked = pmCommitteeCompanyIds.some(fc => fc === companyId);
       const newPmCommitteeCompanyIds = isChecked ? pmCommitteeCompanyIds.filter(fc => fc !== companyId) : [...pmCommitteeCompanyIds, companyId];
       try {
-        const response = await api.post('/module/update-pm-committee-companies', { pmCommitteeCompanies: newPmCommitteeCompanyIds });
+        const response = await api.post('/module/update-pm-calibration-companies', { pmCommitteeCompanies: newPmCommitteeCompanyIds });
         if (response.status === 200) {
           setPmCommitteeCompanyIds(newPmCommitteeCompanyIds);
         }
       } catch (error) {
-        console.error('Error updating PM committee companies:', error);
+        console.error('Error updating Performance Calibration companies:', error);
       }
     }
   };
