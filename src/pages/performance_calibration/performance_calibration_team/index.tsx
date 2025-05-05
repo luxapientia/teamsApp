@@ -64,7 +64,7 @@ const PerformanceCalibrationTeam: React.FC = () => {
       
       // Update auth context if current user was added
       if (user && userIds.includes(user.MicrosoftId)) {
-        setUser({ ...user, isCalibrationMember: true });
+        setUser({ ...user, isPerformanceCalibrationMember: true });
       }
       
       setIsPickerOpen(false);
@@ -81,7 +81,7 @@ const PerformanceCalibrationTeam: React.FC = () => {
       
       // Update auth context if current user was removed
       if (user && memberId === user.MicrosoftId) {
-        setUser({ ...user, isCalibrationMember: false });
+        setUser({ ...user, isPerformanceCalibrationMember: false });
       }
     } catch (error) {
       console.error('Error removing team member:', error);

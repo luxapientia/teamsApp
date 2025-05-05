@@ -58,7 +58,10 @@ router.get('/manage-performance-agreement/company-users', authenticateToken, asy
         id: performance.userId._id,
         name: performance.userId.name,
         team: performance.teamId?.name,
-        position: performance.userId?.jobTitle
+        position: performance.userId?.jobTitle,
+        agreementStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.agreementStatus,
+        agreementReviewStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.agreementReviewStatus,
+        assessmentReviewStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.assessmentReviewStatus,
       }
     });
     return res.json(users);

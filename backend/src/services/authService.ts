@@ -130,7 +130,8 @@ export class AuthService {
         status: 'active',
         tenantId: dbUser.tenantId,
         organizationName: '',
-        isDevMember: dbUser.isDevMember
+        isDevMember: dbUser.isDevMember,
+        isPerformanceCalibrationMember: dbUser.isPerformanceCalibrationMember
       };
 
       const token = await this.createAppToken(tokenUserProfile);

@@ -321,7 +321,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   }));
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+    <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{
         display: 'flex',
         gap: 2,
