@@ -22,6 +22,8 @@ import feedbackRoutes from './routes/feedback';
 import moduleRoutes from './routes/module';
 import submitFeedbackRoutes from './routes/submit-feedback';
 import { checkFeedbackMail } from './services/feedbackService';
+import performanceCalibrationRoutes from './routes/performance_calibration';
+
 const app = express();
 
 // Middleware
@@ -55,6 +57,7 @@ app.use('/api/training', trainingRoutes);
 app.use('/api/feedback', authenticateToken, checkLicenseStatus, feedbackRoutes);
 app.use('/api/module', authenticateToken, checkLicenseStatus, moduleRoutes);
 app.use('/api/submit-feedback', submitFeedbackRoutes);
+app.use('/api/users/performance-calibration', performanceCalibrationRoutes);
 
 // Connect to MongoDB
 mongoose.connect(config.mongoUri)

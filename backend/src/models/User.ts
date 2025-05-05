@@ -39,6 +39,10 @@ const userSchema = new mongoose.Schema<dUser>({
   isDevMember: {
     type: Boolean,
     default: false
+  },
+  isPerformanceCalibrationMember: {
+    type: Boolean,
+    default: false
   }
 });
 

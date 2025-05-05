@@ -16,4 +16,5 @@ export interface dUser {
   teamId?: ObjectId;
   jobTitle?: string;
   isDevMember?: boolean;
+  isPerformanceCalibrationMember?: boolean;
 }
