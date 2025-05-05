@@ -73,12 +73,13 @@ function Main() {
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
   const [isDevMember, setIsDevMember] = useState(false);
+  const [isPerformanceCalibrationMember, setIsPerformanceCalibrationMember] = useState(false);
   const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
 
-  // Separate effect for isDevMember
   useEffect(() => {
     if (user) {
       setIsDevMember(!!user.isDevMember);
+      setIsPerformanceCalibrationMember(!!user.isPerformanceCalibrationMember);
     }
   }, [user]);
 
@@ -148,11 +149,17 @@ function Main() {
             ['My Training Dashboard'])}
         selectedTab={selectedTab}
       />}
-      {(isAppOwner || isSuperUser) && isPerformanceCalibrationModuleEnabled && (
+      {(isAppOwner || isSuperUser || isPerformanceCalibrationMember) && isPerformanceCalibrationModuleEnabled && (
         <PerformanceCalibration
           title="Performance Calibration"
           icon={<Settings24Regular fontSize={iconSize} />}
-          tabs={['Performance Calibration Team', 'Performance Agreements', 'Performance Assessments']}
+          tabs={
+            (isSuperUser || isAppOwner) && isPerformanceCalibrationMember ?
+              ['Performance Calibration Team', 'Performance Agreements', 'Performance Assessments'] :
+              (isPerformanceCalibrationMember) ?
+                ['Performance Agreements', 'Performance Assessments'] :
+                ['Performance Calibration Team']
+          }
           selectedTab={selectedTab}
         />
       )}
