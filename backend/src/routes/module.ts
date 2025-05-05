@@ -75,4 +75,74 @@ router.get('/is-feedback-module-enabled', authenticateToken, async (_req: Authen
     }
 });
 
+router.get('/pm-committee-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+        let modules = await Module.findOne({ moduleName: 'PM Committee' }) as ModuleDocument;
+        if (!modules) {
+            modules = new Module({ moduleName: 'PM Committee', companies: [] });
+            await modules.save();
+        }
+        return res.json({
+            data: modules?.companies,
+            status: 200,
+            message: 'Modules retrieved successfully'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            data: [],
+            status: 500,
+            message: 'Failed to fetch modules'
+        });
+    }
+});
+
+router.post('/update-pm-committee-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+        const pmCommitteeCompanies = _req.body.pmCommitteeCompanies;
+        const module = await Module.findOne({ moduleName: 'PM Committee' }) as ModuleDocument;
+        if (!module) {
+            return res.status(404).json({
+                status: 404,
+                message: 'Module not found'
+            });
+        }
+        module.companies = pmCommitteeCompanies;
+        await module.save();
+        return res.json({
+            status: 200,
+            message: 'Company added to module successfully'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: 'Failed to add company to module'
+        });
+    }
+});
+
+//check if module is enabled for company
+router.get('/is-pm-committee-module-enabled', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+    try {
+        const tenantId = _req.user?.tenantId;
+        const module = await Module.findOne({ moduleName: 'PM Committee' }).populate('companies') as ModuleDocument;
+        if (!module) {
+            return res.status(404).json({
+                status: 404,
+                message: 'Module not found'
+            });
+        }
+        const isEnabled = module.companies.some((company: any) => company.tenantId === tenantId);
+        return res.json({
+            status: 200,
+            message: 'Module enabled for company',
+            isEnabled
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: 500,
+            message: 'Failed to check if module is enabled for company'
+        });
+    }
+});
+
 export default router; 
