@@ -19,6 +19,20 @@ export enum AssessmentStatus {
     SendBack = 'Send Back'
 }
 
+export enum AgreementReviewStatus {
+    NotReviewed = 'Not Reviewed',
+    Reviewed = 'Reviewed',
+    SendBack = 'Send Back'
+}
+
+export enum AssessmentReviewStatus {
+    NotReviewed = 'Not Reviewed',
+    Reviewed = 'Reviewed',
+    SendBack = 'Send Back'
+}
+
+
+
 export interface PersonalQuarterlyTargetFeedbackProvider {
     name: string;
     email: string;
@@ -47,6 +61,8 @@ export interface PersonalQuarterlyTarget {
     agreementStatusUpdatedAt: Date;
     assessmentStatus: AssessmentStatus;
     assessmentStatusUpdatedAt: Date;
+    agreementReviewStatus?: AgreementReviewStatus;
+    assessmentReviewStatus?: AssessmentReviewStatus;
     isEditable: boolean;
     supervisorId?: string;
     objectives: PersonalQuarterlyTargetObjective[];

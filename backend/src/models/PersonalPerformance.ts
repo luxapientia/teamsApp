@@ -16,13 +16,13 @@ export enum AssessmentStatus {
   SendBack = 'Send Back'
 }
 
-export enum agreementReviewStatus {
+export enum AgreementReviewStatus {
   NotReviewed = 'Not Reviewed',
   Reviewed = 'Reviewed',
   SendBack = 'Send Back'
 }
 
-export enum assessmentReviewStatus {
+export enum AssessmentReviewStatus {
   NotReviewed = 'Not Reviewed',
   Reviewed = 'Reviewed',
   SendBack = 'Send Back'
@@ -63,8 +63,8 @@ export interface PersonalQuarterlyTarget {
   agreementStatusUpdatedAt: Date;
   assessmentStatus: AssessmentStatus;
   assessmentStatusUpdatedAt: Date;
-  agreementReviewStatus?: agreementReviewStatus;
-  assessmentReviewStatus?: assessmentReviewStatus;
+  agreementReviewStatus?: AgreementReviewStatus;
+  assessmentReviewStatus?: AssessmentReviewStatus;
   supervisorId?: string;
   objectives: PersonalQuarterlyTargetObjective[];
   isPersonalDevelopmentNotApplicable?: boolean;
@@ -182,13 +182,13 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
     },
     agreementReviewStatus: {
       type: String,
-      enum: Object.values(agreementReviewStatus),
-      default: agreementReviewStatus.NotReviewed,
+      enum: Object.values(AgreementReviewStatus),
+      default: AgreementReviewStatus.NotReviewed,
     },
     assessmentReviewStatus: {
       type: String,
-      enum: Object.values(assessmentReviewStatus),
-      default: assessmentReviewStatus.NotReviewed,
+      enum: Object.values(AssessmentReviewStatus),
+      default: AssessmentReviewStatus.NotReviewed,
     },
     isPersonalDevelopmentNotApplicable: {
       type: Boolean,

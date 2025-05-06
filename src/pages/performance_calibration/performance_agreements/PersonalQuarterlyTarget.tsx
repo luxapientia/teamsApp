@@ -24,18 +24,23 @@ import RatingScalesModal from '../../../components/RatingScalesModal';
 import { api } from '../../../services/api';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useAuth } from '../../../contexts/AuthContext';
+import { AgreementReviewStatus } from '../../../types/personalPerformance';
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
   onBack?: () => void;
   userId: string;
+  initialPmCommitteeStatus?: 'Not Reviewed' | 'Reviewed' | 'Send Back';
 }
+
+type Action = 'accept' | 'sendBack' | 'unaccept';
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
   onBack,
   userId,
+  initialPmCommitteeStatus
 }) => {
   const { user } = useAuth();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
@@ -46,6 +51,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isApproved, setIsApproved] = useState(false);
   const { showToast } = useToast();
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
+  const [pmCommitteeStatus, setPmCommitteeStatus] = useState<'Not Reviewed' | 'Reviewed' | 'Send Back'>(initialPmCommitteeStatus || 'Not Reviewed');
 
   useEffect(() => {
     fetchPersonalPerformance();
@@ -57,9 +63,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
       setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Approved);
-      // setTimeout(() => {
-      //     console.log(personalQuarterlyObjectives, 'fdfadf')
-      // }, 0);
+      setPmCommitteeStatus(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementReviewStatus === AgreementReviewStatus.Reviewed ? 'Reviewed' : 'Not Reviewed');
     }
   }, [personalPerformance]);
 
@@ -110,8 +114,26 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     );
   }
 
-  const canSendBack = async () => {
+  const canEditAgreement = async () => {
     return isApproved && (await personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft);
+  }
+
+  const handleCommitteeAction = async (action: Action) => {
+    if (personalPerformance) {
+      try {
+        await api.post('/users/performance-calibration/pm-committee-action', {
+          performanceId: personalPerformance._id,
+          quarter,
+          action,
+        });
+        if (action === 'accept') setPmCommitteeStatus(AgreementReviewStatus.Reviewed);
+        if (action === 'sendBack') setPmCommitteeStatus(AgreementReviewStatus.SendBack);
+        if (action === 'unaccept') setPmCommitteeStatus(AgreementReviewStatus.NotReviewed);
+        
+      } catch (error) {
+        console.error('Error handling committee action:', error);
+      }
+    }
   }
 
   const handleSendBack = (emailSubject: string, emailBody: string) => {
@@ -200,7 +222,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           Back
         </Button>
       </Box>
-      {canSendBack() && (
+      {canEditAgreement() && (
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Chip
@@ -212,32 +234,42 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 fontSize: '1rem'
               }}
             />
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: '#10B981',
-                '&:hover': {
-                  backgroundColor: '#10D981'
-                },
-                cursor: 'pointer'
-              }}
-              onClick={() => setSendBackModalOpen(true)}
-            >
-                PM Committee Accept
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                backgroundColor: '#EF4444',
-                '&:hover': {
-                  backgroundColor: '#FF4444'
-                },
-                cursor: 'pointer'
-              }}
-              onClick={() => setSendBackModalOpen(true)}
-            >
-              PM Committee Send Back
-            </Button>
+            {pmCommitteeStatus === 'Reviewed' ? (
+              <Button
+                variant="contained"
+                onClick={() => handleCommitteeAction('unaccept')}
+                sx={{
+                  backgroundColor: '#10B981',
+                  '&:hover': {
+                    backgroundColor: '#059669',
+                  },
+                }}
+              >
+                PM Committee Unaccept
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  onClick={() => handleCommitteeAction('accept')}
+                  sx={{
+                    backgroundColor: '#10B981',
+                    '&:hover': {
+                      backgroundColor: '#059669',
+                    },
+                  }}
+                >
+                  PM Committee Accept
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => handleCommitteeAction('sendBack')}
+                >
+                  PM Committee Send Back
+                </Button>
+              </>
+            )}
           </Box>
         </Box>
       )}

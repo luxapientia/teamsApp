@@ -30,7 +30,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, PdfType } from '../../../types';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, PdfType, AgreementReviewStatus } from '../../../types';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddInitiativeModal from './AddInitiativeModal';
@@ -70,6 +70,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [selectedRatingScales, setSelectedRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
+  const [isAgreementReviewed, setIsAgreementReviewed] = useState(false);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [initiativeToDelete, setInitiativeToDelete] = useState<PersonalQuarterlyTargetObjective | null>(null);
@@ -91,6 +92,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
       setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Submitted);
       setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Approved);
+      setIsAgreementReviewed(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementReviewStatus === AgreementReviewStatus.Reviewed);
       setStatus(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus);
     }
   }, [personalPerformance]);
@@ -383,16 +385,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         sourceScorecardId,
         targetPerformanceId: personalPerformance?._id,
       });
-      
+
       // Update the redux store with the response data
       dispatch(updatePersonalPerformance(response.data.data));
-      
+
       // Update local state with the new objectives
       const updatedQuarterlyTarget = response.data.data.quarterlyTargets.find(
         (target: PersonalQuarterlyTarget) => target.quarter === quarter
       );
       setPersonalQuarterlyObjectives(updatedQuarterlyTarget?.objectives || []);
-      
+
       setIsAddFromExistingOpen(false);
       setSourceScorecardId('');
     } catch (error) {
@@ -524,50 +526,62 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             </>
           )}
         </Box>
-
-        {isApproved ? (
-          <Chip
-            label="Approved"
-            size="medium"
-            color="success"
-            sx={{
-              height: '30px',
-              fontSize: '0.75rem'
-            }}
-          />
-        ) : (
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            {
-              personalQuarterlyObjectives.length > 0 &&
-              <Chip
-                label={status}
-                size="medium"
-                color={status == 'Send Back' ? 'error' : 'warning'}
-                sx={{
-                  height: '30px',
-                  fontSize: '0.75rem'
-                }}
-              />
-            }
-            <Button
-              variant="contained"
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {isAgreementReviewed && (
+            <Chip
+              label="PM Committee Reviewed"
+              size="medium"
+              color="primary"
               sx={{
-                backgroundColor: isSubmitted ? '#EF4444' : '#059669',
-                '&:hover': {
-                  backgroundColor: isSubmitted ? '#DC2626' : '#047857'
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: '#E5E7EB',
-                  color: '#9CA3AF'
-                }
+                height: '30px',
+                fontSize: '0.75rem'
               }}
-              onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-              disabled={isSubmitted ? false : !canSubmit()}
-            >
-              {isSubmitted ? 'Recall' : 'Submit'}
-            </Button>
-          </Box>
-        )}
+            />
+          )}
+          {isApproved ? (
+            <Chip
+              label="Approved"
+              size="medium"
+              color="success"
+              sx={{
+                height: '30px',
+                fontSize: '0.75rem'
+              }}
+            />
+          ) : (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              {
+                personalQuarterlyObjectives.length > 0 &&
+                <Chip
+                  label={status}
+                  size="medium"
+                  color={status == 'Send Back' ? 'error' : 'warning'}
+                  sx={{
+                    height: '30px',
+                    fontSize: '0.75rem'
+                  }}
+                />
+              }
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: isSubmitted ? '#EF4444' : '#059669',
+                  '&:hover': {
+                    backgroundColor: isSubmitted ? '#DC2626' : '#047857'
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: '#E5E7EB',
+                    color: '#9CA3AF'
+                  }
+                }}
+                onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
+                disabled={isSubmitted ? false : !canSubmit()}
+              >
+                {isSubmitted ? 'Recall' : 'Submit'}
+              </Button>
+            </Box>
+          )}
+        </Box>
       </Box>
 
       {/* Add total weight display */}

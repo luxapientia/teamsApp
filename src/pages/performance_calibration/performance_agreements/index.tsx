@@ -54,7 +54,6 @@ const PerformanceAgreements: React.FC = () => {
 
     const handleView = async () => {
         setLoading(true);
-        console.log('view', selectedQuarter)
         try {
             const response = await api.get('/personal-performance/manage-performance-agreement/company-users', {
                 params: {
@@ -87,6 +86,7 @@ const PerformanceAgreements: React.FC = () => {
 
     const handleBack = () => {
         setViewingUser(null);
+        handleView();
     };
 
     return (
@@ -147,6 +147,7 @@ const PerformanceAgreements: React.FC = () => {
                 quarter={selectedQuarter as QuarterType}
                 userId={viewingUser.userId}
                 onBack={handleBack}
+                initialPmCommitteeStatus={viewingUser.pmCommitteeStatus as 'Not Reviewed' | 'Reviewed' | 'Send Back'}
               />
             )}
         </Box>
