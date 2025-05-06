@@ -3,8 +3,9 @@ import { RootState } from '../../../store';
 import { AnnualTarget, QuarterType } from '../../../types/annualCorporateScorecard';
 import { Box, Button, InputLabel, MenuItem, Select, styled, FormControl } from '@mui/material';
 import React, { useState } from 'react';
-import AgreementsTable, { AgreementRow } from './agreements_table';
+import AgreementsTable from './agreements_table';
 import { api } from '../../../services/api';
+import PersonalQuarterlyTarget from './PersonalQuarterlyTarget';
 
 const StyledFormControl = styled(FormControl)({
     backgroundColor: '#fff',
@@ -29,6 +30,14 @@ const ViewButton = styled(Button)({
     },
 });
 
+export interface AgreementRow {
+  userId: string;
+  fullName: string;
+  jobTitle: string;
+  team: string;
+  status: string;
+  pmCommitteeStatus: string;
+}
 
 const PerformanceAgreements: React.FC = () => {
     const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState<string>('');
@@ -36,6 +45,7 @@ const PerformanceAgreements: React.FC = () => {
     const [showTable, setShowTable] = useState(false);
     const [agreements, setAgreements] = useState<AgreementRow[]>([]);
     const [loading, setLoading] = useState(false);
+    const [viewingUser, setViewingUser] = useState<AgreementRow | null>(null);
 
     const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
     const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
@@ -54,6 +64,7 @@ const PerformanceAgreements: React.FC = () => {
             });
             const mapped: AgreementRow[] = response.data.data
                 .map((user: any) => ({
+                    userId: user.id,
                     fullName: user.name,
                     jobTitle: user.position,
                     team: user.team,
@@ -71,8 +82,11 @@ const PerformanceAgreements: React.FC = () => {
     };
 
     const handleTableView = (row: AgreementRow) => {
-        // Implement view logic here
-        alert(`Viewing agreement for ${row.fullName}`);
+        setViewingUser(row);
+    };
+
+    const handleBack = () => {
+        setViewingUser(null);
     };
 
     return (
@@ -124,8 +138,16 @@ const PerformanceAgreements: React.FC = () => {
                     View
                 </ViewButton>
             </Box>
-            {showTable && (
+            {showTable && !viewingUser && (
               <AgreementsTable data={agreements} onView={handleTableView} />
+            )}
+            {viewingUser && (
+              <PersonalQuarterlyTarget
+                annualTarget={selectedAnnualTarget!}
+                quarter={selectedQuarter as QuarterType}
+                userId={viewingUser.userId}
+                onBack={handleBack}
+              />
             )}
         </Box>
     );
