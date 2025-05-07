@@ -99,6 +99,11 @@ api.interceptors.response.use(
           window.location.href = '/login';
         }
       }
+      if (error.response.status === 403) {
+        window.location.href = '/license-error';
+        // Prevent further error handling
+        return new Promise(() => {}); // This promise never resolves or rejects
+      }
     }
     return Promise.reject(error);
   }

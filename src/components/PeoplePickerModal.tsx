@@ -24,7 +24,7 @@ import debounce from 'lodash/debounce';
 export interface Person {
   MicrosoftId: string;
   displayName: string;
-  email?: string;
+  email: string;
   jobTitle?: string;
 }
 
@@ -81,13 +81,13 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
       const newUsers = response.data.data.map((user: any) => ({
         MicrosoftId: user.id,
         displayName: user.displayName,
-        email: user.mail,
+        email: user.mail || user.principalName,
         jobTitle: user.jobTitle
       }));
 
       // Filter out all existing team members
       const filteredNewUsers = newUsers.filter(user => 
-        !currentTeamMembers.some(member => member.MicrosoftId === user.MicrosoftId)
+        !currentTeamMembers.some(member => member.email === user.email)
       );
 
       setPeople(prev => [...prev, ...filteredNewUsers]);
@@ -119,7 +119,7 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
       
       // Filter out all existing team members
       const filteredUsers = tempUsers.filter(user => 
-        !currentTeamMembers.some(member => member.MicrosoftId === user.MicrosoftId)
+        !currentTeamMembers.some(member => member.email === user.email)
       );
       
       setPeople(filteredUsers);
@@ -181,9 +181,9 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
 
   const handleTogglePerson = (person: Person) => {
     if (multiSelect) {
-      const isSelected = selectedPeople.some(p => p.MicrosoftId === person.MicrosoftId);
+      const isSelected = selectedPeople.some(p => p.email === person.email);
       if (isSelected) {
-        setSelectedPeople(selectedPeople.filter(p => p.MicrosoftId !== person.MicrosoftId));
+        setSelectedPeople(selectedPeople.filter(p => p.email !== person.email));
       } else {
         setSelectedPeople([...selectedPeople, person]);
       }
@@ -268,12 +268,12 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         ) : (
           <List sx={{ padding: 0 }}>
             {filteredPeople.map((person, index) => {
-              const isSelected = selectedPeople.some(p => p.MicrosoftId === person.MicrosoftId);
+              const isSelected = selectedPeople.some(p => p.email === person.email);
               const isLastElement = index === filteredPeople.length - 1;
 
               return (
                 <ListItem 
-                  key={person.MicrosoftId} 
+                  key={person.email} 
                   component="div"
                   ref={isLastElement ? lastPersonElementRef : null}
                   onClick={() => handleTogglePerson(person)}
