@@ -212,16 +212,19 @@ router.get(
   authenticateToken,
   async (req: AuthenticatedRequest, res, next) => {
     try {
+      const { pageSize, nextLink, searchQuery } = req.query;
       const user = req.user;
       if (!user?.tenantId) {
         throw new ApiError('User tenant ID not found', 400);
       }
 
-      const pageSize = parseInt(req.query.pageSize as string) || 20;
-      const nextLink = req.query.nextLink as string;
-
       try {
-        const result = await graphService.getOrganizationUsers(user.tenantId, pageSize, nextLink);
+        const result = await graphService.getOrganizationUsers(
+          user?.tenantId,
+          pageSize ? Number(pageSize) : 20,
+          nextLink as string,
+          searchQuery as string
+        );
         console.log(result, 'result');
         res.json({
           status: 'success',

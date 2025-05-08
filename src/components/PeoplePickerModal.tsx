@@ -74,7 +74,8 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
       setLoading(true);
       const response = await api.get('/users/organization/users', {
         params: {
-          nextLink: encodeURIComponent(nextLink)
+          nextLink: nextLink,
+          searchQuery
         }
       });
       
@@ -101,19 +102,20 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
     }
   };
 
-  const fetchPeople = async () => {
+  const fetchPeople = async (query?: string) => {
     try {
       setError(null);
       setLoading(true);
       const response = await api.get('/users/organization/users', {
         params: {
-          pageSize: 20
+          pageSize: 20,
+          searchQuery: query
         }
       });
       const tempUsers = response.data.data.map((user: any) => ({
         MicrosoftId: user.id,
         displayName: user.displayName,
-        email: user.mail,
+        email: user.mail || user.principalName,
         jobTitle: user.jobTitle
       }));
       
@@ -156,16 +158,12 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
   const debouncedSearch = useCallback(
     debounce((query: string) => {
       if (query) {
-        const filtered = people.filter(person => 
-          person.displayName.toLowerCase().includes(query.toLowerCase()) ||
-          (person.email && person.email.toLowerCase().includes(query.toLowerCase()))
-        );
-        setFilteredPeople(filtered);
+        fetchPeople(query);
       } else {
-        setFilteredPeople(people);
+        fetchPeople();
       }
-    }, 300),
-    [people]
+    }, 500),
+    []
   );
 
   useEffect(() => {

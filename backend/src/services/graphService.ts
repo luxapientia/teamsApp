@@ -41,7 +41,7 @@ export class GraphService {
     }
   }
 
-  async getOrganizationUsers(tenantId: string, pageSize: number = 20, nextLink?: string): Promise<GraphResponse> {
+  async getOrganizationUsers(tenantId: string, pageSize: number = 20, nextLink?: string, searchQuery?: string): Promise<GraphResponse> {
     try {
       if (!tenantId) {
         throw new ApiError('Tenant ID is required', 400);
@@ -53,8 +53,25 @@ export class GraphService {
       
       console.log('Fetching users from Graph API');
       try {
-        const url = nextLink ? decodeURIComponent(nextLink) : `https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,jobTitle,department&$top=${pageSize}&$orderby=displayName`;
-        console.log(url, 'url');
+        let url: string;
+        if (nextLink) {
+          url = decodeURIComponent(nextLink);
+        } else {
+          const baseUrl = 'https://graph.microsoft.com/v1.0/users';
+          const select = '$select=id,displayName,mail,jobTitle,department,otherMails';
+          const top = `$top=${pageSize}`;
+          const orderBy = '$orderby=displayName';
+          const filter = '$filter=accountEnabled eq true';
+          
+          // Add search filter if searchQuery is provided
+          const searchFilter = searchQuery 
+            ? ` and (contains(displayName,'${searchQuery}') or contains(mail,'${searchQuery}') or contains(otherMails,'${searchQuery}'))`
+            : '';
+          
+          url = `${baseUrl}?${select}&${top}&${orderBy}&${filter}${searchFilter}`;
+        }
+
+        console.log('Using URL:', url);
         const response = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
