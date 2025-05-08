@@ -53,11 +53,8 @@ export class GraphService {
       
       console.log('Fetching users from Graph API');
       try {
-        // Decode nextLink if it exists
-        const decodedNextLink = nextLink ? decodeURIComponent(nextLink) : null;
-        const url = decodedNextLink || `https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,jobTitle,department,otherMails&$top=${pageSize}&$orderby=displayName&$filter=accountEnabled eq true`;
-        
-        console.log('Using URL:', url);
+        const url = nextLink ? decodeURIComponent(nextLink) : `https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,jobTitle,department&$top=${pageSize}&$orderby=displayName`;
+        console.log(url, 'url');
         const response = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${accessToken}`,

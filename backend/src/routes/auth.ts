@@ -75,7 +75,7 @@ router.post('/callback', async (req: Request, res: Response) => {
           };
           const appToken = await authService.createAppToken(tokenUserProfile);
         console.log('App token created successfully');
-        
+        console.log(appToken, 'appToken');
           return res.json({ 
           token: appToken, 
             user: tokenUserProfile 
