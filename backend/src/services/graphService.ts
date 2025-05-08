@@ -61,17 +61,15 @@ export class GraphService {
           const select = '$select=id,displayName,mail,jobTitle,department,otherMails';
           const top = `$top=${pageSize}`;
           const orderBy = '$orderby=displayName';
-          const filter = '$filter=accountEnabled eq true';
-          
-          // Add search filter if searchQuery is provided
-          const searchFilter = searchQuery 
-            ? ` and (contains(displayName,'${searchQuery}') or contains(mail,'${searchQuery}') or contains(otherMails,'${searchQuery}'))`
-            : '';
-          
-          url = `${baseUrl}?${select}&${top}&${orderBy}&${filter}${searchFilter}`;
+          let filter = "accountEnabled eq true";
+          if (searchQuery) {
+            // Escape single quotes in searchQuery for OData
+            const safeQuery = searchQuery.replace(/'/g, "''");
+            filter += ` and (contains(displayName,'${safeQuery}') or contains(mail,'${safeQuery}') or contains(otherMails,'${safeQuery}'))`;
+          }
+          url = `${baseUrl}?${select}&${top}&${orderBy}&$filter=${filter}`;
         }
-
-        console.log('Using URL:', url);
+        console.log(url, 'url');
         const response = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
