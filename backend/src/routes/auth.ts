@@ -21,6 +21,7 @@ router.get('/login', async (_req: Request, res: Response) => {
 router.post('/callback', async (req: Request, res: Response) => {
   try {
     const { code, token, redirect_uri } = req.body;
+    console.log(token, 'token');
     
     // Handle Teams SSO token
     if (token) {

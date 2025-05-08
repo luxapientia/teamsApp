@@ -222,6 +222,7 @@ router.get(
 
       try {
         const result = await graphService.getOrganizationUsers(user.tenantId, pageSize, nextLink);
+        console.log(result, 'result');
         res.json({
           status: 'success',
           data: result.value,
