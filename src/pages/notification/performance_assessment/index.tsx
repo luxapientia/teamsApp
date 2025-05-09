@@ -35,6 +35,7 @@ import { useToast } from '../../../contexts/ToastContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import PersonalFeedback from './PersonalFeedback';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
+import { Toast } from '../../../components/Toast';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -70,6 +71,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const [enableFeedback, setEnableFeedback] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const { showToast } = useToast();
 
@@ -144,20 +147,32 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const handleApprove = async () => {
     if (notification) {
+      setIsSubmitting(true);
       try {
         const response = await api.post(`/notifications/approve/${notification._id}`);
         if (response.status === 200) {
           dispatch(fetchNotifications());
+          setToast({
+            message: 'Performance assessment approved successfully',
+            type: 'success'
+          });
           onBack?.();
         }
       } catch (error) {
         console.error('Error approving notification:', error);
+        setToast({
+          message: 'Failed to approve performance assessment',
+          type: 'error'
+        });
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
 
   const handleSendBack = (emailSubject: string, emailBody: string) => {
     if (notification) {
+      setIsSubmitting(true);
       (async () => {
         try {
           const response = await api.post(`/notifications/send-back/${notification._id}`, {
@@ -167,19 +182,34 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           });
           dispatch(fetchNotifications());
           if (response.status === 200) {
-            showToast('email sent successfully', 'success');
+            setToast({
+              message: 'Performance assessment sent back successfully',
+              type: 'success'
+            });
+            onBack?.();
           }
         } catch (error) {
           console.error('Error send back notification:', error);
-          showToast('sending email failed', 'error');
+          setToast({
+            message: 'Failed to send back performance assessment',
+            type: 'error'
+          });
+        } finally {
+          setIsSubmitting(false);
         }
       })();
-      onBack?.();
     }
   };
 
   return (
     <Box>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <Box sx={{
         mb: 3,
         display: 'flex',
@@ -220,8 +250,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               }
             }}
             onClick={handleApprove}
+            disabled={isSubmitting}
           >
-            Approve
+            {isSubmitting ? 'Processing...' : 'Approve'}
           </Button>
           <Button
             variant="contained"
@@ -230,11 +261,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               '&:hover': {
                 backgroundColor: '#D97706'
               },
-              cursor: 'pointer'
+              '&.Mui-disabled': {
+                backgroundColor: '#E5E7EB',
+                color: '#9CA3AF'
+              }
             }}
             onClick={() => setSendBackModalOpen(true)}
+            disabled={isSubmitting}
           >
-            Send Back
+            {isSubmitting ? 'Processing...' : 'Send Back'}
           </Button>
         </Box>
       </Box>

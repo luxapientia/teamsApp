@@ -46,6 +46,7 @@ import SelectCourseModal from './SelectCourseModal';
 import { Course } from '../../../types/course';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import PersonalFeedback from './PersonalFeedback';
+import { Toast } from '../../../components/Toast';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -88,7 +89,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const tableRef = useRef();
   const { user } = useAuth();
   const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  const feedbacks = useAppSelector((state: RootState) =>
+    state.feedback.feedbacks.filter(f =>
+      f.annualTargetId === personalPerformance?.annualTargetId &&
+      f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+    )
+  );
 
   const annualQuarterlyTarget = annualTarget?.content.quarterlyTarget.quarterlyTargets.find(
     target => target.quarter === quarter
@@ -203,8 +212,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-
       if (target.quarter === quarter) {
         return {
           ...target,
@@ -229,30 +238,40 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       return target;
     });
 
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
     try {
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+
       await api.post('/notifications/assessment/submit', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarter: quarter,
         personalPerformanceId: personalPerformance?._id || ''
       });
+
+      setIsSubmitted(true);
+      setStatus(AssessmentStatus.Submitted);
+      setToast({
+        message: 'Performance assessment submitted successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error submitting quarterly target:', error);
+      setToast({
+        message: 'Failed to submit performance assessment',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitted(true);
-    setStatus(AssessmentStatus.Submitted);
   }
 
-  // Add recall handler
   const handleRecall = async () => {
+    setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
       if (target.quarter === quarter) {
         return {
@@ -265,25 +284,36 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       return target;
     });
 
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
     try {
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+
       await api.post('/notifications/assessment/recall', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarter: quarter,
         personalPerformanceId: personalPerformance?._id || ''
       });
+
+      setIsSubmitted(false);
+      setStatus(AssessmentStatus.Draft);
+      setToast({
+        message: 'Performance assessment recalled successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error recalling quarterly target:', error);
+      setToast({
+        message: 'Failed to recall performance assessment',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitted(false);
   };
 
   const areAllKPIsEvaluated = () => {
@@ -477,6 +507,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
   return (
     <Box>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <Box sx={{
         mb: 3,
         display: 'flex',
@@ -599,9 +636,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 }
               }}
               onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-              disabled={!isSubmitted && !canSubmit()}
+              disabled={isSubmitting || (!isSubmitted && !canSubmit())}
             >
-              {isSubmitted ? 'Recall' : 'Submit'}
+              {isSubmitting ? 'Processing...' : (isSubmitted ? 'Recall' : 'Submit')}
             </Button>
           </Box>
         )}
@@ -868,7 +905,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       </Box>
 
       {/* Feedback Block */}
-      {enableFeedback && (
+      {enableFeedback && feedbacks.length > 0 && (
         <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
           <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
             Feedback

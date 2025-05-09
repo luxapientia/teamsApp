@@ -19,11 +19,13 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import { useToast } from '../../../contexts/ToastContext';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus } from '../../../types/personalPerformance';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus, AgreementReviewStatus } from '../../../types/personalPerformance';
 import RatingScalesModal from '../../../components/RatingScalesModal';
 import { api } from '../../../services/api';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useAuth } from '../../../contexts/AuthContext';
+import { Toast } from '../../../components/Toast';
+
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
     quarter: QuarterType;
@@ -44,8 +46,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const [selectedRatingScales, setSelectedRatingScales] = React.useState<AnnualTargetRatingScale[] | null>(null);
     const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
     const [isApproved, setIsApproved] = useState(false);
+    const [committeeReviewed, setCommitteeReviewed] = useState(false);
     const { showToast } = useToast();
     const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -85,6 +90,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
             if (response.status === 200) {
                 setPersonalPerformance(response.data.data);
+                setCommitteeReviewed(response.data.data.quarterlyTargets.find(target => target.quarter === quarter)?.agreementReviewStatus === AgreementReviewStatus.Reviewed);
             }
         } catch (error) {
             console.error('Personal performance error:', error);
@@ -107,37 +113,53 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         );
     }
 
-    const canSendBack = async() => {
-        return isApproved && (await personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft);
+    const canSendBack = () => {
+        return personalPerformance && (personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft);
     }
 
     const handleSendBack = (emailSubject: string, emailBody: string) => {
         if (personalPerformance) {
-        (async () => {
-            try {
-                const response = await api.post(`/personal-performance/send-back`, {
-                    emailSubject,
-                    emailBody,
-                    supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
-                    userId: personalPerformance.userId,
-                    manageType: 'Agreement',
-                    performanceId: personalPerformance._id,
-                    quarter: quarter
-                });
-                if (response.status === 200) {
-                    showToast('email sent successfully', 'success');
-                }
+            setIsSubmitting(true);
+            (async () => {
+                try {
+                    const response = await api.post(`/personal-performance/send-back`, {
+                        emailSubject,
+                        emailBody,
+                        supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
+                        userId: personalPerformance.userId,
+                        manageType: 'Agreement',
+                        performanceId: personalPerformance._id,
+                        quarter: quarter
+                    });
+                    if (response.status === 200) {
+                        setToast({
+                            message: 'Performance agreement sent back successfully',
+                            type: 'success'
+                        });
+                        onBack?.();
+                    }
                 } catch (error) {
-                console.error('Error send back notification:', error);
-                showToast('sending email failed', 'error');
-            }
-        })();
-        onBack?.();
+                    console.error('Error send back notification:', error);
+                    setToast({
+                        message: 'Failed to send back performance agreement',
+                        type: 'error'
+                    });
+                } finally {
+                    setIsSubmitting(false);
+                }
+            })();
         }
     };
 
     return (
         <Box>
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
             <Box sx={{
                 mb: 3,
                 display: 'flex',
@@ -199,7 +221,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             </Box>
             {canSendBack() && (
                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        {
+                            committeeReviewed && (
+                                <Chip
+                                    label={'PM Committee Reviewed'}
+                                    size="medium"
+                                    color={'primary'}
+                                    sx={{
+                                        height: '30px',
+                                        fontSize: '0.75rem'
+                                    }}
+                                />
+                            )
+                        }
                         <Chip
                             label={'Approved'}
                             size="medium"
@@ -216,11 +251,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 '&:hover': {
                                     backgroundColor: '#D97706'
                                 },
-                                cursor: 'pointer'
+                                '&.Mui-disabled': {
+                                    backgroundColor: '#E5E7EB',
+                                    color: '#9CA3AF'
+                                }
                             }}
                             onClick={() => setSendBackModalOpen(true)}
+                            disabled={isSubmitting}
                         >
-                            Send Back
+                            {isSubmitting ? 'Processing...' : 'Send Back'}
                         </Button>
 
                     </Box>

@@ -79,6 +79,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
+    dispatch(fetchPersonalPerformances({ annualTargetId: selectedAnnualTargetId }));
   }, [dispatch]);
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
@@ -93,9 +94,14 @@ const PersonalPerformanceAgreement: React.FC = () => {
 
   const handleView = () => {
     if (selectedAnnualTarget && selectedQuarter) {
-      dispatch(fetchPersonalPerformances({ annualTargetId: selectedAnnualTargetId }));
-      setShowQuarterlyTargets(true);
-      setShowPersonalQuarterlyTarget(false);
+      dispatch(fetchPersonalPerformances({ annualTargetId: selectedAnnualTargetId }))
+        .then(() => {
+          setShowQuarterlyTargets(true);
+          setShowPersonalQuarterlyTarget(false);
+        })
+        .catch((error) => {
+          console.error('Error fetching personal performances:', error);
+        });
     }
   };
 
@@ -136,15 +142,14 @@ const PersonalPerformanceAgreement: React.FC = () => {
 
         <ViewButton
           variant="contained"
-          disabled={!selectedAnnualTargetId}
+          disabled={!selectedAnnualTargetId || !selectedQuarter}
           onClick={handleView}
         >
           View
         </ViewButton>
-
-
       </Box>
-      {showQuarterlyTargets && selectedAnnualTarget && (
+
+      {showQuarterlyTargets && selectedAnnualTarget && personalPerformances.length > 0 && (
         <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
           <TableContainer>
             <Table>
@@ -163,32 +168,34 @@ const PersonalPerformanceAgreement: React.FC = () => {
                   <TableRow key={index}>
                     <StyledTableCell>{selectedAnnualTarget?.name}</StyledTableCell>
                     <StyledTableCell>
-                    {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.startDate}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.endDate}
-                  </StyledTableCell>
-                  <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatus}</StyledTableCell>
-                  <StyledTableCell>{format(personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatusUpdatedAt || new Date(), 'yyyy-MM-dd HH:mm:ss')}</StyledTableCell>
-                  <StyledTableCell align="center">
-                    <ViewButton
-                      size="small"
-                      onClick={() => {
-                        setShowQuarterlyTargets(false);
-                        setShowPersonalQuarterlyTarget(true);
-                        setSelectedPersonalPerformance(personalPerformance);
-                      }}
-                    >
-                      View
-                    </ViewButton>
-                  </StyledTableCell>
+                      {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.startDate}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {selectedAnnualTarget?.content.contractingPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.contractingPeriod]?.endDate}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatus}
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {format(personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.agreementStatusUpdatedAt || new Date(), 'yyyy-MM-dd HH:mm:ss')}
+                    </StyledTableCell>
+                    <StyledTableCell align="center">
+                      <ViewButton
+                        size="small"
+                        onClick={() => {
+                          setSelectedPersonalPerformance(personalPerformance);
+                          setShowQuarterlyTargets(false);
+                          setShowPersonalQuarterlyTarget(true);
+                        }}
+                      >
+                        View
+                      </ViewButton>
+                    </StyledTableCell>
                   </TableRow>
                 ))}
-
               </TableBody>
             </Table>
           </TableContainer>
-
         </Paper>
       )}
       {showPersonalQuarterlyTarget && selectedAnnualTarget && (

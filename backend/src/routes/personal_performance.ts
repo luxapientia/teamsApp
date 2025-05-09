@@ -1,5 +1,5 @@
 import express, { Response } from 'express';
-import PersonalPerformance, { PersonalPerformanceDocument, AgreementStatus, AssessmentStatus } from '../models/PersonalPerformance';
+import PersonalPerformance, { PersonalPerformanceDocument, AgreementStatus, AssessmentStatus, AgreementReviewStatus, AssessmentReviewStatus } from '../models/PersonalPerformance';
 import { AuthenticatedRequest, authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 import fs from 'fs';
@@ -112,14 +112,16 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
           if (manageType === 'Agreement') {
             return {
               ...quarterlyTarget._doc,
-              agreementStatus: 'Send Back',
-              agreementStatusUpdatedAt: new Date()
+              agreementStatus: AgreementStatus.SendBack,
+              agreementStatusUpdatedAt: new Date(),
+              agreementReviewStatus: AgreementReviewStatus.NotReviewed
             };
           } else {
             return {
               ...quarterlyTarget._doc,
-              assessmentStatus: 'Send Back',
-              assessmentStatusUpdatedAt: new Date()
+              assessmentStatus: AssessmentStatus.SendBack,
+              assessmentStatusUpdatedAt: new Date(),
+              assessmentReviewStatus: AssessmentReviewStatus.NotReviewed
             };
           }
         }

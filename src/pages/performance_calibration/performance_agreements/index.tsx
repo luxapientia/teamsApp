@@ -68,7 +68,7 @@ const PerformanceAgreements: React.FC = () => {
                     jobTitle: user.position,
                     team: user.team,
                     status: user.agreementStatus,
-                    pmCommitteeStatus: user.agreementReviewStatus || 'Not Reviewed', // Default if missing
+                    pmCommitteeStatus: user.agreementReviewStatus || 'Not Reviewed',
                 }));
 
             setAgreements(mapped);

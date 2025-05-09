@@ -47,6 +47,7 @@ import { ExportButton } from '../../../components/Buttons';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { exportPdf } from '../../../utils/exportPdf';
+import { Toast } from '../../../components/Toast';
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
@@ -81,6 +82,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   // Add state for the dialog
   const [sourceScorecardId, setSourceScorecardId] = useState('');
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -226,8 +229,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-
       if (target.quarter === quarter) {
         return {
           ...target,
@@ -252,30 +255,40 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       return target;
     });
 
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
     try {
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+
       await api.post('/notifications/agreement/submit', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarter: quarter,
         personalPerformanceId: personalPerformance?._id || ''
       });
+
+      setIsSubmitted(true);
+      setStatus(AgreementStatus.Submitted);
+      setToast({
+        message: 'Performance agreement submitted successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error submitting quarterly target:', error);
+      setToast({
+        message: 'Failed to submit performance agreement',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitted(true);
-    setStatus(AgreementStatus.Submitted);
   }
 
-  // Add recall handler
   const handleRecall = async () => {
+    setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
       if (target.quarter === quarter) {
         return {
@@ -289,26 +302,36 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       return target;
     });
 
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
     try {
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+
       await api.post('/notifications/agreement/recall', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarter: quarter,
         personalPerformanceId: personalPerformance?._id || ''
       });
+
+      setIsSubmitted(false);
+      setStatus(AgreementStatus.Draft);
+      setToast({
+        message: 'Performance agreement recalled successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error recalling quarterly target:', error);
+      setToast({
+        message: 'Failed to recall performance agreement',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitted(false);
-    setStatus(AgreementStatus.Draft);
   };
 
   // Add date validation function
@@ -406,6 +429,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   return (
     <Box>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <Box sx={{
         mb: 3,
         display: 'flex',
@@ -537,7 +567,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 fontSize: '0.75rem'
               }}
             />
-          )}
+          )}  
           {isApproved ? (
             <Chip
               label="Approved"
@@ -555,7 +585,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <Chip
                   label={status}
                   size="medium"
-                  color={status == 'Send Back' ? 'error' : 'warning'}
+                  color={status == 'Send Back' || status == 'Committee Send Back' ? 'error' : 'warning'}
                   sx={{
                     height: '30px',
                     fontSize: '0.75rem'
@@ -575,9 +605,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   }
                 }}
                 onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-                disabled={isSubmitted ? false : !canSubmit()}
+                disabled={isSubmitting || (isSubmitted ? false : !canSubmit())}
               >
-                {isSubmitted ? 'Recall' : 'Submit'}
+                {isSubmitting ? 'Processing...' : (isSubmitted ? 'Recall' : 'Submit')}
               </Button>
             </Box>
           )}

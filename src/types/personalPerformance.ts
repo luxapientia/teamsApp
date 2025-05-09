@@ -9,26 +9,26 @@ export enum AgreementStatus {
     Draft = 'Draft',
     Submitted = 'Submitted',
     Approved = 'Approved',
-    SendBack = 'Send Back'
+    SendBack = 'Send Back',
+    CommitteeSendBack = 'Committee Send Back'
 }
 
 export enum AssessmentStatus {
     Draft = 'Draft',
     Submitted = 'Submitted',
     Approved = 'Approved',
-    SendBack = 'Send Back'
+    SendBack = 'Send Back',
+    CommitteeSendBack = 'Committee Send Back'
 }
 
 export enum AgreementReviewStatus {
     NotReviewed = 'Not Reviewed',
-    Reviewed = 'Reviewed',
-    SendBack = 'Send Back'
+    Reviewed = 'Reviewed'
 }
 
 export enum AssessmentReviewStatus {
     NotReviewed = 'Not Reviewed',
-    Reviewed = 'Reviewed',
-    SendBack = 'Send Back'
+    Reviewed = 'Reviewed'
 }
 
 
@@ -63,6 +63,7 @@ export interface PersonalQuarterlyTarget {
     assessmentStatusUpdatedAt: Date;
     agreementReviewStatus?: AgreementReviewStatus;
     assessmentReviewStatus?: AssessmentReviewStatus;
+    isAgreementCommitteeSendBack?: boolean;
     isEditable: boolean;
     supervisorId?: string;
     objectives: PersonalQuarterlyTargetObjective[];
