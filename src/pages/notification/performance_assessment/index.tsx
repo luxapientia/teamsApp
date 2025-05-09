@@ -72,6 +72,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const [enableFeedback, setEnableFeedback] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isSendingBack, setIsSendingBack] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const { showToast } = useToast();
@@ -147,7 +149,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const handleApprove = async () => {
     if (notification) {
-      setIsSubmitting(true);
+      setIsApproving(true);
       try {
         const response = await api.post(`/notifications/approve/${notification._id}`);
         if (response.status === 200) {
@@ -165,14 +167,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           type: 'error'
         });
       } finally {
-        setIsSubmitting(false);
+        setIsApproving(false);
       }
     }
   };
 
   const handleSendBack = (emailSubject: string, emailBody: string) => {
     if (notification) {
-      setIsSubmitting(true);
+      setIsSendingBack(true);
       (async () => {
         try {
           const response = await api.post(`/notifications/send-back/${notification._id}`, {
@@ -195,7 +197,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             type: 'error'
           });
         } finally {
-          setIsSubmitting(false);
+          setIsSendingBack(false);
         }
       })();
     }
@@ -250,9 +252,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               }
             }}
             onClick={handleApprove}
-            disabled={isSubmitting}
+            disabled={isApproving || isSendingBack}
           >
-            {isSubmitting ? 'Processing...' : 'Approve'}
+            {isApproving ? 'Processing...' : 'Approve'}
           </Button>
           <Button
             variant="contained"
@@ -267,9 +269,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               }
             }}
             onClick={() => setSendBackModalOpen(true)}
-            disabled={isSubmitting}
+            disabled={isApproving || isSendingBack}
           >
-            {isSubmitting ? 'Processing...' : 'Send Back'}
+            {isSendingBack ? 'Processing...' : 'Send Back'}
           </Button>
         </Box>
       </Box>

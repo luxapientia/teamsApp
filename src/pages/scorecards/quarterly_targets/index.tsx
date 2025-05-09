@@ -217,11 +217,16 @@ const QuarterlyTargetTable: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                {quarter.quarter}
-              </MenuItem>
-            ))}
+            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
+              .filter(quarter => {
+                const isSetAssessmentPeriod = selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable;
+                return isSetAssessmentPeriod;
+              })
+              .map((quarter) => (
+                <MenuItem key={quarter.quarter} value={quarter.quarter}>
+                  {quarter.quarter}
+                </MenuItem>
+              ))}
           </Select>
         </StyledFormControl>
 
