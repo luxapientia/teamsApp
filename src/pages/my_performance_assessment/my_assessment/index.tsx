@@ -60,6 +60,7 @@ const PerformanceAssessment: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -82,27 +83,34 @@ const PerformanceAssessment: React.FC = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    if (personalPerformances.length > 0) {
+    if (personalPerformances.length > 0 && selectedAnnualTargetId) {
       const personalPerformance = personalPerformances.find(performance => performance.annualTargetId === selectedAnnualTargetId);
-      setSelectedPersonalPerformance(personalPerformance);
+      setSelectedPersonalPerformance(personalPerformance || null);
     }
-  }, [personalPerformances])
+  }, [personalPerformances, selectedAnnualTargetId]);
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
     setShowQuarterlyTargets(false);
+    setSelectedPersonalPerformance(null);
   };
 
   const handleQuarterChange = (event: SelectChangeEvent) => {
     setSelectedQuarter(event.target.value);
     setShowQuarterlyTargets(false);
+    setSelectedPersonalPerformance(null);
   };
 
-  const handleView = () => {
+  const handleView = async () => {
     if (selectedAnnualTarget && selectedQuarter) {
-      dispatch(fetchPersonalPerformances({ annualTargetId: selectedAnnualTargetId }));
-      setShowQuarterlyTargets(true);
-      setShowPersonalQuarterlyTarget(false);
+      setIsLoading(true);
+      try {
+        await dispatch(fetchPersonalPerformances({ annualTargetId: selectedAnnualTargetId }));
+        setShowQuarterlyTargets(true);
+        setShowPersonalQuarterlyTarget(false);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -143,15 +151,14 @@ const PerformanceAssessment: React.FC = () => {
 
         <ViewButton
           variant="contained"
-          disabled={!selectedAnnualTargetId}
+          disabled={!selectedAnnualTargetId || !selectedQuarter || isLoading}
           onClick={handleView}
         >
-          View
+          {isLoading ? 'Loading...' : 'View'}
         </ViewButton>
-
-
       </Box>
-      {showQuarterlyTargets && selectedAnnualTarget && (
+
+      {showQuarterlyTargets && selectedAnnualTarget && !isLoading && (
         <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
           <TableContainer>
             <Table>
@@ -166,38 +173,39 @@ const PerformanceAssessment: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {personalPerformances.map((personalPerformance: PersonalPerformance, index: number) => (
-                  <TableRow key={index}>
-                    <StyledTableCell>{selectedAnnualTarget?.name}</StyledTableCell>
-                    <StyledTableCell>
-                    {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.startDate}
-                  </StyledTableCell>
-                  <StyledTableCell>
-                    {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.endDate}
-                  </StyledTableCell>
-                  <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatus}</StyledTableCell>
-                  <StyledTableCell>{format(personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatusUpdatedAt || new Date(), 'yyyy-MM-dd HH:mm:ss')}</StyledTableCell>
-                  <StyledTableCell align="center">
-                    <ViewButton
-                      size="small"
-                      onClick={() => {
-                        setShowQuarterlyTargets(false);
-                        setShowPersonalQuarterlyTarget(true);
-                        setSelectedPersonalPerformance(personalPerformance);
-                      }}
-                    >
-                      View
-                    </ViewButton>
-                  </StyledTableCell>
-                  </TableRow>
-                ))}
-
+                {personalPerformances
+                  .filter(performance => performance.annualTargetId === selectedAnnualTargetId)
+                  .map((personalPerformance: PersonalPerformance, index: number) => (
+                    <TableRow key={index}>
+                      <StyledTableCell>{selectedAnnualTarget?.name}</StyledTableCell>
+                      <StyledTableCell>
+                        {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.startDate}
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        {selectedAnnualTarget?.content.assessmentPeriod[selectedQuarter as keyof typeof selectedAnnualTarget.content.assessmentPeriod]?.endDate}
+                      </StyledTableCell>
+                      <StyledTableCell>{personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatus}</StyledTableCell>
+                      <StyledTableCell>{format(personalPerformance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter)?.assessmentStatusUpdatedAt || new Date(), 'yyyy-MM-dd HH:mm:ss')}</StyledTableCell>
+                      <StyledTableCell align="center">
+                        <ViewButton
+                          size="small"
+                          onClick={() => {
+                            setShowQuarterlyTargets(false);
+                            setShowPersonalQuarterlyTarget(true);
+                            setSelectedPersonalPerformance(personalPerformance);
+                          }}
+                        >
+                          View
+                        </ViewButton>
+                      </StyledTableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </TableContainer>
-
         </Paper>
       )}
+
       {showPersonalQuarterlyTarget && selectedAnnualTarget && (
         <PersonalQuarterlyTargetContent
           annualTarget={selectedAnnualTarget}

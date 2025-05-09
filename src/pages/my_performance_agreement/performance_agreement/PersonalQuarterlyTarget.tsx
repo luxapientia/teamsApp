@@ -293,7 +293,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (target.quarter === quarter) {
         return {
           ...target,
-          agreementStatus: AgreementStatus.Draft,
+          agreementStatus: target.isAgreementCommitteeSendBack ? AgreementStatus.CommitteeSendBack : AgreementStatus.Draft,
           agreementStatusUpdatedAt: new Date(),
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -318,7 +318,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       });
 
       setIsSubmitted(false);
-      setStatus(AgreementStatus.Draft);
+      const currentTarget = newPersonalQuarterlyTargets?.find(target => target.quarter === quarter);
+      setStatus(currentTarget?.isAgreementCommitteeSendBack ? AgreementStatus.CommitteeSendBack : AgreementStatus.Draft);
       setToast({
         message: 'Performance agreement recalled successfully',
         type: 'success'
@@ -564,7 +565,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               color="primary"
               sx={{
                 height: '30px',
-                fontSize: '0.75rem'
+                fontSize: '0.75rem',
+                alignSelf: 'center'
               }}
             />
           )}  
@@ -575,7 +577,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               color="success"
               sx={{
                 height: '30px',
-                fontSize: '0.75rem'
+                fontSize: '0.75rem',
+                alignSelf: 'center'
               }}
             />
           ) : (
@@ -588,7 +591,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   color={status == 'Send Back' || status == 'Committee Send Back' ? 'error' : 'warning'}
                   sx={{
                     height: '30px',
-                    fontSize: '0.75rem'
+                    fontSize: '0.75rem',
+                    alignSelf: 'center'
                   }}
                 />
               }

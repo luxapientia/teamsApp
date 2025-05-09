@@ -231,65 +231,79 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
           <Box sx={{ display: 'flex', gap: 2 }}>
             {isAgreementCommitteeSendBack ? (
-              <Chip
-                label={'PM Committee Send Back'}
-                size="medium"
-                color={'error'}
-                sx={{
-                    height: '40px',
-                    fontSize: '1rem'
-                }}
-              />
-            ) : (
+              <>
+                <Chip
+                  label={'PM Committee Send Back'}
+                  size="medium"
+                  color={'error'}
+                  sx={{
+                    height: '30px',
+                    fontSize: '0.75rem',
+                    alignSelf: 'center'
+                  }}
+                />
                 <Chip
                   label={'Approved'}
                   size="medium"
                   color={'success'}
                   sx={{
-                    height: '40px',
-                    fontSize: '1rem'
+                    height: '30px',
+                    fontSize: '0.75rem',
+                    alignSelf: 'center'
                   }}
                 />
+              </>
+            ) : (
+              <Chip
+                label={'Approved'}
+                size="medium"
+                color={'success'}
+                sx={{
+                  height: '30px',
+                  fontSize: '0.75rem',
+                  alignSelf: 'center'
+                }}
+              />
             )}
             {pmCommitteeStatus === 'Reviewed' ? (
               <Button
                 variant="contained"
-                    onClick={() => handleCommitteeAction('unaccept')}
-                    sx={{
-                      backgroundColor: '#10B981',
-                      '&:hover': {
-                        backgroundColor: '#059669',
-                      },
-                    }}
-                  >
-                    PM Committee Unaccept
-                  </Button>
-                ) : (
-                  <>
-                    <Button
-                      variant="contained"
-                      onClick={() => handleCommitteeAction('accept')}
-                      sx={{
-                        backgroundColor: '#10B981',
-                        '&:hover': {
-                          backgroundColor: '#059669',
-                        },
-                        width: '200px'
-                      }}
-                      disabled={acceptLoading}
-                    >
-                      {acceptLoading ? 'Processing...' : 'PM Committee Accept'}
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      onClick={() => setSendBackModalOpen(true)}
-                      disabled={sendBackLoading || isAssessmentApproved}
-                    >
-                      {sendBackLoading ? 'Processing...' : 'PM Committee Send Back'}
-                    </Button>
-                  </>
-                )}
+                onClick={() => handleCommitteeAction('unaccept')}
+                sx={{
+                  backgroundColor: '#10B981',
+                  '&:hover': {
+                    backgroundColor: '#059669',
+                  },
+                }}
+              >
+                PM Committee Unaccept
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  onClick={() => handleCommitteeAction('accept')}
+                  sx={{
+                    backgroundColor: '#10B981',
+                    '&:hover': {
+                      backgroundColor: '#059669',
+                    },
+                    width: '200px'
+                  }}
+                  disabled={acceptLoading}
+                >
+                  {acceptLoading ? 'Processing...' : 'PM Committee Accept'}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setSendBackModalOpen(true)}
+                  disabled={sendBackLoading || isAssessmentApproved}
+                >
+                  {sendBackLoading ? 'Processing...' : 'PM Committee Send Back'}
+                </Button>
+              </>
+            )}
           </Box>
         </Box>
       ) : (
