@@ -20,21 +20,21 @@ export class GraphService {
     }
 
     // Fetch new token
-    const config = new msal.ConfidentialClientApplication({
-      auth: {
-        clientId: process.env.AZURE_CLIENT_ID!,
-        clientSecret: process.env.AZURE_CLIENT_SECRET!,
-        authority: `https://login.microsoftonline.com/${tenantId}`
+      const config = new msal.ConfidentialClientApplication({
+        auth: {
+          clientId: process.env.AZURE_CLIENT_ID!,
+          clientSecret: process.env.AZURE_CLIENT_SECRET!,
+          authority: `https://login.microsoftonline.com/${tenantId}`
+        }
+      });
+
+      const result = await config.acquireTokenByClientCredential({
+        scopes: ['https://graph.microsoft.com/.default']
+      });
+
+      if (!result?.accessToken) {
+        throw new Error('Failed to acquire access token');
       }
-    });
-
-    const result = await config.acquireTokenByClientCredential({
-      scopes: ['https://graph.microsoft.com/.default']
-    });
-
-    if (!result?.accessToken) {
-      throw new Error('Failed to acquire access token');
-    }
 
     // Cache the token and its expiry
     this.tokenCache[tenantId] = {
@@ -44,7 +44,7 @@ export class GraphService {
         : now + 3500 // fallback: 1 hour minus buffer
     };
 
-    return result.accessToken;
+      return result.accessToken;
   }
 
   async getOrganizationUsers(tenantId: string, pageSize: number = 20, nextLink?: string, searchQuery?: string): Promise<GraphResponse> {

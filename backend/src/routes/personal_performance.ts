@@ -80,7 +80,9 @@ router.get('/manage-performance-assessment/company-users', authenticateToken, as
         id: performance.userId._id,
         name: performance.userId.name,
         team: performance.teamId?.name,
-        position: performance.userId?.jobTitle
+        position: performance.userId?.jobTitle,
+        assessmentStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.assessmentStatus,
+        assessmentReviewStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.assessmentReviewStatus,
       }
     });
     return res.json(users);

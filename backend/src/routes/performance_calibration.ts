@@ -2,8 +2,8 @@ import express, { NextFunction, Response } from 'express';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import User from '../models/User';
 import { ApiError } from '../utils/apiError';
-import PersonalPerformance, { AgreementStatus } from '../models/PersonalPerformance';
-import { AgreementReviewStatus } from '../models/PersonalPerformance';
+import PersonalPerformance, { AgreementStatus, AssessmentStatus } from '../models/PersonalPerformance';
+import { AgreementReviewStatus, AssessmentReviewStatus } from '../models/PersonalPerformance';
 import { graphService } from '../services/graphService';
 const router = express.Router();
 
@@ -74,7 +74,7 @@ router.delete('/remove-member/:userId', authenticateToken, async (req, res, next
     }
 });
 
-router.post('/pm-committee-action', authenticateToken, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+router.post('/pm-committee-action-agreement', authenticateToken, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
         const { performanceId, quarter, action, userId, emailSubject, emailBody } = req.body;
 
@@ -126,6 +126,64 @@ router.post('/pm-committee-action', authenticateToken, async (req: Authenticated
         return res.json({
             status: 'success',
             message: `Agreement ${action}ed successfully`
+        });
+    } catch (error) {
+        return next(error);
+    }
+});
+
+router.post('/pm-committee-action-assessment', authenticateToken, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+        const { performanceId, quarter, action, userId, emailSubject, emailBody } = req.body;
+
+        if (!performanceId || !quarter || !action) {
+            throw new ApiError('Performance ID, quarter, and action are required', 400);
+        }
+        const tenantId = req.user?.tenantId;
+        const fromUserId = req.user?.MicrosoftId;
+        const toUser = await User.findOne({ _id: userId });
+
+        let newStatus;
+        if (action === 'accept') {
+            newStatus = AssessmentReviewStatus.Reviewed;
+            const subject = `Performance Assessment ${quarter}`;
+            const emailBody = `
+                Dear ${toUser?.name},<br>
+                Your performance assessment has been reviewed by the PM Committee and there is nothing required from you.<br>
+                Thank you,<br><br>
+                PM Committee.
+            `;
+            if (!tenantId || !fromUserId || !toUser?.MicrosoftId) {
+                throw new ApiError('Missing required email information', 400);
+            }
+            await PersonalPerformance.updateOne(
+                { _id: performanceId, "quarterlyTargets.quarter": quarter },
+                { $set: { "quarterlyTargets.$.assessmentReviewStatus": newStatus, "quarterlyTargets.$.isAssessmentCommitteeSendBack": false } }
+            );
+            await graphService.sendMail(tenantId, fromUserId, toUser.email, subject, emailBody);
+        } else if (action === 'unaccept') {
+            newStatus = AssessmentReviewStatus.NotReviewed;
+            await PersonalPerformance.updateOne(
+                { _id: performanceId, "quarterlyTargets.quarter": quarter },
+                { $set: { "quarterlyTargets.$.assessmentReviewStatus": newStatus } }
+            );
+        } else if (action === 'sendBack') {
+            newStatus = AssessmentReviewStatus.NotReviewed;
+            if (!tenantId || !fromUserId || !toUser?.MicrosoftId) {
+                throw new ApiError('Missing required email information', 400);
+            }
+            await PersonalPerformance.updateOne(
+                { _id: performanceId, "quarterlyTargets.quarter": quarter },
+                { $set: { "quarterlyTargets.$.assessmentReviewStatus": newStatus, "quarterlyTargets.$.assessmentStatus": AssessmentStatus.CommitteeSendBack, "quarterlyTargets.$.isAssessmentCommitteeSendBack": true } }
+            );
+            await graphService.sendMail(tenantId, fromUserId, toUser.email, emailSubject, emailBody);
+        } else {
+            throw new ApiError('Invalid action', 400);
+        }
+
+        return res.json({
+            status: 'success',
+            message: `Assessment ${action}ed successfully`
         });
     } catch (error) {
         return next(error);

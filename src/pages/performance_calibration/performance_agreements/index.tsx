@@ -61,6 +61,13 @@ const PerformanceAgreements: React.FC = () => {
                     quarter: selectedQuarter,
                 },
             });
+            
+            if (!response.data?.data || response.data.data.length === 0) {
+                setAgreements([]);
+                setShowTable(true);
+                return;
+            }
+
             const mapped: AgreementRow[] = response.data.data
                 .map((user: any) => ({
                     userId: user.id,
@@ -75,7 +82,7 @@ const PerformanceAgreements: React.FC = () => {
             setShowTable(true);
         } catch (e) {
             setAgreements([]);
-            setShowTable(false);
+            setShowTable(true);
         }
         setLoading(false);
     };
@@ -139,7 +146,13 @@ const PerformanceAgreements: React.FC = () => {
                 </ViewButton>
             </Box>
             {showTable && !viewingUser && (
-              <AgreementsTable data={agreements} onView={handleTableView} />
+              agreements.length > 0 ? (
+                <AgreementsTable data={agreements} onView={handleTableView} />
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                  No approved agreements found for the selected criteria.
+                </Box>
+              )
             )}
             {viewingUser && (
               <PersonalQuarterlyTarget

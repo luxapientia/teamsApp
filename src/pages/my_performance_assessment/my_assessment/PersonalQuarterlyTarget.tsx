@@ -239,12 +239,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     });
 
     try {
-      await dispatch(updatePersonalPerformance({
-        _id: personalPerformance?._id || '',
-        teamId: personalPerformance?.teamId || '',
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarterlyTargets: newPersonalQuarterlyTargets || []
-      }));
+    await dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
 
       await api.post('/notifications/assessment/submit', {
         recipientId: selectedSupervisor,
@@ -253,8 +253,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         personalPerformanceId: personalPerformance?._id || ''
       });
 
-      setIsSubmitted(true);
-      setStatus(AssessmentStatus.Submitted);
+    setIsSubmitted(true);
+    setStatus(AssessmentStatus.Submitted);
       setToast({
         message: 'Performance assessment submitted successfully',
         type: 'success'
@@ -285,12 +285,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     });
 
     try {
-      await dispatch(updatePersonalPerformance({
-        _id: personalPerformance?._id || '',
-        teamId: personalPerformance?.teamId || '',
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarterlyTargets: newPersonalQuarterlyTargets || []
-      }));
+    await dispatch(updatePersonalPerformance({
+      _id: personalPerformance?._id || '',
+      teamId: personalPerformance?.teamId || '',
+      annualTargetId: personalPerformance?.annualTargetId || '',
+      quarterlyTargets: newPersonalQuarterlyTargets || []
+    }));
 
       await api.post('/notifications/assessment/recall', {
         recipientId: selectedSupervisor,

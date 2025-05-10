@@ -241,8 +241,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             size="medium"
                             color={'success'}
                             sx={{
-                                height: '40px',
-                                fontSize: '1rem'
+                                height: '30px',
+                                fontSize: '0.75rem'
                             }}
                         />
                         <Button
