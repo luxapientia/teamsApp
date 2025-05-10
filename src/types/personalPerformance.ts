@@ -65,6 +65,8 @@ export interface PersonalQuarterlyTarget {
     assessmentReviewStatus?: AssessmentReviewStatus;
     isAgreementCommitteeSendBack?: boolean;
     isAssessmentCommitteeSendBack?: boolean;
+    agreementCommitteeSendBackMessage?: string;
+    assessmentCommitteeSendBackMessage?: string;
     isEditable: boolean;
     supervisorId?: string;
     objectives: PersonalQuarterlyTargetObjective[];

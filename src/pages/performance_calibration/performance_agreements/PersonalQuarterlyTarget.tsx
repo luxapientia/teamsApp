@@ -23,8 +23,10 @@ import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterl
 import RatingScalesModal from '../../../components/RatingScalesModal';
 import { api } from '../../../services/api';
 import SendBackModal from '../../../components/Modal/SendBackModal';
+import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 import { useAuth } from '../../../contexts/AuthContext';
 import { AgreementReviewStatus } from '../../../types/personalPerformance';
+
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
@@ -54,6 +56,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [pmCommitteeStatus, setPmCommitteeStatus] = useState<'Not Reviewed' | 'Reviewed' | 'Send Back'>(initialPmCommitteeStatus || 'Not Reviewed');
   const [acceptLoading, setAcceptLoading] = useState(false);
   const [sendBackLoading, setSendBackLoading] = useState(false);
+  const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
 
   const currentQuarterTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
   const isAssessmentApproved = currentQuarterTarget?.assessmentStatus === AssessmentStatus.Approved;
@@ -239,7 +242,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   sx={{
                     height: '30px',
                     fontSize: '0.75rem',
-                    alignSelf: 'center'
+                    alignSelf: 'center',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+                    if (currentTarget?.agreementCommitteeSendBackMessage) {
+                      setViewSendBackModalOpen(true);
+                    }
                   }}
                 />
                 <Chip
@@ -309,7 +319,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       ) : (
         <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
           <Typography variant="h6" color="error">
-            Corresponding assessment is approved, you cannot review the agreement.
+            Corresponding assessment is edited, you cannot review the agreement.
           </Typography>
         </Box>
       )}
@@ -486,6 +496,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onSendBack={handleSendBack}
         title="PM Committee Send Back Email"
         emailSubject={`${annualTarget.name}, Performance Agreement ${quarter}(PM Committee Review)`}
+      />
+
+      <ViewSendBackMessageModal
+        open={viewSendBackModalOpen}
+        onClose={() => setViewSendBackModalOpen(false)}
+        emailSubject={`${annualTarget.name}, Performance Agreement ${quarter}(PM Committee Review)`}
+        emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.agreementCommitteeSendBackMessage || 'No message available'}
       />
 
       {selectedRatingScales && (

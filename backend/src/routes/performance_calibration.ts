@@ -99,7 +99,7 @@ router.post('/pm-committee-action-agreement', authenticateToken, async (req: Aut
             }
             await PersonalPerformance.updateOne(
                 { _id: performanceId, "quarterlyTargets.quarter": quarter },
-                { $set: { "quarterlyTargets.$.agreementReviewStatus": newStatus, "quarterlyTargets.$.isAgreementCommitteeSendBack": false } }
+                { $set: { "quarterlyTargets.$.agreementReviewStatus": newStatus, "quarterlyTargets.$.isAgreementCommitteeSendBack": false, "quarterlyTargets.$.agreementCommitteeSendBackMessage": '' } }
             );
             await graphService.sendMail(tenantId, fromUserId, toUser.email, subject, emailBody);
         } else if (action === 'unaccept') {
@@ -115,7 +115,7 @@ router.post('/pm-committee-action-agreement', authenticateToken, async (req: Aut
             }
             await PersonalPerformance.updateOne(
                 { _id: performanceId, "quarterlyTargets.quarter": quarter },
-                { $set: { "quarterlyTargets.$.agreementReviewStatus": newStatus, "quarterlyTargets.$.agreementStatus": AgreementStatus.CommitteeSendBack, "quarterlyTargets.$.isAgreementCommitteeSendBack": true } }
+                { $set: { "quarterlyTargets.$.agreementReviewStatus": newStatus, "quarterlyTargets.$.agreementStatus": AgreementStatus.CommitteeSendBack, "quarterlyTargets.$.isAgreementCommitteeSendBack": true, "quarterlyTargets.$.agreementCommitteeSendBackMessage": emailBody } }
             );
             await graphService.sendMail(tenantId, fromUserId, toUser.email, emailSubject, emailBody);
         } else {
@@ -157,7 +157,7 @@ router.post('/pm-committee-action-assessment', authenticateToken, async (req: Au
             }
             await PersonalPerformance.updateOne(
                 { _id: performanceId, "quarterlyTargets.quarter": quarter },
-                { $set: { "quarterlyTargets.$.assessmentReviewStatus": newStatus, "quarterlyTargets.$.isAssessmentCommitteeSendBack": false } }
+                { $set: { "quarterlyTargets.$.assessmentReviewStatus": newStatus, "quarterlyTargets.$.isAssessmentCommitteeSendBack": false, "quarterlyTargets.$.assessmentCommitteeSendBackMessage": '' } }
             );
             await graphService.sendMail(tenantId, fromUserId, toUser.email, subject, emailBody);
         } else if (action === 'unaccept') {
@@ -173,7 +173,7 @@ router.post('/pm-committee-action-assessment', authenticateToken, async (req: Au
             }
             await PersonalPerformance.updateOne(
                 { _id: performanceId, "quarterlyTargets.quarter": quarter },
-                { $set: { "quarterlyTargets.$.assessmentReviewStatus": newStatus, "quarterlyTargets.$.assessmentStatus": AssessmentStatus.CommitteeSendBack, "quarterlyTargets.$.isAssessmentCommitteeSendBack": true } }
+                { $set: { "quarterlyTargets.$.assessmentReviewStatus": newStatus, "quarterlyTargets.$.assessmentStatus": AssessmentStatus.CommitteeSendBack, "quarterlyTargets.$.isAssessmentCommitteeSendBack": true, "quarterlyTargets.$.assessmentCommitteeSendBackMessage": emailBody } }
             );
             await graphService.sendMail(tenantId, fromUserId, toUser.email, emailSubject, emailBody);
         } else {

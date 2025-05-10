@@ -67,6 +67,8 @@ export interface PersonalQuarterlyTarget {
   assessmentReviewStatus?: AssessmentReviewStatus;
   isAgreementCommitteeSendBack?: boolean;
   isAssessmentCommitteeSendBack?: boolean;
+  agreementCommitteeSendBackMessage?: string;
+  assessmentCommitteeSendBackMessage?: string;
   supervisorId?: string;
   objectives: PersonalQuarterlyTargetObjective[];
   isPersonalDevelopmentNotApplicable?: boolean;
@@ -199,6 +201,14 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
     isAssessmentCommitteeSendBack: {
       type: Boolean,
       default: false,
+    },
+    agreementCommitteeSendBackMessage: {
+      type: String,
+      default: '',
+    },
+    assessmentCommitteeSendBackMessage: {
+      type: String,
+      default: '',
     },
     isPersonalDevelopmentNotApplicable: {
       type: Boolean,

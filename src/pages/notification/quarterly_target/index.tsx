@@ -36,6 +36,7 @@ import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useToast } from '../../../contexts/ToastContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Toast } from '../../../components/Toast';
+import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
@@ -65,6 +66,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isApproving, setIsApproving] = useState(false);
   const [isSendingBack, setIsSendingBack] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -218,7 +220,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               sx={{
                 height: '30px',
                 fontSize: '0.75rem',
-                alignSelf: 'center'
+                alignSelf: 'center',
+                cursor: 'pointer'
+              }}
+              onClick={() => {
+                const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+                if (currentTarget?.agreementCommitteeSendBackMessage) {
+                  setViewSendBackModalOpen(true);
+                }
               }}
             />
           )}
@@ -440,6 +449,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onSendBack={handleSendBack}
         title="Send Back Email"
         emailSubject={`${annualTarget.name} - Performance ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
+      />
+
+      <ViewSendBackMessageModal
+        open={viewSendBackModalOpen}
+        onClose={() => setViewSendBackModalOpen(false)}
+        emailSubject={`${annualTarget.name}, Performance Agreement ${quarter}(PM Committee Review)`}
+        emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.agreementCommitteeSendBackMessage || 'No message available'}
       />
     </Box >
   );

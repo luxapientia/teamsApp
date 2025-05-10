@@ -41,6 +41,7 @@ import { RootState } from '../../../store';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { api } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
+import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 
 import { ExportButton } from '../../../components/Buttons';
 
@@ -84,6 +85,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -592,7 +594,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   sx={{
                     height: '30px',
                     fontSize: '0.75rem',
-                    alignSelf: 'center'
+                    alignSelf: 'center',
+                    cursor: status == 'Committee Send Back' ? 'pointer' : 'default'
+                  }}
+                  onClick={() => {
+                    if (status === 'Committee Send Back') {
+                      const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+                      if (currentTarget?.agreementCommitteeSendBackMessage) {
+                        setViewSendBackModalOpen(true);
+                      }
+                    }
                   }}
                 />
               }
@@ -931,6 +942,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ViewSendBackMessageModal
+        open={viewSendBackModalOpen}
+        onClose={() => setViewSendBackModalOpen(false)}
+        emailSubject={`${annualTarget.name}, Performance Agreement ${quarter}(PM Committee Review)`}
+        emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.agreementCommitteeSendBackMessage || 'No message available'}
+      />
     </Box >
   );
 };

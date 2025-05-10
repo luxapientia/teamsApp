@@ -34,6 +34,7 @@ import { api } from '../../../services/api';
 import KPIModal from './KPIModal';
 import EvidenceModal from './EvidenceModal';
 import { useAuth } from '../../../contexts/AuthContext';
+import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 
 import { ExportButton } from '../../../components/Buttons';
 
@@ -92,6 +93,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
 
   const feedbacks = useAppSelector((state: RootState) =>
     state.feedback.feedbacks.filter(f =>
@@ -636,7 +638,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 sx={{
                   height: '30px',
                   fontSize: '0.75rem',
-                  alignSelf: 'center'
+                  alignSelf: 'center',
+                  cursor: status === AssessmentStatus.CommitteeSendBack ? 'pointer' : 'default'
+                }}
+                onClick={() => {
+                  if (status === AssessmentStatus.CommitteeSendBack) {
+                    const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+                    if (currentTarget?.assessmentCommitteeSendBackMessage) {
+                      setViewSendBackModalOpen(true);
+                    }
+                  }
                 }}
               />
             )}
@@ -1049,6 +1060,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onSelect={handleAddPersonalDevelopment}
         tenantId={user?.tenantId || ''}
         validateCourse={(course) => !isCourseAlreadyRequested(course.name)}
+      />
+
+      <ViewSendBackMessageModal
+        open={viewSendBackModalOpen}
+        onClose={() => setViewSendBackModalOpen(false)}
+        emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
+        emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentCommitteeSendBackMessage || 'No message available'}
       />
     </Box >
   );
