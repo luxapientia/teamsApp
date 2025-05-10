@@ -177,7 +177,6 @@ router.get('/is_team_owner/:userId', authenticateToken, async (req: Authenticate
         if (!userId) {
             throw new ApiError('User not authenticated', 401);
         }
-        console.log(userId, 'userId')
         // Find team where current user is the owner
         const team = await Team.findOne({ owner: userId });
         
@@ -225,7 +224,6 @@ router.get(
           nextLink as string,
           searchQuery as string
         );
-        console.log(result, 'result');
         res.json({
           status: 'success',
           data: result.value,

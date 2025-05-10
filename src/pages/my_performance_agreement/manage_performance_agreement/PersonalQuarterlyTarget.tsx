@@ -230,7 +230,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                     color={'primary'}
                                     sx={{
                                         height: '30px',
-                                        fontSize: '0.75rem'
+                                        fontSize: '0.75rem',
+                                        alignSelf: 'center'
                                     }}
                                 />
                             )
@@ -241,7 +242,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             color={'success'}
                             sx={{
                                 height: '30px',
-                                fontSize: '0.75rem'
+                                fontSize: '0.75rem',
+                                alignSelf: 'center'
                             }}
                         />
                         <Button

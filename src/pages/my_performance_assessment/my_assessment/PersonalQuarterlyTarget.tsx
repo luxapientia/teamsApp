@@ -24,7 +24,8 @@ import {
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '../../../types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, PdfType, Feedback } from '../../../types';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, AssessmentReviewStatus } from '../../../types/personalPerformance';
+import { PdfType, Feedback } from '../../../types';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { fetchPersonalPerformances, updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
@@ -239,12 +240,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     });
 
     try {
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
 
       await api.post('/notifications/assessment/submit', {
         recipientId: selectedSupervisor,
@@ -253,8 +254,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         personalPerformanceId: personalPerformance?._id || ''
       });
 
-    setIsSubmitted(true);
-    setStatus(AssessmentStatus.Submitted);
+      setIsSubmitted(true);
+      setStatus(AssessmentStatus.Submitted);
       setToast({
         message: 'Performance assessment submitted successfully',
         type: 'success'
@@ -276,7 +277,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       if (target.quarter === quarter) {
         return {
           ...target,
-          assessmentStatus: AssessmentStatus.Draft,
+          assessmentStatus: target.isAssessmentCommitteeSendBack ? AssessmentStatus.CommitteeSendBack : AssessmentStatus.Draft,
+          assessmentStatusUpdatedAt: new Date(),
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -285,12 +287,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     });
 
     try {
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
 
       await api.post('/notifications/assessment/recall', {
         recipientId: selectedSupervisor,
@@ -300,7 +302,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       });
 
       setIsSubmitted(false);
-      setStatus(AssessmentStatus.Draft);
+      const currentTarget = newPersonalQuarterlyTargets?.find(target => target.quarter === quarter);
+      setStatus(currentTarget?.isAssessmentCommitteeSendBack ? AssessmentStatus.CommitteeSendBack : AssessmentStatus.Draft);
       setToast({
         message: 'Performance assessment recalled successfully',
         type: 'success'
@@ -599,7 +602,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </FormControl>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, justifyContent: 'flex-end' }}>
+        {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentReviewStatus === AssessmentReviewStatus.Reviewed && (
+          <Chip
+            label="PM Committee Reviewed"
+            size="medium"
+            color="primary"
+            sx={{
+              height: '30px',
+              fontSize: '0.75rem',
+              alignSelf: 'center'
+            }}
+          />
+        )}
         {isApproved ? (
           <Chip
             label="Approved"
@@ -607,22 +622,24 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             color="success"
             sx={{
               height: '30px',
-              fontSize: '0.75rem'
+              fontSize: '0.75rem',
+              alignSelf: 'center'
             }}
           />
         ) : (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {personalQuarterlyObjectives.length > 0 && !isAssessmentsEmpty() &&
+            {personalQuarterlyObjectives.length > 0 && !isAssessmentsEmpty() && (
               <Chip
                 label={status}
                 size="medium"
-                color={status == 'Send Back' ? 'error' : 'warning'}
+                color={status === AssessmentStatus.SendBack || status === AssessmentStatus.CommitteeSendBack ? 'error' : 'warning'}
                 sx={{
                   height: '30px',
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
+                  alignSelf: 'center'
                 }}
               />
-            }
+            )}
             <Button
               variant="contained"
               sx={{
@@ -643,7 +660,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           </Box>
         )}
       </Box>
-
       {/* Add total weight display */}
       <Box
         sx={{

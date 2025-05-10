@@ -73,7 +73,6 @@ const PerformanceDistributionReport: React.FC = () => {
       });
       if (response.status === 200) {
         const newPersonalPerformances = [];
-        console.log(response.data.data);
         response.data.data.forEach((item: any) => {
           if(item.quarterlyTargets.find((quarter: any) => quarter.quarter === selectedQuarter).assessmentStatus === 'Approved') {
             newPersonalPerformances.push(item);

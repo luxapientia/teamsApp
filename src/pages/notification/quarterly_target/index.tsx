@@ -217,7 +217,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               color="error"
               sx={{
                 height: '30px',
-                fontSize: '0.75rem'
+                fontSize: '0.75rem',
+                alignSelf: 'center'
               }}
             />
           )}

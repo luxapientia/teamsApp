@@ -108,8 +108,6 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
     const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
 
-    console.log('feedbackTemplate', feedbackTemplate);
-
     if (!feedbackTemplate || feedbackResponses.length === 0) return null;
 
     let totalWeightedScore = 0;
@@ -138,7 +136,6 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
       totalWeightedScore += dimensionScore * (dimension.weight / 100);
       totalWeight += dimension.weight / 100;
     });
-    console.log('totalWeightedScore', totalWeightedScore);
 
     return totalWeightedScore;
   };
@@ -156,7 +153,6 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
       const finalScore = (overallScore && feedbackOverallScore) ? (overallScore * (1 - contribution / 100)) + (feedbackOverallScore * (contribution / 100)) : null;
       return Number(finalScore?.toFixed(0));
     }
-    console.log('overallScore', overallScore);
     return overallScore;
   });
 
@@ -197,8 +193,6 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     assessment: assessmentResult[index],
     performance: performanceResult[index]
   }));
-
-  console.log('teamsTable', teamsTable);
 
   return (
     <TableContainer component={Paper} sx={{ maxHeight: 400, overflowY: 'auto' }}>

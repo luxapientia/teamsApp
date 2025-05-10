@@ -60,7 +60,6 @@ const PerformanceAssessments: React.FC = () => {
                     quarter: selectedQuarter,
                 },
             });
-            console.log(response.data.data, 'mapped');
             const mapped: AssessmentRow[] = response.data.data
                 .map((user: any) => ({
                     userId: user.id,

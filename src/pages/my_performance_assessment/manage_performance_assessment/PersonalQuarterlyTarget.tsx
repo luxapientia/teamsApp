@@ -18,7 +18,7 @@ import {
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus } from '../../../types/personalPerformance';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus, AssessmentReviewStatus } from '../../../types/personalPerformance';
 import { api } from '../../../services/api';
 import { useToast } from '../../../contexts/ToastContext';
 import EvidenceModal from './EvidenceModal';
@@ -236,13 +236,26 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             {isApproved && (
                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
                     <Box sx={{ display: 'flex', gap: 2 }}>
+                        {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentReviewStatus === AssessmentReviewStatus.Reviewed && (
+                            <Chip
+                                label="PM Committee Reviewed"
+                                size="medium"
+                                color="primary"
+                                sx={{
+                                    height: '30px',
+                                    fontSize: '0.75rem',
+                                    alignSelf: 'center'
+                                }}
+                            />
+                        )}
                         <Chip
                             label={'Approved'}
                             size="medium"
                             color={'success'}
                             sx={{
                                 height: '30px',
-                                fontSize: '0.75rem'
+                                fontSize: '0.75rem',
+                                alignSelf: 'center'
                             }}
                         />
                         <Button

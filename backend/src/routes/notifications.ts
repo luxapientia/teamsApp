@@ -64,7 +64,6 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
       Performance Management Team
     `;
 
-    console.log(tenantId, fromUserId, supervisorEmail, subject, body);
     // Send the email
     await graphService.sendMail(
       tenantId as string,
@@ -431,13 +430,13 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
           if (notification.type === 'agreement') {
             return {
               ...quarterlyTarget._doc,
-              agreementStatus: 'Send Back',
+              agreementStatus: quarterlyTarget.isAgreementCommitteeSendBack ? 'Committee Send Back' : 'Send Back',
               agreementStatusUpdatedAt: new Date()
             };
           } else {
             return {
               ...quarterlyTarget._doc,
-              assessmentStatus: 'Send Back',
+              assessmentStatus: quarterlyTarget.isAssessmentCommitteeSendBack ? 'Committee Send Back' : 'Send Back',
               assessmentStatusUpdatedAt: new Date()
             };
           }

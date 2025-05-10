@@ -488,7 +488,8 @@ const Teams: React.FC = () => {
                         color="primary"
                         sx={{ 
                           height: '20px',
-                          fontSize: '0.75rem'
+                          fontSize: '0.75rem',
+                          alignSelf: 'center'
                         }}
                       />
                       {canManageTeams && (

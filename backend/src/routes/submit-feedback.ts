@@ -50,7 +50,6 @@ router.get('/:id', async (_req: Request, res: Response) => {
 router.post('/', async (_req: Request, res: Response) => {
   try {
     const { responses, feedbackId } = _req.body;
-    console.log(responses, feedbackId);
 
     // Find the document containing the feedback
     const feedbackData = await PersonalPerformance.findOne(

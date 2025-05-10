@@ -10,7 +10,6 @@ const router = express.Router();
 router.get('/get-all-members/:tenantId', authenticateToken, async (req, res, next) => {
     try {
         const { tenantId } = req.params;
-        console.log('tenantId', tenantId);
 
         if (!tenantId) {
             throw new ApiError('Tenant ID is required', 400);

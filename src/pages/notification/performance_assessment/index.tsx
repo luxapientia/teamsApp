@@ -246,6 +246,18 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
+          {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.isAssessmentCommitteeSendBack && (
+            <Chip
+              label="PM Committee Send Back"
+              size="medium"
+              color="error"
+              sx={{
+                height: '30px',
+                fontSize: '0.75rem',
+                alignSelf: 'center'
+              }}
+            />
+          )}
           <Button
             variant="contained"
             sx={{

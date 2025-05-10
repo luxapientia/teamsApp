@@ -192,7 +192,6 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
 
 router.get('/personal-performance', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    console.log(req.user, 'req.user')
     const { userId, annualTargetId } = req.query;
     const personalPerformance = await PersonalPerformance.findOne({ userId, annualTargetId })
       .populate({
@@ -251,8 +250,6 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
       }) as PersonalPerformanceDocument;
       personalPerformances.push(newPersonalPerformance);
     }
-
-    console.log(personalPerformances, 'personalPerformances');
 
     return res.json({
       status: 'success',
