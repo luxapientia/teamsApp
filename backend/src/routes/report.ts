@@ -56,17 +56,16 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
       if (user?.role === UserRole.SUPER_USER || user?.role === UserRole.APP_OWNER) {
         teamPerformances.push({ ...performance._doc, fullName: performance.userId?.name, jobTitle: performance.userId?.jobTitle, team: performance.teamId?.name });
       } else {
-        if (performance.quarterlyTargets[0].supervisorId === req.user?._id) {
+        if (performance.quarterlyTargets[0].supervisorId === req.user?._id?.toString()) {
           teamPerformances.push({ ...performance._doc, fullName: performance.userId?.name, jobTitle: performance.userId?.jobTitle, team: performance.teamId?.name });
         } else {
-          if (isTeamOwner && performance.teamId?._id.toString() === teamId) {
+          if (isTeamOwner && performance.teamId?._id.toString() === teamId.toString()) {
             teamPerformances.push({ ...performance._doc, fullName: performance.userId?.name, jobTitle: performance.userId?.jobTitle, team: performance.teamId?.name });
           }
         }
       }
     }
     );
-
     return res.json(teamPerformances);
   } catch (error) {
     console.error('Team performances error:', error);

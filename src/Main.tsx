@@ -188,14 +188,16 @@ function Main() {
           selectedTab={selectedTab}
         />
       )}
-      {(isAppOwner || isSuperUser) && (
+      {
         <Reports
           title='Reports'
           icon={<DocumentText24Regular fontSize={iconSize} />}
-          tabs={['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Performance Distribution Report']}
+          tabs={isAppOwner || isSuperUser ?
+            ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Performance Distribution Report'] :
+            ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
           selectedTab={selectedTab}
         />
-      )}
+      }
       {(isAppOwner || isSuperUser) && (
         <TeamsPage
           title='Teams'
