@@ -470,7 +470,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
       <Typography variant="h6">
-        {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
+        {`${annualTarget.name}, ${user?.name} Performance Agreement ${quarter}`}
       </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl
