@@ -73,7 +73,6 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
         }
         return qt;
       });
-
       dispatch(updateAnnualTarget({
         ...annualTarget,
         content: {
