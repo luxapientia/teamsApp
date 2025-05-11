@@ -30,7 +30,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import AddIcon from '@mui/icons-material/Add';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, PdfType } from '../../../types';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, PdfType, AgreementReviewStatus } from '../../../types';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddInitiativeModal from './AddInitiativeModal';
@@ -41,12 +41,14 @@ import { RootState } from '../../../store';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { api } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
+import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 
 import { ExportButton } from '../../../components/Buttons';
 
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { exportPdf } from '../../../utils/exportPdf';
+import { Toast } from '../../../components/Toast';
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
@@ -70,6 +72,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [selectedRatingScales, setSelectedRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isApproved, setIsApproved] = useState(false);
+  const [isAgreementReviewed, setIsAgreementReviewed] = useState(false);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [initiativeToDelete, setInitiativeToDelete] = useState<PersonalQuarterlyTargetObjective | null>(null);
@@ -80,6 +83,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   // Add state for the dialog
   const [sourceScorecardId, setSourceScorecardId] = useState('');
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -91,6 +97,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
       setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Submitted);
       setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Approved);
+      setIsAgreementReviewed(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementReviewStatus === AgreementReviewStatus.Reviewed);
       setStatus(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus);
     }
   }, [personalPerformance]);
@@ -224,8 +231,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-
       if (target.quarter === quarter) {
         return {
           ...target,
@@ -250,35 +257,45 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       return target;
     });
 
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
     try {
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+
       await api.post('/notifications/agreement/submit', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarter: quarter,
         personalPerformanceId: personalPerformance?._id || ''
       });
+
+      setIsSubmitted(true);
+      setStatus(AgreementStatus.Submitted);
+      setToast({
+        message: 'Performance agreement submitted successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error submitting quarterly target:', error);
+      setToast({
+        message: 'Failed to submit performance agreement',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitted(true);
-    setStatus(AgreementStatus.Submitted);
   }
 
-  // Add recall handler
   const handleRecall = async () => {
+    setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
       if (target.quarter === quarter) {
         return {
           ...target,
-          agreementStatus: AgreementStatus.Draft,
+          agreementStatus: target.isAgreementCommitteeSendBack ? AgreementStatus.CommitteeSendBack : AgreementStatus.Draft,
           agreementStatusUpdatedAt: new Date(),
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
@@ -287,26 +304,37 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       return target;
     });
 
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
     try {
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+
       await api.post('/notifications/agreement/recall', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarter: quarter,
         personalPerformanceId: personalPerformance?._id || ''
       });
+
+      setIsSubmitted(false);
+      const currentTarget = newPersonalQuarterlyTargets?.find(target => target.quarter === quarter);
+      setStatus(currentTarget?.isAgreementCommitteeSendBack ? AgreementStatus.CommitteeSendBack : AgreementStatus.Draft);
+      setToast({
+        message: 'Performance agreement recalled successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error recalling quarterly target:', error);
+      setToast({
+        message: 'Failed to recall performance agreement',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitted(false);
-    setStatus(AgreementStatus.Draft);
   };
 
   // Add date validation function
@@ -383,16 +411,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         sourceScorecardId,
         targetPerformanceId: personalPerformance?._id,
       });
-      
+
       // Update the redux store with the response data
       dispatch(updatePersonalPerformance(response.data.data));
-      
+
       // Update local state with the new objectives
       const updatedQuarterlyTarget = response.data.data.quarterlyTargets.find(
         (target: PersonalQuarterlyTarget) => target.quarter === quarter
       );
       setPersonalQuarterlyObjectives(updatedQuarterlyTarget?.objectives || []);
-      
+
       setIsAddFromExistingOpen(false);
       setSourceScorecardId('');
     } catch (error) {
@@ -404,6 +432,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   return (
     <Box>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <Box sx={{
         mb: 3,
         display: 'flex',
@@ -524,50 +559,74 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             </>
           )}
         </Box>
-
-        {isApproved ? (
-          <Chip
-            label="Approved"
-            size="medium"
-            color="success"
-            sx={{
-              height: '30px',
-              fontSize: '0.75rem'
-            }}
-          />
-        ) : (
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            {
-              personalQuarterlyObjectives.length > 0 &&
-              <Chip
-                label={status}
-                size="medium"
-                color={status == 'Send Back' ? 'error' : 'warning'}
-                sx={{
-                  height: '30px',
-                  fontSize: '0.75rem'
-                }}
-              />
-            }
-            <Button
-              variant="contained"
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {isAgreementReviewed && (
+            <Chip
+              label="PM Committee Reviewed"
+              size="medium"
+              color="primary"
               sx={{
-                backgroundColor: isSubmitted ? '#EF4444' : '#059669',
-                '&:hover': {
-                  backgroundColor: isSubmitted ? '#DC2626' : '#047857'
-                },
-                '&.Mui-disabled': {
-                  backgroundColor: '#E5E7EB',
-                  color: '#9CA3AF'
-                }
+                height: '30px',
+                fontSize: '0.75rem',
+                alignSelf: 'center'
               }}
-              onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-              disabled={isSubmitted ? false : !canSubmit()}
-            >
-              {isSubmitted ? 'Recall' : 'Submit'}
-            </Button>
-          </Box>
-        )}
+            />
+          )}  
+          {isApproved ? (
+            <Chip
+              label="Approved"
+              size="medium"
+              color="success"
+              sx={{
+                height: '30px',
+                fontSize: '0.75rem',
+                alignSelf: 'center'
+              }}
+            />
+          ) : (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              {
+                personalQuarterlyObjectives.length > 0 &&
+                <Chip
+                  label={status}
+                  size="medium"
+                  color={status == 'Send Back' || status == 'Committee Send Back' ? 'error' : 'warning'}
+                  sx={{
+                    height: '30px',
+                    fontSize: '0.75rem',
+                    alignSelf: 'center',
+                    cursor: status == 'Committee Send Back' ? 'pointer' : 'default'
+                  }}
+                  onClick={() => {
+                    if (status === 'Committee Send Back') {
+                      const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+                      if (currentTarget?.agreementCommitteeSendBackMessage) {
+                        setViewSendBackModalOpen(true);
+                      }
+                    }
+                  }}
+                />
+              }
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: isSubmitted ? '#EF4444' : '#059669',
+                  '&:hover': {
+                    backgroundColor: isSubmitted ? '#DC2626' : '#047857'
+                  },
+                  '&.Mui-disabled': {
+                    backgroundColor: '#E5E7EB',
+                    color: '#9CA3AF'
+                  }
+                }}
+                onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
+                disabled={isSubmitting || (isSubmitted ? false : !canSubmit())}
+              >
+                {isSubmitting ? 'Processing...' : (isSubmitted ? 'Recall' : 'Submit')}
+              </Button>
+            </Box>
+          )}
+        </Box>
       </Box>
 
       {/* Add total weight display */}
@@ -883,6 +942,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ViewSendBackMessageModal
+        open={viewSendBackModalOpen}
+        onClose={() => setViewSendBackModalOpen(false)}
+        emailSubject={`${annualTarget.name}, Performance Agreement ${quarter}(PM Committee Review)`}
+        emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.agreementCommitteeSendBackMessage || 'No message available'}
+      />
     </Box >
   );
 };

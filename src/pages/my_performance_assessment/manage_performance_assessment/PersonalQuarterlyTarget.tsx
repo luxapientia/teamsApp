@@ -18,12 +18,13 @@ import {
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus } from '../../../types/personalPerformance';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus, AssessmentReviewStatus } from '../../../types/personalPerformance';
 import { api } from '../../../services/api';
 import { useToast } from '../../../contexts/ToastContext';
 import EvidenceModal from './EvidenceModal';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useAuth } from '../../../contexts/AuthContext';
+import { Toast } from '../../../components/Toast';
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
@@ -51,7 +52,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const [isApproved, setIsApproved] = useState(false);
     const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
     const { showToast } = useToast();
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -65,7 +67,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Approved);
         }
     }, [personalPerformance]);
-
 
     const fetchCompanyUsers = async () => {
         try {
@@ -97,7 +98,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         }
     }
 
-    // Add total weight calculation function
     const calculateTotalWeight = () => {
         return personalQuarterlyObjectives.reduce((total, objective) => {
             const totalWeight = objective.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0);
@@ -123,7 +123,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         return Math.round(totalWeightedScore / totalWeight);
     };
 
-    // Add function to get rating score info
     const getRatingScaleInfo = (score: number | null) => {
         if (!score || !annualTarget) return null;
 
@@ -132,34 +131,49 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         );
     };
 
-
     const handleSendBack = (emailSubject: string, emailBody: string) => {
         if (personalPerformance) {
-        (async () => {
-            try {
-                const response = await api.post(`/personal-performance/send-back`, {
-                    emailSubject,
-                    emailBody,
-                    supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
-                    userId: personalPerformance.userId,
-                    manageType: 'Assessment',
-                    performanceId: personalPerformance._id,
-                    quarter: quarter
-                });
-                if (response.status === 200) {
-                    showToast('email sent successfully', 'success');
-                }
+            setIsSubmitting(true);
+            (async () => {
+                try {
+                    const response = await api.post(`/personal-performance/send-back`, {
+                        emailSubject,
+                        emailBody,
+                        supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
+                        userId: personalPerformance.userId,
+                        manageType: 'Assessment',
+                        performanceId: personalPerformance._id,
+                        quarter: quarter
+                    });
+                    if (response.status === 200) {
+                        setToast({
+                            message: 'Performance assessment sent back successfully',
+                            type: 'success'
+                        });
+                        onBack?.();
+                    }
                 } catch (error) {
-                console.error('Error send back notification:', error);
-                showToast('sending email failed', 'error');
-            }
-        })();
-        onBack?.();
+                    console.error('Error send back notification:', error);
+                    setToast({
+                        message: 'Failed to send back performance assessment',
+                        type: 'error'
+                    });
+                } finally {
+                    setIsSubmitting(false);
+                }
+            })();
         }
     };
 
     return (
         <Box>
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
             <Box sx={{
                 mb: 3,
                 display: 'flex',
@@ -222,13 +236,26 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             {isApproved && (
                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
                     <Box sx={{ display: 'flex', gap: 2 }}>
+                        {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentReviewStatus === AssessmentReviewStatus.Reviewed && (
+                            <Chip
+                                label="PM Committee Reviewed"
+                                size="medium"
+                                color="primary"
+                                sx={{
+                                    height: '30px',
+                                    fontSize: '0.75rem',
+                                    alignSelf: 'center'
+                                }}
+                            />
+                        )}
                         <Chip
                             label={'Approved'}
                             size="medium"
                             color={'success'}
                             sx={{
-                                height: '40px',
-                                fontSize: '1rem'
+                                height: '30px',
+                                fontSize: '0.75rem',
+                                alignSelf: 'center'
                             }}
                         />
                         <Button
@@ -238,18 +265,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 '&:hover': {
                                     backgroundColor: '#D97706'
                                 },
-                                cursor: 'pointer'
+                                '&.Mui-disabled': {
+                                    backgroundColor: '#E5E7EB',
+                                    color: '#9CA3AF'
+                                }
                             }}
                             onClick={() => setSendBackModalOpen(true)}
+                            disabled={isSubmitting}
                         >
-                            Send Back
+                            {isSubmitting ? 'Processing...' : 'Send Back'}
                         </Button>
-
                     </Box>
                 </Box>
             )}
 
-            {/* Add total weight display */}
             <Box
                 sx={{
                     display: 'flex',
@@ -302,7 +331,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                         </TableHead>
                         <TableBody>
                             {(() => {
-                                // Group by perspective and strategic objective
                                 const groups = personalQuarterlyObjectives.reduce((acc, obj) => {
                                     const perspectiveKey = `${obj.perspectiveId}`;
                                     const objectiveKey = `${obj.perspectiveId}-${obj.name}`;
@@ -333,22 +361,18 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                     }>;
                                 }>);
 
-                                // Calculate row spans considering KPI counts
                                 return Object.values(groups).map(perspectiveGroup => {
                                     let firstInPerspective = true;
-                                    // Calculate total rows for perspective including all KPIs
                                     const perspectiveRowSpan = Object.values(perspectiveGroup.objectives)
                                         .reduce((sum, obj) => sum + obj.initiatives.reduce((kpiSum, initiative) =>
                                             kpiSum + initiative.KPIs.length, 0), 0);
 
                                     return Object.values(perspectiveGroup.objectives).map(objectiveGroup => {
                                         let firstInObjective = true;
-                                        // Calculate total rows for objective including all KPIs
                                         const objectiveRowSpan = objectiveGroup.initiatives.reduce((sum, initiative) =>
                                             sum + initiative.KPIs.length, 0);
 
                                         return objectiveGroup.initiatives.map((initiative) =>
-                                            // Map each KPI to a row
                                             initiative.KPIs.map((kpi, kpiIndex) => {
                                                 const row = (
                                                     <TableRow key={`${initiative.perspectiveId}-${initiative.name}-${initiative.initiativeName}-${kpiIndex}`}>
@@ -473,7 +497,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     attachments={evidenceModalData.attachments}
                 />
             )}
-        </Box >
+        </Box>
     );
 };
 

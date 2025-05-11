@@ -103,12 +103,10 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
   };
 
   const calculateFeedbackOverallScore = (quarter: QuarterType, performance: TeamPerformance) => {
-    const target = performance.quarterlyTargets.find(t => t.quarter === quarter);
+    const target = performance?.quarterlyTargets.find(t => t.quarter === quarter);
     const selectedFeedbackId = target?.selectedFeedbackId;
     const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
     const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
-
-    console.log('feedbackTemplate', feedbackTemplates);
 
     if (!feedbackTemplate || feedbackResponses.length === 0) return null;
 
@@ -139,7 +137,6 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
       totalWeight += dimension.weight / 100;
     });
 
-
     return totalWeightedScore;
   };
 
@@ -153,10 +150,9 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
       const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
       const contribution = feedbackTemplate?.contributionScorePercentage;
       const feedbackOverallScore = calculateFeedbackOverallScore(selectedQuarter as QuarterType, ownerPerformance as TeamPerformance);
-      const finalScore = (overallScore * (1 - contribution / 100)) + (feedbackOverallScore * (contribution / 100));
-      return Number(finalScore.toFixed(0));
+      const finalScore = (overallScore && feedbackOverallScore) ? (overallScore * (1 - contribution / 100)) + (feedbackOverallScore * (contribution / 100)) : null;
+      return Number(finalScore?.toFixed(0));
     }
-
     return overallScore;
   });
 
@@ -191,14 +187,12 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     };
   };
 
-  const teamsTable: TeamTableRow[] = teams.map((team, index) => ({
+  const teamsTable: TeamTableRow[] = teams.filter(team => team !== undefined).map((team, index) => ({
     teamName: team,
     agreement: agreementResult[index],
     assessment: assessmentResult[index],
     performance: performanceResult[index]
   }));
-
-  console.log('teamsTable', teams);
 
   return (
     <TableContainer component={Paper} sx={{ maxHeight: 400, overflowY: 'auto' }}>
@@ -236,9 +230,9 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
                   fontWeight: 500
                 }}
               >
-                {teamsRow.performance !== null ?
+                {teamsRow.performance !== null && !isNaN(teamsRow.performance) ?
                   `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)`
-                  : 'N/A'
+                  : ''
                 }
               </TableCell>
             </TableRow>

@@ -19,12 +19,11 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { api } from '../services/api';
-import debounce from 'lodash/debounce';
 
 export interface Person {
   MicrosoftId: string;
   displayName: string;
-  email?: string;
+  email: string;
   jobTitle?: string;
 }
 
@@ -48,6 +47,7 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
   currentTeamMembers = []
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [selectedPeople, setSelectedPeople] = useState<Person[]>([]);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
@@ -55,9 +55,10 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [nextLink, setNextLink] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
+  const [mode, setMode] = useState<'default' | 'search'>('default');
   const observer = useRef<IntersectionObserver | null>(null);
   const lastPersonElementRef = useCallback((node: HTMLDivElement) => {
-    if (loading) return;
+    if (loading || !hasMore) return;
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
@@ -67,63 +68,33 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
-  const loadMorePeople = async () => {
-    if (!nextLink || loading || !hasMore) return;
-
-    try {
-      setLoading(true);
-      const response = await api.get('/users/organization/users', {
-        params: {
-          nextLink: encodeURIComponent(nextLink)
-        }
-      });
-      
-      const newUsers = response.data.data.map((user: any) => ({
-        MicrosoftId: user.id,
-        displayName: user.displayName,
-        email: user.mail,
-        jobTitle: user.jobTitle
-      }));
-
-      // Filter out all existing team members
-      const filteredNewUsers = newUsers.filter(user => 
-        !currentTeamMembers.some(member => member.MicrosoftId === user.MicrosoftId)
-      );
-
-      setPeople(prev => [...prev, ...filteredNewUsers]);
-      setFilteredPeople(prev => [...prev, ...filteredNewUsers]);
-      setNextLink(response.data.nextLink || null);
-      setHasMore(!!response.data.nextLink);
-    } catch (error) {
-      console.error('Error loading more people:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPeople = async () => {
+  const fetchPeople = async (query?: string, reset = false) => {
     try {
       setError(null);
       setLoading(true);
       const response = await api.get('/users/organization/users', {
         params: {
-          pageSize: 20
+          pageSize: 20,
+          searchQuery: query
         }
       });
       const tempUsers = response.data.data.map((user: any) => ({
         MicrosoftId: user.id,
         displayName: user.displayName,
-        email: user.mail,
+        email: user.mail || user.principalName,
         jobTitle: user.jobTitle
       }));
-      
       // Filter out all existing team members
       const filteredUsers = tempUsers.filter(user => 
-        !currentTeamMembers.some(member => member.MicrosoftId === user.MicrosoftId)
+        !currentTeamMembers.some(member => member.email === user.email)
       );
-      
-      setPeople(filteredUsers);
-      setFilteredPeople(filteredUsers);
+      if (reset) {
+        setPeople(filteredUsers);
+        setFilteredPeople(filteredUsers);
+      } else {
+        setPeople(prev => [...prev, ...filteredUsers]);
+        setFilteredPeople(prev => [...prev, ...filteredUsers]);
+      }
       setNextLink(response.data.nextLink || null);
       setHasMore(!!response.data.nextLink);
     } catch (error: any) {
@@ -147,43 +118,70 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
     }
   };
 
+  const loadMorePeople = async () => {
+    if (!nextLink || loading || !hasMore) return;
+    try {
+      setLoading(true);
+      const response = await api.get('/users/organization/users', {
+        params: {
+          nextLink: nextLink,
+          searchQuery: mode === 'search' ? searchQuery : undefined
+        }
+      });
+      const newUsers = response.data.data.map((user: any) => ({
+        MicrosoftId: user.id,
+        displayName: user.displayName,
+        email: user.mail || user.principalName,
+        jobTitle: user.jobTitle
+      }));
+      // Filter out all existing team members
+      const filteredNewUsers = newUsers.filter(user => 
+        !currentTeamMembers.some(member => member.email === user.email)
+      );
+      setPeople(prev => [...prev, ...filteredNewUsers]);
+      setFilteredPeople(prev => [...prev, ...filteredNewUsers]);
+      setNextLink(response.data.nextLink || null);
+      setHasMore(!!response.data.nextLink);
+    } catch (error) {
+      console.error('Error loading more people:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (open) {
-      fetchPeople();
+      setMode('default');
+      setSearchQuery('');
+      setSearchInput('');
+      fetchPeople(undefined, true);
     }
   }, [open]);
 
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (query) {
-        const filtered = people.filter(person => 
-          person.displayName.toLowerCase().includes(query.toLowerCase()) ||
-          (person.email && person.email.toLowerCase().includes(query.toLowerCase()))
-        );
-        setFilteredPeople(filtered);
+  const handleSearchInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(event.target.value);
+  };
+
+  const handleSearchInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      const trimmed = searchInput.trim();
+      if (trimmed) {
+        setMode('search');
+        setSearchQuery(trimmed);
+        fetchPeople(trimmed, true);
       } else {
-        setFilteredPeople(people);
+        setMode('default');
+        setSearchQuery('');
+        fetchPeople(undefined, true);
       }
-    }, 300),
-    [people]
-  );
-
-  useEffect(() => {
-    debouncedSearch(searchQuery);
-    return () => {
-      debouncedSearch.cancel();
-    };
-  }, [searchQuery, debouncedSearch]);
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
+    }
   };
 
   const handleTogglePerson = (person: Person) => {
     if (multiSelect) {
-      const isSelected = selectedPeople.some(p => p.MicrosoftId === person.MicrosoftId);
+      const isSelected = selectedPeople.some(p => p.email === person.email);
       if (isSelected) {
-        setSelectedPeople(selectedPeople.filter(p => p.MicrosoftId !== person.MicrosoftId));
+        setSelectedPeople(selectedPeople.filter(p => p.email !== person.email));
       } else {
         setSelectedPeople([...selectedPeople, person]);
       }
@@ -242,8 +240,9 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         <TextField
           fullWidth
           placeholder="Search people"
-          value={searchQuery}
-          onChange={handleSearchChange}
+          value={searchInput}
+          onChange={handleSearchInputChange}
+          onKeyDown={handleSearchInputKeyDown}
           variant="outlined"
           size="small"
           InputProps={{
@@ -268,12 +267,12 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         ) : (
           <List sx={{ padding: 0 }}>
             {filteredPeople.map((person, index) => {
-              const isSelected = selectedPeople.some(p => p.MicrosoftId === person.MicrosoftId);
+              const isSelected = selectedPeople.some(p => p.email === person.email);
               const isLastElement = index === filteredPeople.length - 1;
 
               return (
                 <ListItem 
-                  key={person.MicrosoftId} 
+                  key={person.email} 
                   component="div"
                   ref={isLastElement ? lastPersonElementRef : null}
                   onClick={() => handleTogglePerson(person)}

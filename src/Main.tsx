@@ -3,7 +3,7 @@ import Layout from './layouts/Layout';
 import './styles/globals.css';
 import AnnualCorporateScorecard from './pages/scorecards';
 import { ManagePage } from './pages/manage';
-import { GridRegular, Alert24Regular, LearningApp24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular, Home24Regular } from '@fluentui/react-icons';
+import { GridRegular, Alert24Regular, LearningApp24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular, Home24Regular, Settings24Regular } from '@fluentui/react-icons';
 import { useAuth } from './contexts/AuthContext';
 import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
@@ -21,6 +21,7 @@ import Dashboard from './pages/dashboard';
 import EmployeeDevPlan from './pages/employee_dev_plan';
 import TeamsPage from './pages/teams';
 import Feedback from './pages/feedback';
+import PerformanceCalibration from './pages/performance_calibration';
 const iconSize = 24;
 
 function Main() {
@@ -31,6 +32,7 @@ function Main() {
     setSelectedTab(tab);
   }
   const [isFeedbackModuleEnabled, setIsFeedbackModuleEnabled] = useState(false);
+  const [isPerformanceCalibrationModuleEnabled, setIsPerformanceCalibrationModuleEnabled] = useState(false);
 
   // Add socket subscription
   const { subscribe, unsubscribe } = useSocket(SocketEvent.NOTIFICATION, (data) => {
@@ -55,6 +57,13 @@ function Main() {
     }
     checkFeedbackModule();
 
+    const checkPerformanceCalibrationModule = async () => {
+      const isModuleEnabled = await api.get('/module/is-pm-calibration-module-enabled');
+      if (isModuleEnabled.data.data.isEnabled) {
+        setIsPerformanceCalibrationModuleEnabled(true);
+      }
+    }
+    checkPerformanceCalibrationModule();
     // Cleanup subscription
     return () => {
       unsubscribe(SocketEvent.NOTIFICATION);
@@ -64,12 +73,13 @@ function Main() {
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
   const [isDevMember, setIsDevMember] = useState(false);
+  const [isPerformanceCalibrationMember, setIsPerformanceCalibrationMember] = useState(false);
   const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
 
-  // Separate effect for isDevMember
   useEffect(() => {
     if (user) {
       setIsDevMember(!!user.isDevMember);
+      setIsPerformanceCalibrationMember(!!user.isPerformanceCalibrationMember);
     }
   }, [user]);
 
@@ -139,6 +149,20 @@ function Main() {
             ['My Training Dashboard'])}
         selectedTab={selectedTab}
       />}
+      {(isAppOwner || isSuperUser || isPerformanceCalibrationMember) && isPerformanceCalibrationModuleEnabled && (
+        <PerformanceCalibration
+          title="Performance Calibration"
+          icon={<Settings24Regular fontSize={iconSize} />}
+          tabs={
+            (isSuperUser || isAppOwner) && isPerformanceCalibrationMember ?
+              ['Performance Calibration Team', 'Performance Agreements', 'Performance Assessments'] :
+              (isPerformanceCalibrationMember) ?
+                ['Performance Agreements', 'Performance Assessments'] :
+                ['Performance Calibration Team']
+          }
+          selectedTab={selectedTab}
+        />
+      )}
 
       {(isAppOwner || isSuperUser) && isFeedbackModuleEnabled && (
         <Feedback

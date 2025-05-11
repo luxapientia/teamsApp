@@ -60,10 +60,8 @@ const SuperUser: React.FC = () => {
     };
 
     const handleAddSuperUsers = async (selectedPeople: Person[]) => {
-        console.log(selectedPeople, 'selectedPeople');
         try {
             for (const person of selectedPeople) {
-                console.log(person, 'person');
                 await api.post('/super-users/tenant', {
                     email: person.email,
                     firstName: person.displayName.split(' ')[0],

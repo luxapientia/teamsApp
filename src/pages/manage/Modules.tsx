@@ -63,13 +63,23 @@ const Modules: React.FC = () => {
       isExpanded: false,
       companies: [],
     },
+
+    {
+      id: '2',
+      name: 'Performance Calibration',
+      isExpanded: false,
+      companies: [],
+    },
+
   ]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [feedbackCompanyIds, setFeedbackCompanyIds] = useState<string[]>([]);
+  const [pmCommitteeCompanyIds, setPmCommitteeCompanyIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchCompanies();
     fetchFeedbackCompanies();
+    fetchPmCommitteeCompanies();
   }, []);
 
   const fetchCompanies = async () => {
@@ -92,6 +102,17 @@ const Modules: React.FC = () => {
     }
   };
 
+  const fetchPmCommitteeCompanies = async () => {
+    try {
+      const response = await api.get('/module/pm-calibration-companies');
+      if (response.status === 200) {
+        setPmCommitteeCompanyIds(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching Performance Calibration companies:', error);
+    }
+  };
+
   const toggleModuleExpansion = (moduleId: string) => {
     setModules(modules.map(module =>
       module.id === moduleId
@@ -100,18 +121,43 @@ const Modules: React.FC = () => {
     ));
   };
 
-  const handleCompanySelection = async (companyId: string) => {
-    const isChecked = feedbackCompanyIds.some(fc => fc === companyId);
-    const newFeedbackCompanyIds = isChecked ? feedbackCompanyIds.filter(fc => fc !== companyId) : [...feedbackCompanyIds, companyId];
-    try {
-      const response = await api.post('/module/update-feedback-companies', { feedbackCompanies: newFeedbackCompanyIds });
-      if (response.status === 200) {
-        setFeedbackCompanyIds(newFeedbackCompanyIds);
+  const handleCompanySelection = async (companyId: string, moduleId: string) => {
+    if (moduleId === '1') {
+      const isChecked = feedbackCompanyIds.some(fc => fc === companyId);
+      const newFeedbackCompanyIds = isChecked ? feedbackCompanyIds.filter(fc => fc !== companyId) : [...feedbackCompanyIds, companyId];
+      try {
+        const response = await api.post('/module/update-feedback-companies', { feedbackCompanies: newFeedbackCompanyIds });
+        if (response.status === 200) {
+          setFeedbackCompanyIds(newFeedbackCompanyIds);
+        }
+      } catch (error) {
+        console.error('Error updating feedback companies:', error);
       }
-    } catch (error) {
-      console.error('Error updating feedback companies:', error);
+    } else if (moduleId === '2') {
+      const isChecked = pmCommitteeCompanyIds.some(fc => fc === companyId);
+      const newPmCommitteeCompanyIds = isChecked ? pmCommitteeCompanyIds.filter(fc => fc !== companyId) : [...pmCommitteeCompanyIds, companyId];
+      try {
+        const response = await api.post('/module/update-pm-calibration-companies', { pmCommitteeCompanies: newPmCommitteeCompanyIds });
+        if (response.status === 200) {
+          setPmCommitteeCompanyIds(newPmCommitteeCompanyIds);
+        }
+      } catch (error) {
+        console.error('Error updating Performance Calibration companies:', error);
+      }
     }
   };
+
+  const CheckCompanies = (moduleId, companyId) => {
+    switch (moduleId) {
+      case '1': {
+        return feedbackCompanyIds.some(fc => fc === companyId)
+      }
+      case '2': {
+        return pmCommitteeCompanyIds.some(pc => pc === companyId)
+      }
+    }
+  }
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ mb: 3 }}>
@@ -176,13 +222,13 @@ const Modules: React.FC = () => {
                     </ViewButton>
                   </StyledTableCell>
                 </TableRow>
-                {module.isExpanded && module.id === '1' && companies.map((company) => (
+                {module.isExpanded && companies.map((company) => (
                   <TableRow key={company._id}>
                     <StyledTableCell sx={{ pl: 8 }}>{company.name}</StyledTableCell>
                     <StyledTableCell align="right">
                       <Checkbox
-                        checked={feedbackCompanyIds.some(fc => fc === company._id)}
-                        onChange={() => handleCompanySelection(company._id)}
+                        checked={CheckCompanies(module.id, company._id)}
+                        onChange={() => handleCompanySelection(company._id, module.id)}
                       />
                     </StyledTableCell>
                   </TableRow>

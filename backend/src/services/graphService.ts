@@ -8,8 +8,18 @@ interface GraphResponse {
 }
 
 export class GraphService {
+  private tokenCache: { [tenantId: string]: { token: string, expiresAt: number } } = {};
+
   private async getAppAccessToken(tenantId: string): Promise<string> {
-    try {
+    const cache = this.tokenCache[tenantId];
+    const now = Math.floor(Date.now() / 1000);
+
+    // If token exists and is not expired (with a 2 min buffer), use it
+    if (cache && cache.token && cache.expiresAt - 120 > now) {
+      return cache.token;
+    }
+
+    // Fetch new token
       const config = new msal.ConfidentialClientApplication({
         auth: {
           clientId: process.env.AZURE_CLIENT_ID!,
@@ -26,22 +36,18 @@ export class GraphService {
         throw new Error('Failed to acquire access token');
       }
 
+    // Cache the token and its expiry
+    this.tokenCache[tenantId] = {
+      token: result.accessToken,
+      expiresAt: result.expiresOn?.getTime
+        ? Math.floor(result.expiresOn.getTime() / 1000)
+        : now + 3500 // fallback: 1 hour minus buffer
+    };
+
       return result.accessToken;
-    } catch (error: any) {
-      console.error('Error getting app access token:', error);
-      
-      // Check for consent errors
-      if (error.errorCode === 'invalid_grant' || 
-          (error.response?.data?.error === 'invalid_grant' && 
-           error.response?.data?.error_description?.includes('consent'))) {
-        throw new ApiError('Application requires admin consent. Please contact your administrator.', 403);
-      }
-      
-      throw error;
-    }
   }
 
-  async getOrganizationUsers(tenantId: string, pageSize: number = 20, nextLink?: string): Promise<GraphResponse> {
+  async getOrganizationUsers(tenantId: string, pageSize: number = 20, nextLink?: string, searchQuery?: string): Promise<GraphResponse> {
     try {
       if (!tenantId) {
         throw new ApiError('Tenant ID is required', 400);
@@ -49,22 +55,65 @@ export class GraphService {
 
       console.log('Getting access token for tenant:', tenantId);
       const accessToken = await this.getAppAccessToken(tenantId);
+      console.log(accessToken, 'accessToken');
       console.log('Successfully got access token');
       
       console.log('Fetching users from Graph API');
       try {
-        const url = nextLink || `https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,jobTitle,department&$top=${pageSize}&$orderby=displayName`;
-        const response = await axios.get(url, {
+        let url = 'https://graph.microsoft.com/v1.0/users';
+        let params: any = {
+          '$select': 'id,displayName,mail,jobTitle,department,userPrincipalName',
+          '$top': pageSize
+        };
+        if (nextLink) {
+          url = decodeURIComponent(nextLink);
+          params = undefined;
+        } else if (searchQuery) {
+          const safeQuery = searchQuery.replace(/'/g, "''");
+          params['$filter'] = `startsWith(displayName,'${safeQuery}') or startsWith(mail,'${safeQuery}') or startsWith(userPrincipalName,'${safeQuery}')`;
+        } else {
+          params['$orderby'] = 'displayName';
+        }
+
+        // Build URL with parameters
+        if (params) {
+          const searchParams = new URLSearchParams();
+          Object.entries(params).forEach(([key, value]) => {
+            searchParams.append(key, value as string);
+          });
+          url = `${url}?${searchParams.toString()}`;
+        }
+
+        console.log('Fetching users from Graph API:', url);
+        const response = await fetch(url, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             ConsistencyLevel: 'eventual'
           }
         });
-        console.log('Successfully fetched users from Graph API');
 
+        if (!response.ok) {
+          const errorData = await response.json() as { error?: { message?: string } };
+          if (response.status === 403) {
+            if (errorData.error?.message?.includes('terms of use')) {
+              throw new ApiError(
+                'Terms of Use acceptance required. Please contact your administrator to set up Terms of Use in Azure AD.',
+                403
+              );
+            }
+            throw new ApiError(
+              'Insufficient permissions to access user data. Please ensure the application has User.Read.All and Directory.Read.All permissions.',
+              403
+            );
+          }
+          throw new Error(`Graph API error: ${errorData.error?.message || response.statusText}`);
+        }
+
+        const data = await response.json() as GraphResponse;
+        console.log('Successfully fetched users from Graph API');
         return {
-          value: response.data.value,
-          '@odata.nextLink': response.data['@odata.nextLink']
+          value: data.value,
+          '@odata.nextLink': data['@odata.nextLink']
         };
       } catch (error: any) {
         if (error.response?.status === 403) {

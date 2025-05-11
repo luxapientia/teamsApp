@@ -12,79 +12,72 @@ import {
   FormControl,
   Select,
   MenuItem,
-  SelectChangeEvent,
   IconButton,
-  Stack,
   Chip,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
-import AddIcon from '@mui/icons-material/Add';
+import { useToast } from '../../../contexts/ToastContext';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AgreementReviewStatus } from '../../../types/personalPerformance';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddInitiativeModal from './AddInitiativeModal';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AgreementStatus, AssessmentStatus } from '../../../types/personalPerformance';
 import RatingScalesModal from '../../../components/RatingScalesModal';
-import { useAppSelector } from '../../../hooks/useAppSelector';
-import { useAppDispatch } from '../../../hooks/useAppDispatch';
-import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { api } from '../../../services/api';
-import { Notification } from '@/types';
-import { fetchNotifications } from '../../../store/slices/notificationSlice';
 import SendBackModal from '../../../components/Modal/SendBackModal';
-import { useToast } from '../../../contexts/ToastContext';
-import { useAuth } from '../../../contexts/AuthContext';
-import { Toast } from '../../../components/Toast';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
+import { useAuth } from '../../../contexts/AuthContext';
+import { AgreementReviewStatus } from '../../../types/personalPerformance';
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
   onBack?: () => void;
-  notification?: Notification | null;
+  userId: string;
+  initialPmCommitteeStatus?: 'Not Reviewed' | 'Reviewed' | 'Send Back';
 }
+
+type Action = 'accept' | 'sendBack' | 'unaccept';
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
   onBack,
-  notification = null,
+  userId,
+  initialPmCommitteeStatus
 }) => {
   const { user } = useAuth();
-  const dispatch = useAppDispatch();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
-  const [selectedRatingScales, setSelectedRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string }[]>([]);
-  const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
+  const [personalPerformance, setPersonalPerformance] = React.useState<PersonalPerformance | null>(null);
+  const [selectedRatingScales, setSelectedRatingScales] = React.useState<AnnualTargetRatingScale[] | null>(null);
+  const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
+  const { showToast } = useToast();
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const [isAgreementCommitteeSendBack, setIsAgreementCommitteeSendBack] = useState(false);
-  const { showToast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
-  const [isSendingBack, setIsSendingBack] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [pmCommitteeStatus, setPmCommitteeStatus] = useState<'Not Reviewed' | 'Reviewed' | 'Send Back'>(initialPmCommitteeStatus || 'Not Reviewed');
+  const [acceptLoading, setAcceptLoading] = useState(false);
+  const [sendBackLoading, setSendBackLoading] = useState(false);
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
 
+  const currentQuarterTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+  const isAssessmentApproved = currentQuarterTarget?.assessmentStatus === AssessmentStatus.Approved;
+
   useEffect(() => {
-    fetchCompanyUsers();
     fetchPersonalPerformance();
+    fetchCompanyUsers();
   }, []);
 
   useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
       setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
-      setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Submitted);
       setIsAgreementCommitteeSendBack(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.isAgreementCommitteeSendBack || false);
     }
   }, [personalPerformance]);
 
+
   const fetchCompanyUsers = async () => {
     try {
-      const response = await api.get('/personal-performance/company-users');
+      const response = await api.get('/report/company-users');
       if (response.status === 200) {
         setCompanyUsers(response.data.data);
       } else {
@@ -97,76 +90,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const fetchPersonalPerformance = async () => {
     try {
-      const response = await api.get(`/notifications/personal-performance/${notification?._id}`);
+      const response = await api.get(`/personal-performance/personal-performance/`, {
+        params: {
+          userId: userId,
+          annualTargetId: annualTarget._id,
+        }
+      });
+
       if (response.status === 200) {
         setPersonalPerformance(response.data.data);
-      } else {
-        setPersonalPerformance(null);
       }
     } catch (error) {
-      console.error('Error fetching personal performance:', error);
+      console.error('Personal performance error:', error);
     }
   }
-
-  const handleViewRatingScales = (kpi: QuarterlyTargetKPI) => {
-    setSelectedRatingScales(kpi.ratingScales);
-  };
-
-  const handleApprove = async () => {
-    if (notification) {
-      setIsApproving(true);
-      try {
-        const response = await api.post(`/notifications/approve/${notification._id}`);
-        if (response.status === 200) {
-          dispatch(fetchNotifications());
-          setToast({
-            message: 'Performance agreement approved successfully',
-            type: 'success'
-          });
-          onBack?.();
-        }
-      } catch (error) {
-        console.error('Error approving notification:', error);
-        setToast({
-          message: 'Failed to approve performance agreement',
-          type: 'error'
-        });
-      } finally {
-        setIsApproving(false);
-      }
-    }
-  };
-
-  const handleSendBack = (emailSubject: string, emailBody: string) => {
-    if (notification) {
-      setIsSendingBack(true);
-      (async () => {
-        try {
-          const response = await api.post(`/notifications/send-back/${notification._id}`, {
-            emailSubject,
-            emailBody,
-            senderId: notification.sender._id
-          });
-          dispatch(fetchNotifications());
-          if (response.status === 200) {
-            setToast({
-              message: 'Performance agreement sent back successfully',
-              type: 'success'
-            });
-            onBack?.();
-          }
-        } catch (error) {
-          console.error('Error send back notification:', error);
-          setToast({
-            message: 'Failed to send back performance agreement',
-            type: 'error'
-          });
-        } finally {
-          setIsSendingBack(false);
-        }
-      })();
-    }
-  };
 
   // Add total weight calculation function
   const calculateTotalWeight = () => {
@@ -176,15 +113,64 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }, 0);
   };
 
+  const isAssessmentsEmpty = () => {
+    return personalQuarterlyObjectives.every(objective =>
+      objective.KPIs.every(kpi =>
+        kpi.actualAchieved === ""
+      )
+    );
+  }
+
+  const canEditAgreement = () => {
+    return personalPerformance && (personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft);
+  }
+
+  const handleCommitteeAction = async (
+    action: Action,
+    { emailSubject, emailBody }: { emailSubject?: string; emailBody?: string } = {}
+  ) => {
+    if (personalPerformance) {
+      try {
+        if (action === 'accept') setAcceptLoading(true);
+        if (action === 'sendBack') setSendBackLoading(true);
+        await api.post('/users/performance-calibration/pm-committee-action-agreement', {
+          userId: userId,
+          performanceId: personalPerformance._id,
+          quarter,
+          action,
+          emailSubject,
+          emailBody
+        });
+        if (action === 'accept') {
+          setPmCommitteeStatus(AgreementReviewStatus.Reviewed);
+          showToast('Agreement accepted and email sent successfully', 'success');
+        }
+        if (action === 'sendBack') {
+          setPmCommitteeStatus(AgreementReviewStatus.NotReviewed);
+          showToast('Agreement sent back and email sent successfully', 'success');
+        }
+        if (action === 'unaccept') setPmCommitteeStatus(AgreementReviewStatus.NotReviewed);
+      } catch (error) {
+        if (action === 'accept') {
+          showToast('Failed to send email or accept agreement', 'error');
+        }
+        console.error('Error handling committee action:', error);
+      } finally {
+        if (action === 'accept') setAcceptLoading(false);
+        if (action === 'sendBack') setSendBackLoading(false);
+      }
+    }
+  };
+
+  const handleSendBack = (emailSubject: string, emailBody: string) => {
+    if (personalPerformance) {
+      handleCommitteeAction('sendBack', { emailSubject, emailBody });
+      onBack?.();
+    }
+  };
+
   return (
     <Box>
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
       <Box sx={{
         mb: 3,
         display: 'flex',
@@ -192,9 +178,44 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${user?.displayName} ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
+          {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
         </Typography>
+      </Box>
 
+      <Box sx={{
+        mb: 3,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <FormControl
+          variant="outlined"
+          size="small"
+          sx={{
+            mt: 1,
+            minWidth: 200,
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': {
+                borderColor: '#E5E7EB',
+              },
+              '&:hover fieldset': {
+                borderColor: '#D1D5DB',
+              },
+            },
+          }}
+        >
+          <Select
+            value={selectedSupervisor}
+            displayEmpty
+            disabled={true}
+          >
+            {companyUsers.map((user) => (
+              <MenuItem key={user.id} value={user.id}>
+                {user.fullName}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <Button
           onClick={onBack}
           variant="outlined"
@@ -209,64 +230,99 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           Back
         </Button>
       </Box>
-
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          {isAgreementCommitteeSendBack && (
-            <Chip
-              label="PM Committee Send Back Notes"
-              size="medium"
-              color="error"
-              sx={{
-                height: '30px',
-                fontSize: '0.75rem',
-                alignSelf: 'center',
-                cursor: 'pointer'
-              }}
-              onClick={() => {
-                const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
-                if (currentTarget?.agreementCommitteeSendBackMessage) {
-                  setViewSendBackModalOpen(true);
-                }
-              }}
-            />
-          )}
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: '#059669',
-              '&:hover': {
-                backgroundColor: '#047857'
-              },
-              '&.Mui-disabled': {
-                backgroundColor: '#E5E7EB',
-                color: '#9CA3AF'
-              }
-            }}
-            onClick={handleApprove}
-            disabled={isApproving || isSendingBack}
-          >
-            {isApproving ? 'Processing...' : 'Approve'}
-          </Button>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: '#F59E0B',
-              '&:hover': {
-                backgroundColor: '#D97706'
-              },
-              '&.Mui-disabled': {
-                backgroundColor: '#E5E7EB',
-                color: '#9CA3AF'
-              }
-            }}
-            onClick={() => setSendBackModalOpen(true)}
-            disabled={isApproving || isSendingBack}
-          >
-            {isSendingBack ? 'Processing...' : 'Send Back'}
-          </Button>
+      {canEditAgreement() ? (
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            {isAgreementCommitteeSendBack ? (
+              <>
+                <Chip
+                  label={'PM Committee Send Back'}
+                  size="medium"
+                  color={'error'}
+                  sx={{
+                    height: '30px',
+                    fontSize: '0.75rem',
+                    alignSelf: 'center',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+                    if (currentTarget?.agreementCommitteeSendBackMessage) {
+                      setViewSendBackModalOpen(true);
+                    }
+                  }}
+                />
+                <Chip
+                  label={'Approved'}
+                  size="medium"
+                  color={'success'}
+                  sx={{
+                    height: '30px',
+                    fontSize: '0.75rem',
+                    alignSelf: 'center'
+                  }}
+                />
+              </>
+            ) : (
+              <Chip
+                label={'Approved'}
+                size="medium"
+                color={'success'}
+                sx={{
+                  height: '30px',
+                  fontSize: '0.75rem',
+                  alignSelf: 'center'
+                }}
+              />
+            )}
+            {pmCommitteeStatus === 'Reviewed' ? (
+              <Button
+                variant="contained"
+                onClick={() => handleCommitteeAction('unaccept')}
+                sx={{
+                  backgroundColor: '#10B981',
+                  '&:hover': {
+                    backgroundColor: '#059669',
+                  },
+                }}
+              >
+                PM Committee Unaccept
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  onClick={() => handleCommitteeAction('accept')}
+                  sx={{
+                    backgroundColor: '#10B981',
+                    '&:hover': {
+                      backgroundColor: '#059669',
+                    },
+                    width: '200px'
+                  }}
+                  disabled={acceptLoading}
+                >
+                  {acceptLoading ? 'Processing...' : 'PM Committee Accept'}
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setSendBackModalOpen(true)}
+                  disabled={sendBackLoading || isAssessmentApproved}
+                >
+                  {sendBackLoading ? 'Processing...' : 'PM Committee Send Back'}
+                </Button>
+              </>
+            )}
+          </Box>
         </Box>
-      </Box>
+      ) : (
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+          <Typography variant="h6" color="error">
+            Corresponding assessment is edited, you cannot review the agreement.
+          </Typography>
+        </Box>
+      )}
 
       {/* Add total weight display */}
       <Box
@@ -280,7 +336,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         <Typography
           sx={{
             fontWeight: 500,
-            color: calculateTotalWeight() === 100 ? '#059669' : '#DC2626'
+            color: calculateTotalWeight() > 100 ? '#DC2626' : '#374151'
           }}
         >
           Total Weight: {calculateTotalWeight()}%
@@ -299,7 +355,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Typography>
       </Box>
 
-      <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+      <Paper
+        className="performance-table"
+        sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}
+      >
         <TableContainer>
           <Table>
             <TableHead>
@@ -396,7 +455,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             <StyledTableCell align="center">
                               <IconButton
                                 size="small"
-                                onClick={() => handleViewRatingScales(kpi)}
                                 sx={{
                                   borderColor: '#E5E7EB',
                                   color: '#374151',
@@ -404,6 +462,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                     borderColor: '#D1D5DB',
                                     backgroundColor: '#F9FAFB',
                                   },
+                                }}
+                                onClick={() => {
+                                  setSelectedRatingScales(kpi.ratingScales);
                                 }}
                               >
                                 <DescriptionIcon />
@@ -427,28 +488,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             </TableBody>
           </Table>
         </TableContainer>
-
-
       </Paper>
-
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-
-      </Box>
-
-      {selectedRatingScales && (
-        <RatingScalesModal
-          open={!!selectedRatingScales}
-          onClose={() => setSelectedRatingScales(null)}
-          ratingScales={selectedRatingScales}
-        />
-      )}
 
       <SendBackModal
         open={sendBackModalOpen}
         onClose={() => setSendBackModalOpen(false)}
         onSendBack={handleSendBack}
-        title="Send Back Email"
-        emailSubject={`${annualTarget.name} - Performance ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
+        title="PM Committee Send Back Email"
+        emailSubject={`${annualTarget.name}, Performance Agreement ${quarter}(PM Committee Review)`}
       />
 
       <ViewSendBackMessageModal
@@ -457,6 +504,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         emailSubject={`${annualTarget.name}, Performance Agreement ${quarter}(PM Committee Review)`}
         emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.agreementCommitteeSendBackMessage || 'No message available'}
       />
+
+      {selectedRatingScales && (
+        <RatingScalesModal
+          open={!!selectedRatingScales}
+          onClose={() => setSelectedRatingScales(null)}
+          ratingScales={selectedRatingScales}
+        />
+      )}
     </Box >
   );
 };

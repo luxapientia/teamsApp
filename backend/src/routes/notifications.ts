@@ -30,8 +30,6 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
       personalPerformanceId
     });
 
-
-
     if (existingNotification) {
       await Notification.updateOne(
         { _id: existingNotification._id },
@@ -49,6 +47,31 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
       });
     }
     socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
+
+    // Assume you have these variables from your request/session:
+    const tenantId = req.user?.tenantId; // or from session/context
+    const fromUserId = req.user?.MicrosoftId; // the submitting user's Microsoft ID
+    const supervisorEmail = recipientUser.email; // supervisor's email
+    const supervisorFirstName = recipientUser.name.split(' ')[0]; // supervisor's first name
+    const userFullName = req.user?.name; // submitting user's full name
+
+    // Compose subject and body
+    const subject = `Performance Agreement ${quarter}`;
+    const body = `
+      Dear ${supervisorFirstName},<br><br>
+      ${userFullName} has sent you a performance agreement for ${quarter} for approval.<br><br>
+      Thank You.<br>
+      Performance Management Team
+    `;
+
+    // Send the email
+    await graphService.sendMail(
+      tenantId as string,
+      fromUserId as string,
+      supervisorEmail,
+      subject,
+      body
+    );
 
     return res.status(200).json({ message: 'Notification created successfully' });
   } catch (error) {
@@ -80,6 +103,27 @@ router.post('/agreement/recall', authenticateToken, async (req: AuthenticatedReq
       await Notification.deleteOne({ _id: existingNotification._id });
     }
     socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
+
+    // Send recall email to supervisor
+    const tenantId = req.user?.tenantId;
+    const fromUserId = req.user?.MicrosoftId;
+    const supervisorEmail = recipientUser.email;
+    const supervisorFirstName = recipientUser.name.split(' ')[0];
+    const userFullName = req.user?.name;
+    const subject = `Performance Agreement ${quarter} - RECALL`;
+    const body = `
+      Dear ${supervisorFirstName},<br><br>
+      ${userFullName} has recalled his performance agreement for ${quarter}.<br><br>
+      Thank You.<br>
+      Performance Management Team
+    `;
+    await graphService.sendMail(
+      tenantId as string,
+      fromUserId as string,
+      supervisorEmail,
+      subject,
+      body
+    );
 
     return res.status(200).json({ message: 'Notification deleted successfully' });
   } catch (error) {
@@ -125,6 +169,28 @@ router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRe
     }
 
     socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
+
+    // Send assessment submit email to supervisor
+    const tenantId = req.user?.tenantId;
+    const fromUserId = req.user?.MicrosoftId;
+    const supervisorEmail = recipientUser.email;
+    const supervisorFirstName = recipientUser.name.split(' ')[0];
+    const userFullName = req.user?.name;
+    const subject = `Performance Assessment ${quarter}`;
+    const body = `
+      Dear ${supervisorFirstName},<br><br>
+      ${userFullName} has sent you a performance assessment for ${quarter} for approval.<br><br>
+      Thank You.<br>
+      Performance Management Team
+    `;
+    await graphService.sendMail(
+      tenantId as string,
+      fromUserId as string,
+      supervisorEmail,
+      subject,
+      body
+    );
+
     return res.status(200).json({ message: 'Notification created successfully' });
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -155,6 +221,27 @@ router.post('/assessment/recall', authenticateToken, async (req: AuthenticatedRe
       await Notification.deleteOne({ _id: existingNotification._id });
     }
     socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
+
+    // Send recall email to supervisor
+    const tenantId = req.user?.tenantId;
+    const fromUserId = req.user?.MicrosoftId;
+    const supervisorEmail = recipientUser.email;
+    const supervisorFirstName = recipientUser.name.split(' ')[0];
+    const userFullName = req.user?.name;
+    const subject = `Performance Assessment ${quarter} - RECALL`;
+    const body = `
+      Dear ${supervisorFirstName},<br><br>
+      ${userFullName} has recalled his performance assessment for ${quarter}.<br><br>
+      Thank You.<br>
+      Performance Management Team
+    `;
+    await graphService.sendMail(
+      tenantId as string,
+      fromUserId as string,
+      supervisorEmail,
+      subject,
+      body
+    );
 
     return res.status(200).json({ message: 'Notification deleted successfully' });
   } catch (error) {
@@ -275,6 +362,41 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
       await PersonalPerformance.updateOne({ _id: notification.personalPerformanceId }, { $set: { quarterlyTargets: newQuarterlyTargets } });
     }
 
+    // Send approval email to user
+    const senderUser = await User.findById(notification.senderId);
+    if (senderUser) {
+      const tenantId = senderUser.tenantId;
+      const fromUserId = req.user?.MicrosoftId; // supervisor's Microsoft ID
+      const userEmail = senderUser.email;
+      const userFirstName = senderUser.name.split(' ')[0];
+      let subject = '';
+      let body = '';
+      if (notification.type === 'agreement') {
+        subject = `Performance Agreement ${notification.quarter} - Approved`;
+        body = `
+          Dear ${userFirstName},<br><br>
+          Your performance agreement for ${notification.quarter} has been approved.<br><br>
+          Thank You.<br>
+          Performance Management Team
+        `;
+      } else if (notification.type === 'assessment') {
+        subject = `Performance Assessment ${notification.quarter} - Approved`;
+        body = `
+          Dear ${userFirstName},<br><br>
+          Your performance assessment for ${notification.quarter} has been approved.<br><br>
+          Thank You.<br>
+          Performance Management Team
+        `;
+      }
+      await graphService.sendMail(
+        tenantId as string,
+        fromUserId as string,
+        userEmail,
+        subject,
+        body
+      );
+    }
+
     await Notification.deleteOne({ _id: notificationId });
 
     return res.status(200).json({ message: 'Notification send back successfully' });
@@ -308,13 +430,13 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
           if (notification.type === 'agreement') {
             return {
               ...quarterlyTarget._doc,
-              agreementStatus: 'Send Back',
+              agreementStatus: quarterlyTarget.isAgreementCommitteeSendBack ? 'Committee Send Back' : 'Send Back',
               agreementStatusUpdatedAt: new Date()
             };
           } else {
             return {
               ...quarterlyTarget._doc,
-              assessmentStatus: 'Send Back',
+              assessmentStatus: quarterlyTarget.isAssessmentCommitteeSendBack ? 'Committee Send Back' : 'Send Back',
               assessmentStatusUpdatedAt: new Date()
             };
           }

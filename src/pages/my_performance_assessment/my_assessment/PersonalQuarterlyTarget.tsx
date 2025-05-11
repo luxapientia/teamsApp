@@ -24,7 +24,8 @@ import {
 import DescriptionIcon from '@mui/icons-material/Description';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, AnnualTargetPerspective, QuarterlyTargetKPI, AnnualTargetRatingScale } from '../../../types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
-import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, PdfType, Feedback } from '../../../types';
+import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterlyTarget, AssessmentStatus, AssessmentReviewStatus } from '../../../types/personalPerformance';
+import { PdfType, Feedback } from '../../../types';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { fetchPersonalPerformances, updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
@@ -33,6 +34,7 @@ import { api } from '../../../services/api';
 import KPIModal from './KPIModal';
 import EvidenceModal from './EvidenceModal';
 import { useAuth } from '../../../contexts/AuthContext';
+import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 
 import { ExportButton } from '../../../components/Buttons';
 
@@ -46,6 +48,7 @@ import SelectCourseModal from './SelectCourseModal';
 import { Course } from '../../../types/course';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import PersonalFeedback from './PersonalFeedback';
+import { Toast } from '../../../components/Toast';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -88,7 +91,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const tableRef = useRef();
   const { user } = useAuth();
   const [isSelectCourseModalOpen, setIsSelectCourseModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
 
+  const feedbacks = useAppSelector((state: RootState) =>
+    state.feedback.feedbacks.filter(f =>
+      f.annualTargetId === personalPerformance?.annualTargetId &&
+      f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+    )
+  );
 
   const annualQuarterlyTarget = annualTarget?.content.quarterlyTarget.quarterlyTargets.find(
     target => target.quarter === quarter
@@ -203,8 +215,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-
       if (target.quarter === quarter) {
         return {
           ...target,
@@ -229,35 +241,46 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       return target;
     });
 
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
     try {
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+
       await api.post('/notifications/assessment/submit', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarter: quarter,
         personalPerformanceId: personalPerformance?._id || ''
       });
+
+      setIsSubmitted(true);
+      setStatus(AssessmentStatus.Submitted);
+      setToast({
+        message: 'Performance assessment submitted successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error submitting quarterly target:', error);
+      setToast({
+        message: 'Failed to submit performance assessment',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitted(true);
-    setStatus(AssessmentStatus.Submitted);
   }
 
-  // Add recall handler
   const handleRecall = async () => {
+    setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
       if (target.quarter === quarter) {
         return {
           ...target,
-          assessmentStatus: AssessmentStatus.Draft,
+          assessmentStatus: target.isAssessmentCommitteeSendBack ? AssessmentStatus.CommitteeSendBack : AssessmentStatus.Draft,
+          assessmentStatusUpdatedAt: new Date(),
           supervisorId: selectedSupervisor,
           objectives: personalQuarterlyObjectives
         }
@@ -265,25 +288,37 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       return target;
     });
 
-    await dispatch(updatePersonalPerformance({
-      _id: personalPerformance?._id || '',
-      teamId: personalPerformance?.teamId || '',
-      annualTargetId: personalPerformance?.annualTargetId || '',
-      quarterlyTargets: newPersonalQuarterlyTargets || []
-    }));
-
     try {
+      await dispatch(updatePersonalPerformance({
+        _id: personalPerformance?._id || '',
+        teamId: personalPerformance?.teamId || '',
+        annualTargetId: personalPerformance?.annualTargetId || '',
+        quarterlyTargets: newPersonalQuarterlyTargets || []
+      }));
+
       await api.post('/notifications/assessment/recall', {
         recipientId: selectedSupervisor,
         annualTargetId: personalPerformance?.annualTargetId || '',
         quarter: quarter,
         personalPerformanceId: personalPerformance?._id || ''
       });
+
+      setIsSubmitted(false);
+      const currentTarget = newPersonalQuarterlyTargets?.find(target => target.quarter === quarter);
+      setStatus(currentTarget?.isAssessmentCommitteeSendBack ? AssessmentStatus.CommitteeSendBack : AssessmentStatus.Draft);
+      setToast({
+        message: 'Performance assessment recalled successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error recalling quarterly target:', error);
+      setToast({
+        message: 'Failed to recall performance assessment',
+        type: 'error'
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsSubmitted(false);
   };
 
   const areAllKPIsEvaluated = () => {
@@ -477,6 +512,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
   return (
     <Box>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <Box sx={{
         mb: 3,
         display: 'flex',
@@ -562,7 +604,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </FormControl>
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, justifyContent: 'flex-end' }}>
+        {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentReviewStatus === AssessmentReviewStatus.Reviewed && (
+          <Chip
+            label="PM Committee Reviewed"
+            size="medium"
+            color="primary"
+            sx={{
+              height: '30px',
+              fontSize: '0.75rem',
+              alignSelf: 'center'
+            }}
+          />
+        )}
         {isApproved ? (
           <Chip
             label="Approved"
@@ -570,22 +624,33 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             color="success"
             sx={{
               height: '30px',
-              fontSize: '0.75rem'
+              fontSize: '0.75rem',
+              alignSelf: 'center'
             }}
           />
         ) : (
           <Box sx={{ display: 'flex', gap: 2 }}>
-            {personalQuarterlyObjectives.length > 0 && !isAssessmentsEmpty() &&
+            {personalQuarterlyObjectives.length > 0 && !isAssessmentsEmpty() && (
               <Chip
                 label={status}
                 size="medium"
-                color={status == 'Send Back' ? 'error' : 'warning'}
+                color={status === AssessmentStatus.SendBack || status === AssessmentStatus.CommitteeSendBack ? 'error' : 'warning'}
                 sx={{
                   height: '30px',
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
+                  alignSelf: 'center',
+                  cursor: status === AssessmentStatus.CommitteeSendBack ? 'pointer' : 'default'
+                }}
+                onClick={() => {
+                  if (status === AssessmentStatus.CommitteeSendBack) {
+                    const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+                    if (currentTarget?.assessmentCommitteeSendBackMessage) {
+                      setViewSendBackModalOpen(true);
+                    }
+                  }
                 }}
               />
-            }
+            )}
             <Button
               variant="contained"
               sx={{
@@ -599,14 +664,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 }
               }}
               onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-              disabled={!isSubmitted && !canSubmit()}
+              disabled={isSubmitting || (!isSubmitted && !canSubmit())}
             >
-              {isSubmitted ? 'Recall' : 'Submit'}
+              {isSubmitting ? 'Processing...' : (isSubmitted ? 'Recall' : 'Submit')}
             </Button>
           </Box>
         )}
       </Box>
-
       {/* Add total weight display */}
       <Box
         sx={{
@@ -868,7 +932,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       </Box>
 
       {/* Feedback Block */}
-      {enableFeedback && (
+      {enableFeedback && feedbacks.length > 0 && (
         <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
           <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
             Feedback
@@ -996,6 +1060,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onSelect={handleAddPersonalDevelopment}
         tenantId={user?.tenantId || ''}
         validateCourse={(course) => !isCourseAlreadyRequested(course.name)}
+      />
+
+      <ViewSendBackMessageModal
+        open={viewSendBackModalOpen}
+        onClose={() => setViewSendBackModalOpen(false)}
+        emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
+        emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentCommitteeSendBackMessage || 'No message available'}
       />
     </Box >
   );

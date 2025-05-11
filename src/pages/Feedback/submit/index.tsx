@@ -152,6 +152,12 @@ const FeedbackSubmission = () => {
         return isValid;
     };
 
+    const isFormValid = () => {
+        return responses.every(response =>
+            response.response.score && response.reason.trim()
+        );
+    };
+
     const handleSubmit = async () => {
         if (!validateResponses()) {
             setShowValidationAlert(true);
@@ -511,7 +517,7 @@ const FeedbackSubmission = () => {
                     <Button
                         variant="contained"
                         onClick={handleSubmit}
-                        disabled={isCompleted || !validateResponses()}
+                        disabled={isCompleted || !isFormValid()}
                         sx={{
                             backgroundColor: '#0078D4',
                             '&:hover': { 

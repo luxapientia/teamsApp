@@ -42,6 +42,7 @@ export interface UserProfile {
   tenantId?: string;
   organizationName?: string;
   isDevMember?: boolean;
+  isPerformanceCalibrationMember?: boolean;
 }
 
 // API Response types

@@ -15,7 +15,6 @@ const orgDevPlanService = new OrgDevPlanService();
 router.get('/get-all-members/:tenantId', authenticateToken, async (req, res, next) => {
   try {
     const { tenantId } = req.params;
-    console.log('tenantId', tenantId);
     
     if (!tenantId) {
       throw new ApiError('Tenant ID is required', 400);
@@ -85,7 +84,6 @@ router.delete('/remove-member/:userId', authenticateToken, requireRole([UserRole
 router.post('/update-quarterly-target', authenticateToken, async (req, res, next) => {
   try {
     const { annualTargetId, quarter, isEnabled } = req.body;
-    console.log(annualTargetId, quarter, isEnabled, 'backend')
     if (!annualTargetId || !quarter || typeof isEnabled !== 'boolean') {
       throw new ApiError('Invalid request parameters', 400);
     }
@@ -120,9 +118,7 @@ router.post('/update-quarterly-target', authenticateToken, async (req, res, next
 router.get('/:tenantId', authenticateToken, async (req, res) => {
   try {
     const { tenantId } = req.params;
-    console.log(tenantId, 'tenantId')
-    const plans = await orgDevPlanService.getAllPlans(req.params.tenantId);
-    console.log(plans, 'plans')
+    const plans = await orgDevPlanService.getAllPlans(tenantId);
     return res.json({
       status: 'success',
       data: plans

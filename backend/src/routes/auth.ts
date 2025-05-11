@@ -21,6 +21,7 @@ router.get('/login', async (_req: Request, res: Response) => {
 router.post('/callback', async (req: Request, res: Response) => {
   try {
     const { code, token, redirect_uri } = req.body;
+    console.log(token, 'token');
     
     // Handle Teams SSO token
     if (token) {
@@ -69,11 +70,12 @@ router.post('/callback', async (req: Request, res: Response) => {
             status: 'active',
             tenantId: dbUser.tenantId,
             organizationName: '',
-            isDevMember: dbUser.isDevMember
+            isDevMember: dbUser.isDevMember,
+            isPerformanceCalibrationMember: dbUser.isPerformanceCalibrationMember
           };
           const appToken = await authService.createAppToken(tokenUserProfile);
         console.log('App token created successfully');
-        
+        console.log(appToken, 'appToken');
           return res.json({ 
           token: appToken, 
             user: tokenUserProfile 

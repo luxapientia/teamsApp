@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import AnnualTarget, { AnnualTargetDocument, AnnualTargetStatus } from '../models/AnnualTarget';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
 import multer from 'multer';
@@ -36,9 +36,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.get('/annual-targets', authenticateToken, async (_req: Request, res: Response) => {
+router.get('/annual-targets', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const annualTargets = await AnnualTarget.find() as AnnualTargetDocument[];
+    const annualTargets = await AnnualTarget.find({ tenantId: req.user?.tenantId }) as AnnualTargetDocument[];
     const sortedAnnualTargets = annualTargets.sort((a, b) => {
       if (a.status === AnnualTargetStatus.Active && b.status !== AnnualTargetStatus.Active) {
         return -1;

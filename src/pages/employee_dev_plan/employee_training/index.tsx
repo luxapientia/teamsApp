@@ -184,7 +184,6 @@ const EmployeesTraining: React.FC = () => {
       </Box>
     );
   }
-  console.log(plans, 'plans')
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>

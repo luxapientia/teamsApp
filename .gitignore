@@ -16,3 +16,6 @@ appPackage/build
 
 # Dev tool directories
 /devTools/
+
+# Backups
+backups/

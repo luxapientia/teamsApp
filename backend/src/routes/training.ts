@@ -38,8 +38,7 @@ router.get('/:planId/employees', authenticateToken, async (req: AuthenticatedReq
   try {
     const { planId } = req.params;
     const trainings = await trainingService.getTrainingsByPlanId(planId);
-    console.log('trainings', trainings);
-    
+
     return res.json({
       status: 'success',
       data: {
@@ -67,8 +66,6 @@ router.post('/:planId/employees', authenticateToken, async (req: AuthenticatedRe
         message: 'Employees must be an array'
       });
     }
-
-    console.log('employees', employees);
 
     const trainings = await trainingService.addEmployeesToPlan(planId, employees);
     

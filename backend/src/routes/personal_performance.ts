@@ -1,5 +1,5 @@
 import express, { Response } from 'express';
-import PersonalPerformance, { PersonalPerformanceDocument, AgreementStatus, AssessmentStatus } from '../models/PersonalPerformance';
+import PersonalPerformance, { PersonalPerformanceDocument, AgreementStatus, AssessmentStatus, AgreementReviewStatus, AssessmentReviewStatus } from '../models/PersonalPerformance';
 import { AuthenticatedRequest, authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 import fs from 'fs';
@@ -58,7 +58,10 @@ router.get('/manage-performance-agreement/company-users', authenticateToken, asy
         id: performance.userId._id,
         name: performance.userId.name,
         team: performance.teamId?.name,
-        position: performance.userId?.jobTitle
+        position: performance.userId?.jobTitle,
+        agreementStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.agreementStatus,
+        agreementReviewStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.agreementReviewStatus,
+        assessmentReviewStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.assessmentReviewStatus,
       }
     });
     return res.json(users);
@@ -77,7 +80,9 @@ router.get('/manage-performance-assessment/company-users', authenticateToken, as
         id: performance.userId._id,
         name: performance.userId.name,
         team: performance.teamId?.name,
-        position: performance.userId?.jobTitle
+        position: performance.userId?.jobTitle,
+        assessmentStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.assessmentStatus,
+        assessmentReviewStatus: performance?.quarterlyTargets?.filter((q: any) => { return q.quarter === quarter?.toString() })[0]?.assessmentReviewStatus,
       }
     });
     return res.json(users);
@@ -109,14 +114,16 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
           if (manageType === 'Agreement') {
             return {
               ...quarterlyTarget._doc,
-              agreementStatus: 'Send Back',
-              agreementStatusUpdatedAt: new Date()
+              agreementStatus: AgreementStatus.SendBack,
+              agreementStatusUpdatedAt: new Date(),
+              agreementReviewStatus: AgreementReviewStatus.NotReviewed
             };
           } else {
             return {
               ...quarterlyTarget._doc,
-              assessmentStatus: 'Send Back',
-              assessmentStatusUpdatedAt: new Date()
+              assessmentStatus: AssessmentStatus.SendBack,
+              assessmentStatusUpdatedAt: new Date(),
+              assessmentReviewStatus: AssessmentReviewStatus.NotReviewed
             };
           }
         }
@@ -185,7 +192,6 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
 
 router.get('/personal-performance', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    console.log(req.user, 'req.user')
     const { userId, annualTargetId } = req.query;
     const personalPerformance = await PersonalPerformance.findOne({ userId, annualTargetId })
       .populate({
@@ -244,8 +250,6 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
       }) as PersonalPerformanceDocument;
       personalPerformances.push(newPersonalPerformance);
     }
-
-    console.log(personalPerformances, 'personalPerformances');
 
     return res.json({
       status: 'success',

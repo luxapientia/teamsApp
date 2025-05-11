@@ -177,7 +177,6 @@ router.get('/is_team_owner/:userId', authenticateToken, async (req: Authenticate
         if (!userId) {
             throw new ApiError('User not authenticated', 401);
         }
-        console.log(userId, 'userId')
         // Find team where current user is the owner
         const team = await Team.findOne({ owner: userId });
         
@@ -212,16 +211,19 @@ router.get(
   authenticateToken,
   async (req: AuthenticatedRequest, res, next) => {
     try {
+      const { pageSize, nextLink, searchQuery } = req.query;
       const user = req.user;
       if (!user?.tenantId) {
         throw new ApiError('User tenant ID not found', 400);
       }
 
-      const pageSize = parseInt(req.query.pageSize as string) || 20;
-      const nextLink = req.query.nextLink as string;
-
       try {
-        const result = await graphService.getOrganizationUsers(user.tenantId, pageSize, nextLink);
+        const result = await graphService.getOrganizationUsers(
+          user?.tenantId,
+          pageSize ? Number(pageSize) : 20,
+          nextLink as string,
+          searchQuery as string
+        );
         res.json({
           status: 'success',
           data: result.value,

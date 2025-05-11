@@ -6,14 +6,26 @@ export enum AgreementStatus {
   Draft = 'Draft',
   Submitted = 'Submitted',
   Approved = 'Approved',
-  SendBack = 'Send Back'
+  SendBack = 'Send Back',
+  CommitteeSendBack = 'Committee Send Back'
 }
 
 export enum AssessmentStatus {
   Draft = 'Draft',
   Submitted = 'Submitted',
   Approved = 'Approved',
-  SendBack = 'Send Back'
+  SendBack = 'Send Back',
+  CommitteeSendBack = 'Committee Send Back'
+}
+
+export enum AgreementReviewStatus {
+  NotReviewed = 'Not Reviewed',
+  Reviewed = 'Reviewed'
+}
+
+export enum AssessmentReviewStatus {
+  NotReviewed = 'Not Reviewed',
+  Reviewed = 'Reviewed'
 }
 
 interface PersonalQuarterlyTargetObjective {
@@ -51,6 +63,12 @@ export interface PersonalQuarterlyTarget {
   agreementStatusUpdatedAt: Date;
   assessmentStatus: AssessmentStatus;
   assessmentStatusUpdatedAt: Date;
+  agreementReviewStatus?: AgreementReviewStatus;
+  assessmentReviewStatus?: AssessmentReviewStatus;
+  isAgreementCommitteeSendBack?: boolean;
+  isAssessmentCommitteeSendBack?: boolean;
+  agreementCommitteeSendBackMessage?: string;
+  assessmentCommitteeSendBackMessage?: string;
   supervisorId?: string;
   objectives: PersonalQuarterlyTargetObjective[];
   isPersonalDevelopmentNotApplicable?: boolean;
@@ -165,6 +183,32 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
     assessmentStatusUpdatedAt: {
       type: Date,
       default: new Date(),
+    },
+    agreementReviewStatus: {
+      type: String,
+      enum: Object.values(AgreementReviewStatus),
+      default: AgreementReviewStatus.NotReviewed,
+    },
+    assessmentReviewStatus: {
+      type: String,
+      enum: Object.values(AssessmentReviewStatus),
+      default: AssessmentReviewStatus.NotReviewed,
+    },
+    isAgreementCommitteeSendBack: {
+      type: Boolean,
+      default: false,
+    },
+    isAssessmentCommitteeSendBack: {
+      type: Boolean,
+      default: false,
+    },
+    agreementCommitteeSendBackMessage: {
+      type: String,
+      default: '',
+    },
+    assessmentCommitteeSendBackMessage: {
+      type: String,
+      default: '',
     },
     isPersonalDevelopmentNotApplicable: {
       type: Boolean,

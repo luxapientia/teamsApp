@@ -62,7 +62,6 @@ const StrategyMap: React.FC<StrategyMapProps> = ({ annualTargetId, quarter }) =>
 
     // Build the strategy map data from perspectives and objectives
     const perspectives = annualTarget?.content.perspectives || [];
-    console.log(annualTarget?.content.quarterlyTarget.quarterlyTargets.find(q => q.quarter === quarter), 'annualTarget', quarter);
     const objectives = annualTarget?.content.quarterlyTarget.quarterlyTargets.find(q => q.quarter === quarter)?.objectives || [];
     const ratingScales = annualTarget?.content.ratingScales || [];
 
@@ -91,7 +90,6 @@ const StrategyMap: React.FC<StrategyMapProps> = ({ annualTargetId, quarter }) =>
                 color: getObjectiveColor(obj.name)
             })),
     }));
-    console.log(strategyMapData, 'strategyMapData');
 
     return (
         <Box>

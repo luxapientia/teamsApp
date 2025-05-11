@@ -35,6 +35,8 @@ import { useToast } from '../../../contexts/ToastContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import PersonalFeedback from './PersonalFeedback';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
+import { Toast } from '../../../components/Toast';
+import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -70,8 +72,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
   const [enableFeedback, setEnableFeedback] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isSendingBack, setIsSendingBack] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
 
   const { showToast } = useToast();
+
+  const feedbacks = useAppSelector((state: RootState) => 
+    state.feedback.feedbacks.filter(feedback => 
+      feedback.annualTargetId === personalPerformance?.annualTargetId && 
+      feedback.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+    )
+  );
 
   useEffect(() => {
     fetchPersonalPerformance();
@@ -144,20 +158,32 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const handleApprove = async () => {
     if (notification) {
+      setIsApproving(true);
       try {
         const response = await api.post(`/notifications/approve/${notification._id}`);
         if (response.status === 200) {
           dispatch(fetchNotifications());
+          setToast({
+            message: 'Performance assessment approved successfully',
+            type: 'success'
+          });
           onBack?.();
         }
       } catch (error) {
         console.error('Error approving notification:', error);
+        setToast({
+          message: 'Failed to approve performance assessment',
+          type: 'error'
+        });
+      } finally {
+        setIsApproving(false);
       }
     }
   };
 
   const handleSendBack = (emailSubject: string, emailBody: string) => {
     if (notification) {
+      setIsSendingBack(true);
       (async () => {
         try {
           const response = await api.post(`/notifications/send-back/${notification._id}`, {
@@ -167,19 +193,34 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           });
           dispatch(fetchNotifications());
           if (response.status === 200) {
-            showToast('email sent successfully', 'success');
+            setToast({
+              message: 'Performance assessment sent back successfully',
+              type: 'success'
+            });
+            onBack?.();
           }
         } catch (error) {
           console.error('Error send back notification:', error);
-          showToast('sending email failed', 'error');
+          setToast({
+            message: 'Failed to send back performance assessment',
+            type: 'error'
+          });
+        } finally {
+          setIsSendingBack(false);
         }
       })();
-      onBack?.();
     }
   };
 
   return (
     <Box>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <Box sx={{
         mb: 3,
         display: 'flex',
@@ -207,6 +248,25 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 2 }}>
+          {personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.isAssessmentCommitteeSendBack && (
+            <Chip
+              label="PM Committee Send Back"
+              size="medium"
+              color="error"
+              sx={{
+                height: '30px',
+                fontSize: '0.75rem',
+                alignSelf: 'center',
+                cursor: 'pointer'
+              }}
+              onClick={() => {
+                const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+                if (currentTarget?.assessmentCommitteeSendBackMessage) {
+                  setViewSendBackModalOpen(true);
+                }
+              }}
+            />
+          )}
           <Button
             variant="contained"
             sx={{
@@ -220,8 +280,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               }
             }}
             onClick={handleApprove}
+            disabled={isApproving || isSendingBack}
           >
-            Approve
+            {isApproving ? 'Processing...' : 'Approve'}
           </Button>
           <Button
             variant="contained"
@@ -230,11 +291,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               '&:hover': {
                 backgroundColor: '#D97706'
               },
-              cursor: 'pointer'
+              '&.Mui-disabled': {
+                backgroundColor: '#E5E7EB',
+                color: '#9CA3AF'
+              }
             }}
             onClick={() => setSendBackModalOpen(true)}
+            disabled={isApproving || isSendingBack}
           >
-            Send Back
+            {isSendingBack ? 'Processing...' : 'Send Back'}
           </Button>
         </Box>
       </Box>
@@ -446,7 +511,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       </Box>
 
       {/* Feedback Block */}
-      {enableFeedback && (
+      {enableFeedback && feedbacks.length > 0 && (
         <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
           <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
             Feedback
@@ -461,76 +526,69 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               name: getRatingScoreInfo(calculateOverallScore(personalQuarterlyObjectives))?.name
             }}
           />
-
         </Paper>
       )}
 
-      <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
-        <Box sx={{ mt: 4, mb: 2 }}>
-          <Typography variant="h6">
-            Personal Development Courses
-          </Typography>
-        </Box>
+      {/* Personal Development Courses Block */}
+      {!personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.isPersonalDevelopmentNotApplicable && 
+       personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.length > 0 && (
+        <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
+          <Box sx={{ mt: 4, mb: 2 }}>
+            <Typography variant="h6">
+              Personal Development Courses
+            </Typography>
+          </Box>
 
-        <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB', mb: 3 }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <StyledHeaderCell>Course Name</StyledHeaderCell>
-                  <StyledHeaderCell>Description</StyledHeaderCell>
-                  <StyledHeaderCell align="center">Status</StyledHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.map((course, index) => (
-                  <TableRow key={course._id}>
-                    <StyledTableCell>
-                      {typeof course === 'string' ? (
-                        <Skeleton variant="text" width={200} />
-                      ) : (
-                        course.name
-                      )}
-                    </StyledTableCell>
-                    <StyledTableCell>
-                      {typeof course === 'string' ? (
-                        <Skeleton variant="text" width={300} />
-                      ) : (
-                        course.description
-                      )}
-                    </StyledTableCell>
-                    <StyledTableCell align="center">
-                      {typeof course === 'string' ? (
-                        <Skeleton variant="text" width={100} />
-                      ) : (
-                        <Chip
-                          label={course.status}
-                          size="small"
-                          sx={{
-                            backgroundColor: course.status === 'active' ? '#D1FAE5' : '#FEE2E2',
-                            color: course.status === 'active' ? '#059669' : '#DC2626',
-                            fontWeight: 500
-                          }}
-                        />
-                      )}
-                    </StyledTableCell>
+          <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB', mb: 3 }}>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <StyledHeaderCell>Course Name</StyledHeaderCell>
+                    <StyledHeaderCell>Description</StyledHeaderCell>
+                    <StyledHeaderCell align="center">Status</StyledHeaderCell>
                   </TableRow>
-                ))}
-                {(!personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment ||
-                  personalPerformance.quarterlyTargets.find(qt => qt.quarter === quarter)?.personalDevelopment.length === 0) && (
-                    <TableRow>
-                      <StyledTableCell colSpan={3} align="center" sx={{ py: 4 }}>
-                        <Typography variant="body2" sx={{ color: '#6B7280' }}>
-                          No personal development courses added
-                        </Typography>
+                </TableHead>
+                <TableBody>
+                  {personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.map((course, index) => (
+                    <TableRow key={course._id}>
+                      <StyledTableCell>
+                        {typeof course === 'string' ? (
+                          <Skeleton variant="text" width={200} />
+                        ) : (
+                          course.name
+                        )}
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        {typeof course === 'string' ? (
+                          <Skeleton variant="text" width={300} />
+                        ) : (
+                          course.description
+                        )}
+                      </StyledTableCell>
+                      <StyledTableCell align="center">
+                        {typeof course === 'string' ? (
+                          <Skeleton variant="text" width={100} />
+                        ) : (
+                          <Chip
+                            label={course.status}
+                            size="small"
+                            sx={{
+                              backgroundColor: course.status === 'active' ? '#D1FAE5' : '#FEE2E2',
+                              color: course.status === 'active' ? '#059669' : '#DC2626',
+                              fontWeight: 500
+                            }}
+                          />
+                        )}
                       </StyledTableCell>
                     </TableRow>
-                  )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-      </Box>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Box>
+      )}
 
       {evidenceModalData && (
         <EvidenceModal
@@ -547,6 +605,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onSendBack={handleSendBack}
         title="Send Back Email"
         emailSubject={`${annualTarget.name} - Performance ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
+      />
+
+      <ViewSendBackMessageModal
+        open={viewSendBackModalOpen}
+        onClose={() => setViewSendBackModalOpen(false)}
+        emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
+        emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentCommitteeSendBackMessage || 'No message available'}
       />
     </Box >
   );

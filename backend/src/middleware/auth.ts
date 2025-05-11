@@ -35,7 +35,8 @@ export const authenticateToken = async (
     tenantId: user.tenantId,
     jobTitle: user.jobTitle,
     teamId: user.teamId,
-    isDevMember: user.isDevMember
+    isDevMember: user.isDevMember,
+    isPerformanceCalibrationMember: user.isPerformanceCalibrationMember
   }
   req.user = duser;
   next();
