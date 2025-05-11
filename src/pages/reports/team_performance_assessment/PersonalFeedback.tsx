@@ -75,7 +75,7 @@ interface AddProviderForm {
 
 const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance, overallScore }) => {
     const dispatch = useAppDispatch();
-    const [selectedFeedbackId, setSelectedFeedbackId] = useState<string>(personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId || '');
+    const [selectedFeedbackId, setSelectedFeedbackId] = useState<string>('');
     const [isAddProviderOpen, setIsAddProviderOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedQuestion, setSelectedQuestion] = useState<{
@@ -128,10 +128,12 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     }, []);
 
     useEffect(() => {
-        if (personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId) {
-            setSelectedFeedbackId(personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId || '');
+        if (personalPerformance && personalPerformance.quarterlyTargets) {
+            setSelectedFeedbackId(
+                personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId || ''
+            );
         }
-    }, [personalPerformance]);
+    }, [personalPerformance, quarter]);
 
     useEffect(() => {
         if (feedbacks.length > 0 && !selectedFeedbackId) {
@@ -294,6 +296,16 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
         const contributionScorePercentage = selectedFeedback?.contributionScorePercentage || 0;
         const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore.score) * (1 - contributionScorePercentage / 100));
         return finalScore.toFixed(0);
+    }
+
+    if (!personalPerformance || !personalPerformance.quarterlyTargets) {
+        return (
+            <Box sx={{ p: 3 }}>
+                <Typography variant="body1" color="textSecondary">
+                    Loading...
+                </Typography>
+            </Box>
+        );
     }
 
     if (feedbacks.length === 0) {
