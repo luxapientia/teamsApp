@@ -397,7 +397,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleExportPDF = async () => {
-    const title = `${user.name} Performance Agreement - ${annualTarget?.name} ${quarter}`;
+    const title = `${user.displayName} Performance Agreement - ${annualTarget?.name} ${quarter}`;
     if (personalQuarterlyObjectives.length > 0) {
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.15, 0.15, 0.2, 0.1, 0.2, 0.1, 0.1]);
     }
@@ -470,7 +470,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
       <Typography variant="h6">
-        {`${annualTarget.name}, ${user?.name} Performance Agreement ${quarter}`}
+        {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
       </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl

@@ -419,7 +419,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       const score = calculateOverallScore(personalQuarterlyObjectives);
       const ratingScore = getRatingScoreInfo(score);
       if (ratingScore) {
-        const title = `${user.name ? user.name : ''} Performance Assessment - ${annualTarget?.name} ${quarter}`;
+        const title = `${user.displayName ? user.displayName : ''} Performance Assessment - ${annualTarget?.name} ${quarter}`;
         exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
           { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
       } else {
@@ -557,7 +557,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
       <Typography variant="h6">
-        {`${annualTarget.name}, ${user?.name} Performance Assessment ${quarter}`}
+        {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
       </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl
