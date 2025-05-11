@@ -32,6 +32,7 @@ interface PersonalQuarterlyTargetProps {
   quarter: QuarterType;
   onBack?: () => void;
   userId: string;
+  userName: string;
   initialPmCommitteeStatus?: 'Not Reviewed' | 'Reviewed' | 'Send Back';
 }
 
@@ -42,6 +43,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   quarter,
   onBack,
   userId,
+  userName,
   initialPmCommitteeStatus
 }) => {
   const { user } = useAuth();
@@ -178,7 +180,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
+          {`${annualTarget.name}, ${userName} Performance Agreement ${quarter}`}
         </Typography>
       </Box>
 

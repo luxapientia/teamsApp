@@ -159,6 +159,7 @@ const PerformanceAgreements: React.FC = () => {
                 annualTarget={selectedAnnualTarget!}
                 quarter={selectedQuarter as QuarterType}
                 userId={viewingUser.userId}
+                userName={viewingUser.fullName}
                 onBack={handleBack}
                 initialPmCommitteeStatus={viewingUser.pmCommitteeStatus as 'Not Reviewed' | 'Reviewed' | 'Send Back'}
               />
