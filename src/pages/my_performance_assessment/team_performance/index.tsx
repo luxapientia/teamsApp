@@ -127,9 +127,11 @@ const TeamPerformances: React.FC = () => {
     const feedbackOverallScore = calculateFeedbackOverallScore(quarter, performance);
     const selectedFeedback = feedbackTemplates.find(f => f._id === selectedFeedbackId);
     const contributionScorePercentage = selectedFeedback?.contributionScorePercentage || 0;
-    const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore) * (1 - contributionScorePercentage / 100));
-
-    return finalScore.toFixed(0);
+    if(selectedFeedback?.status === 'Active' && selectedFeedback?.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)){
+      const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore) * (1 - contributionScorePercentage / 100));
+      return finalScore;
+    }
+    return overallScore;
   }
 
   const calculateQuarterScore = (objectives: PersonalQuarterlyTargetObjective[]) => {
@@ -230,7 +232,7 @@ const TeamPerformances: React.FC = () => {
                   return null
                 });
 
-                const validScores = quarterScores.filter(score => score !== null) as number[];
+                const validScores = quarterScores.filter(score => score) as number[];
                 const annualScore = validScores.length > 0
                   ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
                   : null;
