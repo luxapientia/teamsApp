@@ -418,9 +418,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (personalQuarterlyObjectives.length > 0) {
       const score = calculateOverallScore(personalQuarterlyObjectives);
       const ratingScore = getRatingScoreInfo(score);
-      const title = `${user.name} Performance Assessment - ${annualTarget?.name} ${quarter}`;
-      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
-        { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
+      if (ratingScore) {
+        const title = `${user.name ? user.name : ''} Performance Assessment - ${annualTarget?.name} ${quarter}`;
+        exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
+          { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
+      } else {
+        setToast({
+          message: 'No Assessment evaluation found',
+          type: 'error'
+        });
+      }
     }
   }
 
@@ -550,7 +557,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
       <Typography variant="h6">
-        {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
+        {`${annualTarget.name}, ${user?.name} Performance Assessment ${quarter}`}
       </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl
