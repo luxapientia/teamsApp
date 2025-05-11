@@ -127,7 +127,7 @@ const OrganizationPerformances: React.FC = () => {
 
     annualTarget.content.quarterlyTarget.quarterlyTargets.forEach(quarter => {
       const quarterScore = calculateQuarterScore(quarter.objectives);
-      if (quarterScore !== null && quarter.editable) {
+      if (quarterScore && quarter.editable) {
         totalWeightedScore += quarterScore;
         totalQuarters++;
       }
