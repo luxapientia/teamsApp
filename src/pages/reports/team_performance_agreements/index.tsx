@@ -228,7 +228,7 @@ const TeamPerformanceAgreements: React.FC = () => {
             </Box>
 
             {showTable && (
-                <Paper sx={{ mt: 3, boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+                <Paper sx={{ mt: 3, boxShadow: 'none', border: '1px solid #E5E7EB', overflowX: 'auto' }}>
                     <Table>
                         <TableHead>
                             <TableRow>
@@ -275,6 +275,7 @@ const TeamPerformanceAgreements: React.FC = () => {
                     }}
                     userId={selectedUserId}
                     teamId={selectedTeamId}
+                    userName={teamPerformances.find(performance => performance.userId._id === selectedUserId)?.fullName}
                 />
             )}
         </Box>

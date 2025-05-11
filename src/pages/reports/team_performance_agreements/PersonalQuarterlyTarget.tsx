@@ -33,6 +33,7 @@ interface PersonalQuarterlyTargetProps {
     onBack?: () => void;
     userId: string;
     teamId: string;
+    userName: string;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
@@ -40,9 +41,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     quarter,
     onBack,
     userId,
-    teamId
+    teamId,
+    userName
 }) => {
-    const { user } = useAuth();
     const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
     const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
     const [personalPerformance, setPersonalPerformance] = React.useState<PersonalPerformance | null>(null);
@@ -110,7 +111,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignItems: 'center'
             }}>
                 <Typography variant="h6">
-                    {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
+                    {`${annualTarget.name}, ${userName} Performance Agreement ${quarter}`}
                 </Typography>
             </Box>
 
