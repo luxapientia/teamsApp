@@ -493,7 +493,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     }
                 }}>
                     <Typography>
-                        You cannot send back this performance agreement as the performance agreement has already been approved. If you want to send it back, go and send back the same performance assessment in My Assessments – Management Performance Assessment and come back here to send back
+                        You cannot send back this performance agreement as the performance agreement has already been submitted or approved. If you want to send it back, go and recall or send back the same performance assessment in My Assessments – Management Performance Assessment and come back here to send back
                     </Typography>
                 </DialogContent>
                 <DialogActions sx={{ 
