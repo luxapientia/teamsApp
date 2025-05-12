@@ -1,11 +1,12 @@
 import React from 'react';
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper, Button } from '@mui/material';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { RootState } from '../../../store';
 import { AnnualTarget, QuarterType } from '../../../types/annualCorporateScorecard';
-
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import EvidenceModal from '../../organization_performance/performance_evaluations/EvidenceModal';
 // StrategyBlock: rounded box for each strategy
-const StrategyBlock: React.FC<{ text: string; color?: string }> = ({ text, color }) => (
+const StrategyBlock: React.FC<{ text: string; color?: string; onClick?: () => void }> = ({ text, color, onClick }) => (
     <Box
         sx={{
             border: '2px solid #1976d2',
@@ -17,14 +18,16 @@ const StrategyBlock: React.FC<{ text: string; color?: string }> = ({ text, color
             textAlign: 'center',
             background: color ? color : '#fff',
             color: color ? '#fff' : undefined,
+            cursor: onClick ? 'pointer' : 'default',
         }}
+        onClick={onClick}
     >
         <Typography>{text}</Typography>
     </Box>
 );
 
 // PerspectiveBlock: section for each perspective
-const PerspectiveBlock: React.FC<{ title: string; strategies: { id: number; text: string; color?: string }[] }> = ({ title, strategies }) => (
+const PerspectiveBlock: React.FC<{ title: string; strategies: { id: number; text: string; color?: string; onClick?: () => void }[] }> = ({ title, strategies }) => (
     <Paper
         elevation={0}
         sx={{
@@ -40,7 +43,7 @@ const PerspectiveBlock: React.FC<{ title: string; strategies: { id: number; text
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
             {strategies.map((s) => (
-                <StrategyBlock key={s.id} text={s.text} color={s.color} />
+                <StrategyBlock key={s.id} text={s.text} color={s.color} onClick={s.onClick} />
             ))}
         </Box>
     </Paper>
@@ -52,6 +55,10 @@ interface StrategyMapProps {
 }
 
 const StrategyMap: React.FC<StrategyMapProps> = ({ annualTargetId, quarter }) => {
+    const [selectedObjective, setSelectedObjective] = React.useState<null | { name: string; kpis: any[] }>(null);
+    const [evidenceModalOpen, setEvidenceModalOpen] = React.useState(false);
+    const [selectedEvidence, setSelectedEvidence] = React.useState<any>(null);
+
     // Get annual targets from store
     const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
     // Pick the selected annual target, or the first one if not provided
@@ -80,6 +87,114 @@ const StrategyMap: React.FC<StrategyMapProps> = ({ annualTargetId, quarter }) =>
         return foundScale?.color;
     };
 
+    // If an objective is selected, show its KPIs
+    if (selectedObjective) {
+        return (
+            <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Button variant="outlined" onClick={() => setSelectedObjective(null)}>
+                        BACK
+                    </Button>
+                </Box>
+                <Typography variant="h6" sx={{ mb: 3, ml: 1 }}>
+                    {selectedObjective.name}
+                </Typography>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 3,
+                        ml: 1,
+                        justifyContent: { xs: 'center', sm: 'flex-start' },
+                    }}
+                >
+                    {selectedObjective.kpis.map((kpi, idx) => (
+                        <Paper
+                            key={idx}
+                            sx={{
+                                p: 2,
+                                mb: 2,
+                                width: { xs: '100%', sm: 320, md: 340 },
+                                minWidth: { xs: '100%', sm: 280 },
+                                maxWidth: 400,
+                                boxShadow: 'none',
+                                border: '1px solid #E5E7EB',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                            }}
+                        >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                                KPI: {kpi.indicator}
+                            </Typography>
+                            <Box sx={{ mb: 1 }}>
+                                <Typography variant="body2">
+                                    Baseline <b>{kpi.baseline}</b>
+                                </Typography>
+                                <Typography variant="body2">
+                                    Target <b>{kpi.target}</b>
+                                </Typography>
+                                <Typography variant="body2">
+                                    Actual <b>{kpi.actualAchieved}</b>
+                                </Typography>
+                            </Box>
+                            {typeof kpi.ratingScore === 'number' && !isNaN(kpi.ratingScore) && (
+                                <Typography
+                                    sx={{
+                                        color: (() => {
+                                            const foundScale = ratingScales.find(
+                                                (scale) => scale.score === kpi.ratingScore
+                                            );
+                                            return foundScale?.color || 'black';
+                                        })(),
+                                        fontWeight: 500,
+                                        mb: 1,
+                                    }}
+                                >
+                                    {kpi.ratingScore} – {(() => {
+                                        const foundScale = ratingScales.find(
+                                            (scale) => scale.score === kpi.ratingScore
+                                        );
+                                        return foundScale
+                                            ? `${foundScale.name} (Score Range: ${foundScale.min}-${foundScale.max})`
+                                            : '';
+                                    })()}
+                                </Typography>
+                            )}
+                            {kpi.evidence && (
+                                <Typography
+                                    sx={{
+                                        color: '#888',
+                                        fontSize: 14,
+                                        mt: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => {
+                                        setSelectedEvidence(kpi.evidence);
+                                        setEvidenceModalOpen(true);
+                                    }}
+                                >
+                                    <AttachFileIcon sx={{ fontSize: 18, mr: 0.5, verticalAlign: 'middle' }} />
+                                    Evidence Attached
+                                </Typography>
+                            )}
+                        </Paper>
+                    ))}
+                </Box>
+                <EvidenceModal
+                    open={evidenceModalOpen}
+                    onClose={() => setEvidenceModalOpen(false)}
+                    evidence={selectedEvidence}
+                    attachments={selectedEvidence?.attachments || []}
+                />
+            </Box>
+        );
+    }
+
+    // Build the strategy map data with click handlers
     const strategyMapData = perspectives.map((perspective) => ({
         perspective: perspective.name,
         strategies: objectives
@@ -87,7 +202,8 @@ const StrategyMap: React.FC<StrategyMapProps> = ({ annualTargetId, quarter }) =>
             .map((obj, idx) => ({
                 id: idx + 1,
                 text: obj.name,
-                color: getObjectiveColor(obj.name)
+                color: getObjectiveColor(obj.name),
+                onClick: () => setSelectedObjective({ name: obj.name, kpis: obj.KPIs }),
             })),
     }));
 

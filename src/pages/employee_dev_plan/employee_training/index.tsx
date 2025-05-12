@@ -194,9 +194,6 @@ const EmployeesTraining: React.FC = () => {
             displayEmpty
             sx={{ backgroundColor: '#fff' }}
           >
-            <MenuItem value="">
-              <Typography color="textSecondary">Select a development plan</Typography>
-            </MenuItem>
             {plans?.map((plan) => (
               <MenuItem key={plan._id} value={plan._id}>
                 {plan.name}

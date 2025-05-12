@@ -192,7 +192,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${user?.displayName} ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
+          {`${annualTarget.name}, ${notification?.sender.fullName} ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
         </Typography>
 
         <Button

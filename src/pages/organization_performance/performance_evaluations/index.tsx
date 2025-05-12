@@ -249,7 +249,7 @@ const PerformanceEvaluations: React.FC = () => {
     if (getQuarterlyObjectives().length > 0) {
       const score = calculateOverallRating(getQuarterlyObjectives());
       const ratingScore = getRatingScoreInfo(score);
-      const title = `${user.organizationName} ${selectedAnnualTarget?.name} ${selectedQuarter} Performance Evaluation`;
+      const title = `${user.organizationName ? user.organizationName : ''} ${selectedAnnualTarget?.name} ${selectedQuarter} Performance Evaluation`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, 'Total Weight: ' + String(calculateTotalWeight(getQuarterlyObjectives())), '', [0.1, 0.15, 0.1, 0.25, 0.1, 0.1, 0.1, 0.1],
         { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
     }

@@ -147,7 +147,7 @@ const OrganizationPerformances: React.FC = () => {
 
   const handleExportPDF = async () => {
     if (selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.length > 0) {
-      const title = `${user.organizationName} ${selectedAnnualTarget?.name} Performances`;
+      const title = `${user.organizationName ? user.organizationName : ''} ${selectedAnnualTarget?.name} Performances`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.2, 0.2, 0.2, 0.2, 0.2]);
     }
   }
@@ -274,6 +274,7 @@ const OrganizationPerformances: React.FC = () => {
                             color: overallRatingScale?.color || '#DC2626',
                             fontWeight: 500
                           }}
+                          data-color={overallRatingScale?.color || '#DC2626'}
                         >
                           {overallScore && overallRatingScale ? (
                             `${overallScore} ${overallRatingScale.name} (${overallRatingScale.min}-${overallRatingScale.max})`

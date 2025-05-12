@@ -251,6 +251,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
             setShowQuarterlyTargets(true);
           }}
           userId={selectedUserId}
+          userName={filteredUsers.find(user => user.id === selectedUserId)?.name || ''}
         />
       )}
     </Box>

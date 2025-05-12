@@ -96,7 +96,7 @@ const TeamPerformances: React.FC = () => {
 
   const handleExportPDF = async () => {
     if (teamPerformances.length > 0) {
-      const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name} ${teamPerformances[0].team} team performance`;
+      const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name} Team Performance`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.1, 0.1, 0.05, 0.15, 0.15, 0.15, 0.15, 0.15]);
     }
   }
@@ -133,7 +133,7 @@ const TeamPerformances: React.FC = () => {
       </Box>
 
       {showTable && (
-        <Paper sx={{ boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+        <Paper sx={{ boxShadow: 'none', border: '1px solid #E5E7EB', overflowX: 'auto' }}>
           <ExportButton
             className="pdf"
             startIcon={<FileDownloadIcon />}

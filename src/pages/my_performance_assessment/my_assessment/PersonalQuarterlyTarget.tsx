@@ -418,9 +418,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (personalQuarterlyObjectives.length > 0) {
       const score = calculateOverallScore(personalQuarterlyObjectives);
       const ratingScore = getRatingScoreInfo(score);
-      const title = `${user.name} Performance Assessment - ${annualTarget?.name} ${quarter}`;
-      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
-        { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
+      if (ratingScore) {
+        const title = `${user.displayName ? user.displayName : ''} Performance Assessment - ${annualTarget?.name} ${quarter}`;
+        exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
+          { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
+      } else {
+        setToast({
+          message: 'No Assessment evaluation found',
+          type: 'error'
+        });
+      }
     }
   }
 

@@ -219,9 +219,6 @@ const PerformanceDistributionReport: React.FC = () => {
             displayEmpty
             sx={{ backgroundColor: '#fff' }}
           >
-            <MenuItem value="" disabled>
-              Annual Corporate Scorecard
-            </MenuItem>
             {annualTargets.map((target) => (
               <MenuItem key={target._id} value={target._id}>
                 {target.name}
