@@ -15,6 +15,7 @@ import { RootState } from '../../../store';
 import { PersonalPerformance } from '../../../types/personalPerformance';
 import { api } from '../../../services/api';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
+import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 
 interface HeatmapByTeamProps {
   teamPerformances: TeamPerformance[];
@@ -148,10 +149,14 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     if (enableFeedback) {
       const selectedFeedbackId = quarterlyTarget?.selectedFeedbackId;
       const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
-      const contribution = feedbackTemplate?.contributionScorePercentage;
-      const feedbackOverallScore = calculateFeedbackOverallScore(selectedQuarter as QuarterType, ownerPerformance as TeamPerformance);
-      const finalScore = (overallScore && feedbackOverallScore) ? (overallScore * (1 - contribution / 100)) + (feedbackOverallScore * (contribution / 100)) : null;
-      return Number(finalScore?.toFixed(0));
+      if(feedbackTemplate?.status === 'Active' && feedbackTemplate?.enableFeedback.some(ef => ef.quarter === selectedQuarter && ef.enable)){
+        const contribution = feedbackTemplate?.contributionScorePercentage;
+        const feedbackOverallScore = calculateFeedbackOverallScore(selectedQuarter as QuarterType, ownerPerformance as TeamPerformance);
+        const finalScore = (overallScore && feedbackOverallScore) ? (overallScore * (1 - contribution / 100)) + (feedbackOverallScore * (contribution / 100)) : null;
+        return Number(finalScore?.toFixed(0));
+      } else {
+        return overallScore;
+      }
     }
     return overallScore;
   });
@@ -199,42 +204,42 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
       <Table stickyHeader>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Team</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Agreements</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Assessments</TableCell>
-            <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Performance</TableCell>
+            <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', }} align="center">Team</StyledHeaderCell>
+            <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Agreements</StyledHeaderCell>
+            <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Assessments</StyledHeaderCell>
+            <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Performance</StyledHeaderCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {teamsTable.map(teamsRow => (
             <TableRow key={teamsRow.teamName} hover>
-              <TableCell sx={{ fontWeight: 500 }}>
+              <StyledTableCell sx={{ fontWeight: 500 }} align="center">
                 {teamsRow.teamName}
-              </TableCell>
-              <TableCell
-                align="center"
+              </StyledTableCell>
+              <StyledTableCell
                 sx={{ fontWeight: 500 }}
+                align="center"
               >
                 {teamsRow.agreement}%
-              </TableCell>
-              <TableCell
-                align="center"
+              </StyledTableCell>
+              <StyledTableCell
                 sx={{ fontWeight: 500 }}
+                align="center"
               >
                 {teamsRow.assessment}%
-              </TableCell>
-              <TableCell
-                align="center"
+              </StyledTableCell>
+              <StyledTableCell
                 sx={{
                   color: getRatingScaleInfo(teamsRow.performance).color,
                   fontWeight: 500
                 }}
+                align="center"
               >
                 {teamsRow.performance !== null && !isNaN(teamsRow.performance) ?
                   `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)`
                   : ''
                 }
-              </TableCell>
+              </StyledTableCell>
             </TableRow>
           ))}
         </TableBody>

@@ -110,7 +110,8 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     const feedbacks = useAppSelector((state: RootState) =>
         state.feedback.feedbacks.filter(f =>
             f.annualTargetId === annualTargetId &&
-            f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+            f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable) && 
+            f.status === 'Active'
         )
     );
 
