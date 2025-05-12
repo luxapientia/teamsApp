@@ -14,6 +14,10 @@ import {
     MenuItem,
     IconButton,
     Chip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { useToast } from '../../../contexts/ToastContext';
@@ -51,6 +55,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [warningModalOpen, setWarningModalOpen] = useState(false);
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -114,18 +119,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
 
     const canSendBack = () => {
-        return personalPerformance && (personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft);
+        return personalPerformance && (personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus !== (AssessmentStatus.Submitted || AssessmentStatus.Approved));
     }
 
     const handleSendBack = (emailSubject: string, emailBody: string) => {
         if (personalPerformance) {
+            const quarterlyTarget = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter);
+
             setIsSubmitting(true);
             (async () => {
                 try {
                     const response = await api.post(`/personal-performance/send-back`, {
                         emailSubject,
                         emailBody,
-                        supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
+                        supervisorId: quarterlyTarget?.supervisorId,
                         userId: personalPerformance.userId,
                         manageType: 'Agreement',
                         performanceId: personalPerformance._id,
@@ -219,7 +226,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     Back
                 </Button>
             </Box>
-            {canSendBack() && (
+            {
                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         {
@@ -258,7 +265,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                     color: '#9CA3AF'
                                 }
                             }}
-                            onClick={() => setSendBackModalOpen(true)}
+                            onClick={() => {
+                                if (canSendBack()) {
+                                    setSendBackModalOpen(true);
+                                } else {
+                                    setWarningModalOpen(true);
+                                }
+                            }}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? 'Processing...' : 'Send Back'}
@@ -266,7 +279,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
                     </Box>
                 </Box>
-            )}
+            }
 
             {/* Add total weight display */}
             <Box
@@ -449,6 +462,59 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     ratingScales={selectedRatingScales}
                 />
             )}
+
+            <Dialog
+                open={warningModalOpen}
+                onClose={() => setWarningModalOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: '12px',
+                        boxShadow: '0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ 
+                    backgroundColor: '#FEF3C7',
+                    color: '#92400E',
+                    borderBottom: '1px solid #F59E0B',
+                    fontWeight: 600,
+                    fontSize: '1.1rem'
+                }}>
+                    Warning
+                </DialogTitle>
+                <DialogContent sx={{ 
+                    mt: 2,
+                    '& .MuiTypography-root': {
+                        color: '#4B5563',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.6
+                    }
+                }}>
+                    <Typography>
+                        You cannot send back this performance agreement as the performance agreement has already been approved. If you want to send it back, go and send back the same performance assessment in My Assessments – Management Performance Assessment and come back here to send back
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ 
+                    p: 2,
+                    borderTop: '1px solid #E5E7EB'
+                }}>
+                    <Button 
+                        onClick={() => setWarningModalOpen(false)}
+                        variant="contained"
+                        sx={{
+                            backgroundColor: '#F59E0B',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: '#D97706'
+                            }
+                        }}
+                    >
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box >
     );
 };
