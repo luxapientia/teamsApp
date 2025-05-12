@@ -104,7 +104,28 @@ const AddAnnualTargetModal: React.FC<AddAnnualTargetModalProps> = ({
           totalWeight: 0,
           quarterlyTarget: {
             editable: false,
-            quarterlyTargets: [],
+            quarterlyTargets: [
+              {
+                quarter: 'Q1',
+                editable: true,
+                objectives: [],
+              },
+              {
+                quarter: 'Q2',
+                editable: true,
+                objectives: [],
+              },
+              {
+                quarter: 'Q3',
+                editable: true,
+                objectives: [],
+              },
+              {
+                quarter: 'Q4',
+                editable: true,
+                objectives: [],
+              },
+            ],
           },
           assessmentPeriod: {
             Q1: {
