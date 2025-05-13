@@ -22,6 +22,7 @@ import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { RootState } from '../../../../../store';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
+import { QUARTER_ALIAS } from '../../../../../constants/quarterAlias';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -100,6 +101,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
           <TableHead>
             <TableRow>
               <StyledHeaderCell>Quarter</StyledHeaderCell>
+              <StyledHeaderCell>Naming</StyledHeaderCell>
               <StyledHeaderCell>Enable</StyledHeaderCell>
               <StyledHeaderCell align="right">Action</StyledHeaderCell>
             </TableRow>
@@ -112,6 +114,11 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
                   <StyledTableCell>
                     <Typography variant="body1">
                       {quarter}
+                    </Typography>
+                  </StyledTableCell>
+                  <StyledTableCell>
+                    <Typography variant="body1">
+                      {QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] ?? ''}
                     </Typography>
                   </StyledTableCell>
                   <StyledTableCell>
