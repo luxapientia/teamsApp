@@ -49,6 +49,7 @@ import { Course } from '../../../types/course';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import PersonalFeedback from './PersonalFeedback';
 import { Toast } from '../../../components/Toast';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -64,6 +65,7 @@ const AccessButton = styled(Button)({
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
+  isEnabledTwoQuarterMode: boolean;
   onBack?: () => void;
   personalPerformance?: PersonalPerformance | null;
 }
@@ -71,6 +73,7 @@ interface PersonalQuarterlyTargetProps {
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
+  isEnabledTwoQuarterMode,
   onBack,
   personalPerformance = null,
 }) => {
@@ -419,7 +422,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       const score = calculateOverallScore(personalQuarterlyObjectives);
       const ratingScore = getRatingScoreInfo(score);
       if (ratingScore) {
-        const title = `${user.displayName ? user.displayName : ''} Performance Assessment - ${annualTarget?.name} ${quarter}`;
+        const title = `${user.displayName ? user.displayName : ''} Performance Assessment - ${annualTarget?.name} ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`;
         exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
           { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
       } else {
@@ -557,7 +560,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
       <Typography variant="h6">
-        {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
+        {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
       </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl

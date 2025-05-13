@@ -37,7 +37,7 @@ import PersonalFeedback from './PersonalFeedback';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import { Toast } from '../../../components/Toast';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
-
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
   color: 'white',
@@ -52,6 +52,7 @@ const AccessButton = styled(Button)({
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
+  isEnabledTwoQuarterMode: boolean;
   onBack?: () => void;
   notification?: Notification | null;
 }
@@ -59,6 +60,7 @@ interface PersonalQuarterlyTargetProps {
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
+  isEnabledTwoQuarterMode,
   onBack,
   notification = null,
 }) => {
@@ -228,7 +230,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${notification?.sender.fullName} ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
+          {`${annualTarget.name}, ${notification?.sender.fullName} ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
         </Typography>
 
         <Button

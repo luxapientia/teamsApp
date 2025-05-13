@@ -9,6 +9,8 @@ import { api } from '../../services/api';
 import { Notification } from '@/types';
 import PersonalQuarterlyTargetContent from './quarterly_target';
 import PersonalPerformanceAssessmentContent from './performance_assessment';
+import { isEnabledTwoQuarterMode } from '../../utils/quarterMode';
+import { QUARTER_ALIAS } from '../../constants/quarterAlias';
 const ViewButton = styled(Button)({
   backgroundColor: '#0078D4',
   color: 'white',
@@ -76,7 +78,22 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                   </TableCell>
                   <TableCell>{teams.find((team) => team._id === notification.sender.teamId)?.name}</TableCell>
                   <TableCell>{annualTargets.find((target) => target._id === notification.annualTargetId)?.name}</TableCell>
-                  <TableCell>{`Approve ${notification.quarter} ${notification.type === 'agreement' ? 'Quarterly Target' : 'Performance Assessment'}`}</TableCell>
+                  <TableCell>
+                    {`Approve ${
+                      isEnabledTwoQuarterMode(
+                        annualTargets.find((target) => target._id === notification.annualTargetId)
+                          ?.content.quarterlyTarget.quarterlyTargets
+                          .filter((quarter) => quarter.editable)
+                          .map((quarter) => quarter.quarter)
+                      ) 
+                        ? QUARTER_ALIAS[notification.quarter as keyof typeof QUARTER_ALIAS] 
+                        : notification.quarter
+                    } ${
+                      notification.type === 'agreement' 
+                        ? 'Quarterly Target' 
+                        : 'Performance Assessment'
+                    }`}
+                  </TableCell>
                   <TableCell>{new Date(notification.updatedAt).toLocaleString()}</TableCell>
                   <TableCell align="right">
                     <ViewButton
@@ -98,6 +115,11 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
           notification={selectedNotification}
           annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
           quarter={selectedNotification.quarter}
+          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+            quarter.editable
+          )).map((quarter) => (
+            quarter.quarter
+          )))}
           onBack={() => {
             setSelectedNotification(null);
             setShowTable(true);
@@ -108,6 +130,11 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
           notification={selectedNotification}
           annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
           quarter={selectedNotification.quarter}
+          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+            quarter.editable
+          )).map((quarter) => (
+            quarter.quarter
+          )))}
           onBack={() => {
             setSelectedNotification(null);
             setShowTable(true);
