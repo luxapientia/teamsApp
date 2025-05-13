@@ -102,6 +102,7 @@ export interface QuarterlyTarget {
     editable: boolean;
     isDevelopmentPlanEnabled?: boolean;
     objectives: QuarterlyTargetObjective[];
+    selectedFeedbackId?: string;
 }
 
 export interface QuarterlyTargetObjective {
