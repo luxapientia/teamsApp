@@ -49,10 +49,12 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { exportPdf } from '../../../utils/exportPdf';
 import { Toast } from '../../../components/Toast';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
+  isEnabledTwoQuarterMode: boolean;
   onBack?: () => void;
   personalPerformance?: PersonalPerformance | null;
 }
@@ -60,6 +62,7 @@ interface PersonalQuarterlyTargetProps {
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
+  isEnabledTwoQuarterMode,
   onBack,
   personalPerformance = null,
 }) => {
@@ -87,6 +90,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
 
+  console.log(isEnabledTwoQuarterMode, 'isEnabledTwoQuarterMode');
+  console.log(quarter, 'quarter');
   useEffect(() => {
     fetchCompanyUsers();
   }, []);
@@ -397,7 +402,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleExportPDF = async () => {
-    const title = `${user.displayName} Performance Agreement - ${annualTarget?.name} ${quarter}`;
+    const title = `${user.displayName} Performance Agreement - ${annualTarget?.name} ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`;
     if (personalQuarterlyObjectives.length > 0) {
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.15, 0.15, 0.2, 0.1, 0.2, 0.1, 0.1]);
     }
@@ -470,7 +475,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
       <Typography variant="h6">
-        {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
+        {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
       </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl

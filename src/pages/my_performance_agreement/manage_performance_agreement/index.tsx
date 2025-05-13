@@ -33,6 +33,7 @@ import { PersonalPerformance, PersonalQuarterlyTarget } from '../../../types';
 import { api } from '../../../services/api';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import SearchIcon from '@mui/icons-material/Search';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -162,12 +163,14 @@ const PersonalPerformanceAgreement: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
-                </MenuItem>
-              )
+            {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            ))).map((quarter) => (
+              <MenuItem key={quarter.key} value={quarter.key}>
+                {quarter.alias}
+              </MenuItem>
             ))}
           </Select>
         </StyledFormControl>
@@ -246,6 +249,11 @@ const PersonalPerformanceAgreement: React.FC = () => {
         <PersonalQuarterlyTargetContent
           annualTarget={selectedAnnualTarget as AnnualTarget}
           quarter={selectedQuarter as QuarterType}
+          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+            quarter.editable
+          )).map((quarter) => (
+            quarter.quarter
+          )))}
           onBack={() => {
             setShowPersonalQuarterlyTarget(false);
             setShowQuarterlyTargets(true);
