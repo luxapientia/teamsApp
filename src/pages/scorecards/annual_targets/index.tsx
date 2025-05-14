@@ -94,22 +94,16 @@ const CreateButton = styled(Button)(({ theme }) => ({
 interface RowProps {
     target: AnnualTarget;
     onMenuClick: (event: React.MouseEvent<HTMLElement>, name: string) => void;
-    onOpen?: (setOpen: (open: boolean) => void) => void;
+    open: boolean;
+    onToggle: () => void;
 }
 
-const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
-    const [open, setOpen] = useState(false);
+const Row: React.FC<RowProps> = ({ target, onMenuClick, open, onToggle }) => {
     const [tabValue, setTabValue] = useState(0);
 
     const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
         setTabValue(newValue);
     };
-
-    useEffect(() => {
-        if (onOpen) {
-            onOpen(setOpen);
-        }
-    }, [onOpen]);
 
     const renderTab = () => {
         switch (tabValue) {
@@ -137,7 +131,7 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
                     <IconButton
                         aria-label="expand row"
                         size="small"
-                        onClick={() => setOpen(!open)}
+                        onClick={onToggle}
                         sx={{ mr: 1 }}
                     >
                         {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
@@ -156,7 +150,7 @@ const Row: React.FC<RowProps> = ({ target, onMenuClick, onOpen }) => {
                 <StyledTableCell>{target.endDate}</StyledTableCell>
                 <StyledTableCell>{target.status}</StyledTableCell>
                 <StyledTableCell align="right">
-                    <ViewButton onClick={() => setOpen(true)}>
+                    <ViewButton onClick={onToggle}>
                         View
                     </ViewButton>
                 </StyledTableCell>
@@ -234,7 +228,7 @@ const AnnualTargets: React.FC = () => {
     const { annualTargets, status } = useAppSelector((state: RootState) => state.scorecard);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [selectedRow, setSelectedRow] = useState<string | null>(null);
-    const [expandRow, setExpandRow] = useState<((open: boolean) => void) | null>(null);
+    const [expandedRow, setExpandedRow] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTarget, setEditingTarget] = useState<AnnualTarget | null>(null);
     const [isCreateFromExistingOpen, setIsCreateFromExistingOpen] = useState(false);
@@ -265,8 +259,8 @@ const AnnualTargets: React.FC = () => {
 
     const handleOpen = () => {
         handleMenuClose();
-        if (expandRow) {
-            expandRow(true);
+        if (selectedRow) {
+            setExpandedRow(selectedRow);
         }
     };
 
@@ -352,7 +346,8 @@ const AnnualTargets: React.FC = () => {
                                     key={index}
                                     target={target}
                                     onMenuClick={handleMenuClick}
-                                    onOpen={target.name === selectedRow ? setExpandRow : undefined}
+                                    open={target.name === expandedRow}
+                                    onToggle={() => setExpandedRow(expandedRow === target.name ? null : target.name)}
                                 />
                             ))}
                         </TableBody>
