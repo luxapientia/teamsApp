@@ -18,6 +18,8 @@ import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { RootState } from '../../../../../store';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
+import { QUARTER_ALIAS } from '../../../../../constants/quarterAlias';
+import { isEnabledTwoQuarterMode } from '../../../../../utils/quarterMode';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -150,6 +152,8 @@ const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName 
     setErrors({});
   };
 
+  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(annualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter) || []);
+
   return (
     <Box p={2}>
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
@@ -163,11 +167,11 @@ const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName 
             </TableRow>
           </TableHead>
           <TableBody>
-            {quarters.map((quarter) => {
+            {quarters.filter(quarter => annualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter)?.editable).map((quarter) => {
               const period = annualTarget?.content.contractingPeriod?.[quarter as keyof typeof annualTarget.content.contractingPeriod];
               return (
                 <TableRow key={quarter}>
-                  <StyledTableCell>{quarter}</StyledTableCell>
+                  <StyledTableCell>{isEnabledTwoQuarter ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}</StyledTableCell>
                   <StyledTableCell>
                     {editingQuarter === quarter ? (
                       <TextField

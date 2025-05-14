@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   FormControl,
@@ -33,6 +33,8 @@ import RatingScalesModal from '../../../components/RatingScalesModal';
 import { ExportButton } from '../../../components/Buttons';
 import { exportPdf } from '../../../utils/exportPdf';
 import { useAuth } from '../../../contexts/AuthContext';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -75,6 +77,7 @@ const QuarterlyTargetTable: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [showTable, setShowTable] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEnabledTwoQuarter, setIsEnabledTwoQuarter] = useState(false);
   const [editingObjective, setEditingObjective] = useState<QuarterlyTargetObjective | null>(null);
   const [selectedKPIRatingScales, setSelectedKPIRatingScales] = useState<AnnualTargetRatingScale[] | null>(null);
   const tableRef = useRef();
@@ -88,7 +91,15 @@ const QuarterlyTargetTable: React.FC = () => {
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
 
+
   const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    if (selectedAnnualTarget) {
+      const isEnabledTwoQuarter = isEnabledTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter));
+      setIsEnabledTwoQuarter(isEnabledTwoQuarter);
+    }
+  }, [selectedAnnualTarget]);
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
@@ -171,7 +182,7 @@ const QuarterlyTargetTable: React.FC = () => {
 
   const handleExportPDF = () => {
     if (getQuarterlyObjectives().length > 0) {
-      const title = `${user.organizationName} ${selectedAnnualTarget?.name} ${selectedQuarter}`;
+      const title = `${user.organizationName} ${selectedAnnualTarget?.name} ${isEnabledTwoQuarter ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter}`;
       exportPdf(PdfType.AnnualTargets, tableRef, title.trim(), `Total Weight: ${calculateTotalWeight(getQuarterlyObjectives())}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
     }
   }
@@ -218,13 +229,10 @@ const QuarterlyTargetTable: React.FC = () => {
             onChange={handleQuarterChange}
           >
             {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
-              .filter(quarter => {
-                const isSetAssessmentPeriod = selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable;
-                return isSetAssessmentPeriod;
-              })
+              .filter(quarter => selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable)
               .map((quarter) => (
                 <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
+                  {isEnabledTwoQuarter ? QUARTER_ALIAS[quarter.quarter as keyof typeof QUARTER_ALIAS] : quarter.quarter}
                 </MenuItem>
               ))}
           </Select>
@@ -247,7 +255,7 @@ const QuarterlyTargetTable: React.FC = () => {
       {showTable && selectedAnnualTarget && (
         <Box sx={{ mt: 3 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Quarterly Corporate Scorecard - {selectedQuarter}
+            Quarterly Corporate Scorecard - {isEnabledTwoQuarter ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter}
           </Typography>
 
           <Box sx={{ mb: 4 }}>
