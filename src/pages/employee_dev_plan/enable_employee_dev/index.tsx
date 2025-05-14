@@ -7,6 +7,8 @@ import { api } from '../../../services/api';
 import { fetchAnnualTargets, updateQuarterlyTarget } from '../../../store/slices/scorecardSlice';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
 import { AnnualTarget } from '../../../types'
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
 
 const EnableEmployeesDevelopment: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -18,6 +20,8 @@ const EnableEmployeesDevelopment: React.FC = () => {
   const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
+
+  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter));
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
@@ -119,9 +123,9 @@ const EnableEmployeesDevelopment: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {quarterlyTargets.map((quarterlyTarget, index) => (
+              {quarterlyTargets.filter(quarterlyTarget => quarterlyTarget.editable).map((quarterlyTarget, index) => (
                 <TableRow key={index}>
-                  <StyledTableCell>{quarterlyTarget.quarter}</StyledTableCell>
+                  <StyledTableCell>{isEnabledTwoQuarter ? QUARTER_ALIAS[quarterlyTarget.quarter as keyof typeof QUARTER_ALIAS] : quarterlyTarget.quarter}</StyledTableCell>
                   <StyledTableCell>
                     {quarterlyTarget.isDevelopmentPlanEnabled ? 'Yes' : 'No'}
                   </StyledTableCell>
