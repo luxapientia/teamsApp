@@ -283,12 +283,31 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
       teamId: p.teamId
     })));
 
-    const isTeamOwner = true;
-
+    const user = await User.findOne({ MicrosoftId: req.user?.id }).populate({
+      path: 'teamId',
+      select: 'owner name'
+    });
+    const isTeamOwner = user?.teamId && typeof user.teamId === 'object' && 'owner' in user.teamId && user.teamId.owner === user?.MicrosoftId;
     const teamPerformances = allPersonalPerformances
       .filter(performance => performance.userId && (
-        performance.quarterlyTargets[0].supervisorId === req.user?._id || isTeamOwner
+        performance.quarterlyTargets[0].supervisorId === user?._id || isTeamOwner
       ))
+      .map(performance => {
+        return {
+          ...performance._doc,
+          fullName: performance.userId.name,
+          jobTitle: performance.userId.jobTitle,
+          email: performance.userId.email,
+          microsoftId: performance.userId.MicrosoftId,
+          team: performance.teamId?.name,
+          quarterlyTargets: performance.quarterlyTargets.map((target: any) => ({
+            ...target._doc,
+            personalDevelopment: target.personalDevelopment || []
+          })),
+          isTeamOwner: performance.userId.MicrosoftId == performance.teamId?.owner
+        }
+      });
+    const orgPerformances = allPersonalPerformances
       .map(performance => {
         return {
           ...performance._doc,
@@ -311,7 +330,10 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
       microsoftId: p.microsoftId
     })));
 
-    return res.json(teamPerformances);
+    const isSuperUser = req.user?.role === 'SuperUser';
+    const isAppOwner = req.user?.email === process.env.APP_OWNER_EMAIL;
+    
+    return res.json(isSuperUser || isAppOwner ? orgPerformances : teamPerformances);
   } catch (error) {
     console.error('Team performances error:', error);
     return res.status(500).json({ error: 'Failed to get team performances' });
