@@ -122,7 +122,7 @@ router.post('/share-feedback', authenticateToken, async (_req: AuthenticatedRequ
       { new: true }
     );
     
-    const feedback = await sendFeedbackEmail(feedbackId, provider, { tenantId: user?.tenantId || '', MicrosoftId: user?.MicrosoftId || '', name: user?.name || '' });
+    const feedback = await sendFeedbackEmail(feedbackId, provider, { tenantId: user?.tenantId || '', MicrosoftId: user?.id || '', name: user?.displayName || '' });
 
     if (feedback.success) {
       return res.status(200).json({ data: null, message: 'Feedback shared successfully' });

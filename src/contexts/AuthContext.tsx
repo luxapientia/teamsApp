@@ -4,11 +4,12 @@ import { isInTeams, initializeTeams } from '../utils/teamsUtils';
 import * as microsoftTeams from '@microsoft/teams-js';
 import { authConfig } from '../config/authConfig';
 import { api } from '../services/api';
+import { UserProfile } from '../types';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
-  user: any;
+  user: UserProfile;
   isTeams: boolean;
   isTeamsInitialized: boolean;
   hasLicenseError: boolean;
@@ -16,7 +17,7 @@ interface AuthContextType {
   login: () => Promise<void>;
   logout: () => Promise<void>;
   setIsAuthenticated: (value: boolean) => void;
-  setUser: (user: any) => void;
+  setUser: (user: UserProfile) => void;
   setIsLoading: (value: boolean) => void;
   setHasLicenseError: (value: boolean) => void;
   setLicenseStatus: (status: string | null) => void;
@@ -57,7 +58,7 @@ const setupApiInterceptors = (
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [isTeams, setIsTeams] = useState(false);
   const [isTeamsInitialized, setIsTeamsInitialized] = useState(false);
   const [hasLicenseError, setHasLicenseError] = useState(false);
@@ -83,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Validate the token with the server
           const response = await api.get('/auth/verify');
           const userData = response.data.data;
-          
           // Token is valid, update auth state
           setUser(userData.user);
           setIsAuthenticated(true);

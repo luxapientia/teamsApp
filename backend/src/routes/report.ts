@@ -37,12 +37,12 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
 router.get('/team-performances', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { annualTargetId } = req.query;
-    const user = req.user;
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
     const allPersonalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId: req.user?.tenantId }).populate('userId').populate('teamId') as any[];
     let isTeamOwner = true;
     let teamId = '';
 
-    const team = await Team.findOne({ owner: user?.MicrosoftId });
+    const team = await Team.findOne({ owner: req.user?.id });
     if (team) {
       isTeamOwner = true;
       teamId = team._id as string;
@@ -53,10 +53,10 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
 
     const teamPerformances: any[] = [];
     allPersonalPerformances.forEach(performance => {
-      if (user?.role === UserRole.SUPER_USER || user?.role === UserRole.APP_OWNER) {
+      if (req.user?.role === UserRole.SUPER_USER || req.user?.role === UserRole.APP_OWNER) {
         teamPerformances.push({ ...performance._doc, fullName: performance.userId?.name, jobTitle: performance.userId?.jobTitle, team: performance.teamId?.name });
       } else {
-        if (performance.quarterlyTargets[0].supervisorId === req.user?._id?.toString()) {
+        if (performance.quarterlyTargets[0].supervisorId === user?._id?.toString()) {
           teamPerformances.push({ ...performance._doc, fullName: performance.userId?.name, jobTitle: performance.userId?.jobTitle, team: performance.teamId?.name });
         } else {
           if (isTeamOwner && performance.teamId?._id.toString() === teamId.toString()) {

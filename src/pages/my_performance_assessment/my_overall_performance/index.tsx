@@ -170,7 +170,7 @@ const MyPerformances: React.FC = () => {
     const feedbackOverallScore = calculateFeedbackOverallScore(quarter);
     const selectedFeedback = feedbackTemplates.find(f => f._id === selectedFeedbackId);
     const contributionScorePercentage = selectedFeedback?.contributionScorePercentage || 0;
-    if(selectedFeedback?.status === 'Active' && selectedFeedback?.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)){
+    if (selectedFeedback?.status === 'Active' && selectedFeedback?.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)) {
       const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore) * (1 - contributionScorePercentage / 100));
       return finalScore;
     }
@@ -254,19 +254,21 @@ const MyPerformances: React.FC = () => {
               <TableBody>
                 {personalPerformances.map((performance: PersonalPerformance, index: number) => {
                   // Calculate quarter scores
-                  const quarterScores = performance.quarterlyTargets.filter(quarter => annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable).map(quarter => {
-                    const isFeedbackEnabled = feedbackTemplates
-                      .find(template => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')
-                      ?.enableFeedback
-                      .find(ef => ef.quarter === quarter.quarter && ef.enable)?.enable;
-                    if (enableFeedback) {
-                      return isFeedbackEnabled 
-                        ? calculateFinalScore(quarter.quarter, calculateQuarterScore(quarter.objectives))
-                        : calculateQuarterScore(quarter.objectives);
-                    } else {
-                      return calculateQuarterScore(quarter.objectives);
-                    }
-                  });
+                  const quarterScores = performance.quarterlyTargets
+                    .filter(quarter => annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable)
+                    .map(quarter => {
+                      const isFeedbackEnabled = feedbackTemplates
+                        .find(template => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')
+                        ?.enableFeedback
+                        .find(ef => ef.quarter === quarter.quarter && ef.enable)?.enable;
+                      if (enableFeedback) {
+                        return isFeedbackEnabled
+                          ? calculateFinalScore(quarter.quarter, calculateQuarterScore(quarter.objectives))
+                          : calculateQuarterScore(quarter.objectives);
+                      } else {
+                        return calculateQuarterScore(quarter.objectives);
+                      }
+                    });
 
                   // Calculate annual score
                   const validScores = quarterScores.filter(score => score) as number[];
@@ -279,15 +281,15 @@ const MyPerformances: React.FC = () => {
                       {/* Quarter scores */}
                       {quarterScores.map((score, idx) => {
                         const ratingScale = getRatingScaleInfo(
-                          Math.round(Number(score)), 
+                          Math.round(Number(score)),
                           annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget
                         );
-                        
+
                         return (
                           <StyledTableCell key={idx}>
                             <Typography sx={{ color: ratingScale?.color }}>
-                              {ratingScale 
-                                ? `${Math.round(Number(score))} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` 
+                              {ratingScale
+                                ? `${Math.round(Number(score))} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`
                                 : 'N/A'
                               }
                             </Typography>
@@ -297,19 +299,19 @@ const MyPerformances: React.FC = () => {
 
                       {/* Annual score */}
                       <StyledTableCell>
-                        <Typography sx={{ 
+                        <Typography sx={{
                           color: getRatingScaleInfo(
-                            annualScore, 
+                            annualScore,
                             annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget
-                          )?.color 
+                          )?.color
                         }}>
                           {(() => {
                             const ratingScale = getRatingScaleInfo(
-                              annualScore, 
+                              annualScore,
                               annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget
                             );
-                            return ratingScale 
-                              ? `${annualScore} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` 
+                            return ratingScale
+                              ? `${annualScore} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})`
                               : 'N/A';
                           })()}
                         </Typography>

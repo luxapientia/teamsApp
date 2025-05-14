@@ -9,10 +9,11 @@ import {
   Paper
 } from '@mui/material';
 import { TeamPerformance } from '../../../types';
-
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 interface PendingAssessmentsTableProps {
   teamPerformances: TeamPerformance[];
   selectedQuarter: string;
+  isEnabledTwoQuarterMode: boolean;
   viewMode: string;
   userOwnedTeam?: string | null;
 }
@@ -21,7 +22,8 @@ export const PendingAssessmentsTable: React.FC<PendingAssessmentsTableProps> = (
   teamPerformances,
   selectedQuarter,
   viewMode,
-  userOwnedTeam
+  userOwnedTeam,
+  isEnabledTwoQuarterMode
 }) => (
   <TableContainer component={Paper}>
     <Table>
@@ -45,7 +47,7 @@ export const PendingAssessmentsTable: React.FC<PendingAssessmentsTableProps> = (
                   <TableCell>{performance.fullName}</TableCell>
                   <TableCell>{performance.team}</TableCell>
                   <TableCell>{performance.jobTitle}</TableCell>
-                  <TableCell>{selectedQuarter}</TableCell>
+                  <TableCell>{isEnabledTwoQuarterMode ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter}</TableCell>
                   <TableCell>{quarterlyTarget?.assessmentStatus || 'Pending'}</TableCell>
                 </TableRow>
               );
@@ -59,7 +61,7 @@ export const PendingAssessmentsTable: React.FC<PendingAssessmentsTableProps> = (
                   <TableCell>{performance.fullName}</TableCell>
                   <TableCell>{performance.team}</TableCell>
                   <TableCell>{performance.jobTitle}</TableCell>
-                  <TableCell>{selectedQuarter}</TableCell>
+                  <TableCell>{isEnabledTwoQuarterMode ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter}</TableCell>
                   <TableCell>{quarterlyTarget?.assessmentStatus || 'Pending'}</TableCell>
                 </TableRow>
               );

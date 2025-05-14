@@ -1,7 +1,5 @@
 import express, { Request, Response } from 'express';
 import { authService } from '../services/authService';
-import { authenticateToken } from '../middleware/auth';
-import { AuthenticatedRequest } from '../middleware/auth';
 import { roleService } from '../services/roleService';
 import { UserRole } from '../types/user';
 import { UserProfile } from '../types';
@@ -149,17 +147,17 @@ router.post('/logout', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Unauthorized' });
-    }
-    return res.json(req.user);
-  } catch (error) {
-    console.error('Error in /me endpoint:', error);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-});
+// router.get('/me', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+//   try {
+//     if (!req.user) {
+//       return res.status(401).json({ message: 'Unauthorized' });
+//     }
+//     return res.json(req.user);
+//   } catch (error) {
+//     console.error('Error in /me endpoint:', error);
+//     return res.status(500).json({ message: 'Internal server error' });
+//   }
+// });
 
 // Add a token verification endpoint
 router.get('/verify', async (req: Request, res: Response) => {
@@ -170,7 +168,7 @@ router.get('/verify', async (req: Request, res: Response) => {
     }
 
     // Verify the token and get the user profile
-    const userProfile = await authService.verifyToken(token);
+    const userProfile = await authService.getProfile(token);
     
     if (!userProfile) {
       return res.status(401).json({ error: 'Invalid token' });

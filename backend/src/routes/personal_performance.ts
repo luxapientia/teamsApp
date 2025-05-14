@@ -41,7 +41,7 @@ const upload = multer({ storage });
 
 router.get('/company-users', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const companyUsers = await User.find({ tenantId: req.user?.tenantId, _id: { $ne: req.user?._id } }).populate('teamId') as any[];
+    const companyUsers = await User.find({ tenantId: req.user?.tenantId, MicrosoftId: { $ne: req.user?.id } }).populate('teamId') as any[];
     return res.json(companyUsers.map((user: any) => ({ id: user._id, name: user.name, team: user.teamId?.name, position: user?.jobTitle })));
   } catch (error) {
     console.error('Company users error:', error);
@@ -158,7 +158,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
       // Use the current user's ID (req.user.MicrosoftId) to send the email
       await graphService.sendMail(
         req.user?.tenantId || '',
-        req.user?.MicrosoftId || '',
+        req.user?.id || '',
         supervisorEmail,
         emailSubject,
         emailContent
@@ -167,7 +167,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
       // Use the current user's ID (req.user.MicrosoftId) to send the email
       await graphService.sendMail(
         req.user?.tenantId || '',
-        req.user?.MicrosoftId || '',
+        req.user?.id || '',
         userEmail,
         emailSubject,
         emailContent
@@ -176,7 +176,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
       // Use the current user's ID (req.user.MicrosoftId) to send the email
       await graphService.sendMail(
         req.user?.tenantId || '',
-        req.user?.MicrosoftId || '',
+        req.user?.id || '',
         req.user?.email || '',
         emailSubject,
         emailContent
@@ -211,7 +211,7 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
     const annualTargetId = req.query.annualTargetId as string;
 
     // Get the user from the database to ensure we have the correct _id
-    const dbUser = await User.findOne({ MicrosoftId: req.user?.MicrosoftId });
+    const dbUser = await User.findOne({ MicrosoftId: req.user?.id });
     if (!dbUser) {
       return res.status(404).json({ error: 'User not found' });
     }

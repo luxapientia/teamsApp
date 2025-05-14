@@ -20,9 +20,10 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
     if (!recipientUser) {
       return res.status(404).json({ error: 'Recipient user not found' });
     }
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
 
     const existingNotification = await Notification.findOne({
-      senderId: req.user?._id,
+      senderId: user?._id,
       recipientId,
       annualTargetId,
       quarter,
@@ -38,7 +39,7 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
     } else {
       await Notification.create({
         type: 'agreement',
-        senderId: req.user?._id,
+        senderId: user?._id,
         recipientId,
         annualTargetId,
         quarter,
@@ -50,10 +51,10 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
 
     // Assume you have these variables from your request/session:
     const tenantId = req.user?.tenantId; // or from session/context
-    const fromUserId = req.user?.MicrosoftId; // the submitting user's Microsoft ID
+    const fromUserId = req.user?.id; // the submitting user's Microsoft ID
     const supervisorEmail = recipientUser.email; // supervisor's email
     const supervisorFirstName = recipientUser.name.split(' ')[0]; // supervisor's first name
-    const userFullName = req.user?.name; // submitting user's full name
+    const userFullName = req.user?.displayName; // submitting user's full name
 
     // Compose subject and body
     const subject = `Performance Agreement ${quarter}`;
@@ -89,9 +90,11 @@ router.post('/agreement/recall', authenticateToken, async (req: AuthenticatedReq
     if (!recipientUser) {
       return res.status(404).json({ error: 'Recipient user not found' });
     }
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
+
 
     const existingNotification = await Notification.findOne({
-      senderId: req.user?._id,
+      senderId: user?._id,
       recipientId,
       annualTargetId,
       quarter,
@@ -106,10 +109,10 @@ router.post('/agreement/recall', authenticateToken, async (req: AuthenticatedReq
 
     // Send recall email to supervisor
     const tenantId = req.user?.tenantId;
-    const fromUserId = req.user?.MicrosoftId;
+    const fromUserId = req.user?.id;
     const supervisorEmail = recipientUser.email;
     const supervisorFirstName = recipientUser.name.split(' ')[0];
-    const userFullName = req.user?.name;
+    const userFullName = req.user?.displayName;
     const subject = `Performance Agreement ${quarter} - RECALL`;
     const body = `
       Dear ${supervisorFirstName},<br><br>
@@ -141,9 +144,10 @@ router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRe
     if (!recipientUser) {
       return res.status(404).json({ error: 'Recipient user not found' });
     }
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
 
     const existingNotification = await Notification.findOne({
-      senderId: req.user?._id,
+      senderId: user?._id,
       recipientId,
       annualTargetId,
       quarter,
@@ -159,7 +163,7 @@ router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRe
     } else {
       await Notification.create({
         type: 'assessment',
-        senderId: req.user?._id,
+        senderId: user?._id,
         recipientId,
         annualTargetId,
         quarter,
@@ -172,10 +176,10 @@ router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRe
 
     // Send assessment submit email to supervisor
     const tenantId = req.user?.tenantId;
-    const fromUserId = req.user?.MicrosoftId;
+    const fromUserId = req.user?.id;
     const supervisorEmail = recipientUser.email;
     const supervisorFirstName = recipientUser.name.split(' ')[0];
-    const userFullName = req.user?.name;
+    const userFullName = req.user?.displayName;
     const subject = `Performance Assessment ${quarter}`;
     const body = `
       Dear ${supervisorFirstName},<br><br>
@@ -207,9 +211,10 @@ router.post('/assessment/recall', authenticateToken, async (req: AuthenticatedRe
     if (!recipientUser) {
       return res.status(404).json({ error: 'Recipient user not found' });
     }
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
 
     const existingNotification = await Notification.findOne({
-      senderId: req.user?._id,
+      senderId: user?._id,
       recipientId,
       annualTargetId,
       quarter,
@@ -224,10 +229,10 @@ router.post('/assessment/recall', authenticateToken, async (req: AuthenticatedRe
 
     // Send recall email to supervisor
     const tenantId = req.user?.tenantId;
-    const fromUserId = req.user?.MicrosoftId;
+    const fromUserId = req.user?.id;
     const supervisorEmail = recipientUser.email;
     const supervisorFirstName = recipientUser.name.split(' ')[0];
-    const userFullName = req.user?.name;
+    const userFullName = req.user?.displayName;
     const subject = `Performance Assessment ${quarter} - RECALL`;
     const body = `
       Dear ${supervisorFirstName},<br><br>
@@ -252,8 +257,10 @@ router.post('/assessment/recall', authenticateToken, async (req: AuthenticatedRe
 
 router.get('/notifications', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
+    
     const notifications = await Notification.find({
-      recipientId: req.user?._id
+      recipientId: user?._id
     }).populate('senderId').populate('personalPerformanceId') as any;
 
     const result = notifications.map((notification: any) => {
@@ -314,7 +321,7 @@ router.post('/read/:notificationId', authenticateToken, async (req: Authenticate
 
     await Notification.updateOne({ _id: notificationId }, { $set: { isRead: true } });
 
-    socketService.emitToUser(req.user?.MicrosoftId as string, SocketEvent.NOTIFICATION, {
+    socketService.emitToUser(req.user?.id as string, SocketEvent.NOTIFICATION, {
       type: notification.type,
       senderId: notification.senderId,
       recipientId: notification.recipientId,
@@ -366,7 +373,7 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
     const senderUser = await User.findById(notification.senderId);
     if (senderUser) {
       const tenantId = senderUser.tenantId;
-      const fromUserId = req.user?.MicrosoftId; // supervisor's Microsoft ID
+      const fromUserId = req.user?.id; // supervisor's Microsoft ID
       const userEmail = senderUser.email;
       const userFirstName = senderUser.name.split(' ')[0];
       let subject = '';
@@ -464,7 +471,7 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
       // Use the current user's ID (req.user.MicrosoftId) to send the email
       await graphService.sendMail(
         req.user?.tenantId || '',
-        req.user?.MicrosoftId || '',
+        req.user?.id || '',
         sender.email,
         emailSubject,
         emailContent
@@ -473,7 +480,7 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
       // Use the current user's ID (req.user.MicrosoftId) to send the email
       await graphService.sendMail(
         req.user?.tenantId || '',
-        req.user?.MicrosoftId || '',
+        req.user?.id || '',
         req.user?.email || '',
         emailSubject,
         emailContent

@@ -1,6 +1,7 @@
 import express, { Response } from 'express';
 import { AuthenticatedRequest, authenticateToken } from '../middleware/auth';
 import { TrainingService } from '../services/trainingService';
+import User from '../models/User';
 
 const router = express.Router();
 const trainingService = new TrainingService();
@@ -212,8 +213,15 @@ router.patch('/:planId/employees/:email/request', authenticateToken, async (req:
 // Get trainings by Microsoft ID
 router.get('/user/:userId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userId = req?.user?._id || '';
-    const trainings = await trainingService.getTrainingsByUserId(userId);
+    const MicrosoftId = req?.user?.id || '';
+    const userId = await User.findOne({ MicrosoftId });
+    if (!userId) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found'
+      });
+    }
+    const trainings = await trainingService.getTrainingsByUserId(userId._id);
     
     return res.json({
       status: 'success',

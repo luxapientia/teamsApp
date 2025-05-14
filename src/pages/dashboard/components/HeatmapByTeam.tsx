@@ -235,9 +235,10 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
                 }}
                 align="center"
               >
-                {teamsRow.performance !== null && !isNaN(teamsRow.performance) ?
-                  `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)`
-                  : ''
+                {
+                  teamsRow.performance !== null && !isNaN(teamsRow.performance) ?
+                    `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)`
+                    : 'N/A'
                 }
               </StyledTableCell>
             </TableRow>

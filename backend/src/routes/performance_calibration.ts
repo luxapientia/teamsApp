@@ -81,7 +81,7 @@ router.post('/pm-committee-action-agreement', authenticateToken, async (req: Aut
             throw new ApiError('Performance ID, quarter, and action are required', 400);
         }
         const tenantId = req.user?.tenantId;
-        const fromUserId = req.user?.MicrosoftId;
+        const fromUserId = req.user?.id;
         const toUser = await User.findOne({ _id: userId });
 
         let newStatus;
@@ -94,7 +94,7 @@ router.post('/pm-committee-action-agreement', authenticateToken, async (req: Aut
                 Thank you,<br><br>
                 PM Committee.
             `;
-            if (!tenantId || !fromUserId || !toUser?.MicrosoftId) {
+            if (!tenantId || !fromUserId || !toUser?.id) {
                 throw new ApiError('Missing required email information', 400);
             }
             await PersonalPerformance.updateOne(
@@ -139,7 +139,7 @@ router.post('/pm-committee-action-assessment', authenticateToken, async (req: Au
             throw new ApiError('Performance ID, quarter, and action are required', 400);
         }
         const tenantId = req.user?.tenantId;
-        const fromUserId = req.user?.MicrosoftId;
+        const fromUserId = req.user?.id;
         const toUser = await User.findOne({ _id: userId });
 
         let newStatus;

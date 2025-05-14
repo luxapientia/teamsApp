@@ -76,7 +76,7 @@ const MyTrainingDashboard: React.FC = () => {
   const fetchAllTrainings = async () => {
     try {
       // First fetch assigned trainings
-      const response = await api.get(`/training/user/${user?._id}`);
+      const response = await api.get(`/training/user/${user?.id}`);
       if (response.data.status === 'success') {
         const trainings = response.data.data.trainings;
         const planned = trainings

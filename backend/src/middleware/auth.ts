@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
-import { dUser } from '../types/user';
+import { UserProfile } from '../types/index';
 export interface AuthenticatedRequest extends Request {
-  user?: dUser;
+  user?: UserProfile;
 }
 
 export const authenticateToken = async (
@@ -27,10 +27,9 @@ export const authenticateToken = async (
     return;
   }
   const duser = {
-    _id: user._id,
-    MicrosoftId: user.MicrosoftId, // Microsoft ID
-    name: user.name,
+    id: user.MicrosoftId,
     email: user.email,
+    displayName: user.name,
     role: user.role,
     tenantId: user.tenantId,
     jobTitle: user.jobTitle,

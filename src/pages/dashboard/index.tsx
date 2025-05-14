@@ -42,6 +42,7 @@ import { PendingAssessmentsTable } from './components/PendingAssessmentsTable';
 import { PerformanceTable } from './components/PerformanceTable';
 import { HeatmapByTeam } from './components/HeatmapByTeam';
 import StrategyMap from './components/strategyMap';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../utils/quarterMode';
 
 interface DashboardProps {
   title?: string;
@@ -350,12 +351,14 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
-                </MenuItem>
-              )
+            {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            ))).map((quarter) => (
+              <MenuItem key={quarter.key} value={quarter.key}>
+                {quarter.alias}
+              </MenuItem>
             ))}
           </Select>
         </StyledFormControl>
@@ -437,6 +440,10 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                       selectedQuarter={selectedQuarter}
                       viewMode={viewMode}
                       userOwnedTeam={userOwnedTeam}
+                      isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
+                        .filter((quarter) => quarter.editable)
+                        .map((quarter) => quarter.quarter)
+                      )}
                     />
                   </Box>
                 )}
@@ -474,6 +481,10 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                       selectedQuarter={selectedQuarter}
                       viewMode={viewMode}
                       userOwnedTeam={userOwnedTeam}
+                      isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
+                        .filter((quarter) => quarter.editable)
+                        .map((quarter) => quarter.quarter)
+                      )}
                     />
                   </Box>
                 )}
@@ -578,34 +589,38 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               gap: 2,
               width: '100%'
             }}>
-              {(isAppOwner || isSuperUser) && <Box
-                sx={{ cursor: 'pointer' }}
-              >
-                <DashboardCard>
-                  <CardHeader>
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
-                      Heatmap by Team
-                    </Typography>
-                  </CardHeader>
-                  <CardContent>
-                    <HeatmapByTeam
-                      teamPerformances={teamPerformances}
-                      selectedQuarter={selectedQuarter}
-                      selectedAnnualTarget={selectedAnnualTarget}
-                    />
-                  </CardContent>
-                </DashboardCard>
-              </Box>}
+              {(isAppOwner || isSuperUser) && (viewMode === 'org') &&
+                <Box
+                  sx={{ cursor: 'pointer' }}
+                >
+                  <DashboardCard>
+                    <CardHeader>
+                      <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
+                        Heatmap by Team
+                      </Typography>
+                    </CardHeader>
+                    <CardContent>
+                      <HeatmapByTeam
+                        teamPerformances={teamPerformances}
+                        selectedQuarter={selectedQuarter}
+                        selectedAnnualTarget={selectedAnnualTarget}
+                      />
+                    </CardContent>
+                  </DashboardCard>
+                </Box>}
             </Box>
           )}
         </Box>
-      )}
-      {showDashboard && viewMode === 'strategyMap' && (
-        <Box>
-          <StrategyMap annualTargetId={selectedAnnualTargetId} quarter={selectedQuarter || undefined} />
-        </Box>
-      )}
-    </Box>
+      )
+      }
+      {
+        showDashboard && viewMode === 'strategyMap' && (
+          <Box>
+            <StrategyMap annualTargetId={selectedAnnualTargetId} quarter={selectedQuarter || undefined} />
+          </Box>
+        )
+      }
+    </Box >
   );
 };
 
