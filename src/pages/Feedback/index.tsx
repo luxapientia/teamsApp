@@ -288,7 +288,11 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
 
                 <Button
                     variant="contained"
-                    onClick={() => setShowTable(true)}
+                    onClick={() => {
+                        setShowTable(true);
+                        setShowDetails(false);
+                        setSelectedFeedback(null);
+                    }}
                     disabled={!selectedAnnualTargetId}
                     sx={{
                         backgroundColor: '#0078D4',
