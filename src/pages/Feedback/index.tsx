@@ -131,6 +131,8 @@ const Feedback: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
     const handleScorecardChange = (event: SelectChangeEvent) => {
         setSelectedAnnualTargetId(event.target.value);
         setShowTable(false);
+        setShowDetails(false);
+        setSelectedFeedback(null);
     };
 
     const handleView = (feedback: FeedbackType) => {
