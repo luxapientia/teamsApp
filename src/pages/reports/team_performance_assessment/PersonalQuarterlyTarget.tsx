@@ -29,6 +29,7 @@ import EvidenceModal from './EvidenceModal';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import PersonalFeedback from './PersonalFeedback';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 
 interface Supervisor {
   id: string;
@@ -44,6 +45,7 @@ interface PersonalQuarterlyTargetProps {
   userId: string;
   teamId: string;
   userName: string;
+  isEnabledTwoQuarterMode: boolean;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
@@ -52,7 +54,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   onBack,
   userId = '',
   teamId = '',
-  userName
+  userName,
+  isEnabledTwoQuarterMode
 }) => {
   const dispatch = useAppDispatch();
   
@@ -157,7 +160,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${userName} Performance Assessment ${quarter}`}
+          {`${annualTarget.name}, ${userName} Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
         </Typography>
       </Box>
 

@@ -26,7 +26,7 @@ import { api } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
     quarter: QuarterType;
@@ -34,6 +34,7 @@ interface PersonalQuarterlyTargetProps {
     userId: string;
     teamId: string;
     userName: string;
+    isEnabledTwoQuarterMode: boolean;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
@@ -42,7 +43,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     onBack,
     userId,
     teamId,
-    userName
+    userName,
+    isEnabledTwoQuarterMode
 }) => {
     const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
     const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
@@ -111,7 +113,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignItems: 'center'
             }}>
                 <Typography variant="h6">
-                    {`${annualTarget.name}, ${userName} Performance Agreement ${quarter}`}
+                    {`${annualTarget.name}, ${userName} Performance Agreement ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
                 </Typography>
             </Box>
 

@@ -27,6 +27,9 @@ import { api } from '../../../services/api';
 import { exportPdf } from '../../../utils/exportPdf';
 import { ExportButton } from '../../../components/Buttons';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
   borderRadius: '8px',
@@ -90,7 +93,7 @@ const TeamPerformances: React.FC = () => {
 
   const handleExportPDF = async () => {
     if (teamPerformances.length > 0) {
-      const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name} ${selectedQuarter} Performance Assessments Completions`;
+      const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name} ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter)) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Assessments Completions`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.15, 0.25, 0.25, 0.1, 0.25]);
     }
   }
@@ -120,13 +123,12 @@ const TeamPerformances: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
+            { selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter))
+              .map((quarter) => (
+                <MenuItem key={quarter.key} value={quarter.key}>
+                  {quarter.alias}
                 </MenuItem>
-              )
-            ))}
+              ))}
           </Select>
         </StyledFormControl>
 
