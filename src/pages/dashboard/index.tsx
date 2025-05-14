@@ -212,7 +212,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   };
 
   const handleView = async () => {
-    if (selectedAnnualTargetId && selectedQuarter) {
+    if (selectedAnnualTargetId && selectedQuarter && viewMode) {
       try {
         const response = await dispatch(fetchTeamPerformances(selectedAnnualTargetId));
 
@@ -384,7 +384,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
 
         <ViewButton
           variant="contained"
-          disabled={!selectedAnnualTargetId}
+          disabled={!selectedAnnualTargetId || !selectedQuarter || !viewMode}
           onClick={handleView}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >

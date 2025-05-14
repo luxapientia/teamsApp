@@ -15,13 +15,17 @@ const EnableEmployeesDevelopment: React.FC = () => {
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [quarterlyTargets, setQuarterlyTargets] = useState<any[]>([]);
+  const [isEnabledTwoQuarter, setIsEnabledTwoQuarter] = useState(false);
   const [showTable, setShowTable] = useState(false);
 
   const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
-
-  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter));
+  useEffect(() => {
+    if (selectedAnnualTarget) {
+      setIsEnabledTwoQuarter(isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter)));
+    }
+  }, [selectedAnnualTarget]);
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());

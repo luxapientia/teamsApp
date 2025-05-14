@@ -183,6 +183,9 @@ const TeamPerformanceAgreements: React.FC = () => {
     if (selectedAnnualTargetId && selectedQuarter) {
       fetchTeamPerformances();
       setShowTable(true);
+      setSelectedUserId('');
+      setSelectedTeamId('');
+      setShowPersonalQuarterlyTarget(false);
     }
   };
 
@@ -257,6 +260,7 @@ const TeamPerformanceAgreements: React.FC = () => {
                       onClick={() => {
                         setShowPersonalQuarterlyTarget(true);
                         setShowTable(false);
+
                         setSelectedUserId(typeof teamPerformance.userId === 'string' ? teamPerformance.userId : teamPerformance.userId?._id);
                         setSelectedTeamId(teamPerformance.teamId);
                       }}

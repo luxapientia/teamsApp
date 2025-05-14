@@ -133,7 +133,7 @@ const PerformanceAssessments: React.FC = () => {
 
                 <ViewButton
                     variant="contained"
-                    disabled={!selectedAnnualTargetId}
+                    disabled={!selectedAnnualTargetId || !selectedQuarter}
                     onClick={handleView}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                 >

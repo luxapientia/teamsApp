@@ -135,7 +135,7 @@ const TeamPerformances: React.FC = () => {
         <Button
           variant="contained"
           onClick={handleView}
-          disabled={!selectedAnnualTargetId}
+          disabled={!selectedAnnualTargetId || !selectedQuarter}
           sx={{
             backgroundColor: '#0078D4',
             '&:hover': { backgroundColor: '#106EBE' },
