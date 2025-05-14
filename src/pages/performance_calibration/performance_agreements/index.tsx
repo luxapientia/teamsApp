@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import AgreementsTable from './agreements_table';
 import { api } from '../../../services/api';
 import PersonalQuarterlyTarget from './PersonalQuarterlyTarget';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
 
 const StyledFormControl = styled(FormControl)({
     backgroundColor: '#fff',
@@ -31,12 +32,12 @@ const ViewButton = styled(Button)({
 });
 
 export interface AgreementRow {
-  userId: string;
-  fullName: string;
-  jobTitle: string;
-  team: string;
-  status: string;
-  pmCommitteeStatus: string;
+    userId: string;
+    fullName: string;
+    jobTitle: string;
+    team: string;
+    status: string;
+    pmCommitteeStatus: string;
 }
 
 const PerformanceAgreements: React.FC = () => {
@@ -61,7 +62,7 @@ const PerformanceAgreements: React.FC = () => {
                     quarter: selectedQuarter,
                 },
             });
-            
+
             if (!response.data?.data || response.data.data.length === 0) {
                 setAgreements([]);
                 setShowTable(true);
@@ -126,12 +127,14 @@ const PerformanceAgreements: React.FC = () => {
                         label="Quarter"
                         onChange={(e) => setSelectedQuarter(e.target.value as QuarterType)}
                     >
-                        {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-                            quarter.editable && (
-                                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                                    {quarter.quarter}
-                                </MenuItem>
-                            )
+                        {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                            quarter.editable
+                        )).map((quarter) => (
+                            quarter.quarter
+                        ))).map((quarter) => (
+                            <MenuItem key={quarter.key} value={quarter.key}>
+                                {quarter.alias}
+                            </MenuItem>
                         ))}
                     </Select>
                 </StyledFormControl>
@@ -146,23 +149,28 @@ const PerformanceAgreements: React.FC = () => {
                 </ViewButton>
             </Box>
             {showTable && !viewingUser && (
-              agreements.length > 0 ? (
-                <AgreementsTable data={agreements} onView={handleTableView} />
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                  No approved agreements found for the selected criteria.
-                </Box>
-              )
+                agreements.length > 0 ? (
+                    <AgreementsTable data={agreements} onView={handleTableView} />
+                ) : (
+                    <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                        No approved agreements found for the selected criteria.
+                    </Box>
+                )
             )}
             {viewingUser && (
-              <PersonalQuarterlyTarget
-                annualTarget={selectedAnnualTarget!}
-                quarter={selectedQuarter as QuarterType}
-                userId={viewingUser.userId}
-                userName={viewingUser.fullName}
-                onBack={handleBack}
-                initialPmCommitteeStatus={viewingUser.pmCommitteeStatus as 'Not Reviewed' | 'Reviewed' | 'Send Back'}
-              />
+                <PersonalQuarterlyTarget
+                    annualTarget={selectedAnnualTarget!}
+                    quarter={selectedQuarter as QuarterType}
+                    userId={viewingUser.userId}
+                    userName={viewingUser.fullName}
+                    onBack={handleBack}
+                    initialPmCommitteeStatus={viewingUser.pmCommitteeStatus as 'Not Reviewed' | 'Reviewed' | 'Send Back'}
+                    isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                        quarter.editable
+                    )).map((quarter) => (
+                        quarter.quarter
+                    )))}
+                />
             )}
         </Box>
     );

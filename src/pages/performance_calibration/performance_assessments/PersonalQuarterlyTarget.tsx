@@ -26,10 +26,12 @@ import SendBackModal from '../../../components/Modal/SendBackModal';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 import { useAuth } from '../../../contexts/AuthContext';
 import { AgreementReviewStatus } from '../../../types/personalPerformance';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
+  isEnabledTwoQuarterMode: boolean;
   onBack?: () => void;
   userId: string;
   userName: string;
@@ -40,6 +42,7 @@ type Action = 'accept' | 'sendBack' | 'unaccept';
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
+  isEnabledTwoQuarterMode,
   onBack,
   userId,
   userName
@@ -167,7 +170,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${userName} Performance Assessment ${quarter}`}
+          {`${annualTarget.name}, ${userName} Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter] : quarter}`}
         </Typography>
       </Box>
 
@@ -475,13 +478,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onClose={() => setSendBackModalOpen(false)}
         onSendBack={handleSendBack}
         title="PM Committee Send Back Email"
-        emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
+        emailSubject={`${annualTarget.name}, Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter] : quarter}(PM Committee Review)`}
       />
 
       <ViewSendBackMessageModal
         open={viewSendBackModalOpen}
         onClose={() => setViewSendBackModalOpen(false)}
-        emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
+        emailSubject={`${annualTarget.name}, Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter] : quarter}(PM Committee Review)`}
         emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentCommitteeSendBackMessage || 'No message available'}
       />
 

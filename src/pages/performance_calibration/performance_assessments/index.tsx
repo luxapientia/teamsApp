@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import AssessmentsTable from './assessments_table';
 import { api } from '../../../services/api';
 import PersonalQuarterlyTarget from './PersonalQuarterlyTarget';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
 const StyledFormControl = styled(FormControl)({
     backgroundColor: '#fff',
     borderRadius: '8px',
@@ -118,12 +119,14 @@ const PerformanceAssessments: React.FC = () => {
                         label="Quarter"
                         onChange={(e) => setSelectedQuarter(e.target.value as QuarterType)}
                     >
-                        {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-                            quarter.editable && (
-                                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                                    {quarter.quarter}
-                                </MenuItem>
-                            )
+                        {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                            quarter.editable
+                        )).map((quarter) => (
+                            quarter.quarter
+                        ))).map((quarter) => (
+                            <MenuItem key={quarter.key} value={quarter.key}>
+                                {quarter.alias}
+                            </MenuItem>
                         ))}
                     </Select>
                 </StyledFormControl>
@@ -154,6 +157,11 @@ const PerformanceAssessments: React.FC = () => {
                 userId={viewingUser.userId}
                 userName={viewingUser.fullName}
                 onBack={handleBack}
+                isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                    quarter.editable
+                )).map((quarter) => (
+                    quarter.quarter
+                )))}
               />
             )}
         </Box>
