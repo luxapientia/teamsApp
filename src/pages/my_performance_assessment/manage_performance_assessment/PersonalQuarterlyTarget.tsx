@@ -25,10 +25,12 @@ import EvidenceModal from './EvidenceModal';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Toast } from '../../../components/Toast';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
     quarter: QuarterType;
+    isEnabledTwoQuarterMode: boolean;
     onBack?: () => void;
     userId: string;
     userName: string;
@@ -37,6 +39,7 @@ interface PersonalQuarterlyTargetProps {
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
     annualTarget,
     quarter,
+    isEnabledTwoQuarterMode,
     onBack,
     userId,
     userName
@@ -183,7 +186,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignItems: 'center'
             }}>
                 <Typography variant="h6">
-                    {`${annualTarget.name}, ${userName} Performance Assessment ${quarter}`}
+                    {`${annualTarget.name}, ${userName} Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
                 </Typography>
             </Box>
 
