@@ -17,4 +17,5 @@ export interface dUser {
   jobTitle?: string;
   isDevMember?: boolean;
   isPerformanceCalibrationMember?: boolean;
+  status?: 'active' | 'inactive';
 }

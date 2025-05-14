@@ -80,7 +80,9 @@ export class AuthService {
         role: UserRole.USER,
         status: 'active',
         tenantId: tenantId,
-        organizationName: userData.companyName || ''
+        organizationName: userData.companyName || '',
+        isDevMember: false,
+        isPerformanceCalibrationMember: false
       };
 
       if (userProfile) {
@@ -128,10 +130,10 @@ export class AuthService {
         organization: '',
         role: dbUser.role,
         status: 'active',
-        tenantId: dbUser.tenantId,
+        tenantId: dbUser.tenantId || '',
         organizationName: '',
-        isDevMember: dbUser.isDevMember,
-        isPerformanceCalibrationMember: dbUser.isPerformanceCalibrationMember
+        isDevMember: !!dbUser.isDevMember,
+        isPerformanceCalibrationMember: !!dbUser.isPerformanceCalibrationMember
       };
 
       const token = await this.createAppToken(tokenUserProfile);
@@ -267,7 +269,9 @@ export class AuthService {
           role: UserRole.USER,
           status: 'active',
           tenantId: tenantId, // Use the tenant ID from the Teams token
-          organizationName: userData.companyName || ''
+          organizationName: userData.companyName || '',
+          isDevMember: false,
+          isPerformanceCalibrationMember: false
         };
 
         if (!userProfile.id || !userProfile.email) {
@@ -352,7 +356,9 @@ export class AuthService {
       role: userProfile.role || UserRole.USER,
       status: userProfile.status || 'active',
       tenantId: userProfile.tenantId,
-      organizationName: userProfile.organizationName || ''
+      organizationName: userProfile.organizationName || '',
+      isDevMember: userProfile.isDevMember,
+      isPerformanceCalibrationMember: userProfile.isPerformanceCalibrationMember
     };
 
     

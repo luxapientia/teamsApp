@@ -54,10 +54,10 @@ export interface UserProfile {
   department?: string;
   organization?: string;
   role: string;
-  status?: 'active' | 'inactive';
-  tenantId?: string;
+  status: 'active' | 'inactive';
+  tenantId: string;
   organizationName?: string;
-  isDevMember?: boolean;
-  isPerformanceCalibrationMember?: boolean;
+  isDevMember: boolean;
+  isPerformanceCalibrationMember: boolean;
 } 
 

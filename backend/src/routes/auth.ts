@@ -66,10 +66,10 @@ router.post('/callback', async (req: Request, res: Response) => {
             organization: '',
             role: dbUser.role,
             status: 'active',
-            tenantId: dbUser.tenantId,
+            tenantId: dbUser.tenantId || '',
             organizationName: '',
-            isDevMember: dbUser.isDevMember,
-            isPerformanceCalibrationMember: dbUser.isPerformanceCalibrationMember
+            isDevMember: !!dbUser.isDevMember,
+            isPerformanceCalibrationMember: !!dbUser.isPerformanceCalibrationMember
           };
           const appToken = await authService.createAppToken(tokenUserProfile);
         console.log('App token created successfully');

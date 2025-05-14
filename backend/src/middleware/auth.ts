@@ -35,8 +35,9 @@ export const authenticateToken = async (
     jobTitle: user.jobTitle,
     teamId: user.teamId,
     isDevMember: user.isDevMember,
-    isPerformanceCalibrationMember: user.isPerformanceCalibrationMember
+    isPerformanceCalibrationMember: user.isPerformanceCalibrationMember,
+    status: user.status || 'inactive'
   }
-  req.user = duser;
+  req.user = duser as UserProfile;
   next();
 }; 
