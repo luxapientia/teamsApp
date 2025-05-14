@@ -28,6 +28,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { exportPdf } from '../../../utils/exportPdf';
+import { enableTwoQuarterMode } from '../../../utils/quarterMode';
 
 
 const StyledFormControl = styled(FormControl)({
@@ -229,9 +230,11 @@ const OrganizationPerformances: React.FC = () => {
               <Table size="small" stickyHeader ref={tableRef}>
                 <TableHead>
                   <TableRow>
-                    {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-                      <StyledHeaderCell key={quarter.quarter} align="center">
-                        {quarter.quarter} Overall Performance Score
+                    {enableTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map((quarter) => (
+                      quarter.quarter
+                    ))).map((quarter) => (
+                      <StyledHeaderCell key={quarter.key} align="center">
+                        {quarter.alias} Overall Performance Score
                       </StyledHeaderCell>
                     ))}
                     <StyledHeaderCell align="center">
@@ -241,7 +244,9 @@ const OrganizationPerformances: React.FC = () => {
                 </TableHead>
                 <TableBody>
                   <TableRow>
-                    {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => {
+                    {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                      quarter.editable
+                    )).map((quarter) => {
                       const score = calculateQuarterScore(quarter.objectives);
                       const ratingScale = getRatingScaleInfo(score, selectedAnnualTarget);
 

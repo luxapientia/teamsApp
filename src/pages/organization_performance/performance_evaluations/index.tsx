@@ -32,6 +32,8 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { exportPdf } from '../../../utils/exportPdf';
 import { useAuth } from '../../../contexts/AuthContext';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -249,7 +251,11 @@ const PerformanceEvaluations: React.FC = () => {
     if (getQuarterlyObjectives().length > 0) {
       const score = calculateOverallRating(getQuarterlyObjectives());
       const ratingScore = getRatingScoreInfo(score);
-      const title = `${user.organizationName ? user.organizationName : ''} ${selectedAnnualTarget?.name} ${selectedQuarter} Performance Evaluation`;
+      const title = `${user.organizationName ? user.organizationName : ''} ${selectedAnnualTarget?.name} ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+        quarter.editable
+      )).map((quarter) => (
+        quarter.quarter
+      ))) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Evaluation`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, 'Total Weight: ' + String(calculateTotalWeight(getQuarterlyObjectives())), '', [0.1, 0.15, 0.1, 0.25, 0.1, 0.1, 0.1, 0.1],
         { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
     }
@@ -280,12 +286,14 @@ const PerformanceEvaluations: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
-                </MenuItem>
-              )
+            {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            ))).map((quarter) => (
+              <MenuItem key={quarter.key} value={quarter.key}>
+                {quarter.alias}
+              </MenuItem>
             ))}
           </Select>
         </StyledFormControl>
@@ -308,7 +316,11 @@ const PerformanceEvaluations: React.FC = () => {
             mb: 3
           }}>
             <Typography variant="h6">
-              Quarterly Corporate Scorecard - {selectedQuarter}
+              Quarterly Corporate Scorecard - {isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                quarter.editable
+              )).map((quarter) => (
+                quarter.quarter
+              ))) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter}
             </Typography>
 
             <Box sx={{ display: 'flex', gap: 2 }}>
