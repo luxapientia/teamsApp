@@ -42,6 +42,7 @@ import { updatePersonalPerformance } from '../../../store/slices/personalPerform
 import { api } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
+import CommentModal from './CommentModal';
 
 import { ExportButton } from '../../../components/Buttons';
 
@@ -89,6 +90,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [selectedComment, setSelectedComment] = useState('');
 
   console.log(isEnabledTwoQuarterMode, 'isEnabledTwoQuarterMode');
   console.log(quarter, 'quarter');
@@ -295,6 +298,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   }
 
   const handleRecall = async () => {
+    if (hasAnyAgreementComment()) {
+      setToast({
+        message: 'You cannot recall as Supervisor is busy reviewing your agreement or assessment.',
+        type: 'error'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
       if (target.quarter === quarter) {
@@ -434,6 +445,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const canAddFromExisting = quarter === 'Q1' && personalQuarterlyObjectives.length === 0;
+
+  const hasAnyAgreementComment = () => {
+    return personalQuarterlyObjectives.some(objective =>
+      objective.KPIs.some(kpi => {
+        return kpi.agreementComment !== undefined && kpi.agreementComment.trim() !== '';
+      })
+    );
+  };
+
+  const showCommentModal = (initiative: PersonalQuarterlyTargetObjective, kpiIndex: number) => {
+    setSelectedComment(initiative.KPIs[kpiIndex].previousAgreementComment || '');
+    setCommentModalOpen(true);
+  };
 
   return (
     <Box>
@@ -625,7 +649,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   }
                 }}
                 onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-                disabled={isSubmitting || (isSubmitted ? false : !canSubmit())}
+                disabled={isSubmitting || (!isSubmitted && !canSubmit())}
               >
                 {isSubmitting ? 'Processing...' : (isSubmitted ? 'Recall' : 'Submit')}
               </Button>
@@ -693,6 +717,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Rating Scale</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Comments</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Actions</StyledHeaderCell>
               </TableRow>
             </TableHead>
@@ -788,6 +813,22 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 }}
                               >
                                 <DescriptionIcon />
+                              </IconButton>
+                            </StyledTableCell>
+                            <StyledTableCell align="center" className='noprint'>
+                              <IconButton
+                                size="small"
+                                onClick={() => showCommentModal(initiative, kpiIndex)}
+                                sx={{
+                                  borderColor: '#E5E7EB',
+                                  color: '#374151',
+                                  '&:hover': {
+                                    borderColor: '#D1D5DB',
+                                    backgroundColor: '#F9FAFB',
+                                  },
+                                }}
+                              >
+                                <EditIcon />
                               </IconButton>
                             </StyledTableCell>
                             {kpiIndex === 0 && (
@@ -953,6 +994,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onClose={() => setViewSendBackModalOpen(false)}
         emailSubject={`${annualTarget.name}, Performance Agreement ${quarter}(PM Committee Review)`}
         emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.agreementCommitteeSendBackMessage || 'No message available'}
+      />
+
+      <CommentModal
+        open={commentModalOpen}
+        onClose={() => setCommentModalOpen(false)}
+        comment={selectedComment}
       />
     </Box >
   );

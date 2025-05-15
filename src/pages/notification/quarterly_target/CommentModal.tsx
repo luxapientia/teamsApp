@@ -7,9 +7,10 @@ interface CommentModalProps {
   onSave: (comment: string, kpiId: number) => void;
   kpiId: number;
   initialComment?: string;
+  previousComment?: string;
 }
 
-const CommentModal: React.FC<CommentModalProps> = ({ open, onClose, onSave, kpiId, initialComment = '' }) => {
+const CommentModal: React.FC<CommentModalProps> = ({ open, onClose, onSave, kpiId, initialComment = '', previousComment = '' }) => {
   const [comment, setComment] = useState(initialComment);
 
   useEffect(() => {
@@ -19,7 +20,17 @@ const CommentModal: React.FC<CommentModalProps> = ({ open, onClose, onSave, kpiI
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogContent sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ fontWeight: 500, mb: 2 }}>
+        {previousComment && (
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+              Previous Comments
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#444', whiteSpace: 'pre-line' }}>
+              {previousComment}
+            </Typography>
+          </Box>
+        )}
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
           Enter Comments
         </Typography>
         <TextareaAutosize

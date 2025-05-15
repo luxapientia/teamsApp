@@ -112,6 +112,7 @@ export interface QuarterlyTargetKPI {
     url: string;
   }[];
   agreementComment?: string;
+  previousAgreementComment?: string;
 }
 
 export interface AnnualTargetDocument extends Document {

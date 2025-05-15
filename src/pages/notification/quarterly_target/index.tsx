@@ -75,6 +75,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [selectedObjective, setSelectedObjective] = useState('');
   const [selectedInitiative, setSelectedInitiative] = useState('');
   const [currentComment, setCurrentComment] = useState('');
+  const [previousComment, setPreviousComment] = useState('');
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -141,6 +142,25 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (notification) {
       setIsApproving(true);
       try {
+        // First, update the personal performance to move comments to previous comments
+        const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+        if (currentTarget) {
+          const updatedObjectives = currentTarget.objectives.map(objective => ({
+            ...objective,
+            KPIs: objective.KPIs.map(kpi => ({
+              ...kpi,
+              previousAgreementComment: kpi.agreementComment || '',
+              agreementComment: ''
+            }))
+          }));
+
+          await api.put(`/notifications/personal-performance/${notification._id}`, {
+            quarter,
+            objectives: updatedObjectives
+          });
+        }
+
+        // Then proceed with approval
         const response = await api.post(`/notifications/approve/${notification._id}`);
         if (response.status === 200) {
           dispatch(fetchNotifications());
@@ -167,6 +187,25 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setIsSendingBack(true);
       (async () => {
         try {
+          // First, update the personal performance to move comments to previous comments
+          const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+          if (currentTarget) {
+            const updatedObjectives = currentTarget.objectives.map(objective => ({
+              ...objective,
+              KPIs: objective.KPIs.map(kpi => ({
+                ...kpi,
+                previousAgreementComment: kpi.agreementComment || '',
+                agreementComment: ''
+              }))
+            }));
+
+            await api.put(`/notifications/personal-performance/${notification._id}`, {
+              quarter,
+              objectives: updatedObjectives
+            });
+          }
+
+          // Then proceed with send back
           const response = await api.post(`/notifications/send-back/${notification._id}`, {
             emailSubject,
             emailBody,
@@ -207,12 +246,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       obj.name === objectiveName && obj.initiativeName === initiativeName
     );
     const currentKpiComment = objective?.KPIs[kpiIndex]?.agreementComment || '';
+    const previousKpiComment = objective?.KPIs[kpiIndex]?.previousAgreementComment || '';
     
     // Store the KPI's current comment, index, and context
     setKpiId(kpiIndex);
     setSelectedObjective(objectiveName);
     setSelectedInitiative(initiativeName);
     setCurrentComment(currentKpiComment);
+    setPreviousComment(previousKpiComment);
     setCommentModalOpen(true);
   }
 
@@ -558,6 +599,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onSave={handleSaveComment}
         kpiId={kpiId}
         initialComment={currentComment}
+        previousComment={previousComment}
       />
 
       {selectedRatingScales && (
