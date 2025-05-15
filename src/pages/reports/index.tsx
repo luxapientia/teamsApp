@@ -9,6 +9,7 @@ import TeamPerformances from './team_performances';
 import TeamPerformanceAgreementsCompletions from './team_performance_agreements_completions';
 import TeamPerformanceAssessmentsCompletions from './team_performance_assessments_completions';
 import PerformanceDistributionReport from './performance_distribution_report';
+import EmployeePerformanceRating from './employee_performance_rating/index';
 
 const MyPerformanceAssessment: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
   const dispatch = useAppDispatch();
@@ -31,6 +32,8 @@ const MyPerformanceAssessment: React.FC<PageProps> = ({ title, icon, tabs, selec
         return <TeamPerformanceAssessmentsCompletions />;
       case 'Performance Distribution Report':
         return <PerformanceDistributionReport />;
+      case 'Employee Performance Rating':
+        return <EmployeePerformanceRating />;
       default:
         return null;
     }

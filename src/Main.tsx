@@ -193,7 +193,7 @@ function Main() {
           title='Reports'
           icon={<DocumentText24Regular fontSize={iconSize} />}
           tabs={isAppOwner || isSuperUser ?
-            ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Performance Distribution Report'] :
+            ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Performance Distribution Report', 'Employee Performance Rating'] :
             ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements']}
           selectedTab={selectedTab}
         />
