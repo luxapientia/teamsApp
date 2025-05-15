@@ -90,7 +90,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                         : notification.quarter
                     } ${
                       notification.type === 'agreement' 
-                        ? 'Quarterly Target' 
+                        ? 'Performance Agreement' 
                         : 'Performance Assessment'
                     }`}
                   </TableCell>

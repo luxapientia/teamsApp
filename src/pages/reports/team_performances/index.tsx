@@ -238,7 +238,7 @@ const TeamPerformances: React.FC = () => {
                 });
 
                 const validScores = quarterScores.filter(score => score) as number[];
-                const annualScore = validScores.length > 0
+                const annualScore = validScores.length === quarterScores.length
                   ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
                   : null;
 
