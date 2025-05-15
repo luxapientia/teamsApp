@@ -178,6 +178,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }, 0);
   };
 
+  // Helper to get timestamp
+  function getTimestamp() {
+    const now = new Date();
+    return `[${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}]`;
+  }
+
   const handleApprove = async () => {
     if (notification) {
       setIsApproving(true);
@@ -189,7 +195,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             ...objective,
             KPIs: objective.KPIs.map(kpi => ({
               ...kpi,
-              previousAssessmentComment: kpi.assessmentComment || '',
+              previousAssessmentComment: kpi.assessmentComment ? `${getTimestamp()} ${kpi.assessmentComment}` : '',
               assessmentComment: ''
             }))
           }));
@@ -231,7 +237,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               ...objective,
               KPIs: objective.KPIs.map(kpi => ({
                 ...kpi,
-                previousAssessmentComment: kpi.assessmentComment || '',
+                previousAssessmentComment: kpi.assessmentComment ? `${getTimestamp()} ${kpi.assessmentComment}` : '',
                 assessmentComment: ''
               }))
             }));

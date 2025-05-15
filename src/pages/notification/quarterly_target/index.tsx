@@ -39,6 +39,7 @@ import { Toast } from '../../../components/Toast';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 import EditCommentModal from '../../../components/EditCommentModal';
+
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
@@ -138,6 +139,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     setSelectedRatingScales(kpi.ratingScales);
   };
 
+  // Helper to get timestamp
+  function getTimestamp() {
+    const now = new Date();
+    return `[${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}]`;
+  }
+
   const handleApprove = async () => {
     if (notification) {
       setIsApproving(true);
@@ -149,7 +156,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             ...objective,
             KPIs: objective.KPIs.map(kpi => ({
               ...kpi,
-              previousAgreementComment: kpi.agreementComment || '',
+              previousAgreementComment: kpi.agreementComment ? `${getTimestamp()} ${kpi.agreementComment}` : '',
               agreementComment: ''
             }))
           }));
@@ -194,7 +201,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               ...objective,
               KPIs: objective.KPIs.map(kpi => ({
                 ...kpi,
-                previousAgreementComment: kpi.agreementComment || '',
+                previousAgreementComment: kpi.agreementComment ? `${getTimestamp()} ${kpi.agreementComment}` : '',
                 agreementComment: ''
               }))
             }));
