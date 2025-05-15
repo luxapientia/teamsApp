@@ -472,4 +472,28 @@ router.post('/copy-initiatives', authenticateToken, async (req: AuthenticatedReq
   }
 });
 
+router.get('/objective-initiatives', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { annualTargetId, quarter, objectiveName } = req.query;
+    const tenantId = req.user?.tenantId;
+    if (!annualTargetId || !quarter || !objectiveName) {
+      return res.status(400).json({ error: 'Missing required query parameters' });
+    }
+    // Find all personal performances for the annual target
+    const personalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId });
+
+    const result = personalPerformances.flatMap(perf => {
+      // Find the quarterly target for the given quarter
+      const qt = perf.quarterlyTargets.find(qt => qt.quarter === quarter);
+      if (!qt) return [];
+      // Filter objectives by objectiveName
+      return qt.objectives.filter(obj => obj.name === objectiveName);
+    });
+    return res.json(result);
+  } catch (error) {
+    console.error('Error fetching objective initiatives:', error);
+    return res.status(500).json({ error: 'Failed to fetch objective initiatives' });
+  }
+});
+
 export default router; 

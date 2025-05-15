@@ -1,10 +1,13 @@
 import React from 'react';
-import { Box, Typography, Paper, Button } from '@mui/material';
+import { Box, Typography, Paper, Button, TableContainer, Table, TableHead, TableBody, TableRow, TableCell } from '@mui/material';
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { RootState } from '../../../store';
 import { AnnualTarget, QuarterType } from '../../../types/annualCorporateScorecard';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import EvidenceModal from '../../organization_performance/performance_evaluations/EvidenceModal';
+import { api } from '../../../services/api';
+import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
+
 // StrategyBlock: rounded box for each strategy
 const StrategyBlock: React.FC<{ text: string; color?: string; onClick?: () => void }> = ({ text, color, onClick }) => (
     <Box
@@ -58,9 +61,13 @@ const StrategyMap: React.FC<StrategyMapProps> = ({ annualTargetId, quarter }) =>
     const [selectedObjective, setSelectedObjective] = React.useState<null | { name: string; kpis: any[] }>(null);
     const [evidenceModalOpen, setEvidenceModalOpen] = React.useState(false);
     const [selectedEvidence, setSelectedEvidence] = React.useState<any>(null);
+    const [userInitiatives, setUserInitiatives] = React.useState<any[]>([]);
+    const [loadingInitiatives, setLoadingInitiatives] = React.useState(false);
 
     // Get annual targets from store
     const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
+    // Get all users' personal performances
+    const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
     // Pick the selected annual target, or the first one if not provided
     const annualTarget: AnnualTarget | undefined =
         annualTargetId
@@ -87,7 +94,27 @@ const StrategyMap: React.FC<StrategyMapProps> = ({ annualTargetId, quarter }) =>
         return foundScale?.color;
     };
 
-    // If an objective is selected, show its KPIs
+    React.useEffect(() => {
+        if (selectedObjective && annualTargetId && quarter) {
+            setLoadingInitiatives(true);
+            api.get('/personal-performance/objective-initiatives', {
+                params: {
+                    annualTargetId,
+                    quarter,
+                    objectiveName: selectedObjective.name,
+                }
+            })
+                .then(res => {
+                    setUserInitiatives(res.data.data)
+                })
+                .catch(() => setUserInitiatives([]))
+                .finally(() => setLoadingInitiatives(false));
+        } else {
+            setUserInitiatives([]);
+        }
+    }, [selectedObjective, annualTargetId, quarter]);
+
+    // If an objective is selected, show its KPIs and all users' initiatives
     if (selectedObjective) {
         return (
             <Box>
@@ -183,6 +210,67 @@ const StrategyMap: React.FC<StrategyMapProps> = ({ annualTargetId, quarter }) =>
                             )}
                         </Paper>
                     ))}
+                </Box>
+                {/* All users' initiatives for this objective */}
+                <Box sx={{ mt: 4 }}>
+                    {loadingInitiatives ? (
+                        <Typography color="text.secondary">Loading user initiatives...</Typography>
+                    ) : userInitiatives.length === 0 ? (
+                        <Typography color="text.secondary">No user initiatives found for this objective.</Typography>
+                    ) : (
+                        <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #E5E7EB', borderRadius: '10px' }}>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <StyledHeaderCell>Initiative</StyledHeaderCell>
+                                        <StyledHeaderCell align="center">Weight %</StyledHeaderCell>
+                                        <StyledHeaderCell>Key Performance Indicator</StyledHeaderCell>
+                                        <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
+                                        <StyledHeaderCell align="center">Target</StyledHeaderCell>
+                                        <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
+                                        <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {userInitiatives.map((initiative, iidx) =>
+                                        initiative.KPIs.map((kpi, kidx) => (
+                                            <TableRow key={`${initiative.initiativeName}-${kidx}`}>
+                                                {kidx === 0 && (
+                                                    <StyledTableCell rowSpan={initiative.KPIs.length}>
+                                                        {initiative.initiativeName}
+                                                    </StyledTableCell>
+                                                )}
+                                                <StyledTableCell align="center">{kpi.weight}</StyledTableCell>
+                                                <StyledTableCell>{kpi.indicator}</StyledTableCell>
+                                                <StyledTableCell align="center">{kpi.baseline}</StyledTableCell>
+                                                <StyledTableCell align="center">{kpi.target}</StyledTableCell>
+                                                <StyledTableCell align="center">{kpi.actualAchieved}</StyledTableCell>
+                                                <StyledTableCell align="center" sx={{
+                                                    color: (() => {
+                                                        const foundScale = ratingScales.find(
+                                                            (scale) => scale.score === kpi.ratingScore
+                                                        );
+                                                        return foundScale?.color || 'black';
+                                                    })(), fontWeight: 500
+                                                }}>
+                                                    {typeof kpi.ratingScore === 'number' && !isNaN(kpi.ratingScore) ? (
+                                                        `${kpi.ratingScore} ${(() => {
+                                                            const foundScale = ratingScales.find(
+                                                                (scale) => scale.score === kpi.ratingScore
+                                                            );
+                                                            return foundScale
+                                                                ? `${foundScale.name} (Score Range: ${foundScale.min}-${foundScale.max})`
+                                                                : '';
+                                                        })()}`
+                                                    ) : ''}
+                                                </StyledTableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    )}
                 </Box>
                 <EvidenceModal
                     open={evidenceModalOpen}
