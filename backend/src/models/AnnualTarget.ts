@@ -110,7 +110,8 @@ export interface QuarterlyTargetKPI {
   attachments: {
     name: string;
     url: string;
-  }[];  
+  }[];
+  agreementComment?: string;
 }
 
 export interface AnnualTargetDocument extends Document {

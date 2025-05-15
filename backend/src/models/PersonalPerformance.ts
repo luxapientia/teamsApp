@@ -302,7 +302,11 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
           _id: false,
           name: String,
           url: String
-        }]
+        }],
+        agreementComment: {
+          type: String,
+          default: ''
+        }
       }]
     }]
   }]

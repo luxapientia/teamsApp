@@ -124,4 +124,5 @@ export interface QuarterlyTargetKPI {
         name: string;
         url: string;
     }[];
+    agreementComment?: string;
 }

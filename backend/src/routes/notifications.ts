@@ -310,6 +310,43 @@ router.get('/personal-performance/:notificationId', authenticateToken, async (re
   }
 });
 
+router.put('/personal-performance/:notificationId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { notificationId } = req.params;
+    const { quarter, objectives } = req.body;
+    const notification = await Notification.findById(notificationId);
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    // Update the specific quarter's objectives
+    await PersonalPerformance.updateOne(
+      {
+        annualTargetId: notification.annualTargetId,
+        userId: notification.senderId,
+        'quarterlyTargets.quarter': quarter
+      },
+      {
+        $set: {
+          'quarterlyTargets.$.objectives': objectives
+        }
+      }
+    );
+
+    return res.status(200).json({ 
+      status: 'success',
+      message: 'Personal performance updated successfully' 
+    });
+  } catch (error) {
+    console.error('Error updating personal performance:', error);
+    return res.status(500).json({ 
+      status: 'error',
+      error: 'Failed to update personal performance' 
+    });
+  }
+});
+
 router.post('/read/:notificationId', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { notificationId } = req.params;

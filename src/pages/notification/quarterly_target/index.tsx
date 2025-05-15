@@ -38,7 +38,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { Toast } from '../../../components/Toast';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
-
+import CommentModal from './CommentModal';
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
@@ -70,6 +70,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isSendingBack, setIsSendingBack] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [kpiId, setKpiId] = useState(-1);
+  const [selectedObjective, setSelectedObjective] = useState('');
+  const [selectedInitiative, setSelectedInitiative] = useState('');
+  const [currentComment, setCurrentComment] = useState('');
 
   useEffect(() => {
     fetchCompanyUsers();
@@ -108,6 +113,23 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       }
     } catch (error) {
       console.error('Error fetching personal performance:', error);
+    }
+  }
+
+  const updatePersonalPerformance = async (comment: string, kpiId: number) => {
+    try {
+      const response = await api.put(`/notifications/personal-performance/${notification?._id}`, {
+        agreementComment: comment,
+        kpiId: kpiId
+      });
+      if (response.status === 200) {
+        setToast({
+          message: 'Performance agreement comment updated successfully',
+          type: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating personal performance:', error);
     }
   }
 
@@ -177,6 +199,82 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       const totalWeight = objective.KPIs.reduce((sum, kpi) => sum + kpi.weight, 0);
       return total + totalWeight;
     }, 0);
+  };
+
+  const editComment = (kpiIndex: number, objectiveName: string, initiativeName: string) => {
+    // Find the current comment for this KPI
+    const objective = personalQuarterlyObjectives.find(obj => 
+      obj.name === objectiveName && obj.initiativeName === initiativeName
+    );
+    const currentKpiComment = objective?.KPIs[kpiIndex]?.agreementComment || '';
+    
+    // Store the KPI's current comment, index, and context
+    setKpiId(kpiIndex);
+    setSelectedObjective(objectiveName);
+    setSelectedInitiative(initiativeName);
+    setCurrentComment(currentKpiComment);
+    setCommentModalOpen(true);
+  }
+
+  const handleSaveComment = async (comment: string, kpiId: number) => {
+    try {
+      // Find the current quarterly target
+      const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+      if (!currentTarget) return;
+
+      // Find and update only the specific objective and initiative
+      const updatedObjectives = currentTarget.objectives.map(objective => {
+        if (objective.name === selectedObjective && objective.initiativeName === selectedInitiative) {
+          return {
+            ...objective,
+            KPIs: objective.KPIs.map((kpi, index) => {
+              if (index === kpiId) {
+                return {
+                  ...kpi,
+                  agreementComment: comment
+                };
+              }
+              return kpi;
+            })
+          };
+        }
+        return objective;
+      });
+
+      // Update the personal performance with the new comment
+      const response = await api.put(`/notifications/personal-performance/${notification?._id}`, {
+        quarter,
+        objectives: updatedObjectives
+      });
+
+      if (response.status === 200) {
+        setToast({
+          message: 'Performance agreement comment updated successfully',
+          type: 'success'
+        });
+        // Refresh the personal performance data
+        await fetchPersonalPerformance();
+      }
+    } catch (error) {
+      console.error('Error updating personal performance comment:', error);
+      setToast({
+        message: 'Failed to update performance agreement comment',
+        type: 'error'
+      });
+    } finally {
+      setCommentModalOpen(false);
+      setSelectedObjective('');
+      setSelectedInitiative('');
+      setCurrentComment('');
+    }
+  }
+
+  const hasAnyKpiComment = () => {
+    return personalQuarterlyObjectives.some(objective =>
+      objective.KPIs.some(kpi => {
+        return kpi.agreementComment !== undefined && kpi.agreementComment.trim() !== '';
+      })
+    );
   };
 
   return (
@@ -264,7 +362,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               }
             }}
             onClick={() => setSendBackModalOpen(true)}
-            disabled={isApproving || isSendingBack}
+            disabled={isApproving || isSendingBack || !hasAnyKpiComment()}
           >
             {isSendingBack ? 'Processing...' : 'Send Back'}
           </Button>
@@ -315,6 +413,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
+                <StyledHeaderCell align="center">Comments</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -412,6 +511,22 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 <DescriptionIcon />
                               </IconButton>
                             </StyledTableCell>
+                            <StyledTableCell align="center">
+                            <IconButton
+                                size="small"
+                                onClick={() => editComment(kpiIndex, objectiveGroup.name, initiative.initiativeName)}
+                                sx={{
+                                  borderColor: '#E5E7EB',
+                                  color: '#374151',
+                                  '&:hover': {
+                                    borderColor: '#D1D5DB',
+                                    backgroundColor: '#F9FAFB',
+                                  },
+                                }}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </StyledTableCell>
                           </TableRow>
                         );
 
@@ -430,13 +545,20 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             </TableBody>
           </Table>
         </TableContainer>
-
-
       </Paper>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-
-      </Box>
+      <CommentModal
+        open={commentModalOpen}
+        onClose={() => {
+          setCommentModalOpen(false);
+          setSelectedObjective('');
+          setSelectedInitiative('');
+          setCurrentComment('');
+        }}
+        onSave={handleSaveComment}
+        kpiId={kpiId}
+        initialComment={currentComment}
+      />
 
       {selectedRatingScales && (
         <RatingScalesModal
