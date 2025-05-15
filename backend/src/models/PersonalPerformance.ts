@@ -310,6 +310,14 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
         previousAgreementComment: {
           type: String,
           default: ''
+        },
+        assessmentComment: {
+          type: String,
+          default: ''
+        },
+        previousAssessmentComment: {
+          type: String,
+          default: ''
         }
       }]
     }]

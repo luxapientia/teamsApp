@@ -126,4 +126,6 @@ export interface QuarterlyTargetKPI {
     }[];
     agreementComment?: string;
     previousAgreementComment?: string;
+    assessmentComment?: string;
+    previousAssessmentComment?: string;
 }

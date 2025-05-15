@@ -10,7 +10,7 @@ interface CommentModalProps {
   previousComment?: string;
 }
 
-const CommentModal: React.FC<CommentModalProps> = ({ open, onClose, onSave, kpiId, initialComment = '', previousComment = '' }) => {
+const EditCommentModal: React.FC<CommentModalProps> = ({ open, onClose, onSave, kpiId, initialComment = '', previousComment = '' }) => {
   const [comment, setComment] = useState(initialComment);
 
   useEffect(() => {
@@ -60,4 +60,4 @@ const CommentModal: React.FC<CommentModalProps> = ({ open, onClose, onSave, kpiI
   );
 };
 
-export default CommentModal;
+export default EditCommentModal;

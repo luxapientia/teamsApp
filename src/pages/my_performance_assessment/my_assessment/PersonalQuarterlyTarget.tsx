@@ -51,7 +51,7 @@ import PersonalFeedback from './PersonalFeedback';
 import { Toast } from '../../../components/Toast';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 import { createSelector } from '@reduxjs/toolkit';
-
+import CommentModal from '../../../components/CommentModal';
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
   color: 'white',
@@ -65,16 +65,16 @@ const AccessButton = styled(Button)({
 
 // Memoized selector for feedbacks
 const selectFeedbacks = createSelector(
-    [
-        (state: RootState) => state.feedback.feedbacks,
-        (_state: RootState, annualTargetId: string | undefined) => annualTargetId,
-        (_state: RootState, _annualTargetId: string | undefined, quarter: QuarterType) => quarter
-    ],
-    (feedbacks, annualTargetId, quarter) => 
-        feedbacks.filter(f =>
-            f.annualTargetId === annualTargetId &&
-            f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
-        )
+  [
+    (state: RootState) => state.feedback.feedbacks,
+    (_state: RootState, annualTargetId: string | undefined) => annualTargetId,
+    (_state: RootState, _annualTargetId: string | undefined, quarter: QuarterType) => quarter
+  ],
+  (feedbacks, annualTargetId, quarter) =>
+    feedbacks.filter(f =>
+      f.annualTargetId === annualTargetId &&
+      f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+    )
 );
 
 interface PersonalQuarterlyTargetProps {
@@ -112,6 +112,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [selectedComment, setSelectedComment] = useState('');
 
   // Use memoized selector
   const feedbacks = useAppSelector(state => selectFeedbacks(state, personalPerformance?.annualTargetId, quarter));
@@ -287,7 +289,22 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   }
 
+  const hasAnyAssessmentComment = () => {
+    return personalQuarterlyObjectives.some(objective =>
+      objective.KPIs.some(kpi => {
+        return kpi.assessmentComment !== undefined && kpi.assessmentComment.trim() !== '';
+      })
+    );
+  };
+
   const handleRecall = async () => {
+    if (hasAnyAssessmentComment()) {
+      setToast({
+        message: 'You cannot recall as Supervisor is busy reviewing your assessment.',
+        type: 'error'
+      });
+      return;
+    }
     setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
       if (target.quarter === quarter) {
@@ -531,6 +548,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       annualTargetId: personalPerformance?.annualTargetId || '',
     }));
   };
+
+  const showCommentModal = (initiative: PersonalQuarterlyTargetObjective, kpiIndex: number) => {
+    setSelectedComment(initiative.KPIs[kpiIndex].previousAssessmentComment || '');
+    setCommentModalOpen(true);
+  };
+
   return (
     <Box>
       {toast && (
@@ -763,6 +786,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                 <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Evidence</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Comments</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Evaluate</StyledHeaderCell>
               </TableRow>
             </TableHead>
@@ -870,6 +894,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                   <DescriptionIcon />
                                 </IconButton>
                               )}
+                            </StyledTableCell>
+                            <StyledTableCell align="center" className='noprint'>
+                              <IconButton
+                                size="small"
+                                onClick={() => showCommentModal(initiative, kpiIndex)}
+                                sx={{ color: '#6B7280' }}
+                              >
+                                <EditIcon />
+                              </IconButton>
                             </StyledTableCell>
                             <StyledTableCell align="center" className='noprint'>
                               {canEdit() ? (
@@ -1088,6 +1121,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onClose={() => setViewSendBackModalOpen(false)}
         emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
         emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentCommitteeSendBackMessage || 'No message available'}
+      />
+
+      <CommentModal
+        open={commentModalOpen}
+        onClose={() => setCommentModalOpen(false)}
+        comment={selectedComment}
       />
     </Box >
   );

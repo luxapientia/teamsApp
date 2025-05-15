@@ -42,7 +42,7 @@ import { updatePersonalPerformance } from '../../../store/slices/personalPerform
 import { api } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
-import CommentModal from './CommentModal';
+import CommentModal from '../../../components/CommentModal';
 
 import { ExportButton } from '../../../components/Buttons';
 

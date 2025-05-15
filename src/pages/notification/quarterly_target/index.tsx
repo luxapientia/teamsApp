@@ -38,7 +38,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { Toast } from '../../../components/Toast';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
-import CommentModal from './CommentModal';
+import EditCommentModal from '../../../components/EditCommentModal';
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
@@ -588,7 +588,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </TableContainer>
       </Paper>
 
-      <CommentModal
+      <EditCommentModal
         open={commentModalOpen}
         onClose={() => {
           setCommentModalOpen(false);
