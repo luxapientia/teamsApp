@@ -174,7 +174,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
 
         <ViewButton
           variant="contained"
-          disabled={!selectedAnnualTargetId}
+          disabled={!selectedAnnualTargetId || !selectedQuarter}
           onClick={handleView}
         >
           View

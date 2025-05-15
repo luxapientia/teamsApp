@@ -45,6 +45,7 @@ import { ViewButton, StyledTableCell, StyledHeaderCell } from '../../../componen
 import { api } from '../../../services/api';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { useToast } from '../../../contexts/ToastContext';
+import { createSelector } from '@reduxjs/toolkit';
 
 interface Props {
     quarter: QuarterType;
@@ -73,6 +74,49 @@ interface AddProviderForm {
     email?: string;
     category: FeedbackProvider['category'];
 }
+
+// Memoized selector for annualTarget
+export const selectAnnualTargetById = createSelector(
+    [
+        (state: RootState) => state.scorecard.annualTargets,
+        (_: RootState, annualTargetId: string) => annualTargetId
+    ],
+    (annualTargets, annualTargetId) =>
+        annualTargets.find(at => at._id === annualTargetId)
+);
+
+// Memoized selector for feedbacks
+const selectFeedbacks = createSelector(
+    [
+        (state: RootState) => state.feedback.feedbacks,
+        (_state: RootState, annualTargetId: string) => annualTargetId,
+        (_state: RootState, _annualTargetId: string, quarter: QuarterType) => quarter
+    ],
+    (feedbacks, annualTargetId, quarter) =>
+        feedbacks.filter(f =>
+            f.annualTargetId === annualTargetId &&
+            f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable) &&
+            f.status === 'Active'
+        )
+);
+
+// Memoized selector for selected feedback
+const selectSelectedFeedback = createSelector(
+    [
+        selectFeedbacks,
+        (_state: RootState, _annualTargetId: string, _quarter: QuarterType, selectedFeedbackId: string) => selectedFeedbackId
+    ],
+    (feedbacks, selectedFeedbackId) => feedbacks.find(f => f._id === selectedFeedbackId)
+);
+
+// Memoized selector for quarterly target
+const selectQuarterlyTarget = createSelector(
+    [
+        (_state: RootState, personalPerformance: PersonalPerformance) => personalPerformance,
+        (_state: RootState, _personalPerformance: PersonalPerformance, quarter: QuarterType) => quarter
+    ],
+    (personalPerformance, quarter) => personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)
+);
 
 const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance, overallScore, editable }) => {
     const dispatch = useAppDispatch();
@@ -105,15 +149,12 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     const [emailError, setEmailError] = useState<string>('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
-    const annualTarget = useAppSelector((state: RootState) => state.scorecard.annualTargets.find(at => at._id === annualTargetId));
+    const annualTarget = useAppSelector(state => selectAnnualTargetById(state, annualTargetId));
 
-    const feedbacks = useAppSelector((state: RootState) =>
-        state.feedback.feedbacks.filter(f =>
-            f.annualTargetId === annualTargetId &&
-            f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable) && 
-            f.status === 'Active'
-        )
-    );
+    // Use memoized selectors
+    const feedbacks = useAppSelector(state => selectFeedbacks(state, annualTargetId, quarter));
+    const selectedFeedback = useAppSelector(state => selectSelectedFeedback(state, annualTargetId, quarter, selectedFeedbackId));
+    const quarterlyTarget = useAppSelector(state => selectQuarterlyTarget(state, personalPerformance, quarter));
 
     useEffect(() => {
         const fetchOrganizationMembers = async () => {
@@ -233,16 +274,16 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     };
 
     const calculateFeedbackOverallScore = () => {
-        const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
-        const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
-        const feedbackTemplate = feedbacks.find(f => f._id === selectedFeedbackId);
+        if (!selectedFeedback || !quarterlyTarget) return '-';
 
-        if (!feedbackTemplate || feedbackResponses.length === 0) return '-';
+        const feedbackResponses = quarterlyTarget.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
+
+        if (feedbackResponses.length === 0) return '-';
 
         let totalWeightedScore = 0;
         let totalWeight = 0;
 
-        feedbackTemplate.dimensions.forEach(dimension => {
+        selectedFeedback.dimensions.forEach(dimension => {
             const dimensionScore = calculateAverageScore(dimension.name);
             if (dimensionScore !== '-') {
                 const score = parseFloat(dimensionScore);
@@ -274,8 +315,9 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     };
 
     const handleViewFeedback = (dimension: string, question: string) => {
-        const target = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter);
-        const feedbacks = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
+        if (!quarterlyTarget) return;
+
+        const feedbacks = quarterlyTarget.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
 
         const responses = feedbacks.map(feedback => ({
             provider: {
@@ -434,31 +476,18 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.feedbacks?.filter(f => f.feedbackId === selectedFeedbackId).map((feedback, index) => (
+                        {quarterlyTarget?.feedbacks?.filter(f => f.feedbackId === selectedFeedbackId).map((feedback, index) => (
                             <TableRow key={index}>
                                 <StyledTableCell>{feedback.provider.name}</StyledTableCell>
                                 <StyledTableCell align="center">{feedback.provider.category}</StyledTableCell>
                                 <StyledTableCell align="center">{feedback.provider.status}</StyledTableCell>
                                 <StyledTableCell align="center">
-                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                                        {/* <Tooltip title="Copy feedback link">
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => handleCopyLink(feedback._id)}
-                                                sx={{ color: '#0078D4' }}
-                                            >
-                                                <ContentCopyIcon fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip> */}
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => handleDeleteProvider(feedback.feedbackId, feedback.provider.email)}
-                                            sx={{ color: '#DC2626' }}
-                                            disabled={!editable}
-                                        >
-                                            <DeleteIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
+                                    <IconButton
+                                        onClick={() => handleDeleteProvider(feedback.feedbackId, feedback.provider.email)}
+                                        disabled={!editable}
+                                    >
+                                        <DeleteIcon />
+                                    </IconButton>
                                 </StyledTableCell>
                             </TableRow>
                         ))}
@@ -478,49 +507,36 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {feedbacks.find(f => f._id === selectedFeedbackId)?.dimensions.map((dimension, index) => {
-                            return (
-                                <React.Fragment key={index}>
-                                    {dimension.questions.map((question, qIndex) => {
-                                        const responses = feedbacks.find(f => f._id === selectedFeedbackId)?.responses.filter(r => r.response !== undefined);
-
-                                        return (
-                                            <TableRow key={`${dimension.index}-${qIndex}`}>
-                                                {qIndex === 0 && (
-                                                    <>
-                                                        <StyledTableCell rowSpan={dimension.questions.length} align="center">
-                                                            {dimension.name}
-                                                        </StyledTableCell>
-                                                        <StyledTableCell rowSpan={dimension.questions.length} align="center">
-                                                            {dimension.weight}
-                                                        </StyledTableCell>
-                                                        <StyledTableCell rowSpan={dimension.questions.length} align="center">
-                                                            {calculateAverageScore(dimension.name)}
-                                                        </StyledTableCell>
-                                                    </>
-                                                )}
-                                                <StyledTableCell align="center">{question}</StyledTableCell>
-                                                <StyledTableCell align="center">
-                                                    <ViewButton onClick={() => handleViewFeedback(dimension.name, question)}>VIEW</ViewButton>
-                                                </StyledTableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </React.Fragment>
-                            );
-                        })}
-
-                        <TableRow>
-                            <StyledTableCell colSpan={2} sx={{ fontWeight: 500 }}>
-                                Overall 360 Degree Feedback Score
-                            </StyledTableCell>
-                            <StyledTableCell colSpan={3} align="center">
-                                {calculateFeedbackOverallScore()}
-                            </StyledTableCell>
-                        </TableRow>
+                        {selectedFeedback?.dimensions.map((dimension, index) => (
+                            <React.Fragment key={index}>
+                                {dimension.questions.map((question, qIndex) => (
+                                    <TableRow key={`${index}-${qIndex}`}>
+                                        <StyledTableCell>{dimension.name}</StyledTableCell>
+                                        <StyledTableCell align="center">{dimension.weight}%</StyledTableCell>
+                                        <StyledTableCell align="center">{calculateAverageScore(dimension.name)}</StyledTableCell>
+                                        <StyledTableCell>{question}</StyledTableCell>
+                                        <StyledTableCell align="center">
+                                            <Button
+                                                variant="outlined"
+                                                onClick={() => handleViewFeedback(dimension.name, question)}
+                                                sx={{
+                                                    color: '#0078D4',
+                                                    borderColor: '#0078D4',
+                                                    '&:hover': {
+                                                        borderColor: '#106EBE',
+                                                        backgroundColor: 'rgba(0, 120, 212, 0.04)',
+                                                    },
+                                                }}
+                                            >
+                                                View
+                                            </Button>
+                                        </StyledTableCell>
+                                    </TableRow>
+                                ))}
+                            </React.Fragment>
+                        ))}
                     </TableBody>
                 </Table>
-
             </Paper>
 
             <Paper sx={{ boxShadow: 'none', border: '1px solid #E5E7EB' }}>

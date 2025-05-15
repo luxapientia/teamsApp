@@ -176,7 +176,6 @@ const PerformanceDistributionReport: React.FC = () => {
   };
 
   const getChartData = (data: PersonalPerformance[], selectedQuarter: string) => {
-    console.log(data, 'data');
     const scores = data.map(item => {
       const quarterObj = item.quarterlyTargets.find(target => target.quarter === selectedQuarter);
       const qScore = calculateOverallScore(quarterObj?.objectives);
@@ -189,7 +188,6 @@ const PerformanceDistributionReport: React.FC = () => {
         return qScore;
       }
     });
-    console.log(scores, 'scores');
     const chartData = selectedAnnualTarget?.content.ratingScales.map(scale => ({
       rating: scale.score,
       count: scores.filter(score => Math.round(Number(score)) === scale.score).length,

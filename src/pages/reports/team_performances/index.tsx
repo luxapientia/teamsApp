@@ -48,6 +48,12 @@ const TeamPerformances: React.FC = () => {
     dispatch(fetchFeedback());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (selectedAnnualTargetId && !annualTargets.some(t => t._id === selectedAnnualTargetId)) {
+      setSelectedAnnualTargetId('');
+    }
+  }, [annualTargets, selectedAnnualTargetId]);
+
   const fetchTeamPerformancesData = async () => {
     try {
       const response = await api.get(`/report/team-performances?annualTargetId=${selectedAnnualTargetId}`);
@@ -169,18 +175,24 @@ const TeamPerformances: React.FC = () => {
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
         <FormControl fullWidth>
-          <Select
-            value={selectedAnnualTargetId}
-            onChange={handleScorecardChange}
-            displayEmpty
-            sx={{ backgroundColor: '#fff' }}
-          >
-            {annualTargets.map((target) => (
-              <MenuItem key={target._id} value={target._id}>
-                {target.name}
-              </MenuItem>
-            ))}
-          </Select>
+          {annualTargets.length > 0 ? (
+            <Select
+              value={selectedAnnualTargetId}
+              onChange={handleScorecardChange}
+              displayEmpty
+              sx={{ backgroundColor: '#fff' }}
+            >
+              {annualTargets.map((target) => (
+                <MenuItem key={target._id} value={target._id}>
+                  {target.name}
+                </MenuItem>
+              ))}
+            </Select>
+          ) : (
+            <Select value="" displayEmpty disabled sx={{ backgroundColor: '#fff' }}>
+              <MenuItem value="">No scorecards available</MenuItem>
+            </Select>
+          )}
         </FormControl>
 
         <Button

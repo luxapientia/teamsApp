@@ -68,10 +68,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     useEffect(() => {
         if (personalPerformance) {
             setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
-            setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
+            const supervisorId = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '';
+            if (companyUsers.some(user => user.id === supervisorId)) {
+                setSelectedSupervisor(supervisorId);
+            } else {
+                setSelectedSupervisor('');
+            }
             setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Approved);
         }
-    }, [personalPerformance]);
+    }, [personalPerformance, companyUsers]);
 
     const fetchCompanyUsers = async () => {
         try {

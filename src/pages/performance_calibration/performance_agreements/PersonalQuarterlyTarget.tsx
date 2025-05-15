@@ -74,10 +74,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
-      setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
+      const supervisorId = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '';
+      if (companyUsers.some(user => user.id === supervisorId)) {
+        setSelectedSupervisor(supervisorId);
+      } else {
+        setSelectedSupervisor('');
+      }
       setIsAgreementCommitteeSendBack(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.isAgreementCommitteeSendBack || false);
     }
-  }, [personalPerformance]);
+  }, [personalPerformance, companyUsers, quarter]);
 
 
   const fetchCompanyUsers = async () => {
@@ -209,17 +214,23 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             },
           }}
         >
-          <Select
-            value={selectedSupervisor}
-            displayEmpty
-            disabled={true}
-          >
-            {companyUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.fullName}
-              </MenuItem>
-            ))}
-          </Select>
+          {companyUsers.length > 0 ? (
+            <Select
+              value={selectedSupervisor}
+              displayEmpty
+              disabled={true}
+            >
+              {companyUsers.map((user) => (
+                <MenuItem key={user.id} value={user.id}>
+                  {user.fullName}
+                </MenuItem>
+              ))}
+            </Select>
+          ) : (
+            <Select value="" displayEmpty disabled>
+              <MenuItem value="">No supervisors available</MenuItem>
+            </Select>
+          )}
         </FormControl>
         <Button
           onClick={onBack}

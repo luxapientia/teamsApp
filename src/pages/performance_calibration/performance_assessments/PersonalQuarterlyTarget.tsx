@@ -74,11 +74,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (personalPerformance) {
       const currentTarget = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter);
       setPersonalQuarterlyObjectives(currentTarget?.objectives || []);
-      setSelectedSupervisor(currentTarget?.supervisorId || '');
+      const supervisorId = currentTarget?.supervisorId || '';
+      if (companyUsers.some(user => user.id === supervisorId)) {
+        setSelectedSupervisor(supervisorId);
+      } else {
+        setSelectedSupervisor('');
+      }
       setIsAssessmentCommitteeSendBack(currentTarget?.isAssessmentCommitteeSendBack || false);
       setPmCommitteeStatus(currentTarget?.assessmentReviewStatus || 'Not Reviewed');
     }
-  }, [personalPerformance, quarter]);
+  }, [personalPerformance, companyUsers, quarter]);
 
   const fetchCompanyUsers = async () => {
     try {
@@ -196,17 +201,23 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             },
           }}
         >
-          <Select
-            value={selectedSupervisor}
-            displayEmpty
-            disabled={true}
-          >
-            {companyUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.fullName}
-              </MenuItem>
-            ))}
-          </Select>
+          {companyUsers.length > 0 ? (
+            <Select
+              value={selectedSupervisor}
+              displayEmpty
+              disabled={true}
+            >
+              {companyUsers.map((user) => (
+                <MenuItem key={user.id} value={user.id}>
+                  {user.fullName}
+                </MenuItem>
+              ))}
+            </Select>
+          ) : (
+            <Select value="" displayEmpty disabled>
+              <MenuItem value="">No supervisors available</MenuItem>
+            </Select>
+          )}
         </FormControl>
         <Button
           onClick={onBack}

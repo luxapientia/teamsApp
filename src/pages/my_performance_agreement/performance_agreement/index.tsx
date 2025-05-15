@@ -31,6 +31,8 @@ import { PersonalPerformance } from '../../../types';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import { format } from 'date-fns';
 import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { createSelector } from '@reduxjs/toolkit';
+
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
   borderRadius: '8px',
@@ -54,6 +56,16 @@ const ViewButton = styled(Button)({
   },
 });
 
+// Memoized selector for selectedAnnualTarget
+export const selectAnnualTargetById = createSelector(
+  [
+    (state: RootState) => state.scorecard.annualTargets,
+    (_: RootState, selectedAnnualTargetId: string) => selectedAnnualTargetId
+  ],
+  (annualTargets, selectedAnnualTargetId) =>
+    annualTargets.find(target => target._id === selectedAnnualTargetId)
+);
+
 const PersonalPerformanceAgreement: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
@@ -73,9 +85,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
     state.personalPerformance.personalPerformances
   );
 
-  const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
-    state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
-  );
+  const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector(state => selectAnnualTargetById(state, selectedAnnualTargetId));
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());

@@ -45,6 +45,7 @@ import { ViewButton, StyledTableCell, StyledHeaderCell } from '../../../componen
 import { api } from '../../../services/api';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { useToast } from '../../../contexts/ToastContext';
+import { createSelector } from '@reduxjs/toolkit';
 
 interface Props {
     quarter: QuarterType;
@@ -72,6 +73,20 @@ interface AddProviderForm {
     email?: string;
     category: FeedbackProvider['category'];
 }
+
+// Memoized selector for feedbacks
+const selectFeedbacks = createSelector(
+    [
+        (state: RootState) => state.feedback.feedbacks,
+        (_: RootState, annualTargetId: string) => annualTargetId,
+        (_: RootState, _annualTargetId: string, quarter: QuarterType) => quarter
+    ],
+    (feedbacks, annualTargetId, quarter) =>
+        feedbacks.filter(f =>
+            f.annualTargetId === annualTargetId &&
+            f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+        )
+);
 
 const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance, overallScore }) => {
     const dispatch = useAppDispatch();
@@ -103,12 +118,7 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     const [emailError, setEmailError] = useState<string>('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-    const feedbacks = useAppSelector((state: RootState) =>
-        state.feedback.feedbacks.filter(f =>
-            f.annualTargetId === annualTargetId &&
-            f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
-        )
-    );
+    const feedbacks = useAppSelector(state => selectFeedbacks(state, annualTargetId, quarter));
 
     useEffect(() => {
         const fetchOrganizationMembers = async () => {
@@ -129,11 +139,14 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
 
     useEffect(() => {
         if (personalPerformance && personalPerformance.quarterlyTargets) {
-            setSelectedFeedbackId(
-                personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId || ''
-            );
+            const id = personalPerformance.quarterlyTargets.find(t => t.quarter === quarter)?.selectedFeedbackId || '';
+            if (feedbacks.some(f => f._id === id)) {
+                setSelectedFeedbackId(id);
+            } else {
+                setSelectedFeedbackId('');
+            }
         }
-    }, [personalPerformance, quarter]);
+    }, [personalPerformance, quarter, feedbacks]);
 
     useEffect(() => {
         if (feedbacks.length > 0 && !selectedFeedbackId) {
@@ -321,18 +334,24 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     return (
         <Box sx={{ p: 3 }}>
             <Box sx={{ mb: 3 }}>
-                <Select
-                    value={selectedFeedbackId}
-                    disabled={true}
-                    fullWidth
-                    sx={{ backgroundColor: '#fff' }}
-                >
-                    {feedbacks.map(feedback => (
-                        <MenuItem key={feedback._id} value={feedback._id}>
-                            {feedback.name}
-                        </MenuItem>
-                    ))}
-                </Select>
+                {feedbacks.length > 0 ? (
+                    <Select
+                        value={selectedFeedbackId}
+                        disabled={true}
+                        fullWidth
+                        sx={{ backgroundColor: '#fff' }}
+                    >
+                        {feedbacks.map(feedback => (
+                            <MenuItem key={feedback._id} value={feedback._id}>
+                                {feedback.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                ) : (
+                    <Select value="" displayEmpty disabled fullWidth sx={{ backgroundColor: '#fff' }}>
+                        <MenuItem value="">No feedback available</MenuItem>
+                    </Select>
+                )}
             </Box>
 
             <Paper sx={{ mb: 3, boxShadow: 'none', border: '1px solid #E5E7EB' }}>

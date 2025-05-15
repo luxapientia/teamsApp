@@ -93,8 +93,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [selectedComment, setSelectedComment] = useState('');
 
-  console.log(isEnabledTwoQuarterMode, 'isEnabledTwoQuarterMode');
-  console.log(quarter, 'quarter');
   useEffect(() => {
     fetchCompanyUsers();
   }, []);
@@ -102,13 +100,18 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
-      setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
+      const supervisorId = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '';
+      if (companyUsers.some(user => user.id === supervisorId)) {
+        setSelectedSupervisor(supervisorId);
+      } else {
+        setSelectedSupervisor('');
+      }
       setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Submitted);
       setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Approved);
       setIsAgreementReviewed(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementReviewStatus === AgreementReviewStatus.Reviewed);
       setStatus(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus);
     }
-  }, [personalPerformance]);
+  }, [personalPerformance, companyUsers, quarter]);
 
   const fetchCompanyUsers = async () => {
     try {
@@ -518,38 +521,47 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             },
           }}
         >
-          <Autocomplete
-            value={companyUsers.find(user => user.id === selectedSupervisor) || null}
-            onChange={(event, newValue) => {
-              if (newValue) {
-                const event = { target: { value: newValue.id } } as SelectChangeEvent;
-                handleSupervisorChange(event);
-              }
-            }}
-            disabled={!canEdit()}
-            options={companyUsers}
-            getOptionLabel={(option) => option.name || ''}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Select Supervisor"
-                size="small"
-              />
-            )}
-            renderOption={(props, option) => (
-              <MenuItem {...props} value={option.id}>
-                {option.name}
-              </MenuItem>
-            )}
-            disableClearable
-            sx={{
-              '& .MuiAutocomplete-inputRoot': {
-                '& .MuiAutocomplete-input': {
-                  cursor: !canEdit() ? 'not-allowed' : 'text',
+          {companyUsers.length > 0 ? (
+            <Autocomplete
+              value={companyUsers.find(user => user.id === selectedSupervisor) || null}
+              onChange={(event, newValue) => {
+                if (newValue) {
+                  const event = { target: { value: newValue.id } } as SelectChangeEvent;
+                  handleSupervisorChange(event);
+                }
+              }}
+              disabled={!canEdit()}
+              options={companyUsers}
+              getOptionLabel={(option) => option.name || ''}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Select Supervisor"
+                  size="small"
+                />
+              )}
+              renderOption={(props, option) => (
+                <MenuItem {...props} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              )}
+              disableClearable
+              sx={{
+                '& .MuiAutocomplete-inputRoot': {
+                  '& .MuiAutocomplete-input': {
+                    cursor: !canEdit() ? 'not-allowed' : 'text',
+                  },
                 },
-              },
-            }}
-          />
+              }}
+            />
+          ) : (
+            <TextField
+              value=""
+              placeholder="No supervisors available"
+              size="small"
+              disabled
+            />
+          )}
         </FormControl>
       </Box>
 
