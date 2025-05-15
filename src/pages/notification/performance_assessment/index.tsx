@@ -38,6 +38,8 @@ import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import { Toast } from '../../../components/Toast';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { createSelector } from '@reduxjs/toolkit';
+
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
   color: 'white',
@@ -48,6 +50,20 @@ const AccessButton = styled(Button)({
     backgroundColor: '#106EBE',
   },
 });
+
+// Memoized selector for feedbacks
+const selectFeedbacks = createSelector(
+    [
+        (state: RootState) => state.feedback.feedbacks,
+        (_state: RootState, annualTargetId: string | undefined) => annualTargetId,
+        (_state: RootState, _annualTargetId: string | undefined, quarter: QuarterType) => quarter
+    ],
+    (feedbacks, annualTargetId, quarter) => 
+        feedbacks.filter(feedback => 
+            feedback.annualTargetId === annualTargetId && 
+            feedback.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+        )
+);
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
@@ -82,12 +98,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const { showToast } = useToast();
 
-  const feedbacks = useAppSelector((state: RootState) => 
-    state.feedback.feedbacks.filter(feedback => 
-      feedback.annualTargetId === personalPerformance?.annualTargetId && 
-      feedback.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
-    )
-  );
+  // Use memoized selector
+  const feedbacks = useAppSelector(state => selectFeedbacks(state, personalPerformance?.annualTargetId, quarter));
 
   useEffect(() => {
     fetchPersonalPerformance();
