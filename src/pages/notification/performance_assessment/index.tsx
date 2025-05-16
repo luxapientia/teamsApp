@@ -325,6 +325,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
+  const hasAnyKpiComment = () => {
+    return personalQuarterlyObjectives.some(objective =>
+      objective.KPIs.some(kpi => {
+        return kpi.assessmentComment !== undefined && kpi.assessmentComment.trim() !== '';
+      })
+    );
+  };
+
+  const assessmentStatus = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus;
+
   return (
     <Box>
       {toast && (
@@ -410,7 +420,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               }
             }}
             onClick={() => setSendBackModalOpen(true)}
-            disabled={isApproving || isSendingBack}
+            disabled={isApproving || isSendingBack || !hasAnyKpiComment()}
           >
             {isSendingBack ? 'Processing...' : 'Send Back'}
           </Button>

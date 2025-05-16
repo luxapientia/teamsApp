@@ -11,6 +11,7 @@ import PersonalQuarterlyTargetContent from './quarterly_target';
 import PersonalPerformanceAssessmentContent from './performance_assessment';
 import { isEnabledTwoQuarterMode } from '../../utils/quarterMode';
 import { QUARTER_ALIAS } from '../../constants/quarterAlias';
+import { fetchNotifications } from '../../store/slices/notificationSlice';
 const ViewButton = styled(Button)({
   backgroundColor: '#0078D4',
   color: 'white',
@@ -32,13 +33,22 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
   const teams = useAppSelector((state: RootState) => state.teams.teams);
 
   const handleView = async (notification: Notification) => {
-    setSelectedNotification(notification);
-    setShowTable(false);
+    if (notification.type === 'resolve_agreement') {
+      
+    } else if(notification.type === 'resolve_assessment'){
+
+    } else {
+      setSelectedNotification(notification);
+      setShowTable(false);
+    }
     await api.post(`/notifications/read/${notification._id}`);
+    dispatch(fetchNotifications());
   };
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
+    dispatch(fetchNotifications());
+    console.log(notifications);
   }, [dispatch]);
 
   return (
@@ -79,7 +89,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                   <TableCell>{teams.find((team) => team._id === notification.sender.teamId)?.name}</TableCell>
                   <TableCell>{annualTargets.find((target) => target._id === notification.annualTargetId)?.name}</TableCell>
                   <TableCell>
-                    {`Approve ${
+                    {`${notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment' ? 'Resolve' : 'Approve'} ${
                       isEnabledTwoQuarterMode(
                         annualTargets.find((target) => target._id === notification.annualTargetId)
                           ?.content.quarterlyTarget.quarterlyTargets
@@ -89,7 +99,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                         ? QUARTER_ALIAS[notification.quarter as keyof typeof QUARTER_ALIAS] 
                         : notification.quarter
                     } ${
-                      notification.type === 'agreement' 
+                      notification.type === 'agreement' || notification.type === 'resolve_agreement'
                         ? 'Performance Agreement' 
                         : 'Performance Assessment'
                     }`}
@@ -110,7 +120,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
         </TableContainer>
       )}
 
-      {selectedNotification && (selectedNotification.type === 'agreement' ? (
+      {selectedNotification && (selectedNotification.type === 'agreement' || selectedNotification.type === 'resolve_agreement' ? (
         <PersonalQuarterlyTargetContent
           notification={selectedNotification}
           annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}

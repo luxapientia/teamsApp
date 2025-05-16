@@ -48,7 +48,24 @@ class SocketService {
       });
 
       // Handle assessment events
-      socket.on(SocketEvent.ASSESSMENT_UPDATE, (data) => {
+      socket.on(SocketEvent.PERFORMANCE_ASSESSMENT_UPDATE, (data) => {
+        this.handleAssessment(socket, data);
+      });
+
+      // Handle assessment events
+      socket.on(SocketEvent.APPROVE_PERFORMANCE_AGREEMENT, (data) => {
+        this.handleAssessment(socket, data);
+      });
+
+      socket.on(SocketEvent.APPROVE_PERFORMANCE_ASSESSMENT, (data) => {
+        this.handleAssessment(socket, data);
+      });
+
+      socket.on(SocketEvent.SEND_BACK_PERFORMANCE_AGREEMENT, (data) => {
+        this.handleAssessment(socket, data);
+      });
+
+      socket.on(SocketEvent.SEND_BACK_PERFORMANCE_ASSESSMENT, (data) => {
         this.handleAssessment(socket, data);
       });
     });
@@ -58,13 +75,13 @@ class SocketService {
     // Add socket to user's room
     socket.join(`user:${microsoftId}`);
     socket.data = { microsoftId };
-    
+
     // Track connected socket
     if (!this.connectedUsers.has(microsoftId)) {
       this.connectedUsers.set(microsoftId, new Set());
     }
     this.connectedUsers.get(microsoftId)?.add(socket.id);
-    
+
     console.log(`User authenticated: ${microsoftId}, Socket: ${socket.id}`);
   }
 
@@ -93,7 +110,7 @@ class SocketService {
   private handleAssessment(socket: Socket, data: any): void {
     const { recipientId, status } = data;
     if (recipientId) {
-      this.emitToUser(recipientId, SocketEvent.ASSESSMENT_UPDATE, {
+      this.emitToUser(recipientId, SocketEvent.PERFORMANCE_ASSESSMENT_UPDATE, {
         senderId: socket.data?.microsoftId,
         status,
         timestamp: new Date().toISOString()

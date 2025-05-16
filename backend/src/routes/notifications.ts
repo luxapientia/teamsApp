@@ -258,7 +258,7 @@ router.post('/assessment/recall', authenticateToken, async (req: AuthenticatedRe
 router.get('/notifications', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const user = await User.findOne({ MicrosoftId: req.user?.id });
-    
+
     const notifications = await Notification.find({
       recipientId: user?._id
     }).populate('senderId').populate('personalPerformanceId') as any;
@@ -334,15 +334,15 @@ router.put('/personal-performance/:notificationId', authenticateToken, async (re
       }
     );
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       status: 'success',
-      message: 'Personal performance updated successfully' 
+      message: 'Personal performance updated successfully'
     });
   } catch (error) {
     console.error('Error updating personal performance:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       status: 'error',
-      error: 'Failed to update personal performance' 
+      error: 'Failed to update personal performance'
     });
   }
 });
@@ -355,17 +355,21 @@ router.post('/read/:notificationId', authenticateToken, async (req: Authenticate
     if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
     }
+    if (notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment') {
+      await Notification.deleteOne({ _id: notificationId });
+    } else {
+      await Notification.updateOne({ _id: notificationId }, { $set: { isRead: true } });
 
-    await Notification.updateOne({ _id: notificationId }, { $set: { isRead: true } });
+      socketService.emitToUser(req.user?.id as string, SocketEvent.NOTIFICATION, {
+        type: notification.type,
+        senderId: notification.senderId,
+        recipientId: notification.recipientId,
+        annualTargetId: notification.annualTargetId,
+        quarter: notification.quarter,
+        isRead: true
+      });
+    }
 
-    socketService.emitToUser(req.user?.id as string, SocketEvent.NOTIFICATION, {
-      type: notification.type,
-      senderId: notification.senderId,
-      recipientId: notification.recipientId,
-      annualTargetId: notification.annualTargetId,
-      quarter: notification.quarter,
-      isRead: true
-    });
     return res.status(200).json({ message: 'Notification read successfully' });
   } catch (error) {
     console.error('Error reading notification:', error);
@@ -393,7 +397,7 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
               agreementStatus: 'Approved',
               agreementStatusUpdatedAt: new Date()
             };
-          } else {
+          } else if (notification.type === 'assessment') {
             return {
               ...quarterlyTarget._doc,
               assessmentStatus: 'Approved',
@@ -408,6 +412,8 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
 
     // Send approval email to user
     const senderUser = await User.findById(notification.senderId);
+    const isAgreement = notification?.type === 'agreement' || notification?.type === 'resolve_agreement';
+    const isAssessment = notification?.type === 'assessment' || notification?.type === 'resolve_assessment';
     if (senderUser) {
       const tenantId = senderUser.tenantId;
       const fromUserId = req.user?.id; // supervisor's Microsoft ID
@@ -443,6 +449,36 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
 
     await Notification.deleteOne({ _id: notificationId });
 
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
+
+    const existingNotification = await Notification.findOne({
+      senderId: user?._id,
+      recipientId: senderUser?._id,
+      annualTargetId: notification.annualTargetId,
+      quarter: notification.quarter,
+      type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
+      personalPerformanceId: notification.personalPerformanceId
+    });
+
+    if (existingNotification) {
+      await Notification.updateOne(
+        { _id: existingNotification._id },
+        { $set: { isRead: false } }
+      );
+    } else {
+      await Notification.create({
+        type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
+        senderId: user?._id,
+        recipientId: senderUser?._id,
+        annualTargetId: notification.annualTargetId,
+        quarter: notification.quarter,
+        isRead: false,
+        personalPerformanceId: notification.personalPerformanceId
+      });
+    }
+    socketService.emitToUser(senderUser?.MicrosoftId as string, SocketEvent.NOTIFICATION, {});
+
+
     return res.status(200).json({ message: 'Notification send back successfully' });
   } catch (error) {
     console.error('Error send back notification:', error);
@@ -455,12 +491,15 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
     const { notificationId } = req.params;
     const { emailBody, emailSubject, senderId } = req.body;
     const sender = await User.findById(senderId);
-    
+
     if (!sender?.email) {
       return res.status(404).json({ error: 'Sender email not found' });
     }
 
     const notification = await Notification.findById(notificationId);
+
+    const isAgreement = notification?.type === 'agreement' || notification?.type === 'resolve_agreement';
+    const isAssessment = notification?.type === 'assessment' || notification?.type === 'resolve_assessment';
 
     if (!notification) {
       return res.status(404).json({ error: 'Notification not found' });
@@ -477,7 +516,7 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
               agreementStatus: quarterlyTarget.isAgreementCommitteeSendBack ? 'Committee Send Back' : 'Send Back',
               agreementStatusUpdatedAt: new Date()
             };
-          } else {
+          } else if (notification.type === 'assessment') {
             return {
               ...quarterlyTarget._doc,
               assessmentStatus: quarterlyTarget.isAssessmentCommitteeSendBack ? 'Committee Send Back' : 'Send Back',
@@ -525,6 +564,38 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
     }
 
     await Notification.deleteOne({ _id: notificationId });
+
+    if (!sender) {
+      return res.status(404).json({ error: 'Sender user not found' });
+    }
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
+
+    const existingNotification = await Notification.findOne({
+      senderId: user?._id,
+      recipientId: sender._id,
+      annualTargetId: notification.annualTargetId,
+      quarter: notification.quarter,
+      type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
+      personalPerformanceId: notification.personalPerformanceId
+    });
+
+    if (existingNotification) {
+      await Notification.updateOne(
+        { _id: existingNotification._id },
+        { $set: { isRead: false } }
+      );
+    } else {
+      await Notification.create({
+        type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
+        senderId: user?._id,
+        recipientId: sender._id,
+        annualTargetId: notification.annualTargetId,
+        quarter: notification.quarter,
+        isRead: false,
+        personalPerformanceId: notification.personalPerformanceId
+      });
+    }
+    socketService.emitToUser(sender.MicrosoftId, SocketEvent.NOTIFICATION, {});
 
     return res.status(200).json({ message: 'Notification sent back successfully and email notification sent' });
   } catch (error) {

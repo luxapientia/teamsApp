@@ -2,7 +2,7 @@ import { QuarterType } from "./annualCorporateScorecard";
 
 export interface Notification {
     _id: string;
-    type: 'agreement' | 'assessment';
+    type: 'agreement' | 'assessment' | 'resolve_agreement' | 'resolve_assessment';
     sender: {
         _id: string;
         fullName: string;
