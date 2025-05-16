@@ -110,7 +110,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                       variant="contained"
                       onClick={() => handleView(notification)}
                     >
-                      View
+                      {notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment' ? 'Check' : 'View'}
                     </ViewButton>
                   </TableCell>
                 </TableRow>
