@@ -30,7 +30,12 @@ interface PerformanceDistributionChartProps {
 }
 
 const PerformanceDistributionChart: React.FC<PerformanceDistributionChartProps> = ({ title, annualTarget, chartData }) => {
-
+  const scaledChartData = chartData.map((item) => ({
+    rating: item.rating,
+    count: item.count,
+    percentage: Number(((item.count / (chartData.reduce((prev, current) => prev + current.count, 0) || 1))).toFixed(2))
+  }));
+  console.log(scaledChartData);
   return (
     <Box sx={{ mb: 4 }}>
       <Typography sx={{ mb: 2 }}>
@@ -66,12 +71,12 @@ const PerformanceDistributionChart: React.FC<PerformanceDistributionChartProps> 
           </Typography>
           <Box sx={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+              <BarChart data={scaledChartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="rating" />
-                <YAxis />
+                <YAxis domain={[0, 1]} />
                 <Bar
-                  dataKey="count"
+                  dataKey="percentage"
                   fill="#FDB022"
                   radius={[4, 4, 0, 0]}
                 />
