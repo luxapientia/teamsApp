@@ -272,7 +272,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
-  const editComment = (kpiIndex, objectiveName, initiativeName) => {
+  const editComment = (kpi, kpiIndex, objectiveName, initiativeName) => {
     const objective = personalQuarterlyObjectives.find(obj =>
       obj.name === objectiveName && obj.initiativeName === initiativeName
     );
@@ -291,10 +291,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (notification) {
       const updatedObjectives = personalQuarterlyObjectives.map(objective => ({
         ...objective,
-        KPIs: objective.KPIs.map(kpi => ({
-          ...kpi,
-          assessmentComment: comment
-        }))
+        KPIs: objective.KPIs.map((kpi, kpiIndex) => {
+          if (kpiIndex === kpiId) {
+            return {
+              ...kpi,
+              assessmentComment: comment
+            }
+          } else {
+            return { ...kpi }
+          }
+        })
       }));
 
       api.put(`/notifications/personal-performance/${notification._id}`, {
@@ -581,7 +587,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             <StyledTableCell align="center">
                               <IconButton
                                 size="small"
-                                onClick={() => editComment(kpiIndex, objectiveGroup.name, initiative.initiativeName)}
+                                onClick={() => editComment(kpi, kpiIndex, objectiveGroup.name, initiative.initiativeName)}
                                 sx={{ color: '#6B7280' }}
                               >
                                 <EditIcon />

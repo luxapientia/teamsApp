@@ -126,7 +126,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
 
     const canSendBack = () => {
-        return personalPerformance && (personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus !== (AssessmentStatus.Submitted || AssessmentStatus.Approved));
+        return personalPerformance && (personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus !== AssessmentStatus.Submitted && personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus !== AssessmentStatus.Approved);
     }
 
     const handleSendBack = (emailSubject: string, emailBody: string) => {
@@ -521,7 +521,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     }
                 }}>
                     <Typography>
-                        You cannot send back this performance agreement as the performance agreement has already been submitted or approved. If you want to send it back, go and recall or send back the same performance assessment in My Assessments – Management Performance Assessment and come back here to send back
+                        You cannot send back while the performance assessment has been approved. If you still want to send back, please go and send back the performance assessment first.
                     </Typography>
                 </DialogContent>
                 <DialogActions sx={{

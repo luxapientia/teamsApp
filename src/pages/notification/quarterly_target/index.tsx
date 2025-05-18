@@ -142,7 +142,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   // Helper to get timestamp
   function getTimestamp() {
     const now = new Date();
-    return `[${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}]`;
+    return `[${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}]`;
   }
 
   const handleApprove = async () => {
@@ -249,12 +249,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const editComment = (kpiIndex: number, objectiveName: string, initiativeName: string) => {
     // Find the current comment for this KPI
-    const objective = personalQuarterlyObjectives.find(obj => 
+    const objective = personalQuarterlyObjectives.find(obj =>
       obj.name === objectiveName && obj.initiativeName === initiativeName
     );
     const currentKpiComment = objective?.KPIs[kpiIndex]?.agreementComment || '';
     const previousKpiComment = objective?.KPIs[kpiIndex]?.previousAgreementComment || '';
-    
+
     // Store the KPI's current comment, index, and context
     setKpiId(kpiIndex);
     setSelectedObjective(objectiveName);
@@ -281,6 +281,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   ...kpi,
                   agreementComment: comment
                 };
+              } else {
+                return { ...kpi }
               }
               return kpi;
             })
@@ -560,7 +562,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               </IconButton>
                             </StyledTableCell>
                             <StyledTableCell align="center">
-                            <IconButton
+                              <IconButton
                                 size="small"
                                 onClick={() => editComment(kpiIndex, objectiveGroup.name, initiative.initiativeName)}
                                 sx={{
