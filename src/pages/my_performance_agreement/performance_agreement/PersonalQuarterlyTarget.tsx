@@ -828,7 +828,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               </IconButton>
                             </StyledTableCell>
                             <StyledTableCell align="center" className='noprint'>
-                              {initiative.KPIs[kpiIndex].previousAgreementComment &&
+                              {kpi.previousAgreementComment &&
                                 <IconButton
                                   size="small"
                                   onClick={() => showCommentModal(initiative, kpiIndex)}
