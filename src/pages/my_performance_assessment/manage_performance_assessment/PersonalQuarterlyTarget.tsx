@@ -26,6 +26,8 @@ import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Toast } from '../../../components/Toast';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import CommentModal from '../../../components/CommentModal';
+
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
@@ -59,6 +61,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const { showToast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [commentModalOpen, setCommentModalOpen] = useState(false);
+    const [selectedComment, setSelectedComment] = useState('');
+
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -173,6 +178,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 }
             })();
         }
+    };
+
+    const showCommentModal = (initiative: PersonalQuarterlyTargetObjective, kpiIndex: number) => {
+        setSelectedComment(initiative.KPIs[kpiIndex].previousAssessmentComment || '');
+        setCommentModalOpen(true);
     };
 
     return (
@@ -337,6 +347,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
+                                <StyledHeaderCell align="center">Comments</StyledHeaderCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -436,6 +447,21 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                                                 </IconButton>
                                                             )}
                                                         </StyledTableCell>
+                                                        <StyledTableCell align="center">
+                                                            {initiative.KPIs[kpiIndex].previousAssessmentComment &&
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => showCommentModal(initiative, kpiIndex)}
+                                                                    sx={{
+                                                                        color: '#DC2626',
+                                                                        '&:hover': {
+                                                                            backgroundColor: '#FEF2F2',
+                                                                        },
+                                                                    }}
+                                                                >
+                                                                    <DescriptionIcon />
+                                                                </IconButton>}
+                                                        </StyledTableCell>
                                                     </TableRow>
                                                 );
 
@@ -507,6 +533,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     attachments={evidenceModalData.attachments}
                 />
             )}
+            <CommentModal
+                open={commentModalOpen}
+                onClose={() => setCommentModalOpen(false)}
+                comment={selectedComment}
+            />
         </Box>
     );
 };

@@ -29,6 +29,8 @@ import { api } from '../../../services/api';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { Toast } from '../../../components/Toast';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import CommentModal from '../../../components/CommentModal';
+
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
@@ -59,6 +61,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
     const [warningModalOpen, setWarningModalOpen] = useState(false);
+    const [commentModalOpen, setCommentModalOpen] = useState(false);
+    const [selectedComment, setSelectedComment] = useState('');
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -159,6 +163,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 }
             })();
         }
+    };
+
+    const showCommentModal = (initiative: PersonalQuarterlyTargetObjective, kpiIndex: number) => {
+        setSelectedComment(initiative.KPIs[kpiIndex].previousAssessmentComment || '');
+        setCommentModalOpen(true);
     };
 
     return (
@@ -331,6 +340,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
+                                <StyledHeaderCell align="center">Comments</StyledHeaderCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -430,6 +440,21 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                                                 <DescriptionIcon />
                                                             </IconButton>
                                                         </StyledTableCell>
+                                                        <StyledTableCell align="center">
+                                                            {initiative.KPIs[kpiIndex].previousAssessmentComment &&
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => showCommentModal(initiative, kpiIndex)}
+                                                                    sx={{
+                                                                        color: '#DC2626',
+                                                                        '&:hover': {
+                                                                            backgroundColor: '#FEF2F2',
+                                                                        },
+                                                                    }}
+                                                                >
+                                                                    <DescriptionIcon />
+                                                                </IconButton>}
+                                                        </StyledTableCell>
                                                     </TableRow>
                                                 );
 
@@ -478,7 +503,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     }
                 }}
             >
-                <DialogTitle sx={{ 
+                <DialogTitle sx={{
                     backgroundColor: '#FEF3C7',
                     color: '#92400E',
                     borderBottom: '1px solid #F59E0B',
@@ -487,7 +512,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 }}>
                     Warning
                 </DialogTitle>
-                <DialogContent sx={{ 
+                <DialogContent sx={{
                     mt: 2,
                     '& .MuiTypography-root': {
                         color: '#4B5563',
@@ -499,11 +524,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                         You cannot send back this performance agreement as the performance agreement has already been submitted or approved. If you want to send it back, go and recall or send back the same performance assessment in My Assessments – Management Performance Assessment and come back here to send back
                     </Typography>
                 </DialogContent>
-                <DialogActions sx={{ 
+                <DialogActions sx={{
                     p: 2,
                     borderTop: '1px solid #E5E7EB'
                 }}>
-                    <Button 
+                    <Button
                         onClick={() => setWarningModalOpen(false)}
                         variant="contained"
                         sx={{
@@ -518,6 +543,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <CommentModal
+                open={commentModalOpen}
+                onClose={() => setCommentModalOpen(false)}
+                comment={selectedComment}
+            />
         </Box >
     );
 };

@@ -896,13 +896,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               )}
                             </StyledTableCell>
                             <StyledTableCell align="center" className='noprint'>
-                              <IconButton
-                                size="small"
-                                onClick={() => showCommentModal(initiative, kpiIndex)}
-                                sx={{ color: '#6B7280' }}
-                              >
-                                <EditIcon />
-                              </IconButton>
+                              {initiative.KPIs[kpiIndex].previousAssessmentComment &&
+                                <IconButton
+                                  size="small"
+                                  onClick={() => showCommentModal(initiative, kpiIndex)}
+                                  sx={{
+                                    color: '#DC2626',
+                                    '&:hover': {
+                                      backgroundColor: '#FEF2F2',
+                                    },
+                                  }}
+                                >
+                                  <DescriptionIcon />
+                                </IconButton>}
                             </StyledTableCell>
                             <StyledTableCell align="center" className='noprint'>
                               {canEdit() ? (

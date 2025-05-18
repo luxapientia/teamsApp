@@ -612,7 +612,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignSelf: 'center'
               }}
             />
-          )}  
+          )}
           {isApproved ? (
             <Chip
               label="Approved"
@@ -828,20 +828,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               </IconButton>
                             </StyledTableCell>
                             <StyledTableCell align="center" className='noprint'>
-                              <IconButton
-                                size="small"
-                                onClick={() => showCommentModal(initiative, kpiIndex)}
-                                sx={{
-                                  borderColor: '#E5E7EB',
-                                  color: '#374151',
-                                  '&:hover': {
-                                    borderColor: '#D1D5DB',
-                                    backgroundColor: '#F9FAFB',
-                                  },
-                                }}
-                              >
-                                <EditIcon />
-                              </IconButton>
+                              {initiative.KPIs[kpiIndex].previousAgreementComment &&
+                                <IconButton
+                                  size="small"
+                                  onClick={() => showCommentModal(initiative, kpiIndex)}
+                                  sx={{
+                                    color: '#DC2626',
+                                    '&:hover': {
+                                      backgroundColor: '#FEF2F2',
+                                    },
+                                  }}
+                                >
+                                  <DescriptionIcon />
+                                </IconButton>}
                             </StyledTableCell>
                             {kpiIndex === 0 && (
                               <StyledTableCell align="center" rowSpan={initiative.KPIs.length} className='noprint'>
