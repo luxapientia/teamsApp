@@ -1,15 +1,20 @@
 import { QUARTER_ALIAS } from "../constants/quarterAlias";
+const defaultQuarters = ['Q1', 'Q2', 'Q3', 'Q4'];
 
-export const enableTwoQuarterMode = (quarters: string[]) => {
-  if (quarters.length === 2 && quarters.includes('Q1') && quarters.includes('Q2')) {
-    return quarters.map(quarter => ({key: quarter, alias: QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS]}));
+export const enableTwoQuarterMode = (quarters: string[], isTeamOwner: boolean) => {
+  if (isTeamOwner) {
+    return defaultQuarters.map(quarter => ({ key: quarter, alias: quarter }));
+  } else if (quarters.length === 2 && quarters.includes('Q1') && quarters.includes('Q2')) {
+    return quarters.map(quarter => ({ key: quarter, alias: QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] }));
   } else {
-    return quarters.map(quarter => ({key: quarter, alias: quarter}));
+    return quarters.map(quarter => ({ key: quarter, alias: quarter }));
   }
 };
 
-export const isEnabledTwoQuarterMode = (quarters: string[]) => {
-  if (quarters.length === 2 && quarters.includes('Q1') && quarters.includes('Q2')) {
+export const isEnabledTwoQuarterMode = (quarters: string[], isTeamOwner: boolean) => {
+  if (isTeamOwner) {
+    return false;
+  } else if (quarters.length === 2 && quarters.includes('Q1') && quarters.includes('Q2')) {
     return true;
   } else {
     return false;

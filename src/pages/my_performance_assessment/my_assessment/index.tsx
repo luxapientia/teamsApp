@@ -31,6 +31,9 @@ import { PersonalPerformance, PersonalQuarterlyTarget } from '../../../types';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import { format } from 'date-fns';
 import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { useAuth } from '../../../contexts/AuthContext';
+
+
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
   borderRadius: '8px',
@@ -62,6 +65,7 @@ const PerformanceAssessment: React.FC = () => {
   const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -144,7 +148,7 @@ const PerformanceAssessment: React.FC = () => {
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            ))).map((quarter) => (
+            )), user?.isTeamOwner).map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>
@@ -217,7 +221,7 @@ const PerformanceAssessment: React.FC = () => {
             quarter.editable
           )).map((quarter) => (
             quarter.quarter
-          )))}
+          )), user?.isTeamOwner)}
           onBack={() => {
             setShowPersonalQuarterlyTarget(false);
             setShowQuarterlyTargets(true);

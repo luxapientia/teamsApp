@@ -26,6 +26,7 @@ import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/qu
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import { Feedback as FeedbackType } from '../../../types/feedback';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -58,7 +59,7 @@ const PerformanceDistributionReport: React.FC = () => {
   const [showReport, setShowReport] = useState(false);
   const [personalPerformances, setPersonalPerformances] = useState<PersonalPerformance[]>([]);
   const teams = useAppSelector((state: RootState) => state.teams.teams);
-
+  const { user } = useAuth();
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const selectedAnnualTarget = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
@@ -209,7 +210,7 @@ const PerformanceDistributionReport: React.FC = () => {
       return yPosition;
     };
 
-    doc.text(`${selectedAnnualTarget?.name} - ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter)) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Distribution`, pageWidth / 2, 20, { align: 'center' });
+    doc.text(`${selectedAnnualTarget?.name} - ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Distribution`, pageWidth / 2, 20, { align: 'center' });
 
     let finalY = 35;
 
@@ -303,7 +304,7 @@ const PerformanceDistributionReport: React.FC = () => {
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            ))).map((quarter) => (
+            )), user?.isTeamOwner).map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>

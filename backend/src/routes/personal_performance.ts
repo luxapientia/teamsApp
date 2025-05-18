@@ -8,6 +8,9 @@ import User from '../models/User';
 import AnnualTarget from '../models/AnnualTarget';
 import { ApiError } from '../utils/apiError';
 import { graphService } from '../services/graphService';
+import Notification from '../models/Notification';
+import { socketService } from '../server';
+import { SocketEvent } from '../types/socket';
 
 const router = express.Router();
 
@@ -106,7 +109,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
   try {
     const { emailSubject, emailBody, supervisorId, userId, manageType, performanceId, quarter } = req.body;
 
-    const personalPerformance = await PersonalPerformance.findOne({ _id: performanceId });
+    const personalPerformance = await PersonalPerformance.findOne({ _id: performanceId }).populate('userId');
     if (personalPerformance) {
       const quarterlyTargets = personalPerformance.quarterlyTargets;
       const newQuarterlyTargets = quarterlyTargets.map((quarterlyTarget: any) => {
@@ -182,6 +185,38 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
         emailContent
       );
     }
+
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
+    const existingNotification = await Notification.findOne({
+      senderId: user?._id,
+      recipientId: typeof personalPerformance?.userId === 'object' ? personalPerformance.userId._id : personalPerformance?.userId,
+      annualTargetId: personalPerformance?.annualTargetId,
+      quarter: quarter,
+      type: manageType === 'Agreement' ? "resolve_agreement" : "resolve_assessment",
+      personalPerformanceId: performanceId
+    });
+
+    if (existingNotification) {
+      await Notification.updateOne(
+        { _id: existingNotification._id },
+        { $set: { isRead: false } }
+      );
+    } else {
+      await Notification.create({
+        type: manageType === 'Agreement' ? "resolve_agreement" : "resolve_assessment",
+        senderId: user?._id,
+        recipientId: typeof personalPerformance?.userId === 'object' ? personalPerformance.userId._id : personalPerformance?.userId,
+        annualTargetId: personalPerformance?.annualTargetId,
+        quarter: quarter,
+        isRead: false,
+        personalPerformanceId: performanceId
+      });
+    }
+    socketService.emitToUser(
+      typeof personalPerformance?.userId === 'object' ? personalPerformance.userId.MicrosoftId : personalPerformance?.userId as string,
+      SocketEvent.NOTIFICATION,
+      {}
+    );
 
     return res.status(200).json({ message: 'email sent back successfully' });
   } catch (error) {

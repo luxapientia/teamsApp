@@ -220,7 +220,7 @@ const TeamPerformances: React.FC = () => {
                 {
                   enableTwoQuarterMode(annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter(qt => qt.editable).map((quarter, index) => (
                     quarter.quarter
-                  ))).map((quarter) => (
+                  )), user?.isTeamOwner).map((quarter) => (
                     <StyledHeaderCell key={quarter.key}>{quarter.alias} Overall Performance Score</StyledHeaderCell>
                   ))
                   }
@@ -230,7 +230,7 @@ const TeamPerformances: React.FC = () => {
             <TableBody>
               {teamPerformancesByTarget[selectedAnnualTargetId].map((performance: TeamPerformance, index: number) => {
                 const quarterScores = performance.quarterlyTargets
-                .filter(quarter => annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable)
+                .filter(quarter => !user?.isTeamOwner?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter)
                 .map(quarter => {
                   const isFeedbackEnabled = feedbackTemplates
                   .find(template => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')

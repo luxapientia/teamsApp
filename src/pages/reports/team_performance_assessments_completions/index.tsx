@@ -29,6 +29,7 @@ import { ExportButton } from '../../../components/Buttons';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -49,6 +50,7 @@ const TeamPerformances: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [showTable, setShowTable] = useState(false);
   const tableRef = useRef();
+  const { user } = useAuth();
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const selectedAnnualTarget = useAppSelector((state: RootState) =>
@@ -93,7 +95,7 @@ const TeamPerformances: React.FC = () => {
 
   const handleExportPDF = async () => {
     if (teamPerformances.length > 0) {
-      const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name} ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter)) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Assessments Completions`;
+      const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name} ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Assessments Completions`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.15, 0.25, 0.25, 0.1, 0.25]);
     }
   }
@@ -123,7 +125,7 @@ const TeamPerformances: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            { selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter))
+            { selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner)
               .map((quarter) => (
                 <MenuItem key={quarter.key} value={quarter.key}>
                   {quarter.alias}

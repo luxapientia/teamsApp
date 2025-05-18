@@ -34,6 +34,8 @@ import { api } from '../../../services/api';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import SearchIcon from '@mui/icons-material/Search';
 import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { useAuth } from '../../../contexts/AuthContext';
+
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -67,6 +69,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string, team: string, position: string }[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuth();
   const teams = useAppSelector((state: RootState) =>
     state.teams.teams
   );
@@ -164,7 +167,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            ))).map((quarter) => (
+            )), user?.isTeamOwner).map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>
@@ -254,7 +257,8 @@ const PersonalPerformanceAgreement: React.FC = () => {
           userName={filteredUsers.find(user => user.id === selectedUserId)?.name || ''}
           isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
             .filter((quarter) => quarter.editable)
-            .map((quarter) => quarter.quarter)
+            .map((quarter) => quarter.quarter),
+            user?.isTeamOwner
           )}
         />
       )}

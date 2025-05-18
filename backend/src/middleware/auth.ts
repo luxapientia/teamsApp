@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
 import { UserProfile } from '../types/index';
+import { roleService } from '../services/roleService';
 export interface AuthenticatedRequest extends Request {
   user?: UserProfile;
 }
@@ -36,6 +37,7 @@ export const authenticateToken = async (
     teamId: user.teamId,
     isDevMember: user.isDevMember,
     isPerformanceCalibrationMember: user.isPerformanceCalibrationMember,
+    isTeamOwner: await roleService.isTeamOwner(user?.teamId?.toString() || null, user.MicrosoftId),
     status: user.status || 'inactive'
   }
   req.user = duser as UserProfile;

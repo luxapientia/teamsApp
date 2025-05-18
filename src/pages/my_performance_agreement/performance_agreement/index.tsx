@@ -32,6 +32,8 @@ import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import { format } from 'date-fns';
 import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
 import { createSelector } from '@reduxjs/toolkit';
+import { useAuth } from '../../../contexts/AuthContext';
+
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -73,6 +75,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
+  const { user } = useAuth();
   const teams = useAppSelector((state: RootState) =>
     state.teams.teams
   );
@@ -144,7 +147,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            ))).map((quarter) => (
+            )), user?.isTeamOwner).map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>
@@ -218,7 +221,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
             quarter.editable
           )).map((quarter) => (
             quarter.quarter
-          )))}
+          )), user?.isTeamOwner)}
           onBack={() => {
             setShowPersonalQuarterlyTarget(false);
             setShowQuarterlyTargets(true);

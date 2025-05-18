@@ -7,7 +7,7 @@ import AgreementsTable from './agreements_table';
 import { api } from '../../../services/api';
 import PersonalQuarterlyTarget from './PersonalQuarterlyTarget';
 import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
-
+import { useAuth } from '../../../contexts/AuthContext';
 const StyledFormControl = styled(FormControl)({
     backgroundColor: '#fff',
     borderRadius: '8px',
@@ -47,7 +47,7 @@ const PerformanceAgreements: React.FC = () => {
     const [agreements, setAgreements] = useState<AgreementRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [viewingUser, setViewingUser] = useState<AgreementRow | null>(null);
-
+    const { user } = useAuth();
     const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
     const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
         state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
@@ -131,7 +131,7 @@ const PerformanceAgreements: React.FC = () => {
                             quarter.editable
                         )).map((quarter) => (
                             quarter.quarter
-                        ))).map((quarter) => (
+                        )), user?.isTeamOwner).map((quarter) => (
                             <MenuItem key={quarter.key} value={quarter.key}>
                                 {quarter.alias}
                             </MenuItem>
@@ -169,7 +169,7 @@ const PerformanceAgreements: React.FC = () => {
                         quarter.editable
                     )).map((quarter) => (
                         quarter.quarter
-                    )))}
+                    )), user?.isTeamOwner)}
                 />
             )}
         </Box>

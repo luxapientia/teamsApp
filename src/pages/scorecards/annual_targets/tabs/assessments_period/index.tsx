@@ -20,6 +20,7 @@ import { RootState } from '../../../../../store';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
 import { QUARTER_ALIAS } from '../../../../../constants/quarterAlias';
 import { isEnabledTwoQuarterMode } from '../../../../../utils/quarterMode';
+import { useAuth } from '../../../../../contexts/AuthContext';
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
   padding: '16px',
@@ -52,6 +53,8 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
   const annualTarget = useAppSelector((state: RootState) => 
     state.scorecard.annualTargets.find(target => target.name === targetName)
   );
+  const { user } = useAuth();
+
 
   const [editingQuarter, setEditingQuarter] = useState<string | null>(null);
   const [editData, setEditData] = useState<PeriodData>({ startDate: '', endDate: '' });
@@ -71,7 +74,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
     setErrors({});
   };
 
-  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(annualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter) || []);
+  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(annualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter) || [], user?.isTeamOwner);
 
   const validateDates = (): boolean => {
     const newErrors: ValidationErrors = {};
@@ -166,7 +169,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
             </TableRow>
           </TableHead>
           <TableBody>
-            {quarters.filter(quarter => annualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter)?.editable).map((quarter) => {
+            {quarters.filter(quarter => !user?.isTeamOwner ? annualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter)?.editable : quarter).map((quarter) => {
               const period = annualTarget?.content.assessmentPeriod?.[quarter as keyof typeof annualTarget.content.assessmentPeriod];
               return (
                 <TableRow key={quarter}>

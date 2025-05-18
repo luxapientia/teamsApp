@@ -30,7 +30,7 @@ import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import { api } from '../../../services/api';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
 import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
-
+import { useAuth } from '../../../contexts/AuthContext';
 const StyledFormControl = styled(FormControl)({
     backgroundColor: '#fff',
     borderRadius: '8px',
@@ -141,7 +141,7 @@ const TeamPerformanceAgreements: React.FC = () => {
     const [selectedTeamId, setSelectedTeamId] = useState('');
     const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
     const [teamPerformances, setTeamPerformances] = useState([]);
-
+    const { user } = useAuth();
     const annualTargets = useAppSelector((state: RootState) =>
         state.scorecard.annualTargets
     );
@@ -213,7 +213,7 @@ const TeamPerformanceAgreements: React.FC = () => {
                             quarter.editable
                         )).map((quarter) => (
                             quarter.quarter
-                        ))).map((quarter) => (
+                        )), user?.isTeamOwner).map((quarter) => (
                             <MenuItem key={quarter.key} value={quarter.key}>
                                 {quarter.alias}
                             </MenuItem>
@@ -276,7 +276,7 @@ const TeamPerformanceAgreements: React.FC = () => {
                         quarter.editable
                     )).map((quarter) => (
                         quarter.quarter
-                    )))}
+                    )), user?.isTeamOwner)}
                     onBack={() => {
                         setShowPersonalQuarterlyTarget(false);
                         setShowTable(true);

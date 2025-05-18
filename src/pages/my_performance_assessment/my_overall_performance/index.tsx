@@ -27,6 +27,7 @@ import { TeamPerformance, PersonalPerformance, PersonalQuarterlyTargetObjective 
 import { api } from '../../../services/api';
 import { enableTwoQuarterMode } from '../../../utils/quarterMode';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
+import { useAuth } from '../../../contexts/AuthContext';
 
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
@@ -62,6 +63,7 @@ const MyPerformances: React.FC = () => {
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [showTable, setShowTable] = useState(false);
   const [enableFeedback, setEnableFeedback] = useState(false);
+  const { user } = useAuth();
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const personalPerformances = useAppSelector((state: RootState) => state.personalPerformance.personalPerformances);
@@ -245,7 +247,7 @@ const MyPerformances: React.FC = () => {
                     quarter.editable
                   )).map((quarter) => (
                     quarter.quarter
-                  ))).map((quarter) => (
+                  )), user?.isTeamOwner).map((quarter) => (
                     <StyledHeaderCell key={quarter.key}>{quarter.alias} Overall Performance Score</StyledHeaderCell>
                   ))}
                   <StyledHeaderCell>Overall Annual Performance Score</StyledHeaderCell>
@@ -255,7 +257,7 @@ const MyPerformances: React.FC = () => {
                 {personalPerformances.map((performance: PersonalPerformance, index: number) => {
                   // Calculate quarter scores
                   const quarterScores = performance.quarterlyTargets
-                    .filter(quarter => annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable)
+                    .filter(quarter => !user?.isTeamOwner?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter)
                     .map(quarter => {
                       const isFeedbackEnabled = feedbackTemplates
                         .find(template => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')
@@ -272,7 +274,7 @@ const MyPerformances: React.FC = () => {
 
                   // Calculate annual score
                   const validScores = quarterScores.filter(score => score) as number[];
-                  const annualScore = validScores.length > 0
+                  const annualScore = validScores.length === quarterScores.length
                     ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
                     : null;
 

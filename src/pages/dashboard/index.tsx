@@ -355,7 +355,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            ))).map((quarter) => (
+            )), user?.isTeamOwner).map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>
@@ -442,7 +442,8 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                       userOwnedTeam={userOwnedTeam}
                       isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
                         .filter((quarter) => quarter.editable)
-                        .map((quarter) => quarter.quarter)
+                        .map((quarter) => quarter.quarter),
+                        user?.isTeamOwner
                       )}
                     />
                   </Box>
@@ -483,7 +484,8 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                       userOwnedTeam={userOwnedTeam}
                       isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
                         .filter((quarter) => quarter.editable)
-                        .map((quarter) => quarter.quarter)
+                        .map((quarter) => quarter.quarter),
+                        user?.isTeamOwner
                       )}
                     />
                   </Box>

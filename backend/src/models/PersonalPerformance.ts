@@ -81,7 +81,7 @@ export interface PersonalQuarterlyTarget {
 export interface PersonalPerformanceDocument extends Document {
   _id: string;
   teamId: string;
-  userId: string;
+  userId: string | { _id: string; MicrosoftId: string };
   tenantId: string;
   annualTargetId: string;
   quarterlyTargets: PersonalQuarterlyTarget[];

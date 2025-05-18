@@ -22,6 +22,7 @@ import { PersonalQuarterlyTargetObjective, TeamPerformance, PdfType } from '../.
 import { Feedback as FeedbackType } from '../../../types/feedback';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
+import { useAuth } from '../../../contexts/AuthContext';
 
 import { ExportButton } from '../../../components/Buttons';
 
@@ -38,7 +39,7 @@ const TeamPerformances: React.FC = () => {
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets as AnnualTargetType[]);
   const feedbackTemplates = useAppSelector((state: RootState) => state.feedback.feedbacks as FeedbackType[]);
   const [teamPerformances, setTeamPerformances] = useState<TeamPerformance[]>([]);
-
+  const { user } = useAuth();
   const tableRef = useRef();
   const enableFeedback = true; // Placeholder: This should be determined dynamically
 
@@ -225,7 +226,7 @@ const TeamPerformances: React.FC = () => {
                 <StyledHeaderCell>Full Name</StyledHeaderCell>
                 <StyledHeaderCell>Job Title</StyledHeaderCell>
                 <StyledHeaderCell>Team</StyledHeaderCell>
-                {enableTwoQuarterMode(annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter))
+                {enableTwoQuarterMode(annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner)
                   .map((quarter) => (
                     <StyledHeaderCell key={quarter.key}>{quarter.alias} Overall Performance Score</StyledHeaderCell>
                   ))}
@@ -234,7 +235,7 @@ const TeamPerformances: React.FC = () => {
             </TableHead>
             <TableBody>
               {teamPerformances.map((performance: TeamPerformance, index: number) => {
-                const quarterScores = performance.quarterlyTargets.filter(quarter => annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable).map(quarter => {
+                const quarterScores = performance.quarterlyTargets.filter(quarter => !user?.isTeamOwner?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter).map(quarter => {
                   const qScore = calculateQuarterScore(quarter.objectives);
                   const isFeedbackEnabled = feedbackTemplates
                   ?.find((template: FeedbackType) => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')

@@ -12,6 +12,7 @@ import PersonalPerformanceAssessmentContent from './performance_assessment';
 import { isEnabledTwoQuarterMode } from '../../utils/quarterMode';
 import { QUARTER_ALIAS } from '../../constants/quarterAlias';
 import { fetchNotifications } from '../../store/slices/notificationSlice';
+import { useAuth } from '../../contexts/AuthContext';
 const ViewButton = styled(Button)({
   backgroundColor: '#0078D4',
   color: 'white',
@@ -31,6 +32,8 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
   const notifications = useAppSelector((state: RootState) => state.notification.notifications);
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const teams = useAppSelector((state: RootState) => state.teams.teams);
+
+  const { user } = useAuth();
 
   const handleView = async (notification: Notification) => {
     if (notification.type === 'resolve_agreement') {
@@ -94,7 +97,8 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                         annualTargets.find((target) => target._id === notification.annualTargetId)
                           ?.content.quarterlyTarget.quarterlyTargets
                           .filter((quarter) => quarter.editable)
-                          .map((quarter) => quarter.quarter)
+                          .map((quarter) => quarter.quarter),
+                        user?.isTeamOwner
                       ) 
                         ? QUARTER_ALIAS[notification.quarter as keyof typeof QUARTER_ALIAS] 
                         : notification.quarter
@@ -129,7 +133,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
             quarter.editable
           )).map((quarter) => (
             quarter.quarter
-          )))}
+          )), user?.isTeamOwner)}
           onBack={() => {
             setSelectedNotification(null);
             setShowTable(true);
@@ -144,7 +148,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
             quarter.editable
           )).map((quarter) => (
             quarter.quarter
-          )))}
+          )), user?.isTeamOwner)}
           onBack={() => {
             setSelectedNotification(null);
             setShowTable(true);

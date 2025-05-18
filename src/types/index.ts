@@ -59,5 +59,6 @@ export interface UserProfile {
   organizationName?: string;
   isDevMember: boolean;
   isPerformanceCalibrationMember: boolean;
+  isTeamOwner: boolean;
 } 
 

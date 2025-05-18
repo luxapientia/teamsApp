@@ -9,6 +9,8 @@ import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTab
 import { AnnualTarget } from '../../../types'
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 import { isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { useAuth } from '../../../contexts/AuthContext';
+
 
 const EnableEmployeesDevelopment: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -17,13 +19,13 @@ const EnableEmployeesDevelopment: React.FC = () => {
   const [quarterlyTargets, setQuarterlyTargets] = useState<any[]>([]);
   const [isEnabledTwoQuarter, setIsEnabledTwoQuarter] = useState(false);
   const [showTable, setShowTable] = useState(false);
-
+  const { user } = useAuth();
   const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
   useEffect(() => {
     if (selectedAnnualTarget) {
-      setIsEnabledTwoQuarter(isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter)));
+      setIsEnabledTwoQuarter(isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner));
     }
   }, [selectedAnnualTarget]);
 
@@ -127,7 +129,7 @@ const EnableEmployeesDevelopment: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {quarterlyTargets.filter(quarterlyTarget => quarterlyTarget.editable).map((quarterlyTarget, index) => (
+              {quarterlyTargets.filter(quarterlyTarget => !user?.isTeamOwner?quarterlyTarget.editable:quarterlyTarget).map((quarterlyTarget, index) => (
                 <TableRow key={index}>
                   <StyledTableCell>{isEnabledTwoQuarter ? QUARTER_ALIAS[quarterlyTarget.quarter as keyof typeof QUARTER_ALIAS] : quarterlyTarget.quarter}</StyledTableCell>
                   <StyledTableCell>

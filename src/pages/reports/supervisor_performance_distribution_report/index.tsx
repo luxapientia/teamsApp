@@ -26,7 +26,7 @@ import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import { Feedback as FeedbackType } from '../../../types/feedback';
 import PerformanceDistributionTable from './performanceDistributionTable';
-
+import { useAuth } from '../../../contexts/AuthContext';
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
   borderRadius: '8px',
@@ -58,7 +58,7 @@ const SupervisorPerformanceDistributionReport: React.FC = () => {
   const [showReport, setShowReport] = useState(false);
   const [personalPerformances, setPersonalPerformances] = useState<PersonalPerformance[]>([]);
   const teams = useAppSelector((state: RootState) => state.teams.teams);
-
+  const { user } = useAuth();
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const selectedAnnualTarget = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
@@ -194,7 +194,7 @@ const SupervisorPerformanceDistributionReport: React.FC = () => {
     }));
     return chartData;
   }
-
+  console.log('here')
   const handleExportPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4'); // Set to landscape
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -209,7 +209,7 @@ const SupervisorPerformanceDistributionReport: React.FC = () => {
       return yPosition;
     };
 
-    doc.text(`${selectedAnnualTarget?.name} - ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter)) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Distribution`, pageWidth / 2, 20, { align: 'center' });
+    doc.text(`${selectedAnnualTarget?.name} - ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Distribution`, pageWidth / 2, 20, { align: 'center' });
 
     let finalY = 35;
     doc.setFontSize(13);
@@ -270,7 +270,7 @@ const SupervisorPerformanceDistributionReport: React.FC = () => {
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            ))).map((quarter) => (
+            )), user?.isTeamOwner).map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>
