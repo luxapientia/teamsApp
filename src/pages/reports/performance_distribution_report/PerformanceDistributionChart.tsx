@@ -35,7 +35,7 @@ const PerformanceDistributionChart: React.FC<PerformanceDistributionChartProps> 
     count: item.count,
     percentage: Number(((item.count / (chartData.reduce((prev, current) => prev + current.count, 0) || 1))).toFixed(2))
   }));
-  console.log(scaledChartData);
+
   return (
     <Box sx={{ mb: 4 }}>
       <Typography sx={{ mb: 2 }}>

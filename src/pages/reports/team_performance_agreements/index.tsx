@@ -167,11 +167,13 @@ const TeamPerformanceAgreements: React.FC = () => {
     const handleScorecardChange = (event: SelectChangeEvent) => {
         setSelectedAnnualTargetId(event.target.value);
         setShowTable(false);
+        setShowPersonalQuarterlyTarget(false);
     };
 
     const handleQuarterChange = (event: SelectChangeEvent) => {
         setSelectedQuarter(event.target.value);
         setShowTable(false);
+        setShowPersonalQuarterlyTarget(false);
     };
 
     const handleView = () => {

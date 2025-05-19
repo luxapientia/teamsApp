@@ -1,7 +1,7 @@
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { RootState } from '../../../store';
 import { AnnualTarget, QuarterType } from '../../../types/annualCorporateScorecard';
-import { Box, Button, InputLabel, MenuItem, Select, styled, FormControl, CircularProgress } from '@mui/material';
+import { Box, Button, InputLabel, MenuItem, Select, styled, FormControl, CircularProgress, SelectChangeEvent } from '@mui/material';
 import React, { useState } from 'react';
 import AssessmentsTable from './assessments_table';
 import { api } from '../../../services/api';
@@ -90,6 +90,19 @@ const PerformanceAssessments: React.FC = () => {
         handleView();
     };
 
+    const handleQuarterChange = (event: SelectChangeEvent) => {
+        setSelectedQuarter(event.target.value as QuarterType);
+        setShowTable(false);
+        setViewingUser(null);
+    }
+
+    const handleScorecardChange = (event: SelectChangeEvent) => {
+        setSelectedAnnualTargetId(event.target.value as string);
+        setShowTable(false);
+        setViewingUser(null);
+    };
+
+
     return (
         <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
             <Box sx={{
@@ -103,7 +116,7 @@ const PerformanceAssessments: React.FC = () => {
                     <Select
                         value={selectedAnnualTargetId}
                         label="Annual Corporate Scorecard"
-                        onChange={(e) => setSelectedAnnualTargetId(e.target.value as string)}
+                        onChange={handleScorecardChange}
                     >
                         {annualTargets.map((target) => (
                             <MenuItem key={target._id} value={target._id}>
@@ -118,7 +131,7 @@ const PerformanceAssessments: React.FC = () => {
                     <Select
                         value={selectedQuarter}
                         label="Quarter"
-                        onChange={(e) => setSelectedQuarter(e.target.value as QuarterType)}
+                        onChange={handleQuarterChange}
                     >
                         {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
                             quarter.editable

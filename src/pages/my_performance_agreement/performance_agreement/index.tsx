@@ -98,11 +98,13 @@ const PersonalPerformanceAgreement: React.FC = () => {
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
     setShowQuarterlyTargets(false);
+    setShowPersonalQuarterlyTarget(false);
   };
 
   const handleQuarterChange = (event: SelectChangeEvent) => {
     setSelectedQuarter(event.target.value);
     setShowQuarterlyTargets(false);
+    setShowPersonalQuarterlyTarget(false);
   };
 
   const handleView = () => {

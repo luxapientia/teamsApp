@@ -98,12 +98,14 @@ const PerformanceAssessment: React.FC = () => {
     setSelectedAnnualTargetId(event.target.value);
     setShowQuarterlyTargets(false);
     setSelectedPersonalPerformance(null);
+    setShowPersonalQuarterlyTarget(false);
   };
 
   const handleQuarterChange = (event: SelectChangeEvent) => {
     setSelectedQuarter(event.target.value);
     setShowQuarterlyTargets(false);
     setSelectedPersonalPerformance(null);
+    setShowPersonalQuarterlyTarget(false);
   };
 
   const handleView = async () => {
