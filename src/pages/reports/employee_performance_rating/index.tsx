@@ -263,7 +263,7 @@ const EmployeePerformanceRating: React.FC = () => {
   const handleExportPDF = async () => {
     if (teamPerformances.length > 0) {
       const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name} Team Performance`;
-      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.1, 0.1, 0.05, 0.15, 0.15, 0.15, 0.15, 0.15]);
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.1, 0.15, 0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]);
     }
   }
 
