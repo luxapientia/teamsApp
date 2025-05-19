@@ -257,7 +257,7 @@ const MyPerformances: React.FC = () => {
                 {personalPerformances.map((performance: PersonalPerformance, index: number) => {
                   // Calculate quarter scores
                   const quarterScores = performance.quarterlyTargets
-                    .filter(quarter => annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable)
+                    .filter(quarter => !(user?.isTeamOwner)?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter)
                     .map(quarter => {
                       const isFeedbackEnabled = feedbackTemplates
                         .find(template => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')
@@ -274,7 +274,7 @@ const MyPerformances: React.FC = () => {
 
                   // Calculate annual score
                   const validScores = quarterScores.filter(score => typeof score === 'number') as number[];
-                  const twoQuarterModeEnabled = !isEnabledTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                  const twoQuarterModeEnabled = isEnabledTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
                     quarter.editable
                   )).map((quarter) => (
                     quarter.quarter
