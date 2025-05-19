@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Button,
@@ -20,16 +20,21 @@ import {
   Select,
   MenuItem,
   InputAdornment,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SearchIcon from '@mui/icons-material/Search';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../../../contexts/AuthContext';
 import { courseAPI } from '../../../services/api';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 import { Course } from '../../../types/course';
 import { SelectChangeEvent } from '@mui/material/Select';
+import { importExcelFile } from '../../../utils/excelImport';
 
 type TrainingCourse = Omit<Course, 'createdAt' | 'updatedAt'>;
 
@@ -53,6 +58,8 @@ const TrainingCoursesManagement: React.FC = () => {
     description: '',
     status: 'active'
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Check if user has super user privileges
   const isSuperUser = user?.role === 'SuperUser';
@@ -167,11 +174,47 @@ const TrainingCoursesManagement: React.FC = () => {
     }
   };
 
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    importExcelFile(file, {
+      requiredColumns: [
+        { name: 'name', aliases: ['name', 'course'] },
+        { name: 'description', aliases: ['description', 'desc'] }
+      ],
+      onSuccess: (rows) => {
+        const courses = rows.map(row => ({
+          name: row.name,
+          description: row.description,
+          status: 'active' as const
+        }));
+
+        Promise.all(courses.map(course => courseAPI.create(course)))
+          .then(() => {
+            fetchCourses();
+            setToast({ message: 'Courses imported successfully', type: 'success' });
+          })
+          .catch(error => {
+            console.error('Error creating courses:', error);
+            setToast({ message: 'Error creating some courses', type: 'error' });
+          });
+      },
+      onError: (error) => {
+        setToast({ message: `Error importing file: ${error}`, type: 'error' });
+      }
+    });
+  };
+
   // Filter courses based on search query
   const filteredCourses = courses.filter(course => 
     course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     course.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleCloseToast = () => {
+    setToast(null);
+  };
 
   if (loading) {
     return <Box>Loading courses...</Box>;
@@ -199,22 +242,42 @@ const TrainingCoursesManagement: React.FC = () => {
             ),
           }}
         />
-        {(isSuperUser || isAppOwner) && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddCourse}
-            sx={{
-              textTransform: 'none',
-              backgroundColor: '#0078D4',
-              '&:hover': {
-                backgroundColor: '#106EBE',
-              }
-            }}
-          >
-            Add Course
-          </Button>
-        )}
+        
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {(isSuperUser || isAppOwner) && (
+            <>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleImportExcel}
+                style={{ display: 'none' }}
+                ref={fileInputRef}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<UploadFileIcon />}
+                onClick={() => fileInputRef.current?.click()}
+                sx={{ textTransform: 'none' }}
+              >
+                Import Excel
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={handleAddCourse}
+                sx={{
+                  textTransform: 'none',
+                  backgroundColor: '#0078D4',
+                  '&:hover': {
+                    backgroundColor: '#106EBE',
+                  }
+                }}
+              >
+                Add Course
+              </Button>
+            </>
+          )}
+        </Box>
       </Box>
 
       {/* Add Course Modal */}
@@ -372,6 +435,21 @@ const TrainingCoursesManagement: React.FC = () => {
           </Table>
         </TableContainer>
       </Paper>
+
+      <Snackbar 
+        open={!!toast} 
+        autoHideDuration={6000} 
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseToast} 
+          severity={toast?.type || 'info'} 
+          sx={{ width: '100%' }}
+        >
+          {toast?.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

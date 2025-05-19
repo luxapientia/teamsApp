@@ -32,6 +32,8 @@ import * as XLSX from 'xlsx';
 import { Toast } from '../../../components/Toast';
 import { exportExcel } from '../../../utils/exportExcel';
 import { useAuth } from '../../../contexts/AuthContext';
+import { importExcelFile } from '../../../utils/excelImport';
+
 const EmployeePerformanceRating: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
@@ -63,92 +65,21 @@ const EmployeePerformanceRating: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Reset states
-    setFileName('');
-    setExcelData([]);
-    setShowTable(false);
-
-    const resetInput = () => {
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-    try {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const bstr = evt.target?.result;
-          if (!bstr) throw new Error('Failed to read file');
-
-          const wb = XLSX.read(bstr, { type: 'binary' });
-          const wsname = wb.SheetNames[0];
-          const ws = wb.Sheets[wsname];
-          const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as (string | undefined)[][];
-
-          if (!Array.isArray(data) || data.length === 0) throw new Error('File is empty or malformed');
-          const headerRow = data[0];
-          if (!Array.isArray(headerRow)) throw new Error('Header row is missing or malformed');
-
-          // Find email column - try different possible headers
-          const header = headerRow.map(h => (typeof h === 'string' ? h.toLowerCase() : ''));
-          const emailIdx = header.findIndex(h =>
-            h.includes('email') ||
-            h.includes('e-mail') ||
-            h.includes('mail')
-          );
-
-          if (emailIdx === -1) throw new Error('Email column not found');
-
-          // Find org unit column - try different possible headers
-          const orgUnitIdx = header.findIndex(h =>
-            h.includes('org') ||
-            h.includes('unit') ||
-            h.includes('department') ||
-            h.includes('division')
-          );
-
-          // Process rows
-          const rows = data.slice(1)
-            .map(row => {
-              if (!Array.isArray(row)) return null;
-              const email = row[emailIdx]?.toString().trim().toLowerCase();
-              if (!email) return null;
-              return {
-                email,
-                orgUnit: orgUnitIdx !== -1 ? row[orgUnitIdx]?.toString().trim() || '' : ''
-              };
-            })
-            .filter((row): row is { email: string; orgUnit: string } => row !== null);
-
-          if (!rows.length) throw new Error('No valid email data found');
-
-          setFileName(file.name);
-          setExcelData(rows);
-          setToast({ message: 'Excel file imported successfully', type: 'success' });
-        } catch (error) {
-          console.error('Error processing Excel file:', error);
-          setToast({
-            message: `Error processing file: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            type: 'error'
-          });
-        } finally {
-          resetInput();
-        }
-      };
-
-      reader.onerror = () => {
-        setToast({ message: 'Error reading file', type: 'error' });
-        resetInput();
-      };
-
-      reader.readAsBinaryString(file);
-    } catch (error) {
-      console.error('Error importing file:', error);
-      setToast({
-        message: `Error importing file: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        type: 'error'
-      });
-      resetInput();
-    }
+    importExcelFile(file, {
+      requiredColumns: [
+        { name: 'email', aliases: ['email', 'e-mail', 'mail'] },
+        { name: 'orgUnit', aliases: ['org', 'unit', 'department', 'division'] }
+      ],
+      onSuccess: (rows) => {
+        setExcelData(rows);
+        setFileName(file.name);
+        setShowTable(true);
+        setToast({ message: 'Excel file imported successfully', type: 'success' });
+      },
+      onError: (error) => {
+        setToast({ message: `Error importing file: ${error}`, type: 'error' });
+      }
+    });
   };
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
