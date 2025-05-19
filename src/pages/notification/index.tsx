@@ -108,7 +108,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                           ?.content.quarterlyTarget.quarterlyTargets
                           .filter((quarter) => quarter.editable)
                           .map((quarter) => quarter.quarter),
-                        user?.isTeamOwner
+                        user?.isTeamOwner || user?.role === 'SuperUser'
                       ) 
                         ? QUARTER_ALIAS[notification.quarter as keyof typeof QUARTER_ALIAS] 
                         : notification.quarter
@@ -142,7 +142,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
             annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets
               .filter((quarter) => quarter.editable)
               .map((quarter) => quarter.quarter),
-            user?.isTeamOwner
+            user?.isTeamOwner || user?.role === 'SuperUser'
           )}
           onBack={() => {
             setSelectedNotification(null);
@@ -162,7 +162,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
               annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets
                 .filter((quarter) => quarter.editable)
                 .map((quarter) => quarter.quarter),
-              user?.isTeamOwner
+              user?.isTeamOwner || user?.role === 'SuperUser'
             )}
             onBack={() => {
               setSelectedNotification(null);
@@ -179,7 +179,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            )), user?.isTeamOwner)}
+            )), user?.isTeamOwner || user?.role === 'SuperUser')}
             onBack={() => {
               setSelectedNotification(null);
               setShowTable(true);
@@ -194,7 +194,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            )), user?.isTeamOwner)}
+            )), user?.isTeamOwner || user?.role === 'SuperUser')}
             onBack={() => {
               setSelectedNotification(null);
               setShowTable(true);

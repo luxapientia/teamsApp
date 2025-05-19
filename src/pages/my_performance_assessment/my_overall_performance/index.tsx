@@ -247,7 +247,7 @@ const MyPerformances: React.FC = () => {
                     quarter.editable
                   )).map((quarter) => (
                     quarter.quarter
-                  )), user?.isTeamOwner).map((quarter) => (
+                  )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
                     <StyledHeaderCell key={quarter.key}>{quarter.alias} Overall Performance Score</StyledHeaderCell>
                   ))}
                   <StyledHeaderCell>Overall Annual Performance Score</StyledHeaderCell>
@@ -257,7 +257,7 @@ const MyPerformances: React.FC = () => {
                 {personalPerformances.map((performance: PersonalPerformance, index: number) => {
                   // Calculate quarter scores
                   const quarterScores = performance.quarterlyTargets
-                    .filter(quarter => !user?.isTeamOwner?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter)
+                    .filter(quarter => !(user?.isTeamOwner || user?.role === 'SuperUser')?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter)
                     .map(quarter => {
                       const isFeedbackEnabled = feedbackTemplates
                         .find(template => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')

@@ -208,7 +208,7 @@ const SupervisorPerformanceDistributionReport: React.FC = () => {
       return yPosition;
     };
 
-    doc.text(`${selectedAnnualTarget?.name} - ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Distribution`, pageWidth / 2, 20, { align: 'center' });
+    doc.text(`${selectedAnnualTarget?.name} - ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser') ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Distribution`, pageWidth / 2, 20, { align: 'center' });
 
     let finalY = 35;
     doc.setFontSize(13);
@@ -269,7 +269,7 @@ const SupervisorPerformanceDistributionReport: React.FC = () => {
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            )), user?.isTeamOwner).map((quarter) => (
+            )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>

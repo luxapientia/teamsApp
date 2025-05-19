@@ -360,7 +360,7 @@ const EmployeePerformanceRating: React.FC = () => {
                 <StyledHeaderCell>Job Title</StyledHeaderCell>
                 <StyledHeaderCell>Team</StyledHeaderCell>
                 <StyledHeaderCell>Orgnizational Unit</StyledHeaderCell>
-                {enableTwoQuarterMode(annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner)
+                {enableTwoQuarterMode(annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser')
                   .map((quarter) => (
                     <StyledHeaderCell key={quarter.key}>{quarter.alias} Overall Performance Score</StyledHeaderCell>
                   ))}
@@ -369,7 +369,7 @@ const EmployeePerformanceRating: React.FC = () => {
             </TableHead>
             <TableBody>
               {teamPerformances.filter(performance => excelData.some(data => data.email === (performance.userId as { email: string })?.email)).map((performance: TeamPerformance, index: number) => {
-                const quarterScores = performance.quarterlyTargets.filter(quarter => !user?.isTeamOwner?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter).map(quarter => {
+                const quarterScores = performance.quarterlyTargets.filter(quarter => !(user?.isTeamOwner || user?.role === 'SuperUser')?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter).map(quarter => {
                   const qScore = calculateQuarterScore(quarter.objectives);
                   const isFeedbackEnabled = feedbackTemplates
                   ?.find((template: FeedbackType) => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')

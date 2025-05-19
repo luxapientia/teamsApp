@@ -255,7 +255,7 @@ const PerformanceEvaluations: React.FC = () => {
         quarter.editable
       )).map((quarter) => (
         quarter.quarter
-      )), user?.isTeamOwner) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Evaluation`;
+      )), user?.isTeamOwner || user?.role === 'SuperUser') ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Evaluation`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, 'Total Weight: ' + String(calculateTotalWeight(getQuarterlyObjectives())), '', [0.1, 0.15, 0.1, 0.25, 0.1, 0.1, 0.1, 0.1],
         { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
     }
@@ -287,10 +287,10 @@ const PerformanceEvaluations: React.FC = () => {
             onChange={handleQuarterChange}
           >
             {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
-              user?.isTeamOwner ? quarter.editable : quarter
+              (user?.isTeamOwner || user?.role === 'SuperUser') ? quarter.editable : quarter
             )).map((quarter) => (
               quarter.quarter
-            )), user?.isTeamOwner).map((quarter) => (
+            )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>
@@ -320,7 +320,7 @@ const PerformanceEvaluations: React.FC = () => {
                 quarter.editable
               )).map((quarter) => (
                 quarter.quarter
-              )), user?.isTeamOwner) ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter}
+              )), user?.isTeamOwner || user?.role === 'SuperUser') ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter}
             </Typography>
 
             <Box sx={{ display: 'flex', gap: 2 }}>

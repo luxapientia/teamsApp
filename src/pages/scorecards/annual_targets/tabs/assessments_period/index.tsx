@@ -74,7 +74,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
     setErrors({});
   };
 
-  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(annualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter) || [], user?.isTeamOwner);
+  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(annualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter) || [], user?.isTeamOwner || user?.role === 'SuperUser');
 
   const validateDates = (): boolean => {
     const newErrors: ValidationErrors = {};
@@ -169,7 +169,7 @@ const AssessmentsPeriodTab: React.FC<AssessmentsPeriodTabProps> = ({ targetName 
             </TableRow>
           </TableHead>
           <TableBody>
-            {quarters.filter(quarter => !user?.isTeamOwner ? annualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter)?.editable : quarter).map((quarter) => {
+            {quarters.filter(quarter => !(user?.isTeamOwner || user?.role === 'SuperUser') ? annualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter)?.editable : quarter).map((quarter) => {
               const period = annualTarget?.content.assessmentPeriod?.[quarter as keyof typeof annualTarget.content.assessmentPeriod];
               return (
                 <TableRow key={quarter}>

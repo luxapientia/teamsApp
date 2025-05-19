@@ -154,7 +154,7 @@ const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName 
     setErrors({});
   };
 
-  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(annualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter) || [], user?.isTeamOwner);
+  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(annualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter) || [], user?.isTeamOwner || user?.role === 'SuperUser');
 
   return (
     <Box p={2}>
@@ -169,7 +169,7 @@ const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName 
             </TableRow>
           </TableHead>
           <TableBody>
-            {quarters.filter(quarter => !user?.isTeamOwner ? annualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter)?.editable : quarter).map((quarter) => {
+            {quarters.filter(quarter => !(user?.isTeamOwner || user?.role === 'SuperUser') ? annualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter)?.editable : quarter).map((quarter) => {
               const period = annualTarget?.content.contractingPeriod?.[quarter as keyof typeof annualTarget.content.contractingPeriod];
               return (
                 <TableRow key={quarter}>

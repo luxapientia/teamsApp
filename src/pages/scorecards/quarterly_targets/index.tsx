@@ -96,7 +96,7 @@ const QuarterlyTargetTable: React.FC = () => {
 
   useEffect(() => {
     if (selectedAnnualTarget) {
-      const isEnabledTwoQuarter = isEnabledTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner);
+      const isEnabledTwoQuarter = isEnabledTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser');
       setIsEnabledTwoQuarter(isEnabledTwoQuarter);
     }
   }, [selectedAnnualTarget]);
@@ -229,7 +229,7 @@ const QuarterlyTargetTable: React.FC = () => {
             onChange={handleQuarterChange}
           >
             {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
-              .filter(quarter => !user?.isTeamOwner ? selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable : quarter)
+              .filter(quarter => !(user?.isTeamOwner || user?.role === 'SuperUser') ? selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable : quarter)
               .map((quarter) => (
                 <MenuItem key={quarter.quarter} value={quarter.quarter}>
                   {isEnabledTwoQuarter ? QUARTER_ALIAS[quarter.quarter as keyof typeof QUARTER_ALIAS] : quarter.quarter}

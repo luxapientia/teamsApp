@@ -128,7 +128,7 @@ const OrganizationPerformances: React.FC = () => {
 
     annualTarget.content.quarterlyTarget.quarterlyTargets.forEach(quarter => {
       const quarterScore = calculateQuarterScore(quarter.objectives);
-      if (quarterScore && user?.isTeamOwner?quarter.editable:true) {
+      if (quarterScore && (user?.isTeamOwner || user?.role === 'SuperUser')?quarter.editable:true) {
         totalWeightedScore += quarterScore;
         totalQuarters++;
       }
@@ -232,7 +232,7 @@ const OrganizationPerformances: React.FC = () => {
                   <TableRow>
                     {enableTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map((quarter) => (
                       quarter.quarter
-                    )), user?.isTeamOwner).map((quarter) => (
+                    )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
                       <StyledHeaderCell key={quarter.key} align="center">
                         {quarter.alias} Overall Performance Score
                       </StyledHeaderCell>
@@ -245,7 +245,7 @@ const OrganizationPerformances: React.FC = () => {
                 <TableBody>
                   <TableRow>
                     {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
-                      !user?.isTeamOwner?quarter.editable:quarter
+                      !(user?.isTeamOwner || user?.role === 'SuperUser')?quarter.editable:quarter
                     )).map((quarter) => {
                       const score = calculateQuarterScore(quarter.objectives);
                       const ratingScale = getRatingScaleInfo(score, selectedAnnualTarget);

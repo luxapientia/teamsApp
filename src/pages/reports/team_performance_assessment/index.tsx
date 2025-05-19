@@ -221,7 +221,7 @@ const TeamPerformanceAgreements: React.FC = () => {
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            )), user?.isTeamOwner).map((quarter) => (
+            )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>
@@ -285,7 +285,7 @@ const TeamPerformanceAgreements: React.FC = () => {
             quarter.editable
           )).map((quarter) => (
             quarter.quarter
-          )), user?.isTeamOwner)}
+          )), user?.isTeamOwner || user?.role === 'SuperUser')}
           onBack={() => {
             setShowPersonalQuarterlyTarget(false);
             setShowTable(true);

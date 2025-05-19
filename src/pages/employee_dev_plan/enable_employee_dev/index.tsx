@@ -25,7 +25,7 @@ const EnableEmployeesDevelopment: React.FC = () => {
   );
   useEffect(() => {
     if (selectedAnnualTarget) {
-      setIsEnabledTwoQuarter(isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner));
+      setIsEnabledTwoQuarter(isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser'));
     }
   }, [selectedAnnualTarget]);
 
@@ -129,7 +129,7 @@ const EnableEmployeesDevelopment: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {quarterlyTargets.filter(quarterlyTarget => !user?.isTeamOwner?quarterlyTarget.editable:quarterlyTarget).map((quarterlyTarget, index) => (
+              {quarterlyTargets.filter(quarterlyTarget => !(user?.isTeamOwner || user?.role === 'SuperUser')?quarterlyTarget.editable:quarterlyTarget).map((quarterlyTarget, index) => (
                 <TableRow key={index}>
                   <StyledTableCell>{isEnabledTwoQuarter ? QUARTER_ALIAS[quarterlyTarget.quarter as keyof typeof QUARTER_ALIAS] : quarterlyTarget.quarter}</StyledTableCell>
                   <StyledTableCell>
