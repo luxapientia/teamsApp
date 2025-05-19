@@ -71,7 +71,8 @@ router.post('/callback', async (req: Request, res: Response) => {
             organizationName: '',
             isDevMember: !!dbUser.isDevMember,
             isPerformanceCalibrationMember: !!dbUser.isPerformanceCalibrationMember,
-            isTeamOwner: await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId)
+            isTeamOwner: await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId),
+            teamId: dbUser.teamId?.toString()
           };
           const appToken = await authService.createAppToken(tokenUserProfile);
         console.log('App token created successfully');

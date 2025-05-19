@@ -84,7 +84,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                 <TableRow key={index}>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {notification.sender.fullName}
+                      {(notification.type==='agreement' || notification.type==='assessment')?notification.sender.fullName:user?.displayName}
                       {/* {!notification.isRead && ( */}
                       {(
                         <Chip
@@ -99,7 +99,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                       )}
                     </Box>
                   </TableCell>
-                  <TableCell>{teams.find((team) => team._id === notification.sender.teamId)?.name}</TableCell>
+                  <TableCell>{teams.find((team) => (notification.type==='agreement' || notification.type==='assessment')?team._id === notification.sender.teamId:team._id === user?.teamId)?.name}</TableCell>
                   <TableCell>{annualTargets.find((target) => target._id === notification.annualTargetId)?.name}</TableCell>
                   <TableCell>
                     {`${notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment' ? 'Resolve' : 'Approve'} ${

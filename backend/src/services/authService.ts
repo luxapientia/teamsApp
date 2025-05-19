@@ -136,7 +136,8 @@ export class AuthService {
         organizationName: '',
         isDevMember: !!dbUser.isDevMember,
         isPerformanceCalibrationMember: !!dbUser.isPerformanceCalibrationMember,
-        isTeamOwner: await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId)
+        isTeamOwner: await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId),
+        teamId: dbUser?.teamId?.toString()
       };
 
       const token = await this.createAppToken(tokenUserProfile);
@@ -363,7 +364,8 @@ export class AuthService {
       organizationName: userProfile.organizationName || '',
       isDevMember: userProfile.isDevMember,
       isPerformanceCalibrationMember: userProfile.isPerformanceCalibrationMember,
-      isTeamOwner: userProfile.isTeamOwner
+      isTeamOwner: userProfile.isTeamOwner,
+      teamId: userProfile.teamId
     };
 
     

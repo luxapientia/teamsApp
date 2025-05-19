@@ -60,5 +60,6 @@ export interface UserProfile {
   isDevMember: boolean;
   isPerformanceCalibrationMember: boolean;
   isTeamOwner: boolean;
+  teamId?: string;
 } 
 
