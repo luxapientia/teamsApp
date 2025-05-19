@@ -284,7 +284,6 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               } else {
                 return { ...kpi }
               }
-              return kpi;
             })
           };
         }

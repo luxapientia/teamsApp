@@ -287,49 +287,59 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     setCommentModalOpen(true);
   };
 
-  const handleSaveComment = (comment: string) => {
-    if (notification) {
-      const updatedObjectives = personalQuarterlyObjectives.map(objective => ({
-        ...objective,
-        KPIs: objective.KPIs.map((kpi, kpiIndex) => {
-          if (kpiIndex === kpiId) {
-            return {
-              ...kpi,
-              assessmentComment: comment
-            }
-          } else {
-            return { ...kpi }
-          }
-        })
-      }));
+  const handleSaveComment = async (comment: string, kpiId: number) => {
+    try {
+      // Find the current quarterly target
+      const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+      if (!currentTarget) return;
 
-      api.put(`/notifications/personal-performance/${notification._id}`, {
+      // Find and update only the specific objective and initiative
+      const updatedObjectives = currentTarget.objectives.map(objective => {
+        if (objective.name === selectedObjective && objective.initiativeName === selectedInitiative) {
+          return {
+            ...objective,
+            KPIs: objective.KPIs.map((kpi, index) => {
+              if (index === kpiId) {
+                return {
+                  ...kpi,
+                  assessmentComment: comment
+                };
+              } else {
+                return { ...kpi }
+              }
+            })
+          };
+        }
+        return objective;
+      });
+
+      // Update the personal performance with the new comment
+      const response = await api.put(`/notifications/personal-performance/${notification?._id}`, {
         quarter,
         objectives: updatedObjectives
-      })
-        .then(response => {
-          if (response.status === 200) {
-            setPersonalQuarterlyObjectives(updatedObjectives);
-            setToast({
-              message: 'Comment saved successfully',
-              type: 'success'
-            });
-            setCommentModalOpen(false);
-            setSelectedObjective('');
-            setSelectedInitiative('');
-            setCurrentComment('');
-            setPreviousComment('');
-          }
-        })
-        .catch(error => {
-          console.error('Error saving comment:', error);
-          setToast({
-            message: 'Failed to save comment',
-            type: 'error'
-          });
+      });
+
+      if (response.status === 200) {
+        setToast({
+          message: 'Performance agreement comment updated successfully',
+          type: 'success'
         });
+        // Refresh the personal performance data
+        await fetchPersonalPerformance();
+      }
+    } catch (error) {
+      console.error('Error updating personal performance comment:', error);
+      setToast({
+        message: 'Failed to update performance agreement comment',
+        type: 'error'
+      });
+    } finally {
+      setCommentModalOpen(false);
+      setSelectedObjective('');
+      setSelectedInitiative('');
+      setCurrentComment('');
     }
-  };
+  }
 
   const hasAnyKpiComment = () => {
     return personalQuarterlyObjectives.some(objective =>
