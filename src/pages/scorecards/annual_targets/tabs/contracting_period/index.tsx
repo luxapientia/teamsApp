@@ -18,9 +18,6 @@ import { useAppSelector } from '../../../../../hooks/useAppSelector';
 import { useAppDispatch } from '../../../../../hooks/useAppDispatch';
 import { RootState } from '../../../../../store';
 import { updateAnnualTarget } from '../../../../../store/slices/scorecardSlice';
-import { QUARTER_ALIAS } from '../../../../../constants/quarterAlias';
-import { isEnabledTwoQuarterMode } from '../../../../../utils/quarterMode';
-import { useAuth } from '../../../../../contexts/AuthContext';
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   borderBottom: '1px solid #E5E7EB',
@@ -54,7 +51,6 @@ const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName 
   const annualTarget = useAppSelector((state: RootState) => 
     state.scorecard.annualTargets.find(target => target.name === targetName)
   );
-  const { user } = useAuth();
 
   const [editingQuarter, setEditingQuarter] = useState<string | null>(null);
   const [editData, setEditData] = useState<PeriodData>({ startDate: '', endDate: '' });
@@ -154,8 +150,6 @@ const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName 
     setErrors({});
   };
 
-  const isEnabledTwoQuarter = isEnabledTwoQuarterMode(annualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter) || [], user?.isTeamOwner || user?.role === 'SuperUser');
-
   return (
     <Box p={2}>
       <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
@@ -169,11 +163,11 @@ const ContractingPeriodTab: React.FC<ContractingPeriodTabProps> = ({ targetName 
             </TableRow>
           </TableHead>
           <TableBody>
-            {quarters.filter(quarter => !(user?.isTeamOwner || user?.role === 'SuperUser') ? annualTarget?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter)?.editable : quarter).map((quarter) => {
+            {quarters.map((quarter) => {
               const period = annualTarget?.content.contractingPeriod?.[quarter as keyof typeof annualTarget.content.contractingPeriod];
               return (
                 <TableRow key={quarter}>
-                  <StyledTableCell>{isEnabledTwoQuarter ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}</StyledTableCell>
+                  <StyledTableCell>{quarter}</StyledTableCell>
                   <StyledTableCell>
                     {editingQuarter === quarter ? (
                       <TextField
