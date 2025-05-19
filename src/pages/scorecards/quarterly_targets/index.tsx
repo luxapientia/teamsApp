@@ -96,7 +96,7 @@ const QuarterlyTargetTable: React.FC = () => {
 
   useEffect(() => {
     if (selectedAnnualTarget) {
-      const isEnabledTwoQuarter = isEnabledTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser');
+      const isEnabledTwoQuarter = isEnabledTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner);
       setIsEnabledTwoQuarter(isEnabledTwoQuarter);
     }
   }, [selectedAnnualTarget]);

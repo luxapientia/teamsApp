@@ -25,8 +25,6 @@ import { RootState } from '../../../../store';
 import { updateFeedback } from '../../../../store/slices/feedbackSlice';
 import { EnableFeedback } from '../../../../types/feedback';
 import { AnnualTarget } from '../../../../types/annualCorporateScorecard';
-import { isEnabledTwoQuarterMode } from '../../../../utils/quarterMode';
-import { QUARTER_ALIAS } from '../../../../constants/quarterAlias';
 import { useAuth } from '../../../../contexts/AuthContext';
 
 interface EnableFeedbackTabProps {
@@ -46,7 +44,6 @@ const EnableFeedbackTab: React.FC<EnableFeedbackTabProps> = ({ feedbackId }) => 
         state.scorecard.annualTargets.find(target => target._id === feedback?.annualTargetId)
     );
     const { user } = useAuth();
-    const isEnabledTwoQuarter = isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser');
     const handleEdit = (quarter: EnableFeedback) => {
         setEditingQuarter(quarter);
         setOpen(true);
@@ -91,9 +88,9 @@ const EnableFeedbackTab: React.FC<EnableFeedbackTabProps> = ({ feedbackId }) => 
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {feedback?.enableFeedback.filter(quarter => !(user?.isTeamOwner || user?.role === 'SuperUser')?selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.find(target => target.quarter === quarter.quarter)?.editable:quarter).map((quarter) => (
+                        {feedback?.enableFeedback.map((quarter) => (
                             <TableRow key={quarter.quarter}>
-                                <StyledTableCell>{isEnabledTwoQuarter ? QUARTER_ALIAS[quarter.quarter as keyof typeof QUARTER_ALIAS] : quarter.quarter}</StyledTableCell>
+                                <StyledTableCell>{quarter.quarter}</StyledTableCell>
                                 <StyledTableCell>
                                     {quarter.enable ? 'Yes' : 'No'}
                                 </StyledTableCell>

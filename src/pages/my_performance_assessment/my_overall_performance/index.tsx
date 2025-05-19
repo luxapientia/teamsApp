@@ -25,7 +25,7 @@ import { fetchAnnualTargets } from '../../../store/slices/scorecardSlice';
 import { fetchTeamPerformances, fetchPersonalPerformances } from '../../../store/slices/personalPerformanceSlice';
 import { TeamPerformance, PersonalPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
 import { api } from '../../../services/api';
-import { enableTwoQuarterMode } from '../../../utils/quarterMode';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -247,7 +247,7 @@ const MyPerformances: React.FC = () => {
                     quarter.editable
                   )).map((quarter) => (
                     quarter.quarter
-                  )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+                  )), user?.isTeamOwner).map((quarter) => (
                     <StyledHeaderCell key={quarter.key}>{quarter.alias} Overall Performance Score</StyledHeaderCell>
                   ))}
                   <StyledHeaderCell>Overall Annual Performance Score</StyledHeaderCell>
@@ -257,7 +257,7 @@ const MyPerformances: React.FC = () => {
                 {personalPerformances.map((performance: PersonalPerformance, index: number) => {
                   // Calculate quarter scores
                   const quarterScores = performance.quarterlyTargets
-                    .filter(quarter => !(user?.isTeamOwner || user?.role === 'SuperUser')?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter)
+                    .filter(quarter => annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable)
                     .map(quarter => {
                       const isFeedbackEnabled = feedbackTemplates
                         .find(template => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')
@@ -273,10 +273,18 @@ const MyPerformances: React.FC = () => {
                     });
 
                   // Calculate annual score
-                  const validScores = quarterScores.filter(score => score) as number[];
-                  const annualScore = validScores.length === quarterScores.length
-                    ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
-                    : null;
+                  const validScores = quarterScores.filter(score => typeof score === 'number') as number[];
+                  const twoQuarterModeEnabled = !isEnabledTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                    quarter.editable
+                  )).map((quarter) => (
+                    quarter.quarter
+                  )), user?.isTeamOwner);
+                  console.log(twoQuarterModeEnabled, validScores)
+                  const annualScore = twoQuarterModeEnabled
+                    ? Number(quarterScores[1])
+                    : validScores.length === quarterScores.length
+                      ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
+                      : null;
 
                   return (
                     <TableRow key={performance._id}>
