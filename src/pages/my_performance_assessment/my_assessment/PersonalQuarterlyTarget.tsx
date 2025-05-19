@@ -52,6 +52,9 @@ import { Toast } from '../../../components/Toast';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
 import { createSelector } from '@reduxjs/toolkit';
 import CommentModal from '../../../components/CommentModal';
+import { fetchNotifications } from '../../../store/slices/notificationSlice';
+
+
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
   color: 'white',
@@ -114,6 +117,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [selectedComment, setSelectedComment] = useState('');
+  const notifications = useAppSelector((state: RootState) => state.notification.notifications);
+
 
   // Use memoized selector
   const feedbacks = useAppSelector(state => selectFeedbacks(state, personalPerformance?.annualTargetId, quarter));
@@ -127,6 +132,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     fetchCompanyUsers();
     checkFeedbackModule();
     dispatch(fetchFeedback());
+    dispatch(fetchNotifications());
   }, []);
 
   useEffect(() => {
@@ -232,32 +238,43 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Submitted,
-          assessmentStatusUpdatedAt: new Date(),
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      if (quarter === 'Q1' && target.isEditable === false) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Draft,
-          assessmentStatusUpdatedAt: new Date(),
-          isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      return target;
-    });
-
     try {
+      const assessmentNotification = notifications.find((n: any) => 
+        n.type === 'resolve_assessment' && 
+        n.annualTargetId === personalPerformance?.annualTargetId &&
+        n.quarter === quarter
+      );
+
+      if (assessmentNotification) {
+        // Mark notification as read
+        await api.post(`/notifications/read/${assessmentNotification._id}`);
+      }
+
+      const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+        if (target.quarter === quarter) {
+          return {
+            ...target,
+            assessmentStatus: AssessmentStatus.Submitted,
+            assessmentStatusUpdatedAt: new Date(),
+            supervisorId: selectedSupervisor,
+            objectives: personalQuarterlyObjectives
+          }
+        }
+
+        if (quarter === 'Q1' && target.isEditable === false) {
+          return {
+            ...target,
+            assessmentStatus: AssessmentStatus.Draft,
+            assessmentStatusUpdatedAt: new Date(),
+            isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
+            supervisorId: selectedSupervisor,
+            objectives: personalQuarterlyObjectives
+          }
+        }
+
+        return target;
+      });
+
       await dispatch(updatePersonalPerformance({
         _id: personalPerformance?._id || '',
         teamId: personalPerformance?.teamId || '',

@@ -58,6 +58,7 @@ router.post('/callback', async (req: Request, res: Response) => {
 
           // Create token using database user data
           const tokenUserProfile: UserProfile = {
+            _id: dbUser._id,
             id: dbUser.MicrosoftId,
             email: dbUser.email,
             displayName: dbUser.name,

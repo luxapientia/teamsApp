@@ -412,8 +412,8 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
 
     // Send approval email to user
     const senderUser = await User.findById(notification.senderId);
-    const isAgreement = notification?.type === 'agreement' || notification?.type === 'resolve_agreement';
-    const isAssessment = notification?.type === 'assessment' || notification?.type === 'resolve_assessment';
+    // const isAgreement = notification?.type === 'agreement' || notification?.type === 'resolve_agreement';
+    // const isAssessment = notification?.type === 'assessment' || notification?.type === 'resolve_assessment';
     if (senderUser) {
       const tenantId = senderUser.tenantId;
       const fromUserId = req.user?.id; // supervisor's Microsoft ID
@@ -448,36 +448,6 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
     }
 
     await Notification.deleteOne({ _id: notificationId });
-
-    const user = await User.findOne({ MicrosoftId: req.user?.id });
-
-    const existingNotification = await Notification.findOne({
-      senderId: user?._id,
-      recipientId: senderUser?._id,
-      annualTargetId: notification.annualTargetId,
-      quarter: notification.quarter,
-      type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
-      personalPerformanceId: notification.personalPerformanceId
-    });
-
-    if (existingNotification) {
-      await Notification.updateOne(
-        { _id: existingNotification._id },
-        { $set: { isRead: false } }
-      );
-    } else {
-      await Notification.create({
-        type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
-        senderId: user?._id,
-        recipientId: senderUser?._id,
-        annualTargetId: notification.annualTargetId,
-        quarter: notification.quarter,
-        isRead: false,
-        personalPerformanceId: notification.personalPerformanceId
-      });
-    }
-    socketService.emitToUser(senderUser?.MicrosoftId as string, SocketEvent.NOTIFICATION, {});
-
 
     return res.status(200).json({ message: 'Notification send back successfully' });
   } catch (error) {

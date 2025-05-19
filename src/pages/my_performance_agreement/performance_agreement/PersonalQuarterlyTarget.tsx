@@ -51,6 +51,9 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { exportPdf } from '../../../utils/exportPdf';
 import { Toast } from '../../../components/Toast';
 import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { fetchNotifications } from '../../../store/slices/notificationSlice';
+
+
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
@@ -83,6 +86,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [status, setStatus] = useState<AgreementStatus | null>(null);
   const tableRef = useRef();
   const { user } = useAuth();
+  const notifications = useAppSelector((state: RootState) => state.notification.notifications);
+
 
   // Add state for the dialog
   const [sourceScorecardId, setSourceScorecardId] = useState('');
@@ -96,6 +101,10 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   useEffect(() => {
     fetchCompanyUsers();
   }, []);
+
+  useEffect(() => {
+    dispatch(fetchNotifications());
+  }, [dispatch]);
 
   useEffect(() => {
     if (personalPerformance) {
@@ -243,32 +252,43 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          agreementStatus: AgreementStatus.Submitted,
-          agreementStatusUpdatedAt: new Date(),
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight(personalQuarterlyObjectives) <= 100) {
-        return {
-          ...target,
-          agreementStatus: AgreementStatus.Draft,
-          agreementStatusUpdatedAt: new Date(),
-          isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      return target;
-    });
-
     try {
+      const agreementNotification = notifications.find((n: any) => 
+        n.type === 'resolve_agreement' && 
+        n.annualTargetId === personalPerformance?.annualTargetId &&
+        n.quarter === quarter
+      );
+
+      if (agreementNotification) {
+        // Mark notification as read
+        await api.post(`/notifications/read/${agreementNotification._id}`);
+      }
+
+      const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+        if (target.quarter === quarter) {
+          return {
+            ...target,
+            agreementStatus: AgreementStatus.Submitted,
+            agreementStatusUpdatedAt: new Date(),
+            supervisorId: selectedSupervisor,
+            objectives: personalQuarterlyObjectives
+          }
+        }
+
+        if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight(personalQuarterlyObjectives) <= 100) {
+          return {
+            ...target,
+            agreementStatus: AgreementStatus.Draft,
+            agreementStatusUpdatedAt: new Date(),
+            isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
+            supervisorId: selectedSupervisor,
+            objectives: personalQuarterlyObjectives
+          }
+        }
+
+        return target;
+      });
+
       await dispatch(updatePersonalPerformance({
         _id: personalPerformance?._id || '',
         teamId: personalPerformance?.teamId || '',

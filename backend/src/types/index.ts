@@ -31,6 +31,7 @@ export interface License extends BaseEntity {
 }
 
 export interface UserProfile {
+  _id?: string;
   id: string;
   email: string;
   displayName: string;

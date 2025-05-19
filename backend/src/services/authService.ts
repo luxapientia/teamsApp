@@ -123,6 +123,7 @@ export class AuthService {
 
       // Create token using database user data
       const tokenUserProfile: UserProfile = {
+        _id: dbUser._id,
         id: dbUser.MicrosoftId,
         email: dbUser.email,
         displayName: dbUser.name,

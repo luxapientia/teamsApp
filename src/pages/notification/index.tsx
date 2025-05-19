@@ -13,6 +13,11 @@ import { isEnabledTwoQuarterMode } from '../../utils/quarterMode';
 import { QUARTER_ALIAS } from '../../constants/quarterAlias';
 import { fetchNotifications } from '../../store/slices/notificationSlice';
 import { useAuth } from '../../contexts/AuthContext';
+import MyPerformanceAgreementContent from '../my_performance_agreement/performance_agreement/PersonalQuarterlyTarget';
+import MyPerformanceAssessmentContent from '../my_performance_assessment/my_assessment/PersonalQuarterlyTarget';
+import { PersonalPerformance } from '../../types/personalPerformance';
+
+
 const ViewButton = styled(Button)({
   backgroundColor: '#0078D4',
   color: 'white',
@@ -27,6 +32,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
   const dispatch = useAppDispatch();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [showTable, setShowTable] = useState(true);
+  const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
 
   // Mock data - replace with actual data from your API
   const notifications = useAppSelector((state: RootState) => state.notification.notifications);
@@ -36,22 +42,26 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
   const { user } = useAuth();
 
   const handleView = async (notification: Notification) => {
-    if (notification.type === 'resolve_agreement') {
-      
-    } else if(notification.type === 'resolve_assessment'){
-
+    if (notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment') {
+      // Fetch the personal performance for this user, annualTarget, and quarter
+      const res = await api.get('/personal-performance/personal-performance', {
+        params: {
+          userId: user?._id,
+          annualTargetId: notification.annualTargetId,
+        }
+      });
+      setSelectedPersonalPerformance(res.data.data); // Adjust based on your API response
+      setSelectedNotification(notification);
+      setShowTable(false);
     } else {
       setSelectedNotification(notification);
       setShowTable(false);
     }
-    await api.post(`/notifications/read/${notification._id}`);
-    dispatch(fetchNotifications());
   };
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
     dispatch(fetchNotifications());
-    console.log(notifications);
   }, [dispatch]);
 
   return (
@@ -114,7 +124,7 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                       variant="contained"
                       onClick={() => handleView(notification)}
                     >
-                      {notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment' ? 'Check' : 'View'}
+                      View
                     </ViewButton>
                   </TableCell>
                 </TableRow>
@@ -124,37 +134,74 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
         </TableContainer>
       )}
 
-      {selectedNotification && (selectedNotification.type === 'agreement' || selectedNotification.type === 'resolve_agreement' ? (
-        <PersonalQuarterlyTargetContent
-          notification={selectedNotification}
+      {selectedNotification && selectedNotification.type === 'resolve_agreement' && selectedPersonalPerformance && (
+        <MyPerformanceAgreementContent
           annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
           quarter={selectedNotification.quarter}
-          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
-            quarter.editable
-          )).map((quarter) => (
-            quarter.quarter
-          )), user?.isTeamOwner)}
+          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(
+            annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets
+              .filter((quarter) => quarter.editable)
+              .map((quarter) => quarter.quarter),
+            user?.isTeamOwner
+          )}
           onBack={() => {
             setSelectedNotification(null);
             setShowTable(true);
+            setSelectedPersonalPerformance(null);
           }}
+          personalPerformance={selectedPersonalPerformance}
         />
-      ) : (
-        <PersonalPerformanceAssessmentContent
-          notification={selectedNotification}
-          annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
-          quarter={selectedNotification.quarter}
-          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
-            quarter.editable
-          )).map((quarter) => (
-            quarter.quarter
-          )), user?.isTeamOwner)}
-          onBack={() => {
-            setSelectedNotification(null);
-            setShowTable(true);
-          }}
-        />
-      ))}
+      )}
+
+      {selectedNotification && (
+        selectedNotification.type === 'resolve_assessment' ? (
+          <MyPerformanceAssessmentContent
+            annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+            quarter={selectedNotification.quarter}
+            isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(
+              annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets
+                .filter((quarter) => quarter.editable)
+                .map((quarter) => quarter.quarter),
+              user?.isTeamOwner
+            )}
+            onBack={() => {
+              setSelectedNotification(null);
+              setShowTable(true);
+            }}
+            personalPerformance={selectedPersonalPerformance}
+          />
+        ) : selectedNotification.type === 'agreement' ? (
+          <PersonalQuarterlyTargetContent
+            notification={selectedNotification}
+            annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+            quarter={selectedNotification.quarter}
+            isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            )), user?.isTeamOwner)}
+            onBack={() => {
+              setSelectedNotification(null);
+              setShowTable(true);
+            }}
+          />
+        ) : selectedNotification.type === 'assessment' && (
+          <PersonalPerformanceAssessmentContent
+            notification={selectedNotification}
+            annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+            quarter={selectedNotification.quarter}
+            isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            )), user?.isTeamOwner)}
+            onBack={() => {
+              setSelectedNotification(null);
+              setShowTable(true);
+            }}
+          />
+        )
+      )}
     </Box>
   );
 };
