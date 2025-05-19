@@ -230,7 +230,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setIsSendingBack(true);
       (async () => {
         try {
-          // Move assessmentComment to previousAssessmentComment for all KPIs before sending back
+          // First update the assessment status and comments
           const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
           if (currentTarget) {
             const updatedObjectives = currentTarget.objectives.map(objective => ({
@@ -246,21 +246,34 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               objectives: updatedObjectives
             });
           }
-          const response = await api.post(`/notifications/send-back/${notification._id}`, {
-            emailSubject,
-            emailBody,
-            senderId: notification.sender._id
-          });
-          dispatch(fetchNotifications());
-          if (response.status === 200) {
+
+          try {
+            // Then try to send the email notification
+            const response = await api.post(`/notifications/send-back/${notification._id}`, {
+              emailSubject,
+              emailBody,
+              senderId: notification.sender._id
+            });
+
+            if (response.status === 200) {
+              dispatch(fetchNotifications());
+              setToast({
+                message: 'Performance assessment sent back successfully',
+                type: 'success'
+              });
+              onBack?.();
+            }
+          } catch (emailError) {
+            console.error('Error sending email notification:', emailError);
+            dispatch(fetchNotifications());
             setToast({
-              message: 'Performance assessment sent back successfully',
+              message: 'Performance assessment sent back successfully, but email notification failed',
               type: 'success'
             });
             onBack?.();
           }
         } catch (error) {
-          console.error('Error send back notification:', error);
+          console.error('Error updating assessment status:', error);
           setToast({
             message: 'Failed to send back performance assessment',
             type: 'error'
@@ -272,20 +285,22 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
-  const editComment = (kpi, kpiIndex, objectiveName, initiativeName) => {
+  const editComment = (kpiIndex: number, objectiveName: string, initiativeName: string) => {
+    // Find the current comment for this KPI
     const objective = personalQuarterlyObjectives.find(obj =>
       obj.name === objectiveName && obj.initiativeName === initiativeName
     );
     const currentKpiComment = objective?.KPIs[kpiIndex]?.assessmentComment || '';
     const previousKpiComment = objective?.KPIs[kpiIndex]?.previousAssessmentComment || '';
 
+    // Store the KPI's current comment, index, and context
     setKpiId(kpiIndex);
     setSelectedObjective(objectiveName);
     setSelectedInitiative(initiativeName);
     setCurrentComment(currentKpiComment);
     setPreviousComment(previousKpiComment);
     setCommentModalOpen(true);
-  };
+  }
 
   const handleSaveComment = async (comment: string, kpiId: number) => {
     try {
@@ -321,7 +336,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
       if (response.status === 200) {
         setToast({
-          message: 'Performance agreement comment updated successfully',
+          message: 'Performance assessment comment updated successfully',
           type: 'success'
         });
         // Refresh the personal performance data
@@ -330,7 +345,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     } catch (error) {
       console.error('Error updating personal performance comment:', error);
       setToast({
-        message: 'Failed to update performance agreement comment',
+        message: 'Failed to update performance assessment comment',
         type: 'error'
       });
     } finally {
@@ -597,7 +612,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                             <StyledTableCell align="center">
                               <IconButton
                                 size="small"
-                                onClick={() => editComment(kpi, kpiIndex, objectiveGroup.name, initiative.initiativeName)}
+                                onClick={() => editComment(kpiIndex, objectiveGroup.name, initiative.initiativeName)}
                                 sx={{ color: '#6B7280' }}
                               >
                                 <EditIcon />

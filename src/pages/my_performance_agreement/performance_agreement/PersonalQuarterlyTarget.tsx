@@ -296,19 +296,27 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         quarterlyTargets: newPersonalQuarterlyTargets || []
       }));
 
-      await api.post('/notifications/agreement/submit', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter,
-        personalPerformanceId: personalPerformance?._id || ''
-      });
+      try {
+        await api.post('/notifications/agreement/submit', {
+          recipientId: selectedSupervisor,
+          annualTargetId: personalPerformance?.annualTargetId || '',
+          quarter: quarter,
+          personalPerformanceId: personalPerformance?._id || ''
+        });
+        setToast({
+          message: 'Performance agreement submitted successfully',
+          type: 'success'
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        setToast({
+          message: 'Performance agreement submitted successfully, but email notification failed',
+          type: 'success'
+        });
+      }
 
       setIsSubmitted(true);
       setStatus(AgreementStatus.Submitted);
-      setToast({
-        message: 'Performance agreement submitted successfully',
-        type: 'success'
-      });
     } catch (error) {
       console.error('Error submitting quarterly target:', error);
       setToast({
@@ -351,20 +359,28 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         quarterlyTargets: newPersonalQuarterlyTargets || []
       }));
 
-      await api.post('/notifications/agreement/recall', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter,
-        personalPerformanceId: personalPerformance?._id || ''
-      });
+      try {
+        await api.post('/notifications/agreement/recall', {
+          recipientId: selectedSupervisor,
+          annualTargetId: personalPerformance?.annualTargetId || '',
+          quarter: quarter,
+          personalPerformanceId: personalPerformance?._id || ''
+        });
+        setToast({
+          message: 'Performance agreement recalled successfully',
+          type: 'success'
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        setToast({
+          message: 'Performance agreement recalled successfully, but email notification failed',
+          type: 'success'
+        });
+      }
 
       setIsSubmitted(false);
       const currentTarget = newPersonalQuarterlyTargets?.find(target => target.quarter === quarter);
       setStatus(currentTarget?.isAgreementCommitteeSendBack ? AgreementStatus.CommitteeSendBack : AgreementStatus.Draft);
-      setToast({
-        message: 'Performance agreement recalled successfully',
-        type: 'success'
-      });
     } catch (error) {
       console.error('Error recalling quarterly target:', error);
       setToast({

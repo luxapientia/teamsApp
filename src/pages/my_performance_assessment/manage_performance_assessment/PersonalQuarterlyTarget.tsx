@@ -151,24 +151,35 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             setIsSubmitting(true);
             (async () => {
                 try {
-                    const response = await api.post(`/personal-performance/send-back`, {
-                        emailSubject,
-                        emailBody,
-                        supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
-                        userId: personalPerformance.userId,
-                        manageType: 'Assessment',
-                        performanceId: personalPerformance._id,
-                        quarter: quarter
-                    });
-                    if (response.status === 200) {
+                    try {
+                        // Then try to send the email notification
+                        const response = await api.post(`/personal-performance/send-back`, {
+                            emailSubject,
+                            emailBody,
+                            supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
+                            userId: personalPerformance.userId,
+                            manageType: 'Assessment',
+                            performanceId: personalPerformance._id,
+                            quarter: quarter
+                        });
+
+                        if (response.status === 200) {
+                            setToast({
+                                message: 'Performance assessment sent back successfully',
+                                type: 'success'
+                            });
+                            onBack?.();
+                        }
+                    } catch (emailError) {
+                        console.error('Error sending email notification:', emailError);
                         setToast({
-                            message: 'Performance assessment sent back successfully',
+                            message: 'Performance assessment sent back successfully, but email notification failed',
                             type: 'success'
                         });
                         onBack?.();
                     }
                 } catch (error) {
-                    console.error('Error send back notification:', error);
+                    console.error('Error updating assessment status:', error);
                     setToast({
                         message: 'Failed to send back performance assessment',
                         type: 'error'

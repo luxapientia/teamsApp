@@ -49,30 +49,32 @@ router.post('/agreement/submit', authenticateToken, async (req: AuthenticatedReq
     }
     socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
 
-    // Assume you have these variables from your request/session:
-    const tenantId = req.user?.tenantId; // or from session/context
-    const fromUserId = req.user?.id; // the submitting user's Microsoft ID
-    const supervisorEmail = recipientUser.email; // supervisor's email
-    const supervisorFirstName = recipientUser.name.split(' ')[0]; // supervisor's first name
-    const userFullName = req.user?.displayName; // submitting user's full name
+    try {
+      // Send email notification
+      const tenantId = req.user?.tenantId;
+      const fromUserId = req.user?.id;
+      const supervisorEmail = recipientUser.email;
+      const supervisorFirstName = recipientUser.name.split(' ')[0];
+      const userFullName = req.user?.displayName;
+      const subject = `Performance Agreement ${quarter}`;
+      const body = `
+        Dear ${supervisorFirstName},<br><br>
+        ${userFullName} has sent you a performance agreement for ${quarter} for approval.<br><br>
+        Thank You.<br>
+        Performance Management Team
+      `;
 
-    // Compose subject and body
-    const subject = `Performance Agreement ${quarter}`;
-    const body = `
-      Dear ${supervisorFirstName},<br><br>
-      ${userFullName} has sent you a performance agreement for ${quarter} for approval.<br><br>
-      Thank You.<br>
-      Performance Management Team
-    `;
-
-    // Send the email
-    await graphService.sendMail(
-      tenantId as string,
-      fromUserId as string,
-      supervisorEmail,
-      subject,
-      body
-    );
+      await graphService.sendMail(
+        tenantId as string,
+        fromUserId as string,
+        supervisorEmail,
+        subject,
+        body
+      );
+    } catch (emailError) {
+      console.error('Error sending email notification:', emailError);
+      // Continue with the response even if email fails
+    }
 
     return res.status(200).json({ message: 'Notification created successfully' });
   } catch (error) {
@@ -174,26 +176,31 @@ router.post('/assessment/submit', authenticateToken, async (req: AuthenticatedRe
 
     socketService.emitToUser(recipientUser.MicrosoftId, SocketEvent.NOTIFICATION, {});
 
-    // Send assessment submit email to supervisor
-    const tenantId = req.user?.tenantId;
-    const fromUserId = req.user?.id;
-    const supervisorEmail = recipientUser.email;
-    const supervisorFirstName = recipientUser.name.split(' ')[0];
-    const userFullName = req.user?.displayName;
-    const subject = `Performance Assessment ${quarter}`;
-    const body = `
-      Dear ${supervisorFirstName},<br><br>
-      ${userFullName} has sent you a performance assessment for ${quarter} for approval.<br><br>
-      Thank You.<br>
-      Performance Management Team
-    `;
-    await graphService.sendMail(
-      tenantId as string,
-      fromUserId as string,
-      supervisorEmail,
-      subject,
-      body
-    );
+    try {
+      // Send assessment submit email to supervisor
+      const tenantId = req.user?.tenantId;
+      const fromUserId = req.user?.id;
+      const supervisorEmail = recipientUser.email;
+      const supervisorFirstName = recipientUser.name.split(' ')[0];
+      const userFullName = req.user?.displayName;
+      const subject = `Performance Assessment ${quarter}`;
+      const body = `
+        Dear ${supervisorFirstName},<br><br>
+        ${userFullName} has sent you a performance assessment for ${quarter} for approval.<br><br>
+        Thank You.<br>
+        Performance Management Team
+      `;
+      await graphService.sendMail(
+        tenantId as string,
+        fromUserId as string,
+        supervisorEmail,
+        subject,
+        body
+      );
+    } catch (emailError) {
+      console.error('Error sending email notification:', emailError);
+      // Continue with the response even if email fails
+    }
 
     return res.status(200).json({ message: 'Notification created successfully' });
   } catch (error) {
@@ -410,49 +417,52 @@ router.post('/approve/:notificationId', authenticateToken, async (req: Authentic
       await PersonalPerformance.updateOne({ _id: notification.personalPerformanceId }, { $set: { quarterlyTargets: newQuarterlyTargets } });
     }
 
-    // Send approval email to user
-    const senderUser = await User.findById(notification.senderId);
-    // const isAgreement = notification?.type === 'agreement' || notification?.type === 'resolve_agreement';
-    // const isAssessment = notification?.type === 'assessment' || notification?.type === 'resolve_assessment';
-    if (senderUser) {
-      const tenantId = senderUser.tenantId;
-      const fromUserId = req.user?.id; // supervisor's Microsoft ID
-      const userEmail = senderUser.email;
-      const userFirstName = senderUser.name.split(' ')[0];
-      let subject = '';
-      let body = '';
-      if (notification.type === 'agreement') {
-        subject = `Performance Agreement ${notification.quarter} - Approved`;
-        body = `
-          Dear ${userFirstName},<br><br>
-          Your performance agreement for ${notification.quarter} has been approved.<br><br>
-          Thank You.<br>
-          Performance Management Team
-        `;
-      } else if (notification.type === 'assessment') {
-        subject = `Performance Assessment ${notification.quarter} - Approved`;
-        body = `
-          Dear ${userFirstName},<br><br>
-          Your performance assessment for ${notification.quarter} has been approved.<br><br>
-          Thank You.<br>
-          Performance Management Team
-        `;
+    await Notification.deleteOne({ _id: notificationId });
+    
+    try {
+      // Send approval email to user
+      const senderUser = await User.findById(notification.senderId);
+      if (senderUser) {
+        const tenantId = senderUser.tenantId;
+        const fromUserId = req.user?.id;
+        const userEmail = senderUser.email;
+        const userFirstName = senderUser.name.split(' ')[0];
+        let subject = '';
+        let body = '';
+        if (notification.type === 'agreement') {
+          subject = `Performance Agreement ${notification.quarter} - Approved`;
+          body = `
+            Dear ${userFirstName},<br><br>
+            Your performance agreement for ${notification.quarter} has been approved.<br><br>
+            Thank You.<br>
+            Performance Management Team
+          `;
+        } else if (notification.type === 'assessment') {
+          subject = `Performance Assessment ${notification.quarter} - Approved`;
+          body = `
+            Dear ${userFirstName},<br><br>
+            Your performance assessment for ${notification.quarter} has been approved.<br><br>
+            Thank You.<br>
+            Performance Management Team
+          `;
+        }
+        await graphService.sendMail(
+          tenantId as string,
+          fromUserId as string,
+          userEmail,
+          subject,
+          body
+        );
       }
-      await graphService.sendMail(
-        tenantId as string,
-        fromUserId as string,
-        userEmail,
-        subject,
-        body
-      );
+    } catch (emailError) {
+      console.error('Error sending approval email:', emailError);
+      // Continue with the response even if email fails
     }
 
-    await Notification.deleteOne({ _id: notificationId });
-
-    return res.status(200).json({ message: 'Notification send back successfully' });
+    return res.status(200).json({ message: 'Notification approved successfully' });
   } catch (error) {
-    console.error('Error send back notification:', error);
-    return res.status(500).json({ error: 'Failed to send back notification' });
+    console.error('Error approving notification:', error);
+    return res.status(500).json({ error: 'Failed to approve notification' });
   }
 });
 
@@ -501,73 +511,78 @@ router.post('/send-back/:notificationId', authenticateToken, async (req: Authent
         { $set: { quarterlyTargets: newQuarterlyTargets } }
       );
 
-      // Send email notification using the provided subject
-      const emailContent = `
-        <html>
-          <body>
-            <h2>Performance ${notification.type === 'agreement' ? 'Agreement' : 'Assessment'} Update</h2>
-            <p>Your ${notification.type === 'agreement' ? 'performance agreement' : 'performance assessment'} for ${notification.quarter} has been sent back for revision.</p>
-            <p>Here goes the reason for sending back the ${notification.type === 'agreement' ? 'performance agreement' : 'performance assessment'}:</p>
-            <p>${emailBody}</p>
-            <p>Please log in to the system to review and make the necessary changes.</p>
-          </body>
-        </html>
-      `;
+      await Notification.deleteOne({ _id: notificationId });
 
-      // Use the current user's ID (req.user.MicrosoftId) to send the email
-      await graphService.sendMail(
-        req.user?.tenantId || '',
-        req.user?.id || '',
-        sender.email,
-        emailSubject,
-        emailContent
-      );
-
-      // Use the current user's ID (req.user.MicrosoftId) to send the email
-      await graphService.sendMail(
-        req.user?.tenantId || '',
-        req.user?.id || '',
-        req.user?.email || '',
-        emailSubject,
-        emailContent
-      );
-    }
-
-    await Notification.deleteOne({ _id: notificationId });
-
-    if (!sender) {
-      return res.status(404).json({ error: 'Sender user not found' });
-    }
-    const user = await User.findOne({ MicrosoftId: req.user?.id });
-
-    const existingNotification = await Notification.findOne({
-      senderId: user?._id,
-      recipientId: sender._id,
-      annualTargetId: notification.annualTargetId,
-      quarter: notification.quarter,
-      type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
-      personalPerformanceId: notification.personalPerformanceId
-    });
-
-    if (existingNotification) {
-      await Notification.updateOne(
-        { _id: existingNotification._id },
-        { $set: { isRead: false } }
-      );
-    } else {
-      await Notification.create({
-        type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
+      if (!sender) {
+        return res.status(404).json({ error: 'Sender user not found' });
+      }
+      const user = await User.findOne({ MicrosoftId: req.user?.id });
+  
+      const existingNotification = await Notification.findOne({
         senderId: user?._id,
         recipientId: sender._id,
         annualTargetId: notification.annualTargetId,
         quarter: notification.quarter,
-        isRead: false,
+        type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
         personalPerformanceId: notification.personalPerformanceId
       });
-    }
-    socketService.emitToUser(sender.MicrosoftId, SocketEvent.NOTIFICATION, {});
+  
+      if (existingNotification) {
+        await Notification.updateOne(
+          { _id: existingNotification._id },
+          { $set: { isRead: false } }
+        );
+      } else {
+        await Notification.create({
+          type: isAgreement ? "resolve_agreement" : isAssessment ? "resolve_assessment" : "",
+          senderId: user?._id,
+          recipientId: sender._id,
+          annualTargetId: notification.annualTargetId,
+          quarter: notification.quarter,
+          isRead: false,
+          personalPerformanceId: notification.personalPerformanceId
+        });
+      }
+      socketService.emitToUser(sender.MicrosoftId, SocketEvent.NOTIFICATION, {});
 
-    return res.status(200).json({ message: 'Notification sent back successfully and email notification sent' });
+      try {
+        // Send email notifications
+        const emailContent = `
+          <html>
+            <body>
+              <h2>Performance ${notification.type === 'agreement' ? 'Agreement' : 'Assessment'} Update</h2>
+              <p>Your ${notification.type === 'agreement' ? 'performance agreement' : 'performance assessment'} for ${notification.quarter} has been sent back for revision.</p>
+              <p>Here goes the reason for sending back the ${notification.type === 'agreement' ? 'performance agreement' : 'performance assessment'}:</p>
+              <p>${emailBody}</p>
+              <p>Please log in to the system to review and make the necessary changes.</p>
+            </body>
+          </html>
+        `;
+
+        // Send to sender
+        await graphService.sendMail(
+          req.user?.tenantId || '',
+          req.user?.id || '',
+          sender.email,
+          emailSubject,
+          emailContent
+        );
+
+        // Send to current user
+        await graphService.sendMail(
+          req.user?.tenantId || '',
+          req.user?.id || '',
+          req.user?.email || '',
+          emailSubject,
+          emailContent
+        );
+      } catch (emailError) {
+        console.error('Error sending email notifications:', emailError);
+        // Continue with the response even if email fails
+      }
+    }
+
+    return res.status(200).json({ message: 'Notification sent back successfully' });
   } catch (error) {
     console.error('Error sending back notification:', error);
     return res.status(500).json({ error: 'Failed to send back notification' });

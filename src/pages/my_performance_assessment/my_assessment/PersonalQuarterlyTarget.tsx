@@ -282,19 +282,27 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         quarterlyTargets: newPersonalQuarterlyTargets || []
       }));
 
-      await api.post('/notifications/assessment/submit', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter,
-        personalPerformanceId: personalPerformance?._id || ''
-      });
+      try {
+        await api.post('/notifications/assessment/submit', {
+          recipientId: selectedSupervisor,
+          annualTargetId: personalPerformance?.annualTargetId || '',
+          quarter: quarter,
+          personalPerformanceId: personalPerformance?._id || ''
+        });
+        setToast({
+          message: 'Performance assessment submitted successfully',
+          type: 'success'
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        setToast({
+          message: 'Performance assessment submitted successfully, but email notification failed',
+          type: 'success'
+        });
+      }
 
       setIsSubmitted(true);
       setStatus(AssessmentStatus.Submitted);
-      setToast({
-        message: 'Performance assessment submitted successfully',
-        type: 'success'
-      });
     } catch (error) {
       console.error('Error submitting quarterly target:', error);
       setToast({
@@ -344,12 +352,24 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         quarterlyTargets: newPersonalQuarterlyTargets || []
       }));
 
-      await api.post('/notifications/assessment/recall', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter,
-        personalPerformanceId: personalPerformance?._id || ''
-      });
+      try {
+        await api.post('/notifications/assessment/recall', {
+          recipientId: selectedSupervisor,
+          annualTargetId: personalPerformance?.annualTargetId || '',
+          quarter: quarter,
+          personalPerformanceId: personalPerformance?._id || ''
+        });
+        setToast({
+          message: 'Performance assessment recalled successfully',
+          type: 'success'
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        setToast({
+          message: 'Performance assessment recalled successfully, but email notification failed',
+          type: 'success'
+        });
+      }
 
       setIsSubmitted(false);
       const currentTarget = newPersonalQuarterlyTargets?.find(target => target.quarter === quarter);
