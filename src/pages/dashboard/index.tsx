@@ -460,7 +460,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               }}
             >
               {(isSuperUser || isAppOwner) && <MenuItem value="org">Team Performance</MenuItem>}
-              {userOwnedTeam && <MenuItem value="team">Completions</MenuItem>}
+              {(isSuperUser || isAppOwner) && <MenuItem value="team">Completions</MenuItem>}
               <MenuItem value="strategyMap">Strategy Map</MenuItem>
             </Select>
           </StyledFormControl>
