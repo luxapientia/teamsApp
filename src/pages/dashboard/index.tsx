@@ -39,10 +39,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../services/api';
 import { PendingTargetsTable } from './components/PendingTargetsTable';
 import { PendingAssessmentsTable } from './components/PendingAssessmentsTable';
-import { PerformanceTable } from './components/PerformanceTable';
+import PerformanceTable from './components/PerformanceTable';
 import { HeatmapByTeam } from './components/HeatmapByTeam';
 import StrategyMap from './components/strategyMap';
 import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../utils/quarterMode';
+import { PersonalQuarterlyTargetObjective } from '../../types';
+import { Feedback as FeedbackType } from '../../types/feedback';
+import { fetchFeedback } from '../../store/slices/feedbackSlice';
 
 interface DashboardProps {
   title?: string;
@@ -88,7 +91,7 @@ const DashboardCard = styled(Paper)(({ theme }) => ({
   borderRadius: '12px',
   boxShadow: 'none',
   backgroundColor: '#EBF8FF',
-  height: '100%',
+  // height: '100%',
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
@@ -124,6 +127,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   const [showPendingAssessmentsTable, setShowPendingAssessmentsTable] = useState(false);
   const [showPerformanceTable, setShowPerformanceTable] = useState(false);
   const [userOwnedTeam, setUserOwnedTeam] = useState<string | null>(null);
+  const feedbackTemplates = useAppSelector((state: RootState) => state.feedback.feedbacks as FeedbackType[]);
   const [pendingTargetsData, setPendingTargetsData] = useState<PendingTargetsData>({
     complete: 0,
     pending: 0,
@@ -148,18 +152,29 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
       percentage: number;
     }>
   });
+  const [tableData, setTableData] = useState<{ [key: number]: { count: number; percentage: number } }>({});
 
   const [viewMode, setViewMode] = useState<'org' | 'team' | 'strategyMap' | ''>('');
+  const [isLoading, setIsLoading] = useState(true);
 
   const isSuperUser = user?.role === 'SuperUser';
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
   const canViewManagementCharts = isAppOwner || isSuperUser;
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
-  const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
+  const teamPerformancesByTarget = useAppSelector((state: RootState) => state.personalPerformance.teamPerformancesByTarget);
   const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
+
+  const [enableFeedback, setEnableFeedback] = useState(false);
+
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
+    }
+  }
 
   useEffect(() => {
     const fetchTeamOwnerFromDB = async () => {
@@ -177,21 +192,24 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     fetchTeamOwnerFromDB();
   }, [user?.id, dispatch]);
 
-  const calculatePersonalPerformanceScore = (objectives: QuarterlyTargetObjective[], ratingCounts: Map<number, number>) => {
-    objectives.forEach(objective => {
-      if (objective.KPIs.length) {
-        objective.KPIs.forEach(kpi => {
-          if (kpi.ratingScore) {
-            ratingCounts.set(kpi.ratingScore, (ratingCounts.get(kpi.ratingScore) || 0) + 1);
-          }
-        });
-      }
-    });
-  };
-
   useEffect(() => {
-    dispatch(fetchAnnualTargets());
-  }, [dispatch]);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          dispatch(fetchAnnualTargets()),
+          dispatch(fetchTeamPerformances(selectedAnnualTargetId)),
+          dispatch(fetchFeedback()),
+          checkFeedbackModule()
+        ]);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [dispatch, selectedAnnualTargetId]);
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
@@ -211,16 +229,84 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     setShowPerformanceTable(false);
   };
 
+  const calculateQuarterScore = (objectives: PersonalQuarterlyTargetObjective[]) => {
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    objectives.forEach(objective => {
+      objective.KPIs.forEach(kpi => {
+        if (kpi.ratingScore !== -1) {
+          totalWeightedScore += (kpi.ratingScore * kpi.weight);
+          totalWeight += kpi.weight;
+        }
+      });
+    });
+
+    if (totalWeight === 0) return null;
+    return Math.round(totalWeightedScore / totalWeight);
+  };
+
+  const calculateFeedbackOverallScore = (quarter: QuarterType, performance: TeamPerformance) => {
+    const target = performance.quarterlyTargets.find(t => t.quarter === quarter);
+    const selectedFeedbackId = target?.selectedFeedbackId;
+    const feedbackResponses = target?.feedbacks.filter(f => f.feedbackId === selectedFeedbackId) || [];
+    const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
+
+    if (!feedbackTemplate || feedbackResponses.length === 0) return '-';
+
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    feedbackTemplate.dimensions.forEach(dimension => {
+      let totalDimensionScore = 0;
+      let totalDimensionResponses = 0;
+      // Get all questions for this dimension
+      const dimensionQuestions = feedbackTemplate.dimensions
+        .find(d => d.name === dimension.name)?.questions || [];
+
+      // For each question in the dimension
+      dimensionQuestions.forEach(question => {
+        feedbackResponses.forEach(feedback => {
+          const response = feedback.feedbacks.find(f =>
+            f.dimension === dimension.name && f.question === question
+          );
+          if (response?.response.score) {
+            totalDimensionScore += response.response.score;
+            totalDimensionResponses++;
+          }
+        });
+      });
+      if (totalDimensionResponses > 0) {
+        const dimensionScore = totalDimensionScore / totalDimensionResponses;
+        totalWeightedScore += dimensionScore * (dimension.weight / 100);
+        totalWeight += dimension.weight / 100;
+      }
+    });
+
+
+    if (totalWeight === 0) return '-';
+    return totalWeightedScore.toFixed(2);
+  };
+
+  const calculateFinalScore = (quarter: QuarterType, overallScore: number | null, performance: TeamPerformance) => {
+    if (overallScore === null) return null;
+    const target = performance.quarterlyTargets.find(t => t.quarter === quarter);
+    const selectedFeedbackId = target?.selectedFeedbackId;
+    const feedbackOverallScore = calculateFeedbackOverallScore(quarter, performance);
+    const selectedFeedback = feedbackTemplates?.find((f: FeedbackType) => f._id === selectedFeedbackId);
+    const contributionScorePercentage = selectedFeedback?.contributionScorePercentage || 0;
+    if(selectedFeedback?.status === 'Active' && selectedFeedback?.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)){
+      if (feedbackOverallScore === '-') return overallScore; // If no feedback score, return original overall score
+      const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore) * (1 - contributionScorePercentage / 100));
+      return finalScore;
+    }
+    return overallScore;
+  }
+
   const handleView = async () => {
     if (selectedAnnualTargetId && selectedQuarter && viewMode) {
       try {
-        const response = await dispatch(fetchTeamPerformances(selectedAnnualTargetId));
-
-        const performances = (response.payload as { performances: TeamPerformance[] }).performances;
-
-        const filteredPerformances = (viewMode === 'team' && userOwnedTeam)
-          ? performances.filter(p => p.team === userOwnedTeam)
-          : performances;
+        const performances = teamPerformancesByTarget[selectedAnnualTargetId];
 
         // Calculate agreement status counts
         let agreementComplete = 0;
@@ -232,9 +318,17 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
 
         // Calculate performance rating distribution
         const ratingCounts = new Map<number, number>();
-        filteredPerformances.forEach(performance => {
+        performances.forEach(performance => {
           const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === selectedQuarter);
-
+          let qScore = calculateQuarterScore(quarterlyTarget.objectives);
+          const isFeedbackEnabled = feedbackTemplates
+            ?.find((template: FeedbackType) => template._id === (quarterlyTarget.selectedFeedbackId ?? quarterlyTarget.feedbacks[0]?.feedbackId) && template.status === 'Active')
+            ?.enableFeedback
+            .find(ef => ef.quarter === quarterlyTarget.quarter && ef.enable)?.enable;
+          if (enableFeedback && isFeedbackEnabled) { // This is the global enableFeedback flag
+            qScore = calculateFinalScore(quarterlyTarget.quarter, qScore, performance)
+          }
+          ratingCounts.set(qScore, ratingCounts.get(qScore) || 0 + 1);
           // Check agreement status
           if (quarterlyTarget?.agreementStatus === AgreementStatus.Approved) {
             agreementComplete++;
@@ -248,9 +342,6 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           } else {
             assessmentPending++;
           }
-
-          // Calculate performance score
-          calculatePersonalPerformanceScore(quarterlyTarget?.objectives || [], ratingCounts);
         });
 
         // Calculate percentages for agreements
@@ -264,19 +355,30 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         const assessmentPendingPercentage = assessmentTotal > 0 ? Math.round((assessmentPending / assessmentTotal) * 100) : 0;
 
         // Calculate performance rating percentages
-        const totalRatings = Array.from(ratingCounts.values()).reduce((sum, count) => sum + count, 0);
+        const totalRatings = Array.from(ratingCounts.entries())
+          .filter(([score]) => score !== 0) // Filter out score 0
+          .reduce((sum, [_, count]) => sum + count, 0);
+
         const updatedPerformanceData = {
           metrics: selectedAnnualTarget?.content.ratingScales.map(scale => {
             const count = ratingCounts.get(scale.score) || 0;
             const percentage = totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0;
             return {
-              label: scale.name,
+              label: `${scale.score} - ${scale.name}`,
               value: `${scale.min}-${scale.max}`,
               color: scale.color,
               percentage
             };
           }) || []
         };
+
+        // Create table data structure
+        const newTableData = selectedAnnualTarget?.content.ratingScales.reduce((acc, scale) => {
+          const count = ratingCounts.get(scale.score) || 0;
+          const percentage = totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0;
+          acc[scale.score] = { count, percentage };
+          return acc;
+        }, {} as { [key: number]: { count: number; percentage: number } }) || {};
 
         setPendingTargetsData({
           complete: agreementComplete,
@@ -297,6 +399,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         });
 
         setPerformanceData(updatedPerformanceData);
+        setTableData(newTableData);
         setShowDashboard(true);
       } catch (error) {
         console.error('Error fetching team performances:', error);
@@ -344,25 +447,6 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           </Select>
         </StyledFormControl>
 
-        <StyledFormControl sx={{ minWidth: { xs: '100%', sm: 200 } }}>
-          <InputLabel>Quarter</InputLabel>
-          <Select
-            value={selectedQuarter}
-            label="Quarter"
-            onChange={handleQuarterChange}
-          >
-            {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
-              quarter.editable
-            )).map((quarter) => (
-              quarter.quarter
-            )), user?.isTeamOwner).map((quarter) => (
-              <MenuItem key={quarter.key} value={quarter.key}>
-                {quarter.alias}
-              </MenuItem>
-            ))}
-          </Select>
-        </StyledFormControl>
-
         {(isSuperUser || isAppOwner || userOwnedTeam) && (
           <StyledFormControl sx={{ minWidth: { xs: '100%', sm: 200 } }}>
             <InputLabel>View Mode</InputLabel>
@@ -375,24 +459,43 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                 resetTables();
               }}
             >
-              {(isSuperUser || isAppOwner) && <MenuItem value="org">Organization Wide</MenuItem>}
-              {userOwnedTeam && <MenuItem value="team">Team View</MenuItem>}
+              {(isSuperUser || isAppOwner) && <MenuItem value="org">Team Performance</MenuItem>}
+              {userOwnedTeam && <MenuItem value="team">Completions</MenuItem>}
               <MenuItem value="strategyMap">Strategy Map</MenuItem>
             </Select>
           </StyledFormControl>
         )}
 
+        <StyledFormControl sx={{ minWidth: { xs: '100%', sm: 200 } }}>
+          <InputLabel>Quarter</InputLabel>
+          <Select
+            value={selectedQuarter}
+            label="Quarter"
+            onChange={handleQuarterChange}
+          >
+            {selectedAnnualTarget && viewMode && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            )), viewMode !== 'strategyMap' ? user?.isTeamOwner : true).map((quarter) => (
+              <MenuItem key={quarter.key} value={quarter.key}>
+                {quarter.alias}
+              </MenuItem>
+            ))}
+          </Select>
+        </StyledFormControl>
+
         <ViewButton
           variant="contained"
-          disabled={!selectedAnnualTargetId || !selectedQuarter || !viewMode}
+          disabled={!selectedAnnualTargetId || !selectedQuarter || !viewMode || isLoading}
           onClick={handleView}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          View
+          {isLoading ? 'Loading...' : 'View'}
         </ViewButton>
       </Box>
 
-      {showDashboard && viewMode !== 'strategyMap' && (
+      {showDashboard && viewMode === 'team' && (
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -436,15 +539,8 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                       {viewMode === 'team' ? `${userOwnedTeam} Pending Agreements Details` : "Pending Agreements Details"}
                     </Typography>
                     <PendingTargetsTable
-                      teamPerformances={teamPerformances}
+                      teamPerformances={teamPerformancesByTarget[selectedAnnualTargetId]}
                       selectedQuarter={selectedQuarter}
-                      viewMode={viewMode}
-                      userOwnedTeam={userOwnedTeam}
-                      isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
-                        .filter((quarter) => quarter.editable)
-                        .map((quarter) => quarter.quarter),
-                        user?.isTeamOwner
-                      )}
                     />
                   </Box>
                 )}
@@ -478,15 +574,8 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                       {viewMode === 'team' ? `${userOwnedTeam} Pending Assessments Details` : "Pending Assessments Details"}
                     </Typography>
                     <PendingAssessmentsTable
-                      teamPerformances={teamPerformances}
+                      teamPerformances={teamPerformancesByTarget[selectedAnnualTargetId]}
                       selectedQuarter={selectedQuarter}
-                      viewMode={viewMode}
-                      userOwnedTeam={userOwnedTeam}
-                      isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
-                        .filter((quarter) => quarter.editable)
-                        .map((quarter) => quarter.quarter),
-                        user?.isTeamOwner
-                      )}
                     />
                   </Box>
                 )}
@@ -508,7 +597,8 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                 <DashboardCard>
                   <CardHeader>
                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
-                      {viewMode === 'team' ? `${userOwnedTeam} Performance` : "Company-wide Performance"}
+                      {/* {viewMode === 'team' ? `${userOwnedTeam} Performance` : "Company-wide Performance"} */}
+                      Company-wide Performance
                     </Typography>
                   </CardHeader>
                   <CardContent>
@@ -569,14 +659,12 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     maxWidth: '100%'
                   }
                 }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    {viewMode === 'team' ? `${userOwnedTeam} Performance Details` : "Performance Details"}
+                  <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
+                    {/* {viewMode === 'team' ? `${userOwnedTeam} Performance Details` : "Performance Details"} */}
+                    Company-wide Performance
                   </Typography>
                   <PerformanceTable
-                    teamPerformances={teamPerformances}
-                    selectedQuarter={selectedQuarter}
-                    viewMode={viewMode}
-                    userOwnedTeam={userOwnedTeam}
+                    tableData={tableData}
                     selectedAnnualTarget={selectedAnnualTarget}
                   />
                 </Box>
@@ -591,30 +679,32 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               gap: 2,
               width: '100%'
             }}>
-              {(isAppOwner || isSuperUser) && (viewMode === 'org') &&
-                <Box
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <DashboardCard>
-                    <CardHeader>
-                      <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
-                        Heatmap by Team
-                      </Typography>
-                    </CardHeader>
-                    <CardContent>
-                      <HeatmapByTeam
-                        teamPerformances={teamPerformances}
-                        selectedQuarter={selectedQuarter}
-                        selectedAnnualTarget={selectedAnnualTarget}
-                      />
-                    </CardContent>
-                  </DashboardCard>
-                </Box>}
             </Box>
           )}
         </Box>
-      )
-      }
+      )}
+      {showDashboard && (isAppOwner || isSuperUser) && (viewMode !== 'strategyMap') &&
+        <Box
+          sx={{ cursor: 'pointer' }}
+        >
+          <DashboardCard>
+            <CardHeader>
+              {viewMode === 'org' ? <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
+                Team Performances
+              </Typography> : viewMode === 'team' && <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
+                Completions by Team
+              </Typography>}
+            </CardHeader>
+            <CardContent>
+              <HeatmapByTeam
+                teamPerformances={teamPerformancesByTarget[selectedAnnualTargetId]}
+                selectedQuarter={selectedQuarter}
+                selectedAnnualTarget={selectedAnnualTarget}
+                viewMode={viewMode}
+              />
+            </CardContent>
+          </DashboardCard>
+        </Box>}
       {
         showDashboard && viewMode === 'strategyMap' && (
           <Box>

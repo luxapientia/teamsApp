@@ -41,12 +41,19 @@ const TeamPerformances: React.FC = () => {
   const [teamPerformances, setTeamPerformances] = useState<TeamPerformance[]>([]);
   const { user } = useAuth();
   const tableRef = useRef();
-  const enableFeedback = true; // Placeholder: This should be determined dynamically
+  const [enableFeedback, setEnableFeedback] = useState(false);
 
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
+    }
+  }
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
     dispatch(fetchFeedback());
+    checkFeedbackModule();
   }, [dispatch]);
 
   useEffect(() => {

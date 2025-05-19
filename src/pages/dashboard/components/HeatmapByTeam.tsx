@@ -21,6 +21,7 @@ interface HeatmapByTeamProps {
   teamPerformances: TeamPerformance[];
   selectedQuarter: string;
   selectedAnnualTarget?: AnnualTarget;
+  viewMode: 'org' | 'team' | 'strategyMap' | '';
 }
 
 interface TeamTableRow {
@@ -40,16 +41,23 @@ interface RatingScaleInfo {
 export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
   teamPerformances,
   selectedQuarter,
-  selectedAnnualTarget
+  selectedAnnualTarget,
+  viewMode
 }) => {
   const feedbackTemplates = useAppSelector((state: RootState) => state.feedback.feedbacks);
   const [enableFeedback, setEnableFeedback] = useState(false);
   const dispatch = useAppDispatch();
 
+  const checkFeedbackModule = async () => {
+    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    if (isModuleEnabled.data.data.isEnabled) {
+      setEnableFeedback(true);
+    }
+  }
+
   useEffect(() => {
     checkFeedbackModule();
     dispatch(fetchFeedback());
-
   }, []);
 
   if (!selectedQuarter || !selectedAnnualTarget) {
@@ -77,13 +85,6 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     const totalCount = assessmentStatus.length;
     return totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
   });
-
-  const checkFeedbackModule = async () => {
-    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
-    if (isModuleEnabled.data.data.isEnabled) {
-      setEnableFeedback(true);
-    }
-  }
 
   // Calculate performance scores
   const getPersonalPerformanceScore = (objectives: QuarterlyTargetObjective[]) => {
@@ -149,7 +150,7 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
     if (enableFeedback) {
       const selectedFeedbackId = quarterlyTarget?.selectedFeedbackId;
       const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
-      if(feedbackTemplate?.status === 'Active' && feedbackTemplate?.enableFeedback.some(ef => ef.quarter === selectedQuarter && ef.enable)){
+      if (feedbackTemplate?.status === 'Active' && feedbackTemplate?.enableFeedback.some(ef => ef.quarter === selectedQuarter && ef.enable)) {
         const contribution = feedbackTemplate?.contributionScorePercentage;
         const feedbackOverallScore = calculateFeedbackOverallScore(selectedQuarter as QuarterType, ownerPerformance as TeamPerformance);
         const finalScore = (overallScore && feedbackOverallScore) ? (overallScore * (1 - contribution / 100)) + (feedbackOverallScore * (contribution / 100)) : null;
@@ -205,9 +206,9 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
         <TableHead>
           <TableRow>
             <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', }} align="center">Team</StyledHeaderCell>
-            <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Agreements</StyledHeaderCell>
-            <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Assessments</StyledHeaderCell>
-            <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Performance</StyledHeaderCell>
+            {viewMode === 'team' && <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Agreements</StyledHeaderCell>}
+            {viewMode === 'team' && <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Assessments</StyledHeaderCell>}
+            {viewMode === 'org' && <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Performance</StyledHeaderCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -216,19 +217,19 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
               <StyledTableCell sx={{ fontWeight: 500 }} align="center">
                 {teamsRow.teamName}
               </StyledTableCell>
-              <StyledTableCell
+              {viewMode === 'team' && <StyledTableCell
                 sx={{ fontWeight: 500 }}
                 align="center"
               >
                 {teamsRow.agreement}%
-              </StyledTableCell>
-              <StyledTableCell
+              </StyledTableCell>}
+              {viewMode === 'team' && <StyledTableCell
                 sx={{ fontWeight: 500 }}
                 align="center"
               >
                 {teamsRow.assessment}%
-              </StyledTableCell>
-              <StyledTableCell
+              </StyledTableCell>}
+              {viewMode === 'org' && <StyledTableCell
                 sx={{
                   color: getRatingScaleInfo(teamsRow.performance).color,
                   fontWeight: 500
@@ -240,7 +241,7 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
                     `${teamsRow.performance} ${getRatingScaleInfo(teamsRow.performance).name} (${getRatingScaleInfo(teamsRow.performance).min}%-${getRatingScaleInfo(teamsRow.performance).max}%)`
                     : 'N/A'
                 }
-              </StyledTableCell>
+              </StyledTableCell>}
             </TableRow>
           ))}
         </TableBody>

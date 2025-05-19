@@ -80,14 +80,14 @@ const SupervisorPerformanceDistributionReport: React.FC = () => {
         }
       });
       if (response.status === 200) {
-        const newPersonalPerformances = [];
-        response.data.data.forEach((item: any) => {
-          if (item.quarterlyTargets.find((quarter: any) => quarter.quarter === selectedQuarter).assessmentStatus === 'Approved') {
-            newPersonalPerformances.push(item);
-          }
-        });
-        setPersonalPerformances(newPersonalPerformances);
-
+        // const newPersonalPerformances = [];
+        // response.data.data.forEach((item: any) => {
+        //   if (item.quarterlyTargets.find((quarter: any) => quarter.quarter === selectedQuarter).assessmentStatus === 'Approved') {
+        //     newPersonalPerformances.push(item);
+        //   }
+        // });
+        // setPersonalPerformances(newPersonalPerformances);
+        setPersonalPerformances(response.data.data);
       }
     } catch (error) {
       console.error('Error fetching performance distribution:', error);
@@ -194,7 +194,6 @@ const SupervisorPerformanceDistributionReport: React.FC = () => {
     }));
     return chartData;
   }
-  console.log('here')
   const handleExportPDF = () => {
     const doc = new jsPDF('l', 'mm', 'a4'); // Set to landscape
     const pageWidth = doc.internal.pageSize.getWidth();
