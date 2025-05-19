@@ -477,7 +477,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            )), viewMode !== 'strategyMap' ? user?.isTeamOwner : true).map((quarter) => (
+            )), viewMode !== 'strategyMap' ? user?.isTeamOwner || user?.role ==='SuperUser' : true).map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>
