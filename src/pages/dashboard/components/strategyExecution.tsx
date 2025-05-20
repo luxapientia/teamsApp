@@ -103,110 +103,113 @@ const StrategyExecution: React.FC<StrategyExecutionProps> = ({ annualTargetId, q
                 Export to PDF
             </ExportButton>
             <div ref={dashboardRef}>
-            {perspectives.map(perspective => (
-                objectives.filter(objective => objective.perspectiveId === perspective.index).map(objective => (
-                    <Box ref={pageRef}
+                {perspectives.map(perspective => (
+                    <Box
                         data-perspective-block
-                        key={objective.name + perspective.index} sx={{
-                            border: `1px solid #E5E7EB`,
-                            borderRadius: '12px',
-                            padding: 2,
-                            margin: 2
-                        }}>
+                        ref={pageRef} key={perspective.index}>
                         <Typography variant="h5" sx={{ mb: 3, ml: 1 }}>
                             {perspective.name}
                         </Typography>
-                        <Typography variant="h6" sx={{ mb: 3, ml: 1 }}>
-                            {objective.name}
-                        </Typography>
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: 3,
-                                ml: 1,
-                                justifyContent: { xs: 'center', sm: 'flex-start' },
-                            }}
-                        >
-                            {objective.KPIs.map((kpi, idx) => (
-                                <Paper
-                                    key={idx}
+                        {objectives.filter(objective => objective.perspectiveId === perspective.index).map(objective => (
+                            <Box
+                                key={objective.name + perspective.index} sx={{
+                                    border: `1px solid #E5E7EB`,
+                                    borderRadius: '12px',
+                                    padding: 2,
+                                    margin: 2
+                                }}>
+                                <Typography variant="h6" sx={{ mb: 3, ml: 1 }}>
+                                    {objective.name}
+                                </Typography>
+                                <Box
                                     sx={{
-                                        p: 2,
-                                        mb: 2,
-                                        width: { xs: '100%', sm: 320, md: 340 },
-                                        minWidth: { xs: '100%', sm: 280 },
-                                        maxWidth: 400,
-                                        boxShadow: 'none',
-                                        border: `3px solid ${getObjectiveColor(objective.name) ?? '#E5E7EB'}`,
-                                        borderRadius: '12px',
                                         display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'space-between',
+                                        flexWrap: 'wrap',
+                                        gap: 3,
+                                        ml: 1,
+                                        justifyContent: { xs: 'center', sm: 'flex-start' },
                                     }}
                                 >
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
-                                        KPI: {kpi.indicator}
-                                    </Typography>
-                                    <Box sx={{ mb: 1 }}>
-                                        <Typography variant="body2">
-                                            Baseline <b>{kpi.baseline}</b>
-                                        </Typography>
-                                        <Typography variant="body2">
-                                            Target <b>{kpi.target}</b>
-                                        </Typography>
-                                        <Typography variant="body2">
-                                            Actual <b>{kpi.actualAchieved}</b>
-                                        </Typography>
-                                    </Box>
-                                    {typeof kpi.ratingScore === 'number' && !isNaN(kpi.ratingScore) && (
-                                        <Typography
+                                    {objective.KPIs.map((kpi, idx) => (
+                                        <Paper
+                                            key={idx}
                                             sx={{
-                                                color: (() => {
-                                                    const foundScale = ratingScales.find(
-                                                        (scale) => scale.score === kpi.ratingScore
-                                                    );
-                                                    return foundScale?.color || 'black';
-                                                })(),
-                                                fontWeight: 500,
-                                                mb: 1,
-                                            }}
-                                        >
-                                            {kpi.ratingScore} – {(() => {
-                                                const foundScale = ratingScales.find(
-                                                    (scale) => scale.score === kpi.ratingScore
-                                                );
-                                                return foundScale
-                                                    ? `${foundScale.name} (Score Range: ${foundScale.min}-${foundScale.max})`
-                                                    : '';
-                                            })()}
-                                        </Typography>
-                                    )}
-                                    {kpi.evidence && (
-                                        <Typography
-                                            sx={{
-                                                color: '#888',
-                                                fontSize: 14,
-                                                mt: 1,
+                                                p: 2,
+                                                mb: 2,
+                                                width: { xs: '100%', sm: 320, md: 340 },
+                                                minWidth: { xs: '100%', sm: 280 },
+                                                maxWidth: 400,
+                                                boxShadow: 'none',
+                                                border: `3px solid ${getObjectiveColor(objective.name) ?? '#E5E7EB'}`,
+                                                borderRadius: '12px',
                                                 display: 'flex',
-                                                alignItems: 'center',
-                                                cursor: 'pointer'
-                                            }}
-                                            onClick={() => {
-                                                setSelectedEvidence(kpi.evidence);
-                                                setEvidenceModalOpen(true);
+                                                flexDirection: 'column',
+                                                justifyContent: 'space-between',
                                             }}
                                         >
-                                            <AttachFileIcon sx={{ fontSize: 18, mr: 0.5, verticalAlign: 'middle' }} />
-                                            Evidence Attached
-                                        </Typography>
-                                    )}
-                                </Paper>
-                            ))}
-                        </Box>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+                                                KPI: {kpi.indicator}
+                                            </Typography>
+                                            <Box sx={{ mb: 1 }}>
+                                                <Typography variant="body2">
+                                                    Baseline <b>{kpi.baseline}</b>
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    Target <b>{kpi.target}</b>
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    Actual <b>{kpi.actualAchieved}</b>
+                                                </Typography>
+                                            </Box>
+                                            {typeof kpi.ratingScore === 'number' && !isNaN(kpi.ratingScore) && (
+                                                <Typography
+                                                    sx={{
+                                                        color: (() => {
+                                                            const foundScale = ratingScales.find(
+                                                                (scale) => scale.score === kpi.ratingScore
+                                                            );
+                                                            return foundScale?.color || 'black';
+                                                        })(),
+                                                        fontWeight: 500,
+                                                        mb: 1,
+                                                    }}
+                                                >
+                                                    {kpi.ratingScore} – {(() => {
+                                                        const foundScale = ratingScales.find(
+                                                            (scale) => scale.score === kpi.ratingScore
+                                                        );
+                                                        return foundScale
+                                                            ? `${foundScale.name} (Score Range: ${foundScale.min}-${foundScale.max})`
+                                                            : '';
+                                                    })()}
+                                                </Typography>
+                                            )}
+                                            {kpi.evidence && (
+                                                <Typography
+                                                    sx={{
+                                                        color: '#888',
+                                                        fontSize: 14,
+                                                        mt: 1,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    onClick={() => {
+                                                        setSelectedEvidence(kpi.evidence);
+                                                        setEvidenceModalOpen(true);
+                                                    }}
+                                                >
+                                                    <AttachFileIcon sx={{ fontSize: 18, mr: 0.5, verticalAlign: 'middle' }} />
+                                                    Evidence Attached
+                                                </Typography>
+                                            )}
+                                        </Paper>
+                                    ))}
+                                </Box>
+                            </Box>
+                        ))}
                     </Box>
-                ))
-            ))}
+                ))}
             </div>
 
             <EvidenceModal
