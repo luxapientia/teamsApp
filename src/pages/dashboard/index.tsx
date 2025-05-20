@@ -154,7 +154,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   });
   const [tableData, setTableData] = useState<{ [key: number]: { count: number; percentage: number } }>({});
 
-  const [viewMode, setViewMode] = useState<'org' | 'team' | 'strategyMap' | ''>('');
+  const [viewMode, setViewMode] = useState<'teamPerformance' | 'completion' | 'strategyMap' | ''>('');
   const [isLoading, setIsLoading] = useState(true);
 
   const isSuperUser = user?.role === 'SuperUser';
@@ -454,13 +454,13 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               value={viewMode}
               label="View Mode"
               onChange={(e) => {
-                setViewMode(e.target.value as 'org' | 'team' | 'strategyMap');
+                setViewMode(e.target.value as 'teamPerformance' | 'completion' | 'strategyMap');
                 setShowDashboard(false);
                 resetTables();
               }}
             >
-              {(isSuperUser || isAppOwner) && <MenuItem value="org">Team Performance</MenuItem>}
-              {(isSuperUser || isAppOwner) && <MenuItem value="team">Completions</MenuItem>}
+              {(isSuperUser || isAppOwner) && <MenuItem value="teamPerformance">Team Performance</MenuItem>}
+              {(isSuperUser || isAppOwner) && <MenuItem value="completion">Completions</MenuItem>}
               <MenuItem value="strategyMap">Strategy Map</MenuItem>
             </Select>
           </StyledFormControl>
@@ -495,7 +495,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         </ViewButton>
       </Box>
 
-      {showDashboard && viewMode === 'team' && (
+      {showDashboard && viewMode === 'completion' && (
         <Box sx={{
           display: 'flex',
           flexDirection: 'column',
@@ -512,7 +512,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
             width: '80%',
             marginX: 'auto'
           }}>
-            {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
+            {(canViewManagementCharts || (viewMode === 'completion')) && (
               <Box sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -523,7 +523,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   sx={{ cursor: 'pointer' }}
                 >
                   <HalfDoughnutCard
-                    title={viewMode === 'team' ? `${userOwnedTeam} Pending Agreements` : "Pending Agreements - Company Wide"}
+                    title={"Pending Agreements - Company Wide"}
                     chartData={chartData(pendingTargetsData)}
                     metrics={pendingTargetsData.metrics}
                   />
@@ -536,7 +536,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     }
                   }}>
                     <Typography variant="h6" sx={{ mb: 2 }}>
-                      {viewMode === 'team' ? `${userOwnedTeam} Pending Agreements Details` : "Pending Agreements Details"}
+                      {"Pending Agreements Details"}
                     </Typography>
                     <PendingTargetsTable
                       teamPerformances={teamPerformancesByTarget[selectedAnnualTargetId]}
@@ -547,7 +547,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               </Box>
             )}
 
-            {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
+            {(canViewManagementCharts || (viewMode === 'completion')) && (
               <Box sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -558,7 +558,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   sx={{ cursor: 'pointer' }}
                 >
                   <HalfDoughnutCard
-                    title={viewMode === 'team' ? `${userOwnedTeam} Pending Assessments` : "Pending Assessments - Company Wide"}
+                    title={"Pending Assessments - Company Wide"}
                     chartData={chartData(pendingAssessmentsData)}
                     metrics={pendingAssessmentsData.metrics}
                   />
@@ -571,7 +571,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                     }
                   }}>
                     <Typography variant="h6" sx={{ mb: 2 }}>
-                      {viewMode === 'team' ? `${userOwnedTeam} Pending Assessments Details` : "Pending Assessments Details"}
+                      {"Pending Assessments Details"}
                     </Typography>
                     <PendingAssessmentsTable
                       teamPerformances={teamPerformancesByTarget[selectedAnnualTargetId]}
@@ -583,7 +583,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
             )}
           </Box>
 
-          {(canViewManagementCharts || (userOwnedTeam && viewMode === 'team')) && (
+          {(canViewManagementCharts || (viewMode === 'completion')) && (
             <Box sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -597,7 +597,6 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                 <DashboardCard>
                   <CardHeader>
                     <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
-                      {/* {viewMode === 'team' ? `${userOwnedTeam} Performance` : "Company-wide Performance"} */}
                       Company-wide Performance
                     </Typography>
                   </CardHeader>
@@ -660,7 +659,6 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
                   }
                 }}>
                   <Typography variant="h6" sx={{ mb: 2, textAlign: 'center' }}>
-                    {/* {viewMode === 'team' ? `${userOwnedTeam} Performance Details` : "Performance Details"} */}
                     Company-wide Performance
                   </Typography>
                   <PerformanceTable
@@ -689,9 +687,9 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         >
           <DashboardCard>
             <CardHeader>
-              {viewMode === 'org' ? <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
+              {viewMode === 'teamPerformance' ? <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
                 Team Performances
-              </Typography> : viewMode === 'team' && <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
+              </Typography> : viewMode === 'completion' && <Typography variant="h6" sx={{ color: 'white', fontWeight: 500, textAlign: 'center' }}>
                 Completions by Team
               </Typography>}
             </CardHeader>

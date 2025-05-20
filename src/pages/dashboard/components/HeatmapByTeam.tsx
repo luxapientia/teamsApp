@@ -21,7 +21,7 @@ interface HeatmapByTeamProps {
   teamPerformances: TeamPerformance[];
   selectedQuarter: string;
   selectedAnnualTarget?: AnnualTarget;
-  viewMode: 'org' | 'team' | 'strategyMap' | '';
+  viewMode: 'teamPerformance' | 'completion' | 'strategyMap' | '';
 }
 
 interface TeamTableRow {
@@ -206,9 +206,9 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
         <TableHead>
           <TableRow>
             <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5', }} align="center">Team</StyledHeaderCell>
-            {viewMode === 'team' && <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Agreements</StyledHeaderCell>}
-            {viewMode === 'team' && <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Assessments</StyledHeaderCell>}
-            {viewMode === 'org' && <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Performance</StyledHeaderCell>}
+            {viewMode === 'completion' && <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Agreements</StyledHeaderCell>}
+            {viewMode === 'completion' && <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Assessments</StyledHeaderCell>}
+            {viewMode === 'teamPerformance' && <StyledHeaderCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }} align="center">Performance</StyledHeaderCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -217,19 +217,19 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
               <StyledTableCell sx={{ fontWeight: 500 }} align="center">
                 {teamsRow.teamName}
               </StyledTableCell>
-              {viewMode === 'team' && <StyledTableCell
+              {viewMode === 'completion' && <StyledTableCell
                 sx={{ fontWeight: 500 }}
                 align="center"
               >
                 {teamsRow.agreement}%
               </StyledTableCell>}
-              {viewMode === 'team' && <StyledTableCell
+              {viewMode === 'completion' && <StyledTableCell
                 sx={{ fontWeight: 500 }}
                 align="center"
               >
                 {teamsRow.assessment}%
               </StyledTableCell>}
-              {viewMode === 'org' && <StyledTableCell
+              {viewMode === 'teamPerformance' && <StyledTableCell
                 sx={{
                   color: getRatingScaleInfo(teamsRow.performance).color,
                   fontWeight: 500
