@@ -295,7 +295,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
     const feedbackOverallScore = calculateFeedbackOverallScore(quarter, performance);
     const selectedFeedback = feedbackTemplates?.find((f: FeedbackType) => f._id === selectedFeedbackId);
     const contributionScorePercentage = selectedFeedback?.contributionScorePercentage || 0;
-    if(selectedFeedback?.status === 'Active' && selectedFeedback?.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)){
+    if (selectedFeedback?.status === 'Active' && selectedFeedback?.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)) {
       if (feedbackOverallScore === '-') return overallScore; // If no feedback score, return original overall score
       const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore) * (1 - contributionScorePercentage / 100));
       return finalScore;
@@ -477,7 +477,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            )), viewMode !== 'strategyMap' ? user?.isTeamOwner || user?.role ==='SuperUser' : true).map((quarter) => (
+            )), viewMode === 'strategyMap' ? true : viewMode === 'completion' ? false : true).map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>

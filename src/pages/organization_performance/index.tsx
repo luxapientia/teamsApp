@@ -15,8 +15,8 @@ const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selec
 
   return (
     <Box>
-      {selectedTab === "Performance Evaluations" ? (
-        <PerformanceEvaluations 
+      {selectedTab === "Organization Performance Assessment" ? (
+        <PerformanceEvaluations
         />
       ) : (
         <OrganizationPerformances />

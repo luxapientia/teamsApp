@@ -177,7 +177,7 @@ function Main() {
         <OrganizationPerformance
           title="Organization Performance"
           icon={<DataTrending24Regular fontSize={iconSize} />}
-          tabs={['Performance Evaluations', 'Organization Performance']}
+          tabs={['Organization Performance Assessment', 'Annual Organization Performance']}
           selectedTab={selectedTab}
         />)}
       {(isAppOwner || isSuperUser) && (
