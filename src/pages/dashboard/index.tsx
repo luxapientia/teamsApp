@@ -46,6 +46,7 @@ import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../utils/quart
 import { PersonalQuarterlyTargetObjective } from '../../types';
 import { Feedback as FeedbackType } from '../../types/feedback';
 import { fetchFeedback } from '../../store/slices/feedbackSlice';
+import StrategyExecution from './components/strategyExecution';
 
 interface DashboardProps {
   title?: string;
@@ -154,7 +155,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   });
   const [tableData, setTableData] = useState<{ [key: number]: { count: number; percentage: number } }>({});
 
-  const [viewMode, setViewMode] = useState<'teamPerformance' | 'completion' | 'strategyMap' | ''>('');
+  const [viewMode, setViewMode] = useState<'teamPerformance' | 'completion' | 'strategyMap' | 'strategyExecution' | ''>('');
   const [isLoading, setIsLoading] = useState(true);
 
   const isSuperUser = user?.role === 'SuperUser';
@@ -454,7 +455,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               value={viewMode}
               label="View Mode"
               onChange={(e) => {
-                setViewMode(e.target.value as 'teamPerformance' | 'completion' | 'strategyMap');
+                setViewMode(e.target.value as 'teamPerformance' | 'completion' | 'strategyMap' | 'strategyExecution');
                 setShowDashboard(false);
                 resetTables();
               }}
@@ -462,6 +463,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               {(isSuperUser || isAppOwner) && <MenuItem value="teamPerformance">Team Performance</MenuItem>}
               {(isSuperUser || isAppOwner) && <MenuItem value="completion">Completions</MenuItem>}
               <MenuItem value="strategyMap">Strategy Map</MenuItem>
+              <MenuItem value="strategyExecution">Strategy Execution</MenuItem>
             </Select>
           </StyledFormControl>
         )}
@@ -477,7 +479,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
               quarter.editable
             )).map((quarter) => (
               quarter.quarter
-            )), viewMode === 'strategyMap' ? true : viewMode === 'completion' ? false : true).map((quarter) => (
+            )), viewMode === 'strategyMap' || viewMode === 'strategyExecution' ? true : viewMode === 'completion' ? false : true).map((quarter) => (
               <MenuItem key={quarter.key} value={quarter.key}>
                 {quarter.alias}
               </MenuItem>
@@ -681,7 +683,7 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
           )}
         </Box>
       )}
-      {showDashboard && (isAppOwner || isSuperUser) && (viewMode !== 'strategyMap') &&
+      {showDashboard && (isAppOwner || isSuperUser) && (viewMode === 'teamPerformance' || viewMode === 'completion') &&
         <Box
           sx={{ cursor: 'pointer' }}
         >
@@ -707,6 +709,14 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
         showDashboard && viewMode === 'strategyMap' && (
           <Box>
             <StrategyMap annualTargetId={selectedAnnualTargetId} quarter={selectedQuarter || undefined} />
+          </Box>
+        )
+      }
+
+      {
+        showDashboard && viewMode === 'strategyExecution' && (
+          <Box>
+            <StrategyExecution annualTargetId={selectedAnnualTargetId} quarter={selectedQuarter || undefined} />
           </Box>
         )
       }

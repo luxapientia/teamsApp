@@ -21,7 +21,7 @@ interface HeatmapByTeamProps {
   teamPerformances: TeamPerformance[];
   selectedQuarter: string;
   selectedAnnualTarget?: AnnualTarget;
-  viewMode: 'teamPerformance' | 'completion' | 'strategyMap' | '';
+  viewMode: 'teamPerformance' | 'completion' | 'strategyMap' | 'strategyExecution'| '';
 }
 
 interface TeamTableRow {
