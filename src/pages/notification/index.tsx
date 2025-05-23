@@ -112,15 +112,16 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
                   <TableCell>{annualTargets.find((target) => target._id === notification.annualTargetId)?.name}</TableCell>
                   <TableCell>
                     {`${notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment' ? 'Resolve' : 'Approve'} ${
-                      isEnabledTwoQuarterMode(
-                        annualTargets.find((target) => target._id === notification.annualTargetId)
-                          ?.content.quarterlyTarget.quarterlyTargets
-                          .filter((quarter) => quarter.editable)
-                          .map((quarter) => quarter.quarter),
-                        user?.isTeamOwner || user?.role === 'SuperUser'
-                      ) 
-                        ? QUARTER_ALIAS[notification.quarter as keyof typeof QUARTER_ALIAS] 
-                        : notification.quarter
+                      (() => {
+                        const target = annualTargets?.find((target) => target._id === notification.annualTargetId);
+                        const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+                          ?.filter((quarter) => quarter?.editable)
+                          ?.map((quarter) => quarter?.quarter) || [];
+                        
+                        return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser')
+                          ? QUARTER_ALIAS[notification.quarter as keyof typeof QUARTER_ALIAS] 
+                          : notification.quarter;
+                      })()
                     } ${
                       notification.type === 'agreement' || notification.type === 'resolve_agreement'
                         ? 'Performance Agreement' 
@@ -145,14 +146,15 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
 
       {selectedNotification && selectedNotification.type === 'resolve_agreement' && selectedPersonalPerformance && (
         <MyPerformanceAgreementContent
-          annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+          annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
           quarter={selectedNotification.quarter}
-          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(
-            annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets
-              .filter((quarter) => quarter.editable)
-              .map((quarter) => quarter.quarter),
-            user?.isTeamOwner || user?.role === 'SuperUser'
-          )}
+          isEnabledTwoQuarterMode={(() => {
+            const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
+            const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+              ?.filter((quarter) => quarter?.editable)
+              ?.map((quarter) => quarter?.quarter) || [];
+            return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
+          })()}
           onBack={() => {
             setSelectedNotification(null);
             setShowTable(true);
@@ -165,14 +167,15 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
       {selectedNotification && (
         selectedNotification.type === 'resolve_assessment' ? (
           <MyPerformanceAssessmentContent
-            annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+            annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
             quarter={selectedNotification.quarter}
-            isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(
-              annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets
-                .filter((quarter) => quarter.editable)
-                .map((quarter) => quarter.quarter),
-              user?.isTeamOwner || user?.role === 'SuperUser'
-            )}
+            isEnabledTwoQuarterMode={(() => {
+              const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
+              const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+                ?.filter((quarter) => quarter?.editable)
+                ?.map((quarter) => quarter?.quarter) || [];
+              return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
+            })()}
             onBack={() => {
               setSelectedNotification(null);
               setShowTable(true);
@@ -182,13 +185,15 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
         ) : selectedNotification.type === 'agreement' ? (
           <PersonalQuarterlyTargetContent
             notification={selectedNotification}
-            annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+            annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
             quarter={selectedNotification.quarter}
-            isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
-              quarter.editable
-            )).map((quarter) => (
-              quarter.quarter
-            )), user?.isTeamOwner || user?.role === 'SuperUser')}
+            isEnabledTwoQuarterMode={(() => {
+              const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
+              const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+                ?.filter((quarter) => quarter?.editable)
+                ?.map((quarter) => quarter?.quarter) || [];
+              return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
+            })()}
             onBack={() => {
               setSelectedNotification(null);
               setShowTable(true);
@@ -197,13 +202,15 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
         ) : selectedNotification.type === 'assessment' && (
           <PersonalPerformanceAssessmentContent
             notification={selectedNotification}
-            annualTarget={annualTargets.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+            annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
             quarter={selectedNotification.quarter}
-            isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(annualTargets.find((target) => target._id === selectedNotification.annualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
-              quarter.editable
-            )).map((quarter) => (
-              quarter.quarter
-            )), user?.isTeamOwner || user?.role === 'SuperUser')}
+            isEnabledTwoQuarterMode={(() => {
+              const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
+              const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+                ?.filter((quarter) => quarter?.editable)
+                ?.map((quarter) => quarter?.quarter) || [];
+              return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
+            })()}
             onBack={() => {
               setSelectedNotification(null);
               setShowTable(true);
