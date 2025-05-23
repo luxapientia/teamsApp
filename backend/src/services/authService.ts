@@ -180,7 +180,33 @@ export class AuthService {
   async getProfile(token: string): Promise<UserProfile> {
     try {
       const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
-      return decoded;
+      
+      // Get the user from database to ensure we have the latest data
+      const dbUser = await roleService.getUser(decoded.id);
+      if (!dbUser) {
+        throw new Error('User not found in database');
+      }
+
+      // Create a complete user profile with all necessary fields
+      const userProfile: UserProfile = {
+        _id: dbUser._id?.toString() || '',
+        id: dbUser.MicrosoftId,
+        email: dbUser.email,
+        displayName: dbUser.name,
+        jobTitle: dbUser.jobTitle || '',
+        department: '',
+        organization: '',
+        role: dbUser.role,
+        status: 'active',
+        tenantId: dbUser.tenantId || '',
+        organizationName: '',
+        isDevMember: !!dbUser.isDevMember,
+        isPerformanceCalibrationMember: !!dbUser.isPerformanceCalibrationMember,
+        isTeamOwner: await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId),
+        teamId: dbUser?.teamId?.toString()
+      };
+
+      return userProfile;
     } catch (error) {
       console.error('Profile error:', error);
       throw new Error('Invalid token');
