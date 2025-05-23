@@ -42,27 +42,36 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
   const { user } = useAuth();
 
   const handleView = async (notification: Notification) => {
-    if (notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment') {
-      // Fetch the personal performance for this user, annualTarget, and quarter
-      const res = await api.get('/personal-performance/personal-performance', {
-        params: {
-          userId: user?._id,
-          annualTargetId: notification.annualTargetId,
-        }
-      });
-      setSelectedPersonalPerformance(res.data.data); // Adjust based on your API response
-      setSelectedNotification(notification);
-      setShowTable(false);
-    } else {
-      setSelectedNotification(notification);
-      setShowTable(false);
+    if (!user?._id) {
+      console.log('Waiting for user data...');
+      return;
     }
+
+    if (notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment') {
+      try {
+        const res = await api.get('/personal-performance/personal-performance', {
+          params: {
+            userId: user._id,
+            annualTargetId: notification.annualTargetId,
+          }
+        });
+        if (res.data?.data) {
+          setSelectedPersonalPerformance(res.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching personal performance:', error);
+      }
+    }
+    setSelectedNotification(notification);
+    setShowTable(false);
   };
 
   useEffect(() => {
-    dispatch(fetchAnnualTargets());
-    dispatch(fetchNotifications());
-  }, [dispatch]);
+    if (user?._id) {
+      dispatch(fetchAnnualTargets());
+      dispatch(fetchNotifications());
+    }
+  }, [dispatch, user?._id]);
 
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
