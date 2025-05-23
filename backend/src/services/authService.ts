@@ -316,7 +316,7 @@ export class AuthService {
         userProfile.role = role || UserRole.USER;
         
         if (!user) {
-          await roleService.createUser(
+          const newUser = await roleService.createUser(
             userProfile.id,
             userProfile.email,
             userProfile.displayName,
@@ -325,6 +325,7 @@ export class AuthService {
             undefined,
             userProfile.jobTitle
           );
+          userProfile._id = newUser._id;
         } else {
           await roleService.updateUser(
             userProfile.id,
@@ -337,7 +338,21 @@ export class AuthService {
               jobTitle: userProfile.jobTitle
             }
           );
+          userProfile._id = user._id;
         }
+
+        // Get the latest user data to ensure we have all fields
+        const dbUser = await roleService.getUser(userProfile.id);
+        if (!dbUser) {
+          throw new Error('Failed to retrieve updated user data');
+        }
+
+        // Update the user profile with complete data
+        userProfile._id = dbUser._id;
+        userProfile.isDevMember = !!dbUser.isDevMember;
+        userProfile.isPerformanceCalibrationMember = !!dbUser.isPerformanceCalibrationMember;
+        userProfile.isTeamOwner = await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId);
+        userProfile.teamId = dbUser.teamId?.toString();
 
         console.log('Created user profile:', userProfile);
         return userProfile;
