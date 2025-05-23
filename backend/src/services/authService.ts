@@ -15,7 +15,7 @@ export class AuthService {
       client_id: config.azure.clientId!,
       response_type: 'code',
       redirect_uri: config.azure.redirectUri,
-      scope: 'openid profile email User.Read Organization.Read.All',
+      scope: 'openid profile email User.Read Organization.Read.All Mail.Send Mail.Read Mail.ReadBasic Mail.ReadWrite',
       response_mode: 'query',
       prompt: 'consent',
       ...(state && { state })
@@ -93,8 +93,8 @@ export class AuthService {
         if (!user) {
           await roleService.createUser(
             userProfile.id,
-            userProfile.email,
             userProfile.displayName,
+            userProfile.email,
             role || UserRole.USER,
             userProfile.tenantId,
             undefined,
