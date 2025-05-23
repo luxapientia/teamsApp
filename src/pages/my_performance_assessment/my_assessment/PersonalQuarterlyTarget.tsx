@@ -239,8 +239,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const assessmentNotification = notifications.find((n: any) => 
-        n.type === 'resolve_assessment' && 
+      const assessmentNotification = notifications.find((n: any) =>
+        n.type === 'resolve_assessment' &&
         n.annualTargetId === personalPerformance?.annualTargetId &&
         n.quarter === quarter
       );
@@ -422,13 +422,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
     return isWithinPeriod() &&
       quarterlyTarget?.isEditable !== false &&
-      !isSubmitted && !isApproved && quarterlyTarget?.agreementStatus === 'Approved';
+      !isSubmitted && !isApproved;
   };
 
   // Add validation function for submit button
   const canSubmit = () => {
-    const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
-    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && quarterlyTarget?.agreementStatus === 'Approved' && areAllKPIsEvaluated();
+    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && areAllKPIsEvaluated();
   };
 
   const handleSave = async (newKPI: QuarterlyTargetKPI) => {
