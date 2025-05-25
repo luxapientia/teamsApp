@@ -10,7 +10,7 @@ import { PageProps } from '../types';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { RootState } from '../store';
 import { Badge, Divider } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
@@ -54,9 +54,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Main Navigation */}
       <nav className="mt-4 flex-grow">
         <ul>
-          {pagePropsList.map((pageProps, index) => (
+          {pagePropsList.filter(page => page.show).map((pageProps, index) => (
             <li key={index}>
-              <button
+              <NavLink
+                to={pageProps.path}
                 className={`w-full flex items-center px-4 py-3 text-left transition-colors ${
                   activePageTitle === pageProps.title
                     ? 'bg-ms-blue bg-opacity-10 text-ms-blue'
@@ -84,7 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   )}
                 </span>
                 {isOpen && <span className="ml-3">{pageProps.title}</span>}
-              </button>
+              </NavLink>
             </li>
           ))}
         </ul>

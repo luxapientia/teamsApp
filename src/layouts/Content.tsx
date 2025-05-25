@@ -9,12 +9,12 @@ import {
   styled,
 } from '@mui/material';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import { Outlet } from 'react-router-dom';
 
 interface ContentProps {
   title: string;
   tabs: string[];
   icon: React.ReactNode;
-  children: React.ReactNode;
   selectedTab: string;
   onTabChange: (tab: string) => void;
 }
@@ -46,7 +46,6 @@ const Content: React.FC<ContentProps> = ({
   title,
   tabs,
   icon,
-  children,
   selectedTab,
   onTabChange,
 }) => {
@@ -107,7 +106,7 @@ const Content: React.FC<ContentProps> = ({
           <Typography variant="h5">{title}</Typography>
         </Box>
 
-        <TabContainer ref={containerRef} sx={{bgcolor: '#f5f5f5'}}>
+        <TabContainer ref={containerRef} sx={{ bgcolor: '#f5f5f5' }}>
           {visibleTabs.map((tab) => (
             <TabButton
               key={tab}
@@ -117,7 +116,7 @@ const Content: React.FC<ContentProps> = ({
               {tab}
             </TabButton>
           ))}
-          
+
           {overflowTabs.length > 0 && (
             <>
               <IconButton onClick={handleMenuClick} size="small">
@@ -142,7 +141,7 @@ const Content: React.FC<ContentProps> = ({
           )}
         </TabContainer>
 
-        <Box sx={{ mt: 3 }}>{children}</Box>
+        <Box sx={{ mt: 3 }}><Outlet /></Box>
       </Container>
     </Box>
   );

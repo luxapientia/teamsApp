@@ -3,19 +3,11 @@ import { Box, useTheme, useMediaQuery } from '@mui/material';
 import Sidebar from './Sidebar';
 import Content from './Content';
 import { PageProps } from '../types';
+import { Outlet } from 'react-router-dom';
 
 interface LayoutProps {
-  children: React.ReactNode;
   selectedTabChanger: (tab: string) => void;
-}
-
-interface PageElement extends ReactElement {
-  props: {
-    title: string;
-    icon?: React.ReactNode;
-    tabs: string[];
-    selectedTab?: string;
-  };
+  pages: PageProps[];
 }
 
 const Layout: React.FC<LayoutProps> = (props) => {
@@ -24,12 +16,16 @@ const Layout: React.FC<LayoutProps> = (props) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
   const [activePageTitle, setActivePageTitle] = useState('');
 
-  const pages = React.Children.toArray(props.children) as PageElement[];
+  // const pages = React.Children.toArray(props.children) as PageElement[];
+  const pages = props.pages as PageProps[];
   const pagePropsList: PageProps[] = pages.map((page) => ({
-    title: page.props.title,
-    icon: page.props.icon || null,
-    tabs: page.props.tabs,
-    selectedTab: page.props.selectedTab || page.props.tabs[0] || ''
+    title: page.title,
+    icon: page.icon || null,
+    tabs: page.tabs,
+    selectedTab: page.selectedTab || page.tabs[0] || '',
+    path: page.path,
+    show: page.show,
+    element: page.element
   }));
 
   useEffect(() => {
@@ -70,7 +66,7 @@ const Layout: React.FC<LayoutProps> = (props) => {
       );
     }
 
-    const activePage = pages.find((page) => page.props.title === activePageTitle);
+    const activePage = pagePropsList.find((page) => page.title === activePageTitle);
     if (!activePage) {
       return (
         <Box sx={{ 
@@ -86,14 +82,12 @@ const Layout: React.FC<LayoutProps> = (props) => {
 
     return (
       <Content
-        title={activePage.props.title}
-        tabs={activePage.props.tabs}
-        icon={activePage.props.icon}
+        title={activePage.title}
+        tabs={activePage.tabs}
+        icon={activePage.icon}
         onTabChange={props.selectedTabChanger}
-        selectedTab={activePage.props.selectedTab || activePage.props.tabs[0] || ''}
-      >
-        {activePage}
-      </Content>
+        selectedTab={activePage.selectedTab || activePage.tabs[0] || ''}
+      />
     );
   };
 

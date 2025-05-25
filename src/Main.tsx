@@ -22,6 +22,7 @@ import EmployeeDevPlan from './pages/employee_dev_plan';
 import TeamsPage from './pages/teams';
 import Feedback from './pages/feedback';
 import PerformanceCalibration from './pages/performance_calibration';
+import { Routes, Route, Navigate } from 'react-router-dom';
 const iconSize = 24;
 
 function Main() {
@@ -100,123 +101,161 @@ function Main() {
     fetchTeamOwnerFromDB();
   }, [user?.id]);
 
+  const pages = [
+    {
+      path: "/dashboard",
+      element: Dashboard,
+      title: "Dashboard",
+      icon: <Home24Regular fontSize={iconSize} />,
+      tabs: ['Dashboard'],
+      show: TeamOwnerStatus || isAppOwner || isSuperUser,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/notifications",
+      element: NotificationPage,
+      title: "Notifications",
+      icon: <Alert24Regular fontSize={iconSize} />,
+      tabs: [],
+      show: true,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/my-performance-assessment",
+      element: MyPerformanceAssessment,
+      title: "My Performance Assessment",
+      icon: <ClipboardCheckmark24Regular fontSize={iconSize} />,
+      tabs: TeamOwnerStatus ?
+        (isAppOwner || isSuperUser ?
+          ['My Assessments', 'My Performances', 'Team Performances', 'Manage Performance Assessment'] :
+          ['My Assessments', 'My Performances', 'Team Performances']
+        ) :
+        (isAppOwner || isSuperUser ?
+          ['My Assessments', 'My Performances', 'Manage Performance Assessment'] :
+          ['My Assessments', 'My Performances']
+        ),
+      show: true,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/my-performance-agreement",
+      element: MyPerformanceAgreement,
+      title: "My Performance Agreement",
+      icon: <Handshake24Regular fontSize={iconSize} />,
+      tabs: isAppOwner || isSuperUser ?
+        ['My Performance Agreements', 'Manage Performance Agreement'] :
+        ['My Performance Agreements'],
+      show: true,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/employee-dev-plan",
+      element: EmployeeDevPlan,
+      title: "Employee Development Plan",
+      icon: <LearningApp24Regular fontSize={iconSize} />,
+      tabs: (isSuperUser || isAppOwner) ?
+        (isDevMember ?
+          ['My Training Dashboard', 'Employees Training', 'Enable Employees Development', 'Annual Organization Development Plans', 'Training & Courses Management', 'Organization Development Team'] :
+          ['My Training Dashboard', 'Organization Development Team']) :
+        (isDevMember ?
+          ['My Training Dashboard', 'Employees Training', 'Enable Employees Development', 'Annual Organization Development Plans', 'Training & Courses Management'] :
+          ['My Training Dashboard']),
+      show: true,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/performance-calibration",
+      element: PerformanceCalibration,
+      title: "Performance Calibration",
+      icon: <Settings24Regular fontSize={iconSize} />,
+      tabs: (isSuperUser || isAppOwner) && isPerformanceCalibrationMember ?
+        ['Performance Calibration Team', 'Performance Agreements', 'Performance Assessments'] :
+        (isPerformanceCalibrationMember) ?
+          ['Performance Agreements', 'Performance Assessments'] :
+          ['Performance Calibration Team'],
+      show: (isAppOwner || isSuperUser || isPerformanceCalibrationMember) && isPerformanceCalibrationModuleEnabled,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/feedback",
+      element: Feedback,
+      title: "Employee 360 Degree Feedback",
+      icon: <ClipboardCheckmark24Regular fontSize={iconSize} />,
+      tabs: [],
+      show: (isAppOwner || isSuperUser) && isFeedbackModuleEnabled,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/organization-performance",
+      element: OrganizationPerformance,
+      title: "Organization Performance",
+      icon: <DataTrending24Regular fontSize={iconSize} />,
+      tabs: ['Organization Performance Assessment', 'Annual Organization Performance'],
+      show: isAppOwner || isSuperUser,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/annual-corporate-scorecard",
+      element: AnnualCorporateScorecard,
+      title: "Annual Corporate Scorecard",
+      icon: <Globe24Regular fontSize={iconSize} />,
+      tabs: ['Quarterly Corporate Scorecards', 'Annual Corporate Scorecards'],
+      show: isAppOwner || isSuperUser,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/reports",
+      element: Reports,
+      title: "Reports",
+      icon: <DocumentText24Regular fontSize={iconSize} />,
+      tabs: isAppOwner || isSuperUser ?
+        ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Performance Distribution Report', 'Employee Performance Rating', 'Supervisor Performance Distribution Report'] :
+        ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Supervisor Performance Distribution Report'],
+      show: true,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/teams",
+      element: TeamsPage,
+      title: "Teams",
+      icon: <PeopleTeam24Regular fontSize={iconSize} />,
+      tabs: ['Teams', 'Super User'],
+      show: isAppOwner || isSuperUser,
+      selectedTab: selectedTab
+    },
+    {
+      path: "/manage",
+      element: ManagePage,
+      title: "Manage Companies",
+      icon: <GridRegular fontSize={iconSize} />,
+      tabs: ['Companies', 'Companies Super Users', 'Companies Licenses', 'Modules'],
+      show: isAppOwner,
+      selectedTab: selectedTab
+    }
+  ];
+
   return (
-    <Layout selectedTabChanger={selectedTabChanger}>
-      {(TeamOwnerStatus || isAppOwner || isSuperUser) &&
-        <Dashboard
-          title="Dashboard"
-          icon={<Home24Regular fontSize={iconSize} />}
-          tabs={['Dashboard']}
-          selectedTab={selectedTab}
-        />}
-      <NotificationPage
-        title="Notifications"
-        icon={<Alert24Regular fontSize={iconSize} />}
-        tabs={[]}
-        selectedTab={selectedTab}
-      />
-      <MyPerformanceAssessment
-        title="My Performance Assessment"
-        icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-        tabs={TeamOwnerStatus ?
-          (isAppOwner || isSuperUser ?
-            ['My Assessments', 'My Performances', 'Team Performances', 'Manage Performance Assessment'] :
-            ['My Assessments', 'My Performances', 'Team Performances']
-          ) :
-          (isAppOwner || isSuperUser ?
-            ['My Assessments', 'My Performances', 'Manage Performance Assessment'] :
-            ['My Assessments', 'My Performances']
-          )}
-        selectedTab={selectedTab}
-      />
-      <MyPerformanceAgreement
-        title="My Performance Agreement"
-        icon={<Handshake24Regular fontSize={iconSize} />}
-        tabs={isAppOwner || isSuperUser ?
-          ['My Performance Agreements', 'Manage Performance Agreement'] :
-          ['My Performance Agreements']}
-        selectedTab={selectedTab}
-      />
-      {<EmployeeDevPlan
-        title="Employee Development Plan"
-        icon={<LearningApp24Regular fontSize={iconSize} />}
-        tabs={(isSuperUser || isAppOwner) ?
-          (isDevMember ?
-            ['My Training Dashboard', 'Employees Training', 'Enable Employees Development', 'Annual Organization Development Plans', 'Training & Courses Management', 'Organization Development Team'] :
-            ['My Training Dashboard', 'Organization Development Team']) :
-          (isDevMember ?
-            ['My Training Dashboard', 'Employees Training', 'Enable Employees Development', 'Annual Organization Development Plans', 'Training & Courses Management'] :
-            ['My Training Dashboard'])}
-        selectedTab={selectedTab}
-      />}
-      {(isAppOwner || isSuperUser || isPerformanceCalibrationMember) && isPerformanceCalibrationModuleEnabled && (
-        <PerformanceCalibration
-          title="Performance Calibration"
-          icon={<Settings24Regular fontSize={iconSize} />}
-          tabs={
-            (isSuperUser || isAppOwner) && isPerformanceCalibrationMember ?
-              ['Performance Calibration Team', 'Performance Agreements', 'Performance Assessments'] :
-              (isPerformanceCalibrationMember) ?
-                ['Performance Agreements', 'Performance Assessments'] :
-                ['Performance Calibration Team']
-          }
-          selectedTab={selectedTab}
-        />
-      )}
-
-      {(isAppOwner || isSuperUser) && isFeedbackModuleEnabled && (
-        <Feedback
-          title="Employee 360 Degree Feedback"
-          icon={<ClipboardCheckmark24Regular fontSize={iconSize} />}
-          tabs={[]}
-          selectedTab={selectedTab}
-        />
-      )}
-
-      {(isAppOwner || isSuperUser) && (
-        <OrganizationPerformance
-          title="Organization Performance"
-          icon={<DataTrending24Regular fontSize={iconSize} />}
-          tabs={['Organization Performance Assessment', 'Annual Organization Performance']}
-          selectedTab={selectedTab}
-        />)}
-      {(isAppOwner || isSuperUser) && (
-        <AnnualCorporateScorecard
-          title="Annual Corporate Scorecard"
-          icon={<Globe24Regular fontSize={iconSize} />}
-          tabs={['Quarterly Corporate Scorecards', 'Annual Corporate Scorecards']}
-          selectedTab={selectedTab}
-        />
-      )}
-      {
-        <Reports
-          title='Reports'
-          icon={<DocumentText24Regular fontSize={iconSize} />}
-          tabs={isAppOwner || isSuperUser ?
-            ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Performance Distribution Report', 'Employee Performance Rating', 'Supervisor Performance Distribution Report'] :
-            ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Supervisor Performance Distribution Report']}
-          selectedTab={selectedTab}
-        />
-      }
-      {(isAppOwner || isSuperUser) && (
-        <TeamsPage
-          title='Teams'
-          icon={<PeopleTeam24Regular fontSize={iconSize} />}
-          tabs={['Teams', 'Super User']}
-          selectedTab={selectedTab}
-        />
-      )}
-
-
-      {isAppOwner && (
-        <ManagePage
-          title="Manage Companies"
-          icon={<GridRegular fontSize={iconSize} />}
-          tabs={['Companies', 'Companies Super Users', 'Companies Licenses', 'Modules']}
-          selectedTab={selectedTab}
-        />
-      )}
-    </Layout>
+    <Routes>
+      <Route element={<Layout selectedTabChanger={selectedTabChanger} pages={pages} />}>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {pages.map((page) => (
+          page.show && (
+            <Route
+              key={page.path}
+              path={page.path}
+              element={
+                <page.element
+                  title={page.title}
+                  icon={page.icon}
+                  tabs={page.tabs}
+                  selectedTab={selectedTab}
+                />
+              }
+            />
+          )
+        ))}
+      </Route>
+    </Routes>
   );
 }
 
