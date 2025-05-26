@@ -14,9 +14,9 @@ const Layout: React.FC<LayoutProps> = (props) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
-  const [activePageTitle, setActivePageTitle] = useState('');
+  const [activePageTitle, setActivePageTitle] = useState('Dashboard');
   const location = useLocation();
-  const [selectedTabItem, setSelectedTabItem] = useState('');
+  const [selectedTabItem, setSelectedTabItem] = useState('Dashboard');
 
   useEffect(() => {
     setSelectedTabItem(location.pathname.split('/')[2]);
