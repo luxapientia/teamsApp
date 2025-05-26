@@ -64,7 +64,7 @@ const TeamPerformances: React.FC = () => {
   }, [dispatch]);
 
   const checkFeedbackModule = async () => {
-    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    const isModuleEnabled = await api.get('/module/Feedback/is-enabled');
     if (isModuleEnabled.data.data.isEnabled) {
       setEnableFeedback(true);
     }

@@ -47,7 +47,7 @@ function Main() {
 
     //check if feedback module is enabled for company
     const checkFeedbackModule = async () => {
-      const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+      const isModuleEnabled = await api.get('/module/Feedback/is-enabled');
       if (isModuleEnabled.data.data.isEnabled) {
         setIsFeedbackModuleEnabled(true);
       }
@@ -55,7 +55,7 @@ function Main() {
     checkFeedbackModule();
 
     const checkPerformanceCalibrationModule = async () => {
-      const isModuleEnabled = await api.get('/module/is-pm-calibration-module-enabled');
+      const isModuleEnabled = await api.get('/module/PerformanceCalibration/is-enabled');
       if (isModuleEnabled.data.data.isEnabled) {
         setIsPerformanceCalibrationModuleEnabled(true);
       }

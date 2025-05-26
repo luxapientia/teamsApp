@@ -8,7 +8,8 @@
     "dev": "nodemon --ignore 'public/uploads/*' --ignore 'src/**/public/uploads/*' src/server.ts",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
-    "test": "jest"
+    "test": "jest",
+    "port:modules": "ts-node scripts/portModules.ts"
   },
   "dependencies": {
     "@azure/msal-node": "^3.4.1",

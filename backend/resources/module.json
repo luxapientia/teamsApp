@@ -1,0 +1,12 @@
+[
+  {
+    "moduleName": "Feedback",
+    "description": "Employees 360 Degree Feedback",
+    "enabled": true
+  },
+  {
+    "moduleName": "PerformanceCalibration",
+    "description": "Performance Calibration",
+    "enabled": true
+  }
+]

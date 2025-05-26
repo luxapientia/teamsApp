@@ -49,7 +49,7 @@ export const HeatmapByTeam: React.FC<HeatmapByTeamProps> = ({
   const dispatch = useAppDispatch();
 
   const checkFeedbackModule = async () => {
-    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    const isModuleEnabled = await api.get('/module/Feedback/is-enabled');
     if (isModuleEnabled.data.data.isEnabled) {
       setEnableFeedback(true);
     }

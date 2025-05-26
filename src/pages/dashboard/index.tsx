@@ -172,8 +172,8 @@ const Dashboard: React.FC<DashboardProps> = ({ title, icon, tabs, selectedTab })
   const [enableFeedback, setEnableFeedback] = useState(false);
 
   const checkFeedbackModule = async () => {
-    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
-    if (isModuleEnabled.data.data.isEnabled) {
+    const response = await api.get('/module/Feedback/is-enabled');
+    if (response.data.data.isEnabled) {
       setEnableFeedback(true);
     }
   }
