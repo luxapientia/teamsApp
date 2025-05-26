@@ -10,10 +10,10 @@ const ManagePage: React.FC<PageProps> = ({ title, icon, tabs }) => {
   return (
     <div className="p-6 space-y-6">
       <Routes>
-        <Route path="/" element={<Navigate to="companies" replace />} />
+        <Route path="/*" element={<Navigate to="companies" replace />} />
         <Route path="companies" element={<Companies />} />
-        <Route path="super-users" element={<SuperUsers />} />
-        <Route path="licenses" element={<CompanyLicenses />} />
+        <Route path="companies-super-users" element={<SuperUsers />} />
+        <Route path="companies-licenses" element={<CompanyLicenses />} />
         <Route path="modules" element={<Modules />} />
       </Routes>
     </div>
