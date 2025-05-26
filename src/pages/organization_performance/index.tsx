@@ -1,27 +1,18 @@
-import React, { useEffect } from 'react';
-import { Box, Button } from '@mui/material';
-import { TargetTab, PageProps, AnnualTarget } from '../../types';
+import React from 'react';
+import { PageProps } from '../../types';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import PerformanceEvaluations from './performance_evaluations';
 import OrganizationPerformances from './organization_performance';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { createAnnualTarget, updateAnnualTarget, deleteAnnualTarget, fetchAnnualTargets } from '../../store/slices/scorecardSlice';
-import AddIcon from '@mui/icons-material/Add';
-const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
-  const dispatch = useAppDispatch();
 
-  useEffect(() => {
-    dispatch(fetchAnnualTargets());
-  }, [dispatch]);
-
+const OrganizationPerformance: React.FC<PageProps> = ({ title, icon, tabs }) => {
   return (
-    <Box>
-      {selectedTab === "Organization Performance Assessment" ? (
-        <PerformanceEvaluations
-        />
-      ) : (
-        <OrganizationPerformances />
-      )}
-    </Box>
+    <div className="space-y-6">
+      <Routes>
+        <Route path="/*" element={<Navigate to="organization-performance-assessment" replace />} />
+        <Route path="organization-performance-assessment" element={<PerformanceEvaluations />} />
+        <Route path="annual-organization-performance" element={<OrganizationPerformances />} />
+      </Routes>
+    </div>
   );
 };
 

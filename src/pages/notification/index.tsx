@@ -16,7 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import MyPerformanceAgreementContent from '../my_performance_agreement/performance_agreement/PersonalQuarterlyTarget';
 import MyPerformanceAssessmentContent from '../my_performance_assessment/my_assessment/PersonalQuarterlyTarget';
 import { PersonalPerformance } from '../../types/personalPerformance';
-
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 const ViewButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -28,13 +28,12 @@ const ViewButton = styled(Button)({
   },
 });
 
-const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
+const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs }) => {
   const dispatch = useAppDispatch();
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
   const [showTable, setShowTable] = useState(true);
   const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
 
-  // Mock data - replace with actual data from your API
   const notifications = useAppSelector((state: RootState) => state.notification.notifications);
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const teams = useAppSelector((state: RootState) => state.teams.teams);
@@ -74,151 +73,157 @@ const NotificationPage: React.FC<PageProps> = ({ title, icon, tabs, selectedTab 
   }, [dispatch, user?._id]);
 
   return (
-    <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
-      {showTable && (
-        <TableContainer component={Paper} variant="outlined">
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Full Name</TableCell>
-                <TableCell>Team</TableCell>
-                <TableCell>Annual Corporate Scorecard</TableCell>
-                <TableCell>Action</TableCell>
-                <TableCell>Date, Time</TableCell>
-                <TableCell></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {notifications.map((notification, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {(notification.type==='agreement' || notification.type==='assessment')?notification.sender.fullName:user?.displayName}
-                      {/* {!notification.isRead && ( */}
-                      {(
-                        <Chip
-                          label="New"
-                          size="small"
-                          color="error"
-                          sx={{
-                            height: '20px',
-                            fontSize: '0.75rem'
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>{teams.find((team) => (notification.type==='agreement' || notification.type==='assessment')?team._id === notification.sender.teamId:team._id === user?.teamId)?.name}</TableCell>
-                  <TableCell>{annualTargets.find((target) => target._id === notification.annualTargetId)?.name}</TableCell>
-                  <TableCell>
-                    {`${notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment' ? 'Resolve' : 'Approve'} ${
-                      (() => {
-                        const target = annualTargets?.find((target) => target._id === notification.annualTargetId);
-                        const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
-                          ?.filter((quarter) => quarter?.editable)
-                          ?.map((quarter) => quarter?.quarter) || [];
-                        
-                        return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser')
-                          ? QUARTER_ALIAS[notification.quarter as keyof typeof QUARTER_ALIAS] 
-                          : notification.quarter;
-                      })()
-                    } ${
-                      notification.type === 'agreement' || notification.type === 'resolve_agreement'
-                        ? 'Performance Agreement' 
-                        : 'Performance Assessment'
-                    }`}
-                  </TableCell>
-                  <TableCell>{new Date(notification.updatedAt).toLocaleString()}</TableCell>
-                  <TableCell align="right">
-                    <ViewButton
-                      variant="contained"
-                      onClick={() => handleView(notification)}
-                    >
-                      View
-                    </ViewButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+    <div className="space-y-6">
+      <Routes>
+        <Route path="/*" element={<Navigate to="notifications" replace />} />
+        <Route path="notifications" element={
+          <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
+            {showTable && (
+              <TableContainer component={Paper} variant="outlined">
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Full Name</TableCell>
+                      <TableCell>Team</TableCell>
+                      <TableCell>Annual Corporate Scorecard</TableCell>
+                      <TableCell>Action</TableCell>
+                      <TableCell>Date, Time</TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {notifications.map((notification, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {(notification.type==='agreement' || notification.type==='assessment')?notification.sender.fullName:user?.displayName}
+                            {(
+                              <Chip
+                                label="New"
+                                size="small"
+                                color="error"
+                                sx={{
+                                  height: '20px',
+                                  fontSize: '0.75rem'
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell>{teams.find((team) => (notification.type==='agreement' || notification.type==='assessment')?team._id === notification.sender.teamId:team._id === user?.teamId)?.name}</TableCell>
+                        <TableCell>{annualTargets.find((target) => target._id === notification.annualTargetId)?.name}</TableCell>
+                        <TableCell>
+                          {`${notification.type === 'resolve_agreement' || notification.type === 'resolve_assessment' ? 'Resolve' : 'Approve'} ${
+                            (() => {
+                              const target = annualTargets?.find((target) => target._id === notification.annualTargetId);
+                              const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+                                ?.filter((quarter) => quarter?.editable)
+                                ?.map((quarter) => quarter?.quarter) || [];
+                              
+                              return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser')
+                                ? QUARTER_ALIAS[notification.quarter as keyof typeof QUARTER_ALIAS] 
+                                : notification.quarter;
+                            })()
+                          } ${
+                            notification.type === 'agreement' || notification.type === 'resolve_agreement'
+                              ? 'Performance Agreement' 
+                              : 'Performance Assessment'
+                          }`}
+                        </TableCell>
+                        <TableCell>{new Date(notification.updatedAt).toLocaleString()}</TableCell>
+                        <TableCell align="right">
+                          <ViewButton
+                            variant="contained"
+                            onClick={() => handleView(notification)}
+                          >
+                            View
+                          </ViewButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
 
-      {selectedNotification && selectedNotification.type === 'resolve_agreement' && selectedPersonalPerformance && (
-        <MyPerformanceAgreementContent
-          annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
-          quarter={selectedNotification.quarter}
-          isEnabledTwoQuarterMode={(() => {
-            const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
-            const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
-              ?.filter((quarter) => quarter?.editable)
-              ?.map((quarter) => quarter?.quarter) || [];
-            return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
-          })()}
-          onBack={() => {
-            setSelectedNotification(null);
-            setShowTable(true);
-            setSelectedPersonalPerformance(null);
-          }}
-          personalPerformance={selectedPersonalPerformance}
-        />
-      )}
+            {selectedNotification && selectedNotification.type === 'resolve_agreement' && selectedPersonalPerformance && (
+              <MyPerformanceAgreementContent
+                annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+                quarter={selectedNotification.quarter}
+                isEnabledTwoQuarterMode={(() => {
+                  const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
+                  const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+                    ?.filter((quarter) => quarter?.editable)
+                    ?.map((quarter) => quarter?.quarter) || [];
+                  return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
+                })()}
+                onBack={() => {
+                  setSelectedNotification(null);
+                  setShowTable(true);
+                  setSelectedPersonalPerformance(null);
+                }}
+                personalPerformance={selectedPersonalPerformance}
+              />
+            )}
 
-      {selectedNotification && (
-        selectedNotification.type === 'resolve_assessment' ? (
-          <MyPerformanceAssessmentContent
-            annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
-            quarter={selectedNotification.quarter}
-            isEnabledTwoQuarterMode={(() => {
-              const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
-              const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
-                ?.filter((quarter) => quarter?.editable)
-                ?.map((quarter) => quarter?.quarter) || [];
-              return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
-            })()}
-            onBack={() => {
-              setSelectedNotification(null);
-              setShowTable(true);
-            }}
-            personalPerformance={selectedPersonalPerformance}
-          />
-        ) : selectedNotification.type === 'agreement' ? (
-          <PersonalQuarterlyTargetContent
-            notification={selectedNotification}
-            annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
-            quarter={selectedNotification.quarter}
-            isEnabledTwoQuarterMode={(() => {
-              const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
-              const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
-                ?.filter((quarter) => quarter?.editable)
-                ?.map((quarter) => quarter?.quarter) || [];
-              return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
-            })()}
-            onBack={() => {
-              setSelectedNotification(null);
-              setShowTable(true);
-            }}
-          />
-        ) : selectedNotification.type === 'assessment' && (
-          <PersonalPerformanceAssessmentContent
-            notification={selectedNotification}
-            annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
-            quarter={selectedNotification.quarter}
-            isEnabledTwoQuarterMode={(() => {
-              const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
-              const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
-                ?.filter((quarter) => quarter?.editable)
-                ?.map((quarter) => quarter?.quarter) || [];
-              return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
-            })()}
-            onBack={() => {
-              setSelectedNotification(null);
-              setShowTable(true);
-            }}
-          />
-        )
-      )}
-    </Box>
+            {selectedNotification && (
+              selectedNotification.type === 'resolve_assessment' ? (
+                <MyPerformanceAssessmentContent
+                  annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+                  quarter={selectedNotification.quarter}
+                  isEnabledTwoQuarterMode={(() => {
+                    const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
+                    const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+                      ?.filter((quarter) => quarter?.editable)
+                      ?.map((quarter) => quarter?.quarter) || [];
+                    return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
+                  })()}
+                  onBack={() => {
+                    setSelectedNotification(null);
+                    setShowTable(true);
+                  }}
+                  personalPerformance={selectedPersonalPerformance}
+                />
+              ) : selectedNotification.type === 'agreement' ? (
+                <PersonalQuarterlyTargetContent
+                  notification={selectedNotification}
+                  annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+                  quarter={selectedNotification.quarter}
+                  isEnabledTwoQuarterMode={(() => {
+                    const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
+                    const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+                      ?.filter((quarter) => quarter?.editable)
+                      ?.map((quarter) => quarter?.quarter) || [];
+                    return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
+                  })()}
+                  onBack={() => {
+                    setSelectedNotification(null);
+                    setShowTable(true);
+                  }}
+                />
+              ) : selectedNotification.type === 'assessment' && (
+                <PersonalPerformanceAssessmentContent
+                  notification={selectedNotification}
+                  annualTarget={annualTargets?.find((target) => target._id === selectedNotification.annualTargetId) as AnnualTarget}
+                  quarter={selectedNotification.quarter}
+                  isEnabledTwoQuarterMode={(() => {
+                    const target = annualTargets?.find((target) => target._id === selectedNotification.annualTargetId);
+                    const quarters = target?.content?.quarterlyTarget?.quarterlyTargets
+                      ?.filter((quarter) => quarter?.editable)
+                      ?.map((quarter) => quarter?.quarter) || [];
+                    return isEnabledTwoQuarterMode(quarters, user?.isTeamOwner || user?.role === 'SuperUser');
+                  })()}
+                  onBack={() => {
+                    setSelectedNotification(null);
+                    setShowTable(true);
+                  }}
+                />
+              )
+            )}
+          </Box>
+        } />
+      </Routes>
+    </div>
   );
 };
 

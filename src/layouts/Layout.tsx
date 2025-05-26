@@ -3,10 +3,10 @@ import { Box, useTheme, useMediaQuery } from '@mui/material';
 import Sidebar from './Sidebar';
 import Content from './Content';
 import { PageProps } from '../types';
-import { Outlet } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 interface LayoutProps {
-  selectedTabChanger: (tab: string) => void;
+  // selectedTabChanger: (tab: string) => void;
   pages: PageProps[];
 }
 
@@ -15,6 +15,13 @@ const Layout: React.FC<LayoutProps> = (props) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
   const [activePageTitle, setActivePageTitle] = useState('');
+  const location = useLocation();
+  const [selectedTabItem, setSelectedTabItem] = useState('');
+
+  useEffect(() => {
+    setSelectedTabItem(location.pathname.split('/')[2]);
+  }, [location]);
+  
 
   // const pages = React.Children.toArray(props.children) as PageElement[];
   const pages = props.pages as PageProps[];
@@ -22,18 +29,33 @@ const Layout: React.FC<LayoutProps> = (props) => {
     title: page.title,
     icon: page.icon || null,
     tabs: page.tabs,
-    selectedTab: page.selectedTab || page.tabs[0] || '',
     path: page.path,
     show: page.show,
     element: page.element
   }));
 
   useEffect(() => {
-    if (pagePropsList.length > 0 && pagePropsList[0].tabs.length > 0) {
-      props.selectedTabChanger(pagePropsList[0].tabs[0]);
+    // Example: /employee-dev-plan/training-and-courses-management
+    const segments = location.pathname.split('/').filter(Boolean);
+
+    // Find the matching page
+    const activePage = pagePropsList.find(page =>
+      segments.length > 0 && page.path.replace('/*', '').split('/').filter(Boolean)[0] === segments[0]
+    );
+
+    setActivePageTitle(activePage ? activePage.title : '');
+
+    // Find the matching tab (if any)
+    if (activePage && segments.length > 1) {
+      const tabSegment = segments[1];
+      const activeTab = activePage.tabs.find(tab =>
+        tab.toLowerCase().replace(/\s+/g, '-') === tabSegment
+      );
+      setSelectedTabItem(activeTab || '');
+    } else {
+      setSelectedTabItem('');
     }
-    setActivePageTitle(pagePropsList[0]?.title || '');
-  }, []);
+  }, [location.pathname, pagePropsList]);
 
   // Handle sidebar state on screen resize
   useEffect(() => {
@@ -42,14 +64,14 @@ const Layout: React.FC<LayoutProps> = (props) => {
 
   const handlePageChange = (title: string) => {
     setActivePageTitle(title);
-    const clickedPage = pagePropsList.find(page => page.title === title);
-    if (clickedPage && clickedPage.tabs.length > 0) {
-      props.selectedTabChanger(clickedPage.tabs[0]);
-    }
   };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleTabChange = (tab: string) => {
+    setSelectedTabItem(tab);
   };
 
   const renderContent = () => {
@@ -85,8 +107,8 @@ const Layout: React.FC<LayoutProps> = (props) => {
         title={activePage.title}
         tabs={activePage.tabs}
         icon={activePage.icon}
-        onTabChange={props.selectedTabChanger}
-        selectedTab={activePage.selectedTab || activePage.tabs[0] || ''}
+        selectedTab={selectedTabItem}
+        onTabChange={handleTabChange}
       />
     );
   };

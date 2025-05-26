@@ -1,39 +1,18 @@
-import React, { useEffect } from 'react';
-import { Box, Button } from '@mui/material';
-import { TargetTab, PageProps, AnnualTarget } from '../../types';
+import React from 'react';
+import { PageProps } from '../../types';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import AnnualTargets from './annual_targets';
-import AddAnnualTargetModal from './annual_targets/AddAnnualTargetModal';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { createAnnualTarget, updateAnnualTarget, deleteAnnualTarget, fetchAnnualTargets } from '../../store/slices/scorecardSlice';
-import AddIcon from '@mui/icons-material/Add';
 import QuarterlyTargetTable from './quarterly_targets';
 
-const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
-  const dispatch = useAppDispatch();
-
-  useEffect(() => {
-    dispatch(fetchAnnualTargets());
-  }, [dispatch]);
-
+const AnnualCorporateScorecard: React.FC<PageProps> = ({ title, icon, tabs }) => {
   return (
-    <Box>
-      
-
-      {selectedTab === TargetTab.Annual ? (
-        <AnnualTargets 
-          // onEdit={handleEditTarget}
-        />
-      ) : (
-        <QuarterlyTargetTable />
-      )}
-
-      {/* <AddAnnualTargetModal
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        onSubmit={handleAddTarget}
-        editingTarget={editingTarget}
-      /> */}
-    </Box>
+    <div className="space-y-6">
+      <Routes>
+        <Route path="/*" element={<Navigate to="quarterly-corporate-scorecards" replace />} />
+        <Route path="quarterly-corporate-scorecards" element={<QuarterlyTargetTable />} />
+        <Route path="annual-corporate-scorecards" element={<AnnualTargets />} />
+      </Routes>
+    </div>
   );
 };
 
