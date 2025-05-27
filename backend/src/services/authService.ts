@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 import { UserProfile } from '../types';
 import { roleService } from './roleService';
 import { dUser, UserRole } from '../types/user';
+import { tokenPayload } from '../types';
 
 dotenv.config();
 
@@ -122,7 +123,7 @@ export class AuthService {
       }
 
       // Create token using database user data
-      const tokenUserProfile: UserProfile = {
+      const UserProfile: UserProfile = {
         _id: dbUser._id,
         id: dbUser.MicrosoftId,
         email: dbUser.email,
@@ -140,9 +141,9 @@ export class AuthService {
         teamId: dbUser?.teamId?.toString()
       };
 
-      const token = await this.createAppToken(tokenUserProfile);
+      const token = await this.createAppToken({id: dbUser.MicrosoftId, email: dbUser.email, name: dbUser.name});
 
-      return { token, user: tokenUserProfile };
+      return { token, user: UserProfile };
     } catch (error: any) {
       console.error('Authentication error details:', {
         message: error.message,
@@ -157,7 +158,7 @@ export class AuthService {
   async verifyToken(token: string): Promise<Promise<dUser | null> | null> {
     try {
       // Verify the JWT token using the secret
-      const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
+      const decoded = jwt.verify(token, config.jwtSecret) as tokenPayload;
       
       // Ensure the token has the necessary fields
       if (!decoded.id || !decoded.email) {
@@ -179,7 +180,7 @@ export class AuthService {
 
   async getProfile(token: string): Promise<UserProfile> {
     try {
-      const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
+      const decoded = jwt.verify(token, config.jwtSecret) as tokenPayload;
       
       // Get the user from database to ensure we have the latest data
       const dbUser = await roleService.getUser(decoded.id);
@@ -387,29 +388,11 @@ export class AuthService {
     }
   }
 
-  async createAppToken(userProfile: UserProfile): Promise<string> {
-    if (!userProfile.id || !userProfile.email) {
+  async createAppToken(tokenPayload: tokenPayload): Promise<string> {
+    if (!tokenPayload.id || !tokenPayload.email) {
       throw new Error('Invalid user profile: missing required fields');
     }
 
-    const tokenPayload = {
-      id: userProfile.id,
-      email: userProfile.email,
-      displayName: userProfile.displayName || '',
-      jobTitle: userProfile.jobTitle || '',
-      department: userProfile.department || '',
-      organization: userProfile.organization || '',
-      role: userProfile.role || UserRole.USER,
-      status: userProfile.status || 'active',
-      tenantId: userProfile.tenantId,
-      organizationName: userProfile.organizationName || '',
-      isDevMember: userProfile.isDevMember,
-      isPerformanceCalibrationMember: userProfile.isPerformanceCalibrationMember,
-      isTeamOwner: userProfile.isTeamOwner,
-      teamId: userProfile.teamId
-    };
-
-    
     return jwt.sign(
       tokenPayload,
       process.env.JWT_SECRET || 'your-secret-key',

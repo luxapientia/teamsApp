@@ -20,13 +20,13 @@ router.post('/callback', async (req: Request, res: Response) => {
   try {
     const { code, token, redirect_uri } = req.body;
     console.log(token, 'token');
-    
+
     // Handle Teams SSO token
     if (token) {
       console.log('Processing Teams SSO token...');
       try {
         const userProfile = await authService.verifyTeamsToken(token);
-        
+
         if (!userProfile) {
           console.error('Teams token verification failed');
           return res.status(401).json({ error: 'Invalid Teams token' });
@@ -74,12 +74,12 @@ router.post('/callback', async (req: Request, res: Response) => {
             isTeamOwner: await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId),
             teamId: dbUser.teamId?.toString()
           };
-          const appToken = await authService.createAppToken(tokenUserProfile);
-        console.log('App token created successfully');
-        console.log(appToken, 'appToken');
-          return res.json({ 
-          token: appToken, 
-            user: tokenUserProfile 
+          const appToken = await authService.createAppToken({ id: dbUser.MicrosoftId, email: dbUser.email, name: dbUser.name });
+          console.log('App token created successfully');
+          console.log(appToken, 'appToken');
+          return res.json({
+            token: appToken,
+            user: tokenUserProfile
           });
         }
       } catch (error: any) {
@@ -90,7 +90,7 @@ router.post('/callback', async (req: Request, res: Response) => {
             error.tenantId,
             redirect_uri || `${req.protocol}://${req.get('host')}/api/auth/consent-callback`
           );
-          
+
           return res.status(403).json({
             error: 'consent_required',
             consentUrl,
@@ -98,12 +98,12 @@ router.post('/callback', async (req: Request, res: Response) => {
             tenantId: error.tenantId
           });
         }
-        
+
         console.error('Teams token verification failed with error:', error);
         return res.status(401).json({ error: 'Token verification failed' });
       }
     }
-    
+
     // Handle standard login code
     if (code) {
       console.log('Processing standard login code...');
@@ -172,11 +172,11 @@ router.get('/verify', async (req: Request, res: Response) => {
 
     // Verify the token and get the user profile
     const userProfile = await authService.getProfile(token);
-    
+
     if (!userProfile) {
       return res.status(401).json({ error: 'Invalid token' });
     }
-    
+
     // Return the user information for the client to update state
     return res.json({
       status: 'success',
@@ -195,7 +195,7 @@ router.get('/verify', async (req: Request, res: Response) => {
 router.get('/consent-callback', async (req, res) => {
   try {
     const { error, admin_consent, state } = req.query;
-    
+
     if (error) {
       console.error('Consent error:', error);
       res.redirect('/auth/error?message=consent_failed');

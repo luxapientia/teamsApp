@@ -54,3 +54,10 @@ export interface ApiResponse<T> {
   status: number;
   message?: string;
 } 
+
+
+export interface tokenPayload {
+  id: string;
+  email: string;
+  name: string;
+} 
