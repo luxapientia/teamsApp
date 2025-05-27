@@ -19,7 +19,8 @@ export interface dUser {
   jobTitle?: string;
   isDevMember?: boolean;
   isPerformanceCalibrationMember?: boolean;
-  isComplianceUser?: boolean;
+  isComplianceSuperUser?: boolean;
+  isComplianceChampion?: boolean;
   status?: 'active' | 'inactive';
 }
 

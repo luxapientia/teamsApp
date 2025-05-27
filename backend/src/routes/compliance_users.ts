@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.get('/tenant', authenticateToken, checkLicenseStatus, async (_req: AuthenticatedRequest, res: Response) => {
     try {
-        const complianceUsers = await User.find({ isComplianceUser: true, tenantId: _req.user?.tenantId });
+        const complianceUsers = await User.find({ isComplianceSuperUser: true, tenantId: _req.user?.tenantId });
         res.json(complianceUsers);
     } catch (error) {
         console.error('Error fetching compliance users:', error);
@@ -19,7 +19,7 @@ router.get('/tenant', authenticateToken, checkLicenseStatus, async (_req: Authen
 router.post('/tenant', authenticateToken, checkLicenseStatus, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { email } = req.body;
-        const complianceUser = await User.findOneAndUpdate({ email, tenantId: req.user?.tenantId }, { isComplianceUser: true });
+        const complianceUser = await User.findOneAndUpdate({ email, tenantId: req.user?.tenantId }, { isComplianceSuperUser: true });
         res.json(complianceUser);
     } catch (error) {
         console.error('Error fetching compliance users:', error);
@@ -30,7 +30,7 @@ router.post('/tenant', authenticateToken, checkLicenseStatus, async (req: Authen
 router.delete('/tenant/by-email/:email', authenticateToken, checkLicenseStatus, async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { email } = req.params;
-        const complianceUser = await User.findOneAndUpdate({ email, tenantId: req.user?.tenantId }, { isComplianceUser: false });
+        const complianceUser = await User.findOneAndUpdate({ email, tenantId: req.user?.tenantId }, { isComplianceSuperUser: false });
         res.json(complianceUser);
     } catch (error) {
         console.error('Error deleting compliance user:', error);

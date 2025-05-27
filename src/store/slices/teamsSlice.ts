@@ -184,6 +184,28 @@ export const removeTeamMember = createAsyncThunk(
   }
 );
 
+// Add a champion to a team
+export const addChampion = createAsyncThunk(
+  'teams/addChampion',
+  async ({ teamId, email }: { teamId: string, email: string }) => {
+    await api.post(`/compliance-champions/tenant`, {teamId, email });
+    // Refresh team members
+    const response = await api.get(`/users/team/${teamId}`);
+    return { teamId, members: response.data.data || [] };
+  }
+);
+
+// Remove a champion from a team
+export const removeChampion = createAsyncThunk(
+  'teams/removeChampion',
+  async ({ teamId, email }: { teamId: string, email: string }) => {
+    await api.delete(`/compliance-champions/tenant/by-email/${email}`);
+    // Refresh team members
+    const response = await api.get(`/users/team/${teamId}`);
+    return { teamId, members: response.data.data || [] };
+  }
+);
+
 const teamsSlice = createSlice({
   name: 'teams',
   initialState,

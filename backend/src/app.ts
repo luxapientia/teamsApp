@@ -24,6 +24,7 @@ import moduleRoutes from './routes/module';
 import submitFeedbackRoutes from './routes/submit_feedback';
 import { checkFeedbackMail } from './services/feedbackService';
 import performanceCalibrationRoutes from './routes/performance_calibration';
+import complianceChampionRoutes from './routes/compliance_champions';
 // import { applySecurityMiddleware } from './middleware/security';
 
 const app = express();
@@ -54,6 +55,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/companies', authenticateToken, checkLicenseStatus, companyRoutes);
 app.use('/api/super-users', authenticateToken, checkLicenseStatus, superUserRoutes);
 app.use('/api/compliance-users', authenticateToken, checkLicenseStatus, complianceUserRoutes);
+app.use('/api/compliance-champions', authenticateToken, checkLicenseStatus, complianceChampionRoutes);
 app.use('/api/licenses', authenticateToken, checkLicenseStatus, licenseRoutes);
 app.use('/api/score-card', authenticateToken, checkLicenseStatus, scoreCardRoutes);
 app.use('/api/personal-performance', authenticateToken, checkLicenseStatus, personalPerformanceRoutes);

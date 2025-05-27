@@ -27,7 +27,7 @@ interface User {
     _id: string;
     email: string;
     name: string;
-    isComplianceUser?: boolean;
+    isComplianceSuperUser?: boolean;
 }
 
 const ComplianceUser: React.FC = () => {

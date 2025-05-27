@@ -3,7 +3,21 @@ import Layout from './layouts/Layout';
 import './styles/globals.css';
 import AnnualCorporateScorecard from './pages/scorecards';
 import { ManagePage } from './pages/manage';
-import { GridRegular, Alert24Regular, LearningApp24Regular, DocumentText24Regular, ClipboardCheckmark24Regular, DataTrending24Regular, Handshake24Regular, PeopleTeam24Regular, Globe24Regular, Home24Regular, Settings24Regular } from '@fluentui/react-icons';
+import {
+  GridRegular,
+  Alert24Regular,
+  LearningApp24Regular,
+  DocumentText24Regular,
+  ClipboardCheckmark24Regular,
+  DataTrending24Regular,
+  Handshake24Regular,
+  PeopleTeam24Regular,
+  Globe24Regular,
+  Home24Regular,
+  Settings24Regular,
+  ShieldCheckmark24Regular,
+  PersonFeedback24Regular
+} from '@fluentui/react-icons';
 import { useAuth } from './contexts/AuthContext';
 import OrganizationPerformance from './pages/organization_performance';
 import NotificationPage from './pages/notification';
@@ -23,6 +37,7 @@ import TeamsPage from './pages/teams';
 import Feedback from './pages/feedback';
 import PerformanceCalibration from './pages/performance_calibration';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import ComplianceManagement from './pages/compliance_management';
 const iconSize = 24;
 
 function Main() {
@@ -170,7 +185,7 @@ function Main() {
       path: "/feedback/*",
       element: Feedback,
       title: "Employee 360 Degree Feedback",
-      icon: <ClipboardCheckmark24Regular fontSize={iconSize} />,
+      icon: <PersonFeedback24Regular  fontSize={iconSize} />,
       tabs: ['feedback'],
       show: (isAppOwner || isSuperUser) && isFeedbackModuleEnabled
     },
@@ -215,6 +230,14 @@ function Main() {
       icon: <GridRegular fontSize={iconSize} />,
       tabs: ['Companies', 'Companies Super Users', 'Companies Licenses', 'Modules'],
       show: isAppOwner
+    },
+    {
+      path: "/compliance-management/*",
+      element: ComplianceManagement,
+      title: "Compliance Management",
+      icon: <ShieldCheckmark24Regular fontSize={iconSize} />,
+      tabs: ['Compliance Champions'],
+      show: true
     }
   ];
 

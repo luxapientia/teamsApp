@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions, 
-  Button, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  ListItemAvatar, 
-  Avatar, 
-  Checkbox, 
-  TextField, 
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
+  Checkbox,
+  TextField,
   InputAdornment,
   Typography,
   Box,
@@ -35,6 +35,8 @@ interface PeoplePickerModalProps {
   title?: string;
   multiSelect?: boolean;
   currentTeamMembers?: Person[];
+  eligibleMembers?: Person[];
+  isElegibleModeOn?: boolean;
 }
 
 const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
@@ -44,13 +46,14 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
   onSelectPeople,
   title = 'Select People',
   multiSelect = true,
-  currentTeamMembers = []
+  currentTeamMembers = [],
+  eligibleMembers = [],
+  isElegibleModeOn = false
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [selectedPeople, setSelectedPeople] = useState<Person[]>([]);
   const [filteredPeople, setFilteredPeople] = useState<Person[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [nextLink, setNextLink] = useState<string | null>(null);
@@ -72,31 +75,41 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
     try {
       setError(null);
       setLoading(true);
-      const response = await api.get('/users/organization/users', {
-        params: {
-          pageSize: 20,
-          searchQuery: query
+      let tempUsers: Person[] = [];
+      if (isElegibleModeOn) {
+        tempUsers = eligibleMembers;
+        if (reset) {
+          setFilteredPeople(tempUsers);
+        } else {
+          setFilteredPeople(prev => [...prev, ...tempUsers]);
         }
-      });
-      const tempUsers = response.data.data.map((user: any) => ({
-        MicrosoftId: user.id,
-        displayName: user.displayName,
-        email: user.mail || user.principalName,
-        jobTitle: user.jobTitle
-      }));
-      // Filter out all existing team members
-      const filteredUsers = tempUsers.filter(user => 
-        !currentTeamMembers.some(member => member.email === user.email)
-      );
-      if (reset) {
-        setPeople(filteredUsers);
-        setFilteredPeople(filteredUsers);
+        setNextLink(null); // No pagination for eligibleMembers
+        setHasMore(false);
       } else {
-        setPeople(prev => [...prev, ...filteredUsers]);
-        setFilteredPeople(prev => [...prev, ...filteredUsers]);
+        const response = await api.get('/users/organization/users', {
+          params: {
+            pageSize: 20,
+            searchQuery: query
+          }
+        });
+        tempUsers = response.data.data.map((user: any) => ({
+          MicrosoftId: user.id,
+          displayName: user.displayName,
+          email: user.mail || user.principalName,
+          jobTitle: user.jobTitle
+        }));
+        // Filter out all existing team members
+        tempUsers = tempUsers.filter(user =>
+          !currentTeamMembers.some(member => member.email === user.email)
+        );
+        if (reset) {
+          setFilteredPeople(tempUsers);
+        } else {
+          setFilteredPeople(prev => [...prev, ...tempUsers]);
+        }
+        setNextLink(response.data.nextLink || null);
+        setHasMore(!!response.data.nextLink);
       }
-      setNextLink(response.data.nextLink || null);
-      setHasMore(!!response.data.nextLink);
     } catch (error: any) {
       console.error('Error fetching people:', error);
       if (error.response?.data?.consentRequired) {
@@ -111,7 +124,6 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         return;
       }
       setError('Failed to load users. Please try again later.');
-      setPeople([]);
       setFilteredPeople([]);
     } finally {
       setLoading(false);
@@ -135,10 +147,9 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
         jobTitle: user.jobTitle
       }));
       // Filter out all existing team members
-      const filteredNewUsers = newUsers.filter(user => 
+      const filteredNewUsers = newUsers.filter(user =>
         !currentTeamMembers.some(member => member.email === user.email)
       );
-      setPeople(prev => [...prev, ...filteredNewUsers]);
       setFilteredPeople(prev => [...prev, ...filteredNewUsers]);
       setNextLink(response.data.nextLink || null);
       setHasMore(!!response.data.nextLink);
@@ -211,7 +222,8 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
     }
   };
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name) return '';
     return name
       .split(' ')
       .map(part => part.charAt(0))
@@ -221,8 +233,8 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
   };
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth="sm"
       fullWidth
@@ -234,7 +246,7 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
       }}
     >
       <DialogTitle sx={{ borderBottom: '1px solid #e0e0e0', padding: 2 }}>
-        <Typography variant="h6">{title}</Typography>
+        {title}
       </DialogTitle>
       <Box sx={{ padding: 2, borderBottom: '1px solid #e0e0e0' }}>
         <TextField
@@ -271,8 +283,8 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
               const isLastElement = index === filteredPeople.length - 1;
 
               return (
-                <ListItem 
-                  key={person.email} 
+                <ListItem
+                  key={person.email}
                   component="div"
                   ref={isLastElement ? lastPersonElementRef : null}
                   onClick={() => handleTogglePerson(person)}
@@ -282,7 +294,7 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
                     cursor: 'pointer'
                   }}
                 >
-                  <Checkbox 
+                  <Checkbox
                     checked={isSelected}
                     sx={{ color: isSelected ? '#0078d4' : undefined }}
                   />
@@ -291,23 +303,26 @@ const PeoplePickerModal: React.FC<PeoplePickerModalProps> = ({
                       {getInitials(person.displayName)}
                     </Avatar>
                   </ListItemAvatar>
-                  <ListItemText 
+                  <ListItemText
                     primary={
                       <Typography variant="body1" fontWeight={isSelected ? 600 : 400}>
                         {person.displayName}
                       </Typography>
                     }
                     secondary={
-                      <Box>
+                      <>
                         <Typography variant="body2" color="textSecondary" component="span">
                           {person.email}
                         </Typography>
                         {person.jobTitle && (
-                          <Typography variant="body2" color="textSecondary" component="span" sx={{ display: 'block' }}>
-                            {person.jobTitle}
-                          </Typography>
+                          <>
+                            <br />
+                            <Typography variant="body2" color="textSecondary" component="span">
+                              {person.jobTitle}
+                            </Typography>
+                          </>
                         )}
-                      </Box>
+                      </>
                     }
                   />
                 </ListItem>
