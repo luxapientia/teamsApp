@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema<dUser>({
   isPerformanceCalibrationMember: {
     type: Boolean,
     default: false
+  },
+  isComplianceUser: {
+    type: Boolean,
+    default: false
   }
 });
 

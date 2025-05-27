@@ -205,7 +205,7 @@ function Main() {
       element: TeamsPage,
       title: "Teams",
       icon: <PeopleTeam24Regular fontSize={iconSize} />,
-      tabs: ['Teams', 'Super User'],
+      tabs: ['Teams', 'Super User', 'Compliance User'],
       show: isAppOwner || isSuperUser
     },
     {

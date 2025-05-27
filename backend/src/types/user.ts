@@ -1,4 +1,6 @@
 import { ObjectId } from 'mongodb';
+import { UserProfile } from '.';
+import { Request } from 'express';
 
 export enum UserRole {
   APP_OWNER = 'AppOwner',
@@ -17,5 +19,10 @@ export interface dUser {
   jobTitle?: string;
   isDevMember?: boolean;
   isPerformanceCalibrationMember?: boolean;
+  isComplianceUser?: boolean;
   status?: 'active' | 'inactive';
+}
+
+export interface AuthenticatedRequest extends Request {
+  user?: UserProfile;
 }

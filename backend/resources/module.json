@@ -8,5 +8,10 @@
     "moduleName": "PerformanceCalibration",
     "description": "Performance Calibration",
     "enabled": true
+  },
+  {
+    "moduleName": "Compliance",
+    "description": "Compliance Management",
+    "enabled": true
   }
 ]

@@ -60,11 +60,13 @@ const Modules: React.FC = () => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [feedbackCompanyIds, setFeedbackCompanyIds] = useState<string[]>([]);
   const [pmCommitteeCompanyIds, setPmCommitteeCompanyIds] = useState<string[]>([]);
+  const [complianceCompanyIds, setComplianceCompanyIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchCompanies();
     fetchFeedbackCompanies();
     fetchPmCommitteeCompanies();
+    fetchComplianceCompanies();
     const fetchModules = async () => {
       const response = await api.get('/module');
       setModules(
@@ -110,6 +112,17 @@ const Modules: React.FC = () => {
     }
   };
 
+  const fetchComplianceCompanies = async () => {
+    try {
+      const response = await api.get('/module/Compliance/companies');
+      if (response.status === 200) {
+        setComplianceCompanyIds(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching Compliance companies:', error);
+    }
+  };
+
   const toggleModuleExpansion = (moduleId: string) => {
     setModules(modules.map(module =>
       module.id === moduleId
@@ -142,6 +155,17 @@ const Modules: React.FC = () => {
       } catch (error) {
         console.error('Error updating Performance Calibration companies:', error);
       }
+    } else if (moduleId === '3') {
+      const isChecked = complianceCompanyIds.some(fc => fc === companyId);
+      const newComplianceCompanyIds = isChecked ? complianceCompanyIds.filter(fc => fc !== companyId) : [...complianceCompanyIds, companyId];
+      try {
+        const response = await api.post(`/module/Compliance/companies`, { companies: newComplianceCompanyIds });
+        if (response.status === 200) {
+          setComplianceCompanyIds(newComplianceCompanyIds);
+        }
+      } catch (error) {
+        console.error('Error updating Compliance companies:', error);
+      }
     }
   };
 
@@ -152,6 +176,9 @@ const Modules: React.FC = () => {
       }
       case '2': {
         return pmCommitteeCompanyIds.some(pc => pc === companyId)
+      }
+      case '3': {
+        return complianceCompanyIds.some(cc => cc === companyId)
       }
     }
   }
