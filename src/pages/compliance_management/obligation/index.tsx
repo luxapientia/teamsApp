@@ -59,7 +59,6 @@ const ComplianceObligationPage: React.FC = () => {
       // Update
       const res = await api.put(`/compliance-obligations/${editObligation._id}`, {
         ...data,
-        status: editObligation.status || 'Active',
       });
       setObligations(prev => prev.map(ob =>
         ob._id === editObligation._id ? res.data.data : ob
@@ -69,7 +68,6 @@ const ComplianceObligationPage: React.FC = () => {
       // Create
       const res = await api.post('/compliance-obligations', {
         ...data,
-        status: 'Active',
       });
       setObligations(prev => [...prev, res.data.data]);
     }

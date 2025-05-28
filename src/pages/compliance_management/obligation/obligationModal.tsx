@@ -29,7 +29,7 @@ const frequencies = [
   'Every 6 Years', 'Every 7 Years', 'Every 8 Years', 'Every 9 Years', 'Every 10 Years'
 ];
 
-const riskColors: Record<string, string> = {
+export const riskColors: Record<string, string> = {
   High: '#FF4D4F',    // Red
   Medium: '#FFC53D',  // Amber
   Low: '#52C41A'      // Green
@@ -42,6 +42,7 @@ const ObligationModal: React.FC<ObligationModalProps> = ({ open, onClose, onSave
   const [lastDueDate, setLastDueDate] = useState('');
   const [owner, setOwner] = useState('');
   const [riskLevel, setRiskLevel] = useState('');
+  const [status, setStatus] = useState('Active');
 
   useEffect(() => {
     if (open) {
@@ -59,6 +60,7 @@ const ObligationModal: React.FC<ObligationModalProps> = ({ open, onClose, onSave
           : initialData?.owner || ''
       );
       setRiskLevel(initialData?.riskLevel || '');
+      setStatus(initialData?.status || 'Active');
     }
   }, [open, initialData]);
 
@@ -69,7 +71,8 @@ const ObligationModal: React.FC<ObligationModalProps> = ({ open, onClose, onSave
       frequency,
       lastDueDate,
       owner,
-      riskLevel
+      riskLevel,
+      status
     });
   };
 
@@ -79,7 +82,8 @@ const ObligationModal: React.FC<ObligationModalProps> = ({ open, onClose, onSave
     frequency &&
     lastDueDate &&
     owner &&
-    riskLevel;
+    riskLevel &&
+    status;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -157,6 +161,18 @@ const ObligationModal: React.FC<ObligationModalProps> = ({ open, onClose, onSave
                 }} />
                 {level}
               </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={status}
+            onChange={e => setStatus(e.target.value)}
+            label="Status"
+          >
+            {['Active', 'Inactive'].map(s => (
+              <MenuItem key={s} value={s}>{s}</MenuItem>
             ))}
           </Select>
         </FormControl>
