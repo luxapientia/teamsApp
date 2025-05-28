@@ -236,7 +236,7 @@ function Main() {
       element: ComplianceManagement,
       title: "Compliance Management",
       icon: <ShieldCheckmark24Regular fontSize={iconSize} />,
-      tabs: ['Compliance Champions', 'Compliance Areas'],
+      tabs: ['Compliance Champions', 'Compliance Areas', 'Compliance Obligations'],
       show: true
     }
   ];
