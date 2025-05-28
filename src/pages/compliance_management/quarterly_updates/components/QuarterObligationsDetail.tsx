@@ -6,6 +6,18 @@ import ArticleIcon from '@mui/icons-material/Article'; // Icon for comments/atta
 import ComplianceUpdateModal, { FileToUpload } from './ComplianceUpdateModal';
 import CommentsAttachmentsViewModal from './CommentsAttachmentsViewModal'; // Import the new modal
 
+interface Attachment {
+    filename: string;
+    filepath: string;
+}
+
+interface UpdateEntry {
+    year: string;
+    quarter: string;
+    comments?: string;
+    attachments?: Attachment[];
+}
+
 interface Obligation {
     _id: string;
     complianceObligation: string;
@@ -15,9 +27,9 @@ interface Obligation {
     owner: { name: string; }; // Assuming owner is populated
     riskLevel: string;
     status: string;
-    complianceStatus?: 'Completed' | 'Not Completed'; // Add complianceStatus
-    comments?: string;
-    attachments?: { filename: string, filepath: string }[]; // Add attachments
+    tenantId: string; // Added missing field
+    complianceStatus?: 'Completed' | 'Not Completed'; // This is a top-level field
+    update?: UpdateEntry[]; // This is the array of updates
 }
 
 interface QuarterObligationsDetailProps {
@@ -33,7 +45,7 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
     const [updateModalOpen, setUpdateModalOpen] = useState(false);
     const [selectedObligation, setSelectedObligation] = useState<Obligation | null>(null);
     const [commentsAttachmentsModalOpen, setCommentsAttachmentsModalOpen] = useState(false); // State for the new modal
-    const [obligationForView, setObligationForView] = useState<Obligation | null>(null); // State for data in the new modal
+    const [obligationForView, setObligationForView] = useState<Obligation | null>(null); // State for data in the new modal, might only need update data structure
     const [selectedObligations, setSelectedObligations] = useState<string[]>([]); // State for selected obligations
 
     useEffect(() => {
@@ -81,10 +93,10 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                             },
                         });
 
-                        // The backend /upload endpoint should return the final file metadata
-                        // Assuming the backend returns { filename: string, filepath: string }
-                        if (response.status === 200 && response.data && response.data.filename && response.data.filepath) {
-                            return { filename: response.data.filename, filepath: response.data.filepath };
+                        // The backend /upload endpoint should return an object with the file path in a 'data' property
+                        if (response.status === 200 && response.data && typeof response.data.data === 'string') {
+                            // Use original filename and the returned filepath from response.data.data
+                            return { filename: fileData.name, filepath: response.data.data };
                         } else {
                             console.error('File upload failed for:', fileData.name, response);
                             return null; // Handle upload failure
@@ -100,30 +112,65 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
             const successfulUploads = uploadedFiles.filter(fileInfo => fileInfo !== null) as { filename: string, filepath: string }[];
 
             // 2. Combine existing attachments and newly uploaded attachments' info
-            const finalAttachments = [...data.attachments, ...successfulUploads];
+            // Filter out any attachments from the initial data that had temporary blob: URLs
+            // and combine with successfully uploaded files (which have server paths).
+            const existingServerAttachments = data.attachments.filter(att => !att.filepath.startsWith('blob:'));
 
-            // 3. Prepare data for the main obligation update (compliance status, comments, and all attachment metadata)
+            const finalAttachments = [...existingServerAttachments, ...successfulUploads];
+
+            // 3. Prepare data for the main obligation update
             const updatePayload = {
                 complianceStatus: data.complianceStatus,
+                year,
+                quarter,
                 comments: data.comments,
-                attachments: finalAttachments, // Send the array of attachment metadata
+                attachments: finalAttachments, // Send only server paths
             };
 
-            // 4. Send the update payload to the dedicated update endpoint
+            // 4. Send the update payload
             const res = await api.put(`/compliance-obligations/${obligationId}/update`, updatePayload);
 
-            // Update the obligation in the state with the response data
+            // Update the obligation in the state with the response data from the backend
+            // This response data should have the correct server paths for attachments.
             setObligations(prev => prev.map(ob => ob._id === obligationId ? res.data.data : ob));
             handleCloseUpdateModal();
+
+            // Revoke any temporary blob URLs after successful save and state update
+            data.attachments.forEach(att => {
+                if (att.filepath.startsWith('blob:')) {
+                    URL.revokeObjectURL(att.filepath);
+                }
+            });
+
         } catch (error) {
             console.error('Error saving compliance update:', error);
             // Optionally show an error message to the user
+
+             // Also revoke temporary blob URLs on error
+            data.attachments.forEach(att => {
+                if (att.filepath.startsWith('blob:')) {
+                    URL.revokeObjectURL(att.filepath);
+                }
+            });
         }
     };
 
     const handleViewCommentsAttachments = (obligation: Obligation) => {
-        setObligationForView(obligation);
-        setCommentsAttachmentsModalOpen(true);
+         // Find the most recent update for the current quarter to display
+        const latestQuarterUpdate = obligation.update?.find(u => u.year === year.toString() && u.quarter === quarter); // Assuming year is passed as number and stored as string
+        console.log(latestQuarterUpdate, 'here')
+        if (latestQuarterUpdate) {
+            // Pass the specific update entry and obligation ID to the modal
+             setObligationForView(obligation); // Pass the full obligation
+             // The CommentsAttachmentsViewModal will need to find the correct update entry internally
+            setCommentsAttachmentsModalOpen(true);
+        } else {
+             // Handle case where no update exists for the current quarter (e.g., show empty modal or alert)
+            console.log('No update found for this quarter for obligation', obligation._id);
+             // Pass the full obligation, modal should handle empty state if update is not found
+             setObligationForView(obligation);
+             setCommentsAttachmentsModalOpen(true);
+        }
     };
 
     const handleCloseCommentsAttachmentsModal = () => {
@@ -148,14 +195,19 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
 
     const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            const allSelectableObligationIds = obligations.filter(
-                ob => (ob.comments && ob.comments.length > 0) || (ob.attachments && ob.attachments.length > 0) && ob.complianceStatus !== undefined
-            ).map(ob => ob._id);
+            // Select all obligations that have an update for the current quarter with comments or attachments AND a compliance status
+            const allSelectableObligationIds = obligations.filter(ob => {
+                const quarterUpdate = ob.update?.find(u => u.year === year.toString() && u.quarter === quarter);
+                 // Check condition based on the quarter's update
+                const hasCommentsOrAttachmentsForQuarter = quarterUpdate && ((quarterUpdate.comments && quarterUpdate.comments.length > 0) || (quarterUpdate.attachments && quarterUpdate.attachments.length > 0));
+                return hasCommentsOrAttachmentsForQuarter && ob.complianceStatus !== undefined;
+            }).map(ob => ob._id);
             setSelectedObligations(allSelectableObligationIds);
         } else {
             setSelectedObligations([]);
         }
     };
+
 
     if (loading) {
         return <Typography>Loading obligations...</Typography>;
@@ -164,9 +216,12 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
     }
 
     const canSubmit = selectedObligations.length > 0;
-    const selectableObligations = obligations.filter(
-        ob => (ob.comments && ob.comments.length > 0) || (ob.attachments && ob.attachments.length > 0) && ob.complianceStatus !== undefined
-    );
+    // Filter selectable obligations based on having an update for the current quarter with comments/attachments AND compliance status
+    const selectableObligations = obligations.filter(ob => {
+         const quarterUpdate = ob.update?.find(u => u.year === year.toString() && u.quarter === quarter);
+          const hasCommentsOrAttachmentsForQuarter = quarterUpdate && ((quarterUpdate.comments && quarterUpdate.comments.length > 0) || (quarterUpdate.attachments && quarterUpdate.attachments.length > 0));
+         return hasCommentsOrAttachmentsForQuarter && ob.complianceStatus !== undefined;
+    });
     const isAllSelected = selectableObligations.length > 0 && selectedObligations.length === selectableObligations.length;
 
     return (
@@ -234,8 +289,15 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                         </TableHead>
                         <TableBody>
                             {obligations.map(obligation => {
-                                const hasCommentsOrAttachments = (obligation.comments && obligation.comments.length > 0) || (obligation.attachments && obligation.attachments.length > 0);
-                                const canSelect = hasCommentsOrAttachments && obligation.complianceStatus !== undefined; // Checkbox appears if comments/attachments exist AND complianceStatus is set
+                                // Find the update entry for the current quarter
+                                 const quarterUpdate = obligation.update?.find(u => u.year === year.toString() && u.quarter === quarter);
+
+                                // Checkbox appears if an update exists for the current quarter with comments or attachments AND complianceStatus is set
+                                const hasCommentsOrAttachmentsForQuarter = quarterUpdate && ((quarterUpdate.comments && quarterUpdate.comments.length > 0) || (quarterUpdate.attachments && quarterUpdate.attachments.length > 0));
+                                const canSelect = hasCommentsOrAttachmentsForQuarter && obligation.complianceStatus !== undefined;
+
+                                 // Determine if comments/attachments icon should be shown (based on *any* update entry)
+                                const hasAnyCommentsOrAttachments = obligation.update?.some(u => (u.comments && u.comments.length > 0) || (u.attachments && u.attachments.length > 0));
 
                                 return (
                                     <TableRow key={obligation._id} hover>
@@ -268,7 +330,7 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                                             {obligation.complianceStatus || 'N/A'}
                                         </TableCell>
                                         <TableCell align='center'>
-                                             {hasCommentsOrAttachments ? (
+                                             {hasAnyCommentsOrAttachments ? (
                                                 <IconButton size="small" onClick={() => handleViewCommentsAttachments(obligation)}>
                                                      <ArticleIcon fontSize="small" />
                                                 </IconButton>
@@ -293,6 +355,8 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                 onClose={handleCloseUpdateModal}
                 onSave={handleSaveComplianceUpdate}
                 obligation={selectedObligation}
+                year={year}
+                quarter={quarter}
             />
 
             {/* Comments/Attachments View Modal */}
@@ -300,6 +364,8 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                 open={commentsAttachmentsModalOpen}
                 onClose={handleCloseCommentsAttachmentsModal}
                 obligation={obligationForView}
+                year={year}
+                quarter={quarter}
             />
 
         </Box>

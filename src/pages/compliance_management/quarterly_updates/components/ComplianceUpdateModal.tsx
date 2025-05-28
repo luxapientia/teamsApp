@@ -17,7 +17,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { api } from '../../../../services/api';
+import { UpdateEntry } from './CommentsAttachmentsViewModal';
+
+interface Attachment {
+    filename: string;
+    filepath: string;
+}
 
 interface Obligation {
     _id: string;
@@ -29,15 +34,16 @@ interface Obligation {
     riskLevel: string;
     status: string;
     complianceStatus?: 'Completed' | 'Not Completed';
-    comments?: string;
-    attachments?: { filename: string, filepath: string }[];
+    update?: UpdateEntry[];
 }
 
 interface ComplianceUpdateModalProps {
     open: boolean;
     onClose: () => void;
-    onSave: (obligationId: string, data: { complianceStatus: string, comments: string, filesToUpload: FileToUpload[], attachments: { filename: string, filepath: string }[] }) => void;
+    onSave: (obligationId: string, data: { complianceStatus: string, comments: string, filesToUpload: FileToUpload[], attachments: { filename: string, filepath: string }[], year: number, quarter: string }) => void;
     obligation: Obligation | null;
+    year: number;
+    quarter: string;
 }
 
 export interface FileToUpload {
@@ -45,20 +51,23 @@ export interface FileToUpload {
     name: string;
 }
 
-const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onClose, onSave, obligation }) => {
+const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onClose, onSave, obligation, year, quarter }) => {
     const [complianceStatus, setComplianceStatus] = useState('Not Completed');
     const [comments, setComments] = useState('');
-    const [attachments, setAttachments] = useState<{ filename: string, filepath: string }[]>([]);
+    const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [filesToUpload, setFilesToUpload] = useState<FileToUpload[]>([]);
+
+    // Find the relevant update entry for the current year and quarter
+    const currentQuarterUpdate = obligation?.update?.find(u => u.year === year.toString() && u.quarter === quarter);
 
     useEffect(() => {
         if (open && obligation) {
             setComplianceStatus(obligation.complianceStatus || 'Not Completed');
-            setComments(obligation.comments || '');
-            setAttachments(obligation.attachments || []);
+            setComments(currentQuarterUpdate?.comments || '');
+            setAttachments(currentQuarterUpdate?.attachments || []);
             setFilesToUpload([]);
         }
-    }, [open, obligation]);
+    }, [open, obligation, currentQuarterUpdate]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -83,11 +92,36 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
         }
     };
 
-    const handleSave = () => {
-        if (obligation) {
-            onSave(obligation._id, { complianceStatus, comments, filesToUpload, attachments });
+    const handleDeleteAttachment = (filepathToDelete: string) => {
+        const updatedAttachments = attachments.filter(att => att.filepath !== filepathToDelete);
+        setAttachments(updatedAttachments);
+
+        if (filepathToDelete.startsWith('blob:')) {
+            URL.revokeObjectURL(filepathToDelete);
         }
     };
+
+    const handleSave = () => {
+        if (obligation) {
+            onSave(obligation._id, { complianceStatus, comments, filesToUpload, attachments, year, quarter });
+        }
+    };
+
+    useEffect(() => {
+        if (!open) {
+            filesToUpload.forEach(fileData => {
+                 const attachment = attachments.find(att => att.filename === fileData.name && att.filepath.startsWith('blob:'));
+                 if(attachment) {
+                     URL.revokeObjectURL(attachment.filepath);
+                 }
+            });
+             attachments.forEach(att => {
+                 if (att.filepath.startsWith('blob:')) {
+                     URL.revokeObjectURL(att.filepath);
+                 }
+             });
+        }
+    }, [open, filesToUpload, attachments]);
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -167,8 +201,9 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
                                     >
                                         <InsertDriveFileIcon sx={{ fontSize: 48, color: '#6B7280' }} />
                                     </Box>
-                                    <Box sx={{ p: 2 }}>
+                                    <Box sx={{ p: 1, textAlign: 'center' }}>
                                         <Typography
+                                            variant="body2"
                                             sx={{
                                                 color: '#374151',
                                                 overflow: 'hidden',
@@ -178,26 +213,38 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
                                         >
                                             {attachment.filename}
                                         </Typography>
+                                        {!attachment.filepath.startsWith('blob:') && (
+                                            <a
+                                                 href={`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}${attachment.filepath}`}
+                                                 target="_blank"
+                                                 rel="noopener noreferrer"
+                                                 download
+                                                 style={{
+                                                     fontSize: '0.75rem',
+                                                     color: '#2563EB',
+                                                     textDecoration: 'none'
+                                                 }}
+                                            >
+                                                 Download
+                                            </a>
+                                         )}
                                     </Box>
                                     <IconButton
                                         className="delete-button"
                                         size="small"
                                         sx={{
                                             position: 'absolute',
-                                            top: 8,
-                                            right: 8,
+                                            top: 4,
+                                            right: 4,
                                             color: '#DC2626',
-                                            backgroundColor: 'white',
+                                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
                                             opacity: 0,
                                             transition: 'opacity 0.2s',
                                             '&:hover': {
                                                 backgroundColor: '#FEE2E2',
                                             }
                                         }}
-                                        onClick={() => {
-                                            const newAttachments = attachments.filter((_, i) => i !== index);
-                                            setAttachments(newAttachments);
-                                        }}
+                                        onClick={() => handleDeleteAttachment(attachment.filepath)}
                                     >
                                         <DeleteIcon fontSize="small" />
                                     </IconButton>
@@ -211,6 +258,7 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
                         multiple
                         style={{ display: 'none' }}
                         onChange={handleFileChange}
+                        onClick={(event) => { (event.target as HTMLInputElement).value = ''; }}
                     />
                     <label htmlFor="file-upload">
                         <Button
@@ -220,6 +268,7 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
                             sx={{
                                 color: '#6B7280',
                                 borderColor: '#E5E7EB',
+                                textTransform: 'none',
                                 '&:hover': {
                                     borderColor: '#D1D5DB',
                                     backgroundColor: '#F9FAFB',

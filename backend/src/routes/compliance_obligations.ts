@@ -103,14 +103,20 @@ router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res: Res
 // Update an obligation
 router.put('/:id/update', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { complianceStatus, comments, attachments } = req.body;
-    console.log(attachments, 'attachments')
+    const { complianceStatus, comments, attachments, year, quarter } = req.body;
+
     const obligation = await Obligation.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.user?.tenantId },
       {
-        complianceStatus,
-        comments,
-        attachments: attachments // <-- Fix: Use the entire attachments array
+        complianceStatus, // Keep complianceStatus as a top-level field
+        $push: { // Use $push to add a new object to the update array
+          update: {
+            year,
+            quarter,
+            comments,
+            attachments: attachments // This should now be an array of attachment objects {filename, filepath}
+          }
+        }
       },
       { new: true }
     ).populate('complianceArea').populate('owner');
@@ -120,6 +126,7 @@ router.put('/:id/update', authenticateToken, async (req: AuthenticatedRequest, r
     }
     return res.json({ data: obligation });
   } catch (error) {
+    console.error('Error updating obligation with new update:', error);
     return res.status(400).json({ message: 'Error updating obligation' });
   }
 });
@@ -148,6 +155,7 @@ router.post('/upload', authenticateToken, upload.single('file'), async (req: Aut
 
     // Return the URL for accessing the file
     const fileUrl = `/uploads/${req.file.filename}`;
+    console.log(fileUrl, 'url')
     return res.json(fileUrl);
 
   } catch (error) {

@@ -9,17 +9,30 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 
-interface Obligation {
+interface Attachment {
+    filename: string;
+    filepath: string;
+}
+
+export interface UpdateEntry {
+    year: string;
+    quarter: string;
+    comments?: string;
+    attachments?: Attachment[];
+}
+
+export interface Obligation {
     _id: string;
     complianceObligation: string;
-    comments?: string;
-    attachments?: { filename: string, filepath: string }[];
+    update?: UpdateEntry[]; // Obligation now has an update array
 }
 
 interface CommentsAttachmentsViewModalProps {
     open: boolean;
     onClose: () => void;
-    obligation: Obligation | null;
+    obligation: Obligation | null; // Still pass the full obligation
+    year: number; // Add year and quarter props to find the correct update
+    quarter: string;
 }
 
 const FileLink = styled('a')({
@@ -34,7 +47,13 @@ const FileLink = styled('a')({
     },
 });
 
-const CommentsAttachmentsViewModal: React.FC<CommentsAttachmentsViewModalProps> = ({ open, onClose, obligation }) => {
+const CommentsAttachmentsViewModal: React.FC<CommentsAttachmentsViewModalProps> = ({ open, onClose, obligation, year, quarter }) => {
+    // Find the relevant update entry for the current year and quarter
+    const currentQuarterUpdate = obligation?.update?.find(u => u.year === year.toString() && u.quarter === quarter);
+
+    const comments = currentQuarterUpdate?.comments;
+    const attachments = currentQuarterUpdate?.attachments;
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <Box sx={{ p: 3 }}>
@@ -52,14 +71,14 @@ const CommentsAttachmentsViewModal: React.FC<CommentsAttachmentsViewModalProps> 
                             whiteSpace: 'pre-wrap'
                         }}
                     >
-                        {obligation?.comments || 'No comments provided.'}
+                        {comments || 'No comments provided.'} {/* Use comments from the update entry */}
                     </Typography>
                 </Box>
 
-                {obligation?.attachments && obligation.attachments.length > 0 && (
+                {attachments && attachments.length > 0 && (
                     <Box>
                         <Typography variant="subtitle2" sx={{ color: '#374151', mb: 2 }}>Attachments</Typography>
-                        {obligation.attachments.map((attachment, index) => (
+                        {attachments.map((attachment, index) => (
                             <Box
                                 key={index}
                                 sx={{
@@ -86,6 +105,7 @@ const CommentsAttachmentsViewModal: React.FC<CommentsAttachmentsViewModalProps> 
                                         href={`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/${attachment.filepath}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        download // Add download attribute
                                     >
                                         Download attachment
                                     </FileLink>
