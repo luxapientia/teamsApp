@@ -9,6 +9,12 @@ export interface ObligationDocument extends Document {
   riskLevel: string;
   status: string;
   tenantId: string;
+  complianceStatus: 'Completed' | 'Not Completed';
+  comments: string;
+  attachments: {
+    filename: string;
+    filepath: string;
+  }[];
 }
 
 const obligationSchema = new Schema<ObligationDocument>({
@@ -20,6 +26,15 @@ const obligationSchema = new Schema<ObligationDocument>({
   riskLevel: { type: String, required: true },
   status: { type: String, required: true, default: 'Active' },
   tenantId: { type: String, required: true },
+  complianceStatus: { type: String, required: true, enum: ['Completed', 'Not Completed'], default: 'Not Completed' },
+  comments: { type: String, required: false, default: '' },
+  attachments: {
+    type: [{
+      filename: String,
+      filepath: String
+    }],
+    default: []
+  }
 }, {
   timestamps: true,
 });

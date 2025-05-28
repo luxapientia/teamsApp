@@ -185,7 +185,7 @@ function Main() {
       path: "/feedback/*",
       element: Feedback,
       title: "Employee 360 Degree Feedback",
-      icon: <PersonFeedback24Regular  fontSize={iconSize} />,
+      icon: <PersonFeedback24Regular fontSize={iconSize} />,
       tabs: ['feedback'],
       show: (isAppOwner || isSuperUser) && isFeedbackModuleEnabled
     },
@@ -236,7 +236,7 @@ function Main() {
       element: ComplianceManagement,
       title: "Compliance Management",
       icon: <ShieldCheckmark24Regular fontSize={iconSize} />,
-      tabs: ['Compliance Champions', 'Compliance Areas', 'Compliance Obligations', 'Compliance Setting'],
+      tabs: ['Compliance Champions', 'Compliance Areas', 'Compliance Obligations', 'Compliance Setting', 'Quarterly Compliance Updates', 'Compliance Reviews'],
       show: true
     }
   ];
