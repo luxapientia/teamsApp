@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Button, TableContainer, Paper, Table, TableHead, TableRow, TableBody, TableCell, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, FormControl, InputLabel, TextField } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { api } from '../../../services/api';
+import AnnualComplianceDetailView from './AnnualComplianceDetailView';
 
 const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + 1 - i);
 const months = [
@@ -54,36 +55,46 @@ const ComplianceSettingPage: React.FC = () => {
     const handleAddOrEdit = async () => {
         if (editSetting) {
             // Update
-            const res = await api.put(`/compliance-settings/${editSetting.id}`, {
-                year: newYear,
-                firstMonth: newMonth,
-                quarters: editSetting.quarters,
-            });
-            setSettings(prev => prev.map(s =>
-                s.id === editSetting.id ? {
-                    id: res.data.data._id,
-                    year: res.data.data.year,
-                    firstMonth: res.data.data.firstMonth,
-                    quarters: res.data.data.quarters,
-                } : s
-            ));
-            setEditSetting(null);
+            try {
+                const res = await api.put(`/compliance-settings/${editSetting.id}`, {
+                    year: newYear,
+                    firstMonth: newMonth,
+                    quarters: editSetting.quarters,
+                });
+                setSettings(prev => prev.map(s =>
+                    s.id === editSetting.id ? {
+                        id: res.data.data._id,
+                        year: res.data.data.year,
+                        firstMonth: res.data.data.firstMonth,
+                        quarters: res.data.data.quarters,
+                    } : s
+                ));
+                setEditSetting(null);
+            } catch (error) {
+                console.error('Error updating compliance setting:', error);
+                // Optionally show an error message to the user
+            }
         } else {
             // Create
-            const res = await api.post('/compliance-settings', {
-                year: newYear,
-                firstMonth: newMonth,
-                quarters: initialQuarters(newYear),
-            });
-            setSettings(prev => [
-                {
-                    id: res.data.data._id,
-                    year: res.data.data.year,
-                    firstMonth: res.data.data.firstMonth,
-                    quarters: res.data.data.quarters,
-                },
-                ...prev,
-            ]);
+            try {
+                const res = await api.post('/compliance-settings', {
+                    year: newYear,
+                    firstMonth: newMonth,
+                    quarters: initialQuarters(newYear),
+                });
+                setSettings(prev => [
+                    {
+                        id: res.data.data._id,
+                        year: res.data.data.year,
+                        firstMonth: res.data.data.firstMonth,
+                        quarters: res.data.data.quarters,
+                    },
+                    ...prev,
+                ]);
+            } catch (error) {
+                console.error('Error creating compliance setting:', error);
+                // Optionally show an error message to the user
+            }
         }
         setModalOpen(false);
     };
@@ -103,8 +114,13 @@ const ComplianceSettingPage: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        await api.delete(`/compliance-settings/${id}`);
-        setSettings(prev => prev.filter(s => s.id !== id));
+        try {
+            await api.delete(`/compliance-settings/${id}`);
+            setSettings(prev => prev.filter(s => s.id !== id));
+        } catch (error) {
+            console.error('Error deleting compliance setting:', error);
+            // Optionally show an error message to the user
+        }
     };
 
     const handleCloseModal = () => {
@@ -119,40 +135,65 @@ const ComplianceSettingPage: React.FC = () => {
         setEditEnd(q.end);
         setQuarterModalOpen(true);
     };
-    const handleSaveQuarter = async () => {
-        if (!viewId || !editQuarter) return;
+    const handleSaveQuarter = async (quarter: Quarter, start: string, end: string) => {
+        if (!viewId) return;
         const setting = settings.find(s => s.id === viewId);
         if (!setting) return;
         const updatedQuarters = setting.quarters.map(q =>
-            q.quarter === editQuarter.quarter ? { ...q, start: editStart, end: editEnd } : q
+            q.quarter === quarter.quarter ? { ...q, start, end } : q
         );
-        const res = await api.put(`/compliance-settings/${setting.id}`, {
-            year: setting.year,
-            firstMonth: setting.firstMonth,
-            quarters: updatedQuarters,
-        });
-        setSettings(prev => prev.map(s =>
-            s.id === setting.id ? {
-                id: res.data.data._id,
-                year: res.data.data.year,
-                firstMonth: res.data.data.firstMonth,
-                quarters: res.data.data.quarters,
-            } : s
-        ));
-        setQuarterModalOpen(false);
-        setEditQuarter(null);
+        try {
+            const res = await api.put(`/compliance-settings/${setting.id}`, {
+                year: setting.year,
+                firstMonth: setting.firstMonth,
+                quarters: updatedQuarters,
+            });
+            setSettings(prev => prev.map(s =>
+                s.id === setting.id ? {
+                    id: res.data.data._id,
+                    year: res.data.data.year,
+                    firstMonth: res.data.data.firstMonth,
+                    quarters: res.data.data.quarters,
+                } : s
+            ));
+        } catch (error) {
+            console.error('Error updating quarter dates:', error);
+            // Optionally show an error message to the user
+        }
     };
     const handleCancelQuarter = () => {
         setQuarterModalOpen(false);
         setEditQuarter(null);
     };
 
+    // State and handlers for detail view using viewId
+    const handleViewDetail = (id: string) => {
+        setViewId(id);
+    };
+
+    const handleBackFromDetail = () => {
+        setViewId(null);
+        // Reset quarter modal state as well when going back from detail view
+        setEditQuarter(null);
+        setQuarterModalOpen(false);
+    };
+
     const selectedSetting = settings.find(s => s.id === viewId);
     const quarters = selectedSetting?.quarters || [];
 
+    if (viewId && selectedSetting) {
+        return (
+            <AnnualComplianceDetailView
+                quarters={quarters}
+                onBack={handleBackFromDetail}
+                onEditQuarter={handleSaveQuarter}
+            />
+        );
+    }
+
     return (
         <Box>
-            {!viewId ? (
+            {!viewId && (
                 <>
                     <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
                         <Button
@@ -231,76 +272,6 @@ const ComplianceSettingPage: React.FC = () => {
                         </Table>
                     </TableContainer>
                 </>
-            ) : (
-                <Box>
-                    <Button
-                        variant="outlined"
-                        onClick={() => setViewId(null)}
-                        sx={{
-                            textTransform: 'none',
-                            borderColor: '#DC2626',
-                            color: '#DC2626',
-                            mb: 2,
-                            '&:hover': {
-                                borderColor: '#B91C1C',
-                                backgroundColor: 'rgba(220, 38, 38, 0.04)',
-                            }
-                        }}
-                    >
-                        Back
-                    </Button>
-                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 1, border: '1px solid #E5E7EB', overflowX: 'auto' }}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Quarter</TableCell>
-                                    <TableCell>Start Date</TableCell>
-                                    <TableCell>End Date</TableCell>
-                                    <TableCell>Actions</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {quarters.map(q => (
-                                    <TableRow key={q.quarter} hover>
-                                        <TableCell>{q.quarter}</TableCell>
-                                        <TableCell>{q.start}</TableCell>
-                                        <TableCell>{q.end}</TableCell>
-                                        <TableCell>
-                                            <IconButton color="primary" size="small" onClick={() => handleEditQuarter(q)}>
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                    <Dialog open={quarterModalOpen} onClose={handleCancelQuarter} maxWidth="xs" fullWidth>
-                        <DialogTitle>Edit Quarter Dates</DialogTitle>
-                        <DialogContent>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                                <TextField
-                                    label="Start Date"
-                                    type="date"
-                                    value={editStart}
-                                    onChange={e => setEditStart(e.target.value)}
-                                    InputLabelProps={{ shrink: true }}
-                                />
-                                <TextField
-                                    label="End Date"
-                                    type="date"
-                                    value={editEnd}
-                                    onChange={e => setEditEnd(e.target.value)}
-                                    InputLabelProps={{ shrink: true }}
-                                />
-                            </Box>
-                        </DialogContent>
-                        <DialogActions>
-                            <Button onClick={handleCancelQuarter}>Cancel</Button>
-                            <Button onClick={handleSaveQuarter} variant="contained">Save</Button>
-                        </DialogActions>
-                    </Dialog>
-                </Box>
             )}
         </Box>
     );
