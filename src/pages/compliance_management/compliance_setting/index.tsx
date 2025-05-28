@@ -201,8 +201,8 @@ const ComplianceSettingPage: React.FC = () => {
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Year</TableCell>
-                                    <TableCell>Financial Year 1st Month</TableCell>
-                                    <TableCell>Actions</TableCell>
+                                    <TableCell align='center'>Financial Year 1st Month</TableCell>
+                                    <TableCell align='center'>Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -211,9 +211,9 @@ const ComplianceSettingPage: React.FC = () => {
                                     .map(row => (
                                         <TableRow key={row.id} hover>
                                             <TableCell>{row.year}</TableCell>
-                                            <TableCell>{row.firstMonth}</TableCell>
-                                            <TableCell>
-                                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                            <TableCell align='center'>{row.firstMonth}</TableCell>
+                                            <TableCell align="center">
+                                                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
                                                     <Button variant="outlined" onClick={() => setViewId(row.id)}>
                                                         VIEW
                                                     </Button>
