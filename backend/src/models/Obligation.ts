@@ -8,6 +8,7 @@ export interface ObligationDocument extends Document {
   owner: Schema.Types.ObjectId; // team _id
   riskLevel: string;
   status: string;
+  tenantId: string;
 }
 
 const obligationSchema = new Schema<ObligationDocument>({
@@ -18,6 +19,7 @@ const obligationSchema = new Schema<ObligationDocument>({
   owner: { type: Schema.Types.ObjectId, ref: 'Team', required: true },
   riskLevel: { type: String, required: true },
   status: { type: String, required: true, default: 'Active' },
+  tenantId: { type: String, required: true },
 }, {
   timestamps: true,
 });

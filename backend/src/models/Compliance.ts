@@ -4,6 +4,7 @@ export interface ComplianceAreaDocument extends Document {
     _id: string;
     areaName: string;
     description: string;
+    tenantId: string;
 }
 
 const complianceAreaSchema = new Schema<ComplianceAreaDocument>({
@@ -15,6 +16,10 @@ const complianceAreaSchema = new Schema<ComplianceAreaDocument>({
         type: String,
         required: true,
     },
+    tenantId: {
+        type: String,
+        required: true,
+    }
 }, {
     timestamps: true,
 });
