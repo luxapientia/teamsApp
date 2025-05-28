@@ -26,7 +26,8 @@ import { checkFeedbackMail } from './services/feedbackService';
 import performanceCalibrationRoutes from './routes/performance_calibration';
 import complianceChampionRoutes from './routes/compliance_champions';
 import complianceAreaRoutes from './routes/compliance_area';
-import complianceObligationRoutes from './routes/obligation';
+import complianceObligationRoutes from './routes/compliance_obligations';
+import complianceSettingRoutes from './routes/compliance_setting';
 // import { applySecurityMiddleware } from './middleware/security';
 
 const app = express();
@@ -74,6 +75,7 @@ app.use('/api/feedback', authenticateToken, checkLicenseStatus, feedbackRoutes);
 app.use('/api/module', authenticateToken, checkLicenseStatus, moduleRoutes);
 app.use('/api/submit-feedback', submitFeedbackRoutes);
 app.use('/api/users/performance-calibration', performanceCalibrationRoutes);
+app.use('/api/compliance-settings', authenticateToken, checkLicenseStatus, complianceSettingRoutes);
 
 // Connect to MongoDB
 mongoose.connect(config.mongoUri)
