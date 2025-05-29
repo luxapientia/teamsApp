@@ -34,7 +34,7 @@ interface Obligation {
     owner: { name: string; };
     riskLevel: string;
     status: string;
-    complianceStatus?: 'Completed' | 'Not Completed';
+    complianceStatus?: 'Compliant' | 'Not Compliant';
     update?: UpdateEntry[];
 }
 
@@ -53,7 +53,7 @@ export interface FileToUpload {
 }
 
 const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onClose, onSave, obligation, year, quarter }) => {
-    const [complianceStatus, setComplianceStatus] = useState('Not Completed');
+    const [complianceStatus, setComplianceStatus] = useState('Not Compliant');
     const [comments, setComments] = useState('');
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [filesToUpload, setFilesToUpload] = useState<FileToUpload[]>([]);
@@ -68,7 +68,7 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
 
     useEffect(() => {
         if (open && obligation) {
-            setComplianceStatus(obligation.complianceStatus || 'Not Completed');
+            setComplianceStatus(obligation.complianceStatus || 'Not Compliant');
             setComments(currentQuarterUpdate?.comments || '');
             setAttachments(currentQuarterUpdate?.attachments || []);
             setFilesToUpload([]);
@@ -187,13 +187,13 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
                     <Select
                         value={complianceStatus}
                         onChange={e => {
-                            setComplianceStatus(e.target.value as 'Completed' | 'Not Completed');
+                            setComplianceStatus(e.target.value as 'Compliant' | 'Not Compliant');
                             setErrors(prev => ({ ...prev, complianceStatus: undefined }));
                         }}
                         label="Compliance Status"
                         size="small"
                     >
-                        {['Completed', 'Not Completed'].map(statusOption => (
+                        {['Compliant', 'Not Compliant'].map(statusOption => (
                             <MenuItem key={statusOption} value={statusOption}>{statusOption}</MenuItem>
                         ))}
                     </Select>

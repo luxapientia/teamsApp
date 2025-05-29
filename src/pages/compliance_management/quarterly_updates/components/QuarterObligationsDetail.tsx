@@ -378,7 +378,7 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                                                 {obligation.riskLevel}
                                             </Box>
                                         </TableCell>
-                                        <TableCell sx={{ color: obligation.complianceStatus === 'Completed' ? 'green' : (obligation.complianceStatus === 'Not Completed' ? 'red' : 'inherit') }}>
+                                        <TableCell sx={{ color: obligation.complianceStatus === 'Compliant' ? 'green' : (obligation.complianceStatus === 'Not Compliant' ? 'red' : 'inherit') }}>
                                             {obligation.complianceStatus || 'N/A'}
                                         </TableCell>
                                         <TableCell align='center'>

@@ -27,6 +27,6 @@ export interface Obligation {
     riskLevel: string;
     status: string;
     tenantId: string;
-    complianceStatus?: 'Completed' | 'Not Completed';
+    complianceStatus?: 'Compliant' | 'Not Compliant';
     update?: UpdateEntry[];
 } 
