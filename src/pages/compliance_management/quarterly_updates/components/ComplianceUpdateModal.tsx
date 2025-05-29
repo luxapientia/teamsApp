@@ -12,6 +12,7 @@ import {
     Typography,
     IconButton,
     Grid,
+    FormHelperText,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -56,6 +57,11 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
     const [comments, setComments] = useState('');
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [filesToUpload, setFilesToUpload] = useState<FileToUpload[]>([]);
+    const [errors, setErrors] = useState<{
+        complianceStatus?: string;
+        comments?: string;
+        files?: string;
+    }>({});
 
     // Find the relevant update entry for the current year and quarter
     const currentQuarterUpdate = obligation?.update?.find(u => u.year === year.toString() && u.quarter === quarter);
@@ -66,8 +72,29 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
             setComments(currentQuarterUpdate?.comments || '');
             setAttachments(currentQuarterUpdate?.attachments || []);
             setFilesToUpload([]);
+            setErrors({}); // Reset errors when modal opens
         }
     }, [open, obligation, currentQuarterUpdate]);
+
+    const validateForm = () => {
+        const newErrors: {
+            complianceStatus?: string;
+            comments?: string;
+        } = {};
+
+        if (!complianceStatus) {
+            newErrors.complianceStatus = 'Compliance status is required';
+        }
+
+        if (!comments.trim()) {
+            newErrors.comments = 'Comments are required';
+        } else if (comments.length > 1000) {
+            newErrors.comments = 'Comments cannot exceed 1000 characters';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -77,6 +104,14 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
 
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
+                // Check file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    setErrors(prev => ({
+                        ...prev,
+                        files: 'File size should not exceed 10MB'
+                    }));
+                    continue;
+                }
                 newFiles.push({
                     file,
                     name: file.name
@@ -102,7 +137,7 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
     };
 
     const handleSave = () => {
-        if (obligation) {
+        if (validateForm() && obligation) {
             onSave(obligation._id, { complianceStatus, comments, filesToUpload, attachments, year, quarter });
         }
     };
@@ -110,16 +145,16 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
     useEffect(() => {
         if (!open) {
             filesToUpload.forEach(fileData => {
-                 const attachment = attachments.find(att => att.filename === fileData.name && att.filepath.startsWith('blob:'));
-                 if(attachment) {
-                     URL.revokeObjectURL(attachment.filepath);
-                 }
+                const attachment = attachments.find(att => att.filename === fileData.name && att.filepath.startsWith('blob:'));
+                if (attachment) {
+                    URL.revokeObjectURL(attachment.filepath);
+                }
             });
-             attachments.forEach(att => {
-                 if (att.filepath.startsWith('blob:')) {
-                     URL.revokeObjectURL(att.filepath);
-                 }
-             });
+            attachments.forEach(att => {
+                if (att.filepath.startsWith('blob:')) {
+                    URL.revokeObjectURL(att.filepath);
+                }
+            });
         }
     }, [open, filesToUpload, attachments]);
 
@@ -137,16 +172,24 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
                     <Typography variant="subtitle1" gutterBottom sx={{ color: '#4B5563' }}>Obligation: {obligation?.complianceObligation}</Typography>
                 </Box>
 
-                <FormControl fullWidth margin="normal" sx={{
-                    backgroundColor: '#F9FAFB',
-                    '& .MuiOutlinedInput-root': {
-                        '& fieldset': { borderColor: '#E5E7EB' },
-                    }
-                }}>
+                <FormControl
+                    fullWidth
+                    margin="normal"
+                    error={!!errors.complianceStatus}
+                    sx={{
+                        backgroundColor: '#F9FAFB',
+                        '& .MuiOutlinedInput-root': {
+                            '& fieldset': { borderColor: errors.complianceStatus ? '#DC2626' : '#E5E7EB' },
+                        }
+                    }}
+                >
                     <InputLabel>Compliance Status</InputLabel>
                     <Select
                         value={complianceStatus}
-                        onChange={e => setComplianceStatus(e.target.value as 'Completed' | 'Not Completed')}
+                        onChange={e => {
+                            setComplianceStatus(e.target.value as 'Completed' | 'Not Completed');
+                            setErrors(prev => ({ ...prev, complianceStatus: undefined }));
+                        }}
                         label="Compliance Status"
                         size="small"
                     >
@@ -154,27 +197,40 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
                             <MenuItem key={statusOption} value={statusOption}>{statusOption}</MenuItem>
                         ))}
                     </Select>
+                    {errors.complianceStatus && (
+                        <FormHelperText>{errors.complianceStatus}</FormHelperText>
+                    )}
                 </FormControl>
 
                 <TextField
                     label="Comments"
                     value={comments}
-                    onChange={e => setComments(e.target.value)}
+                    onChange={e => {
+                        setComments(e.target.value);
+                        setErrors(prev => ({ ...prev, comments: undefined }));
+                    }}
                     fullWidth
                     margin="normal"
                     multiline
                     rows={4}
                     variant="outlined"
+                    error={!!errors.comments}
+                    helperText={errors.comments}
                     sx={{
                         backgroundColor: '#F9FAFB',
                         '& .MuiOutlinedInput-root': {
-                            '& fieldset': { borderColor: '#E5E7EB' },
+                            '& fieldset': { borderColor: errors.comments ? '#DC2626' : '#E5E7EB' },
                         }
                     }}
                 />
 
                 <Box sx={{ mt: 2 }}>
                     <Typography variant="subtitle2" sx={{ color: '#374151', mb: 2 }}>Attachments</Typography>
+                    {errors.files && (
+                        <Typography color="error" variant="caption" sx={{ mb: 1, display: 'block' }}>
+                            {errors.files}
+                        </Typography>
+                    )}
                     <Grid container spacing={2} sx={{ mb: 2 }}>
                         {attachments.map((attachment, index) => (
                             <Grid key={index} component="div" sx={{ mb: 1 }} >
@@ -215,19 +271,19 @@ const ComplianceUpdateModal: React.FC<ComplianceUpdateModalProps> = ({ open, onC
                                         </Typography>
                                         {!attachment.filepath.startsWith('blob:') && (
                                             <a
-                                                 href={`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}${attachment.filepath}`}
-                                                 target="_blank"
-                                                 rel="noopener noreferrer"
-                                                 download
-                                                 style={{
-                                                     fontSize: '0.75rem',
-                                                     color: '#2563EB',
-                                                     textDecoration: 'none'
-                                                 }}
+                                                href={`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}${attachment.filepath}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                download
+                                                style={{
+                                                    fontSize: '0.75rem',
+                                                    color: '#2563EB',
+                                                    textDecoration: 'none'
+                                                }}
                                             >
-                                                 Download
+                                                Download
                                             </a>
-                                         )}
+                                        )}
                                     </Box>
                                     <IconButton
                                         className="delete-button"

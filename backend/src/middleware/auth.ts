@@ -39,6 +39,8 @@ export const authenticateToken = async (
     isDevMember: user.isDevMember,
     isPerformanceCalibrationMember: user.isPerformanceCalibrationMember,
     isTeamOwner: await roleService.isTeamOwner(user?.teamId?.toString() || null, user.MicrosoftId),
+    isComplianceSuperUser: user.isComplianceSuperUser,
+    isComplianceChampion: user.isComplianceChampion,
     status: user.status || 'inactive'
   }
   req.user = duser as UserProfile;

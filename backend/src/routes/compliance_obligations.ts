@@ -40,10 +40,17 @@ const upload = multer({ storage });
 // Get all obligations for the tenant
 router.get('/', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const obligations = await Obligation.find({ tenantId: req.user?.tenantId })
-      .populate('complianceArea')
-      .populate('owner');
-    return res.json({ data: obligations });
+    if (req.user?.isComplianceSuperUser) {
+      const obligations = await Obligation.find({ tenantId: req.user?.tenantId })
+        .populate('complianceArea')
+        .populate('owner');
+      return res.json({ data: obligations });
+    } else {
+      const obligations = await Obligation.find({ tenantId: req.user?.tenantId, owner: req.user?.teamId })
+        .populate('complianceArea')
+        .populate('owner');
+      return res.json({ data: obligations });
+    }
   } catch (error) {
     return res.status(500).json({ message: 'Error fetching obligations' });
   }
@@ -105,27 +112,57 @@ router.put('/:id/update', authenticateToken, async (req: AuthenticatedRequest, r
   try {
     const { complianceStatus, comments, attachments, year, quarter } = req.body;
 
-    const obligation = await Obligation.findOneAndUpdate(
-      { _id: req.params.id, tenantId: req.user?.tenantId },
-      {
-        complianceStatus, // Keep complianceStatus as a top-level field
-        $push: { // Use $push to add a new object to the update array
-          update: {
-            year,
-            quarter,
-            comments,
-            assessmentStatus: 'Draft',
-            attachments: attachments // This should now be an array of attachment objects {filename, filepath}
-          }
-        }
-      },
-      { new: true }
-    ).populate('complianceArea').populate('owner');
+    // First check if an update entry exists for this year and quarter
+    const obligation = await Obligation.findOne({
+      _id: req.params.id,
+      tenantId: req.user?.tenantId,
+      'update.year': year,
+      'update.quarter': quarter
+    });
 
-    if (!obligation) {
+    let result;
+    if (obligation) {
+      // Update existing entry
+      result = await Obligation.findOneAndUpdate(
+        { 
+          _id: req.params.id, 
+          tenantId: req.user?.tenantId,
+          'update.year': year,
+          'update.quarter': quarter
+        },
+        {
+          $set: {
+            complianceStatus,
+            'update.$.comments': comments,
+            'update.$.attachments': attachments
+          }
+        },
+        { new: true }
+      ).populate('complianceArea').populate('owner');
+    } else {
+      // Add new entry
+      result = await Obligation.findOneAndUpdate(
+        { _id: req.params.id, tenantId: req.user?.tenantId },
+        {
+          $set: { complianceStatus },
+          $push: {
+            update: {
+              year,
+              quarter,
+              comments,
+              assessmentStatus: 'Draft',
+              attachments
+            }
+          }
+        },
+        { new: true }
+      ).populate('complianceArea').populate('owner');
+    }
+
+    if (!result) {
       return res.status(404).json({ message: 'Obligation not found' });
     }
-    return res.json({ data: obligation });
+    return res.json({ data: result });
   } catch (error) {
     console.error('Error updating obligation with new update:', error);
     return res.status(400).json({ message: 'Error updating obligation' });

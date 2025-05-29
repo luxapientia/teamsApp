@@ -82,7 +82,7 @@ const ComplianceUser: React.FC = () => {
                 showToast('You cannot remove yourself from compliance users', 'error');
                 return;
             }
-            const response = await api.delete(`/compliance-users/by-email/${email}`);
+            const response = await api.delete(`/compliance-users/tenant/by-email/${email}`);
             if (response.status === 200) {
                 showToast('Compliance user removed successfully', 'success');
                 fetchComplianceUsers();

@@ -46,6 +46,8 @@ export interface UserProfile {
   isPerformanceCalibrationMember: boolean;
   isTeamOwner: boolean;
   teamId?: string;
+  isComplianceSuperUser?: boolean;
+  isComplianceChampion?: boolean;
 }
 
 // API Response types

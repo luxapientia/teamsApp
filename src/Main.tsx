@@ -45,6 +45,7 @@ function Main() {
   const dispatch = useAppDispatch();
   const [isFeedbackModuleEnabled, setIsFeedbackModuleEnabled] = useState(false);
   const [isPerformanceCalibrationModuleEnabled, setIsPerformanceCalibrationModuleEnabled] = useState(false);
+  const [isComplianceModuleEnabled, setIsComplianceModuleEnabled] = useState(false);
 
   // Add socket subscription
   const { subscribe, unsubscribe } = useSocket(SocketEvent.NOTIFICATION, (data) => {
@@ -76,6 +77,14 @@ function Main() {
       }
     }
     checkPerformanceCalibrationModule();
+
+    const checkComplianceModule = async () => {
+      const isModuleEnabled = await api.get('/module/Compliance/is-enabled');
+      if (isModuleEnabled.data.data.isEnabled) {
+        setIsComplianceModuleEnabled(true);
+      }
+    }
+    checkComplianceModule();
     // Cleanup subscription
     return () => {
       unsubscribe(SocketEvent.NOTIFICATION);
@@ -86,31 +95,19 @@ function Main() {
   const isAppOwner = user?.email === process.env.REACT_APP_OWNER_EMAIL;
   const [isDevMember, setIsDevMember] = useState(false);
   const [isPerformanceCalibrationMember, setIsPerformanceCalibrationMember] = useState(false);
-  const [TeamOwnerStatus, setTeamOwnerStatus] = useState(false);
+  const [isTeamOwner, setIsTeamOwner] = useState(false);
+  const [isComplianceSuperUser, setIsComplianceSuperUser] = useState(false);
+  const [isComplianceChampion, setIsComplianceChampion] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setIsDevMember(!!user.isDevMember);
-      setIsPerformanceCalibrationMember(!!user.isPerformanceCalibrationMember);
+      setIsComplianceSuperUser(!!user?.isComplianceSuperUser);
+      setIsComplianceChampion(!!user?.isComplianceChampion);
+      setIsTeamOwner(!!user?.isTeamOwner);
+      setIsDevMember(!!user?.isDevMember);
+      setIsPerformanceCalibrationMember(!!user?.isPerformanceCalibrationMember);
     }
   }, [user]);
-
-  // Separate effect for team owner status
-  useEffect(() => {
-    const fetchTeamOwnerFromDB = async () => {
-      if (user?.id) {
-        try {
-          const teamInfo = await api.get(`/users/is_team_owner/${user.id}`);
-          const result = teamInfo.data.data;
-          setTeamOwnerStatus(result.isTeamOwner);
-        } catch (error) {
-          console.error('Error fetching team owner:', error);
-          setTeamOwnerStatus(false);
-        }
-      }
-    };
-    fetchTeamOwnerFromDB();
-  }, [user?.id]);
 
   const pages = [
     {
@@ -134,7 +131,7 @@ function Main() {
       element: MyPerformanceAssessment,
       title: "My Performance Assessment",
       icon: <ClipboardCheckmark24Regular fontSize={iconSize} />,
-      tabs: TeamOwnerStatus ?
+      tabs: isTeamOwner ?
         (isAppOwner || isSuperUser ?
           ['My Assessments', 'My Performances', 'Team Performances', 'Manage Performance Assessment'] :
           ['My Assessments', 'My Performances', 'Team Performances']
@@ -213,7 +210,7 @@ function Main() {
       tabs: isAppOwner || isSuperUser ?
         ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Performance Distribution Report', 'Employee Performance Rating', 'Supervisor Performance Distribution Report'] :
         ['Teams Performances', 'Teams Performance Assessments Completions', 'Teams Performance Agreements Completions', 'Teams Performance Assessments', 'Teams Performance Agreements', 'Supervisor Performance Distribution Report'],
-      show: isAppOwner || isSuperUser || TeamOwnerStatus
+      show: isAppOwner || isSuperUser || isTeamOwner
     },
     {
       path: "/teams/*",
@@ -236,8 +233,10 @@ function Main() {
       element: ComplianceManagement,
       title: "Compliance Management",
       icon: <ShieldCheckmark24Regular fontSize={iconSize} />,
-      tabs: ['Compliance Champions', 'Compliance Areas', 'Compliance Obligations', 'Compliance Setting', 'Quarterly Compliance Updates', 'Compliance Reviews'],
-      show: true
+      tabs: isComplianceSuperUser ?
+        ['Compliance Champions', 'Compliance Areas', 'Compliance Obligations', 'Compliance Setting', 'Quarterly Compliance Updates', 'Compliance Reviews'] :
+        ['Quarterly Compliance Updates'],
+      show: (isComplianceSuperUser || isComplianceChampion) && isComplianceModuleEnabled
     }
   ];
 

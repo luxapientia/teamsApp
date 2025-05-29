@@ -8,13 +8,14 @@ import ComplianceSetting from './compliance_setting';
 import QuarterlyComplianceUpdates from './quarterly_updates';
 import ComplianceReviews from './reviews';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ComplianceManagement: React.FC<PageProps> = ({ title, icon, tabs }) => {
-
+  const { user } = useAuth();
   return (
     <Box>
       <Routes>
-        <Route path="/*" element={<Navigate to="compliance-champions" replace />} />
+        <Route path="/*" element={<Navigate to={user?.isComplianceSuperUser ? "compliance-champions" : "quarterly-compliance-updates"} replace />} />
         <Route path="compliance-champions" element={<Champions />} />
         <Route path="compliance-areas" element={<ComplianceAreas />} />
         <Route path="compliance-obligations" element={<ComplianceObligationPage />} />

@@ -168,7 +168,6 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
     const handleViewCommentsAttachments = (obligation: Obligation) => {
         // Find the most recent update for the current quarter to display
         const latestQuarterUpdate = obligation.update?.find(u => u.year === year.toString() && u.quarter === quarter); // Assuming year is passed as number and stored as string
-        console.log(latestQuarterUpdate, 'here')
         if (latestQuarterUpdate) {
             // Pass the specific update entry and obligation ID to the modal
             setObligationForView(obligation); // Pass the full obligation
