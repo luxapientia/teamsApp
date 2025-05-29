@@ -4,6 +4,11 @@ import { api } from '../../../../services/api';
 import { riskColors } from '../../obligation/obligationModal';
 import ArticleIcon from '@mui/icons-material/Article'; // Icon for comments/attachments
 import CommentsAttachmentsViewModal from './CommentsAttachmentsViewModal'; // Import the view modal
+import { Toast } from '../../../../components/Toast';
+import { useAppSelector } from '../../../../hooks/useAppSelector';
+import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { fetchComplianceObligations } from '../../../../store/slices/complianceObligationsSlice';
+import { Obligation, AssessmentStatus } from '../../../../types/compliance';
 
 interface Attachment {
     filename: string;
@@ -14,21 +19,8 @@ interface UpdateEntry {
     year: string;
     quarter: string;
     comments?: string;
+    assessmentStatus: AssessmentStatus;
     attachments?: Attachment[];
-}
-
-interface Obligation {
-    _id: string;
-    complianceObligation: string;
-    complianceArea: { areaName: string; }; // Assuming area is populated
-    frequency: string;
-    lastDueDate: string;
-    owner: { name: string; }; // Assuming owner is populated
-    riskLevel: string;
-    status: string;
-    tenantId: string;
-    complianceStatus?: 'Completed' | 'Not Completed';
-    update?: UpdateEntry[];
 }
 
 interface ApprovedObligationsDetailProps {
@@ -38,24 +30,27 @@ interface ApprovedObligationsDetailProps {
 }
 
 const ApprovedObligationsDetail: React.FC<ApprovedObligationsDetailProps> = ({ year, quarter, onBack }) => {
-    const [obligations, setObligations] = useState<Obligation[]>([]);
+    const dispatch = useAppDispatch();
+    const { obligations: allObligations } = useAppSelector(state => state.complianceObligations);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [obligationForView, setObligationForView] = useState<Obligation | null>(null); // State for data in the comments/attachments modal
     const [commentsAttachmentsModalOpen, setCommentsAttachmentsModalOpen] = useState(false); // State for comments/attachments modal
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    // Filter obligations that have an update entry for the specified year and quarter and are approved
+    const obligations = allObligations.filter(ob =>
+        ob.update?.some(u => 
+            u.year === year.toString() && 
+            u.quarter === quarter && 
+            u.assessmentStatus === AssessmentStatus.Approved
+        )
+    );
 
     useEffect(() => {
-        const fetchObligations = async () => {
+        const loadObligations = async () => {
             try {
-                const res = await api.get('/compliance-obligations');
-                const allObligations: Obligation[] = res.data.data || [];
-
-                // Filter obligations that have an update entry for the specified year and quarter
-                const filteredObligations = allObligations.filter(ob => 
-                     ob.update?.some(u => u.year === year.toString() && u.quarter === quarter)
-                 );
-
-                setObligations(filteredObligations);
+                await dispatch(fetchComplianceObligations()).unwrap();
                 setLoading(false);
             } catch (err) {
                 console.error('Error fetching obligations:', err);
@@ -64,13 +59,13 @@ const ApprovedObligationsDetail: React.FC<ApprovedObligationsDetailProps> = ({ y
             }
         };
 
-        fetchObligations();
-    }, [year, quarter]); // Re-run effect if year or quarter changes
+        loadObligations();
+    }, [dispatch]);
 
-     const handleViewCommentsAttachments = (obligation: Obligation) => {
-         setObligationForView(obligation);
-         setCommentsAttachmentsModalOpen(true);
-     };
+    const handleViewCommentsAttachments = (obligation: Obligation) => {
+        setObligationForView(obligation);
+        setCommentsAttachmentsModalOpen(true);
+    };
 
     const handleCloseCommentsAttachmentsModal = () => {
         setCommentsAttachmentsModalOpen(false);
@@ -85,6 +80,13 @@ const ApprovedObligationsDetail: React.FC<ApprovedObligationsDetailProps> = ({ y
 
     return (
         <Box sx={{ mt: 2 }}>
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
             <Button
                 variant="outlined"
                 onClick={onBack}
@@ -120,11 +122,11 @@ const ApprovedObligationsDetail: React.FC<ApprovedObligationsDetailProps> = ({ y
                         </TableHead>
                         <TableBody>
                             {obligations.map(obligation => {
-                                 // Find the relevant update entry for the displayed quarter
-                                 const displayQuarterUpdate = obligation.update?.find(u => u.year === year.toString() && u.quarter === quarter);
+                                // Find the relevant update entry for the displayed quarter
+                                const displayQuarterUpdate = obligation.update?.find(u => u.year === year.toString() && u.quarter === quarter);
 
-                                 // Determine if comments/attachments icon should be shown based on the specific quarter's update entry
-                                 const hasCommentsOrAttachmentsForQuarter = (displayQuarterUpdate?.comments && displayQuarterUpdate.comments.length > 0) || (displayQuarterUpdate?.attachments && displayQuarterUpdate.attachments.length > 0);
+                                // Determine if comments/attachments icon should be shown based on the specific quarter's update entry
+                                const hasCommentsOrAttachmentsForQuarter = (displayQuarterUpdate?.comments && displayQuarterUpdate.comments.length > 0) || (displayQuarterUpdate?.attachments && displayQuarterUpdate.attachments.length > 0);
 
                                 return (
                                     <TableRow key={obligation._id} hover>
@@ -164,6 +166,15 @@ const ApprovedObligationsDetail: React.FC<ApprovedObligationsDetailProps> = ({ y
                     </Table>
                 </TableContainer>
             )}
+            
+            {/* Comments/Attachments View Modal */}
+            <CommentsAttachmentsViewModal
+                open={commentsAttachmentsModalOpen}
+                onClose={handleCloseCommentsAttachmentsModal}
+                obligation={obligationForView}
+                year={year}
+                quarter={quarter}
+            />
         </Box>
     );
 };

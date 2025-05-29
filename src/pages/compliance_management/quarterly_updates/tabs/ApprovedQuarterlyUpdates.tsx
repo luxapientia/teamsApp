@@ -2,37 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, Typography, TableContainer, Paper, Table, TableHead, TableRow, TableBody, TableCell, Button, IconButton } from '@mui/material';
 import moment from 'moment';
 import { api } from '../../../../services/api';
-import ArticleIcon from '@mui/icons-material/Article'; // Icon for comments/attachments
-import CommentsAttachmentsViewModal from '../components/CommentsAttachmentsViewModal'; // Import the view modal
-import { riskColors } from '../../obligation/obligationModal'; // Assuming riskColors is needed
 import ApprovedObligationsDetail from '../components/ApprovedObligationsDetail'; // Import the new detail component
-
-interface Attachment {
-    filename: string;
-    filepath: string;
-}
-
-interface UpdateEntry {
-    year: string;
-    quarter: string;
-    comments?: string;
-    attachments?: Attachment[];
-}
-
-interface Obligation {
-    _id: string;
-    complianceObligation: string;
-    complianceArea: { areaName: string; };
-    frequency: string;
-    lastDueDate: string;
-    owner: { name: string; };
-    riskLevel: string;
-    status: string;
-    tenantId: string;
-    complianceStatus?: 'Completed' | 'Not Completed';
-    update?: UpdateEntry[];
-}
-
 interface Quarter {
     quarter: string;
     start: string;
@@ -82,7 +52,7 @@ const ApprovedQuarterlyUpdates: React.FC = () => {
                             break;
                         }
                     }
-                    if(foundQuarter) break;
+                    if (foundQuarter) break;
                 }
 
                 setCurrentQuarter(foundQuarter);
@@ -99,13 +69,13 @@ const ApprovedQuarterlyUpdates: React.FC = () => {
         fetchComplianceSettings();
     }, []); // Dependency array includes nothing, so it runs once on mount
 
-     const handleViewClick = () => {
-         setShowDetail(true);
-     };
+    const handleViewClick = () => {
+        setShowDetail(true);
+    };
 
-     const handleBackClick = () => {
-         setShowDetail(false);
-     };
+    const handleBackClick = () => {
+        setShowDetail(false);
+    };
 
     if (loading) {
         return <Typography>Loading...</Typography>;
@@ -123,7 +93,7 @@ const ApprovedQuarterlyUpdates: React.FC = () => {
     // Otherwise, render the initial view with the table showing the quarter and view button
     return (
         <Box sx={{ mt: 2 }}>
-             <Typography variant="h6" gutterBottom>Approved Quarterly Compliance Updates</Typography>
+            <Typography variant="h6" gutterBottom>Approved Quarterly Compliance Updates</Typography>
 
             {!currentQuarter ? (
                 <Typography>No active compliance quarter found for today's date.</Typography>

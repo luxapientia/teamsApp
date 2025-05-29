@@ -114,6 +114,7 @@ router.put('/:id/update', authenticateToken, async (req: AuthenticatedRequest, r
             year,
             quarter,
             comments,
+            assessmentStatus: 'Draft',
             attachments: attachments // This should now be an array of attachment objects {filename, filepath}
           }
         }
@@ -176,6 +177,43 @@ router.delete('/delete-file', authenticateToken, async (req: AuthenticatedReques
   } catch (error) {
     console.error('Delete file error:', error);
     return res.status(500).json({ error: 'Failed to delete file' });
+  }
+});
+
+router.post('/submit-quarterly-updates', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { obligationIds, year, quarter, status } = req.body;
+    const tenantId = req.user?.tenantId;
+
+    if (!obligationIds || !Array.isArray(obligationIds) || obligationIds.length === 0) {
+      return res.status(400).json({ message: 'No obligation IDs provided' });
+    }
+
+    if (!year || !quarter || !status) {
+       return res.status(400).json({ message: 'Missing year, quarter, or status' });
+    }
+    console.log(obligationIds, 'obligationIds')
+
+    const result = await Obligation.updateMany(
+      { 
+        _id: { $in: obligationIds }, 
+        tenantId: tenantId,
+        'update.year': year,
+        'update.quarter': quarter
+      },
+      { 
+        $set: { 'update.$.assessmentStatus': status } // Use positional operator $ to update the matched element in the array
+      }
+    );
+
+    // Note: updateMany doesn't return the updated documents, just a result object
+    // If you need the updated documents, you would fetch them after this.
+
+    return res.json({ message: 'Obligations updated successfully', result });
+
+  } catch (error) {
+    console.error('Error submitting quarterly updates:', error);
+    return res.status(400).json({ message: 'Error submitting quarterly updates' });
   }
 });
 

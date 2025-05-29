@@ -5,6 +5,11 @@ import { riskColors } from '../../obligation/obligationModal';
 import ArticleIcon from '@mui/icons-material/Article'; // Icon for comments/attachments
 import ComplianceUpdateModal, { FileToUpload } from './ComplianceUpdateModal';
 import CommentsAttachmentsViewModal from './CommentsAttachmentsViewModal'; // Import the new modal
+import { Toast } from '../../../../components/Toast';
+import { useAppSelector } from '../../../../hooks/useAppSelector';
+import { useAppDispatch } from '../../../../hooks/useAppDispatch';
+import { fetchComplianceObligations, submitQuarterlyUpdates } from '../../../../store/slices/complianceObligationsSlice';
+import { Obligation, AssessmentStatus } from '../../../../types/compliance';
 
 interface Attachment {
     filename: string;
@@ -16,20 +21,7 @@ interface UpdateEntry {
     quarter: string;
     comments?: string;
     attachments?: Attachment[];
-}
-
-interface Obligation {
-    _id: string;
-    complianceObligation: string;
-    complianceArea: { areaName: string; }; // Assuming area is populated
-    frequency: string;
-    lastDueDate: string;
-    owner: { name: string; }; // Assuming owner is populated
-    riskLevel: string;
-    status: string;
-    tenantId: string; // Added missing field
-    complianceStatus?: 'Completed' | 'Not Completed'; // This is a top-level field
-    update?: UpdateEntry[]; // This is the array of updates
+    assessmentStatus?: AssessmentStatus;
 }
 
 interface QuarterObligationsDetailProps {
@@ -39,7 +31,8 @@ interface QuarterObligationsDetailProps {
 }
 
 const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ year, quarter, onBack }) => {
-    const [obligations, setObligations] = useState<Obligation[]>([]);
+    const dispatch = useAppDispatch();
+    const { obligations: allObligations } = useAppSelector(state => state.complianceObligations);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [updateModalOpen, setUpdateModalOpen] = useState(false);
@@ -47,15 +40,24 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
     const [commentsAttachmentsModalOpen, setCommentsAttachmentsModalOpen] = useState(false); // State for the new modal
     const [obligationForView, setObligationForView] = useState<Obligation | null>(null); // State for data in the new modal, might only need update data structure
     const [selectedObligations, setSelectedObligations] = useState<string[]>([]); // State for selected obligations
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    // Filter obligations based on status and current quarter
+    const obligations = allObligations.filter((ob: Obligation) => {
+        if (ob.status !== 'Active') return false;
+        const currentQuarterUpdate = ob.update?.find(u => 
+            u.year === year.toString() && 
+            u.quarter === quarter
+        );
+        return !currentQuarterUpdate || 
+               (currentQuarterUpdate.assessmentStatus !== AssessmentStatus.Submitted && 
+                currentQuarterUpdate.assessmentStatus !== AssessmentStatus.Approved);
+    });
 
     useEffect(() => {
-        const fetchObligations = async () => {
+        const loadObligations = async () => {
             try {
-                const res = await api.get('/compliance-obligations');
-                const activeObligations = (res.data.data || []).filter((ob: Obligation) => ob.status === 'Active');
-
-                // TODO: Implement filtering by year and quarter dates
-                setObligations(activeObligations);
+                await dispatch(fetchComplianceObligations()).unwrap();
                 setLoading(false);
             } catch (err) {
                 console.error('Error fetching obligations:', err);
@@ -64,8 +66,8 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
             }
         };
 
-        fetchObligations();
-    }, []);
+        loadObligations();
+    }, [dispatch]);
 
     const handleOpenUpdateModal = (obligation: Obligation) => {
         setSelectedObligation(obligation);
@@ -132,7 +134,7 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
 
             // Update the obligation in the state with the response data from the backend
             // This response data should have the correct server paths for attachments.
-            setObligations(prev => prev.map(ob => ob._id === obligationId ? res.data.data : ob));
+            dispatch(fetchComplianceObligations());
             handleCloseUpdateModal();
 
             // Revoke any temporary blob URLs after successful save and state update
@@ -158,7 +160,6 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
     const handleViewCommentsAttachments = (obligation: Obligation) => {
          // Find the most recent update for the current quarter to display
         const latestQuarterUpdate = obligation.update?.find(u => u.year === year.toString() && u.quarter === quarter); // Assuming year is passed as number and stored as string
-        console.log(latestQuarterUpdate, 'here')
         if (latestQuarterUpdate) {
             // Pass the specific update entry and obligation ID to the modal
              setObligationForView(obligation); // Pass the full obligation
@@ -186,11 +187,30 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
         );
     };
 
-     const handleSubmitSelected = () => {
-         // TODO: Implement backend call to update status of selectedObligations
-         console.log('Submitting selected obligations:', selectedObligations);
-         // After successful backend update, you would likely refetch the obligations
-         // or update the local state to remove the submitted ones from this view.
+     const handleSubmitSelected = async () => {
+         try {
+             await dispatch(submitQuarterlyUpdates({
+                 obligationIds: selectedObligations,
+                 year: year.toString(),
+                 quarter: quarter,
+                 status: 'Submitted'
+             })).unwrap();
+
+             setSelectedObligations([]);
+             setToast({
+                 message: 'Obligations submitted successfully',
+                 type: 'success'
+             });
+
+             // Refetch obligations after successful submission
+             await dispatch(fetchComplianceObligations());
+         } catch (error) {
+             console.error('Error submitting obligations:', error);
+             setToast({
+                 message: 'Error submitting obligations',
+                 type: 'error'
+             });
+         }
      };
 
     const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,7 +246,14 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
 
     return (
         <Box sx={{ mt: 2 }}>
-             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Button
                     variant="outlined"
                     onClick={onBack}

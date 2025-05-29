@@ -1,5 +1,11 @@
 import { Schema, model, Document } from 'mongoose';
 
+enum AssessmentStatus {
+  Draft = 'Draft',
+  Submitted = 'Submitted',
+  Approved = 'Approved'
+}
+
 export interface ObligationDocument extends Document {
   complianceObligation: string;
   complianceArea: Schema.Types.ObjectId; // area _id
@@ -14,6 +20,7 @@ export interface ObligationDocument extends Document {
     year: string;
     quarter: string;
     comments: string;
+    assessmentStatus: AssessmentStatus;
     attachments: {
       filename: string;
       filepath: string;
@@ -22,20 +29,67 @@ export interface ObligationDocument extends Document {
 }
 
 const obligationSchema = new Schema<ObligationDocument>({
-  complianceObligation: { type: String, required: true },
-  complianceArea: { type: Schema.Types.ObjectId, ref: 'ComplianceArea', required: true },
-  frequency: { type: String, required: true },
-  lastDueDate: { type: String, required: true },
-  owner: { type: Schema.Types.ObjectId, ref: 'Team', required: true },
-  riskLevel: { type: String, required: true },
-  status: { type: String, required: true, default: 'Active' },
-  tenantId: { type: String, required: true },
-  complianceStatus: { type: String, required: false, enum: ['Completed', 'Not Completed'], default: 'Not Completed' },
+  complianceObligation: {
+    type: String,
+    required: true
+  },
+  complianceArea: {
+    type: Schema.Types.ObjectId,
+    ref: 'ComplianceArea',
+    required: true
+  },
+  frequency: {
+    type: String,
+    required: true
+  },
+  lastDueDate: {
+    type: String,
+    required: true
+  },
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: 'Team',
+    required: true
+  },
+  riskLevel: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    required: true,
+    default: 'Active'
+  },
+  tenantId: {
+    type: String,
+    required: true
+  },
+  complianceStatus: {
+    type: String,
+    required: false,
+    enum: ['Completed', 'Not Completed'],
+    default: 'Not Completed'
+  },
   update: [
     {
-      year: { type: String, required: true },
-      quarter: { type: String, required: true },
-      comments: { type: String, required: false, default: '' },
+      year: {
+        type: String,
+        required: true
+      },
+      quarter: {
+        type: String,
+        required: true
+      },
+      comments: {
+        type: String,
+        required: false,
+        default: ''
+      },
+      assessmentStatus: {
+        type: String,
+        required: true,
+        default: AssessmentStatus.Draft
+      },
       attachments: {
         type: [{
           filename: String,
@@ -45,8 +99,9 @@ const obligationSchema = new Schema<ObligationDocument>({
       }
     }
   ]
-}, {
-  timestamps: true,
-});
+},
+  {
+    timestamps: true,
+  });
 
 export default model<ObligationDocument>('Obligation', obligationSchema); 
