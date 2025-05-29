@@ -7,6 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import User from '../models/User';
 import { graphService } from '../services/graphService';
+import { sendComplianceReminders } from '../services/complianceReminderService';
 
 
 const router = express.Router();
@@ -293,6 +294,22 @@ router.post('/submit-quarterly-updates', authenticateToken, async (req: Authenti
   } catch (error) {
     console.error('Error submitting quarterly updates:', error);
     return res.status(400).json({ message: 'Error submitting quarterly updates' });
+  }
+});
+
+router.post('/send-reminders', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { year, quarter, endDate } = req.body;
+
+    if (!year || !quarter || !endDate) {
+      return res.status(400).json({ message: 'Year, quarter, and endDate are required' });
+    }
+
+    const result = await sendComplianceReminders(year, quarter, endDate);
+    return res.json(result);
+  } catch (error) {
+    console.error('Error sending compliance reminders:', error);
+    return res.status(500).json({ message: 'Failed to send compliance reminders' });
   }
 });
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import ComplianceChart from '../../../../../components/ComplianceChart';
 import { Obligation } from '../../../../../types/compliance';
 
@@ -11,7 +11,7 @@ interface ComplianceViewProps {
 
 const ComplianceView: React.FC<ComplianceViewProps> = ({ year, quarter, obligations }) => {
   const calculateCompliance = (filteredObligations: Obligation[]) => {
-    if (!filteredObligations.length) return 0;
+    if (!filteredObligations.length) return null;
     const compliantCount = filteredObligations.filter(o => o.complianceStatus === 'Compliant').length;
     return Math.round((compliantCount / filteredObligations.length) * 100);
   };
@@ -39,22 +39,34 @@ const ComplianceView: React.FC<ComplianceViewProps> = ({ year, quarter, obligati
       compliancePercentage: calculateCompliance(obligations)
     }));
 
-    return { organizationCompliance, teamCompliance };
+    return { organizationCompliance, teamCompliance, hasData: filteredObligations.length > 0 };
   };
+
+  const { organizationCompliance, teamCompliance, hasData } = getComplianceData();
+
+  if (!hasData) {
+    return (
+      <Box sx={{ mt: 4, textAlign: 'center' }}>
+        <Typography variant="h6" color="text.secondary">
+          No compliance data available for {year}, {quarter}
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ mt: 4 }}>
       <ComplianceChart 
         title={`${year}, ${quarter} Organization Compliance`}
-        compliancePercentage={getComplianceData().organizationCompliance}
+        compliancePercentage={organizationCompliance || 0}
       />
       
-      {getComplianceData().teamCompliance.map((team) => (
+      {teamCompliance.map((team) => (
         <ComplianceChart
           key={team.teamName}
           title={`${year}, ${quarter} ${team.teamName} Teams Compliance`}
           teamName={team.teamName}
-          compliancePercentage={team.compliancePercentage}
+          compliancePercentage={team.compliancePercentage || 0}
         />
       ))}
     </Box>
