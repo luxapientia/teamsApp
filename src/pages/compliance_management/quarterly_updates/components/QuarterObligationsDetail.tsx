@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, TableContainer, Paper, Table, TableHead, TableRow, TableBody, TableCell, Button, IconButton, Checkbox } from '@mui/material';
+import { Box, Typography, TableContainer, Paper, Table, TableHead, TableRow, TableBody, TableCell, Button, IconButton, Checkbox, CircularProgress } from '@mui/material';
 import { api } from '../../../../services/api';
 import { riskColors } from '../../obligation/obligationModal';
 import ArticleIcon from '@mui/icons-material/Article'; // Icon for comments/attachments
@@ -41,6 +41,7 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
     const [obligationForView, setObligationForView] = useState<Obligation | null>(null); // State for data in the new modal, might only need update data structure
     const [selectedObligations, setSelectedObligations] = useState<string[]>([]); // State for selected obligations
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Filter obligations based on status and current quarter
     const obligations = allObligations.filter((ob: Obligation) => {
@@ -189,6 +190,7 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
 
      const handleSubmitSelected = async () => {
          try {
+             setIsSubmitting(true);
              await dispatch(submitQuarterlyUpdates({
                  obligationIds: selectedObligations,
                  year: year.toString(),
@@ -210,6 +212,8 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                  message: 'Error submitting obligations',
                  type: 'error'
              });
+         } finally {
+             setIsSubmitting(false);
          }
      };
 
@@ -269,25 +273,46 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                 >
                     Back
                 </Button>
-                 <Button
-                     variant="contained"
-                     onClick={handleSubmitSelected}
-                     disabled={!canSubmit}
-                     sx={{
-                         textTransform: 'none',
-                         backgroundColor: '#10B981', // Green color
-                         '&:hover': {
-                             backgroundColor: '#059669', // Darker green on hover
-                         },
-                         '&:disabled': {
-                            backgroundColor: '#9CA3AF', // Gray when disabled
-                            color: '#E5E7EB', // Light gray text when disabled
-                         },
-                     }}
-                 >
-                     Submit
-                 </Button>
-             </Box>
+                <Button
+                    variant="contained"
+                    onClick={handleSubmitSelected}
+                    disabled={!canSubmit || isSubmitting}
+                    sx={{
+                        textTransform: 'none',
+                        backgroundColor: '#10B981',
+                        minWidth: '120px',
+                        height: '36px',
+                        position: 'relative',
+                        '&:hover': {
+                            backgroundColor: '#059669',
+                        },
+                        '&:disabled': {
+                            backgroundColor: '#9CA3AF',
+                            color: '#E5E7EB',
+                        },
+                    }}
+                >
+                    <Box sx={{ 
+                        visibility: isSubmitting ? 'hidden' : 'visible',
+                        minWidth: '60px'
+                    }}>
+                        Submit
+                    </Box>
+                    {isSubmitting && (
+                        <CircularProgress
+                            size={24}
+                            sx={{
+                                color: '#fff',
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                marginTop: '-12px',
+                                marginLeft: '-12px',
+                            }}
+                        />
+                    )}
+                </Button>
+            </Box>
             <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Active Compliance Obligations for {quarter} {year}</Typography>
 
             {!obligations.length ? (

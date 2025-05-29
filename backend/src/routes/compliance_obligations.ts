@@ -5,6 +5,8 @@ import { authenticateToken } from '../middleware/auth';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import User from '../models/User';
+import { graphService } from '../services/graphService';
 
 
 const router = express.Router();
@@ -124,8 +126,8 @@ router.put('/:id/update', authenticateToken, async (req: AuthenticatedRequest, r
     if (obligation) {
       // Update existing entry
       result = await Obligation.findOneAndUpdate(
-        { 
-          _id: req.params.id, 
+        {
+          _id: req.params.id,
           tenantId: req.user?.tenantId,
           'update.year': year,
           'update.quarter': quarter
@@ -227,26 +229,66 @@ router.post('/submit-quarterly-updates', authenticateToken, async (req: Authenti
     }
 
     if (!year || !quarter || !status) {
-       return res.status(400).json({ message: 'Missing year, quarter, or status' });
+      return res.status(400).json({ message: 'Missing year, quarter, or status' });
     }
-    console.log(obligationIds, 'obligationIds')
 
+    // Update the obligations
     const result = await Obligation.updateMany(
-      { 
-        _id: { $in: obligationIds }, 
+      {
+        _id: { $in: obligationIds },
         tenantId: tenantId,
         'update.year': year,
         'update.quarter': quarter
       },
-      { 
-        $set: { 'update.$.assessmentStatus': status } // Use positional operator $ to update the matched element in the array
+      {
+        $set: { 'update.$.assessmentStatus': status }
       }
     );
+    if (status === 'Submitted') {
+      // Get the team name from the first obligation
+      const firstObligation = await Obligation.findOne({ _id: obligationIds[0] })
+        .populate<{ owner: { name: string } }>('owner');
+      const teamName = firstObligation?.owner?.name || 'Unknown Team';
 
-    // Note: updateMany doesn't return the updated documents, just a result object
-    // If you need the updated documents, you would fetch them after this.
+      // Get all compliance super users in the tenant
+      const complianceSuperUsers = await User.find({
+        tenantId: tenantId,
+        isComplianceSuperUser: true
+      });
 
-    return res.json({ message: 'Obligations updated successfully', result });
+      // Send email to each compliance super user
+      const emailSubject = `Review ${teamName} Compliance Obligation`;
+      const emailContent = `
+      <html>
+        <body>
+          <h2>Compliance Obligation Review Request</h2>
+          <p>Dear Compliance Team,</p>
+          <p>A compliance obligation has been submitted for review by the ${teamName}.</p>
+          <p>Best Regards,<br>${teamName}</p>
+        </body>
+      </html>
+    `;
+
+      // Send emails to all compliance super users
+      for (const user of complianceSuperUsers) {
+        if (user.email && tenantId) {
+          await graphService.sendMail(
+            tenantId,
+            req.user?.id || '',
+            user.email,
+            emailSubject,
+            emailContent
+          );
+        }
+      }
+
+      return res.json({
+        message: 'Obligations updated successfully and notifications sent',
+        result
+      });
+    } else {
+      return res.json({ message: 'Obligations updated successfully', result });
+    }
 
   } catch (error) {
     console.error('Error submitting quarterly updates:', error);
