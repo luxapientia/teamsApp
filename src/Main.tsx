@@ -217,7 +217,7 @@ function Main() {
       element: TeamsPage,
       title: "Teams",
       icon: <PeopleTeam24Regular fontSize={iconSize} />,
-      tabs: ['Teams', 'Super User', 'Compliance User'],
+      tabs: isComplianceModuleEnabled ? ['Teams', 'Super User', 'Compliance User'] : ['Teams', 'Super User'],
       show: isAppOwner || isSuperUser
     },
     {
