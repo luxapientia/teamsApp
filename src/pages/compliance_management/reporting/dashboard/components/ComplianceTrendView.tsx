@@ -1,6 +1,9 @@
-import React from 'react';
-import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import React, { useRef } from 'react';
+import { Box, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button } from '@mui/material';
 import { Obligation } from '../../../../../types/compliance';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import jsPDF from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
 
 interface ComplianceTrendViewProps {
   year: string;
@@ -15,6 +18,8 @@ interface ComplianceData {
 }
 
 const ComplianceTrendView: React.FC<ComplianceTrendViewProps> = ({ year, obligations }) => {
+  const orgTableRef = useRef<any>(null);
+
   const calculateCompliance = (filteredObligations: Obligation[]) => {
     if (!filteredObligations.length) return { compliance: 0, nonCompliance: 0 };
     const compliantCount = filteredObligations.filter(o => o.complianceStatus === 'Compliant').length;
@@ -66,15 +71,112 @@ const ComplianceTrendView: React.FC<ComplianceTrendViewProps> = ({ year, obligat
 
   const { organizationTrend, teamTrends } = getComplianceTrendData();
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Add title
+    doc.setFontSize(13);
+    doc.text(`${year} Compliance Trend Report`, pageWidth / 2, 20, { align: 'center' });
+
+    let finalY = 35;
+
+    // Organization Compliance Table
+    doc.text('Organization Compliance Trend', 10, finalY);
+    finalY += 5;
+    doc.setLineWidth(0.5);
+    doc.line(10, finalY, pageWidth - 10, finalY);
+    finalY += 5;
+
+    const tableWidth = pageWidth - 30;
+
+    // Organization table
+    autoTable(doc, {
+      head: [['Quarter', 'Compliance %', 'Non-Compliance %']],
+      body: organizationTrend.map(row => [
+        row.quarter,
+        `${row.compliance}%`,
+        `${row.nonCompliance}%`
+      ]),
+      startY: finalY,
+      columnStyles: {
+        0: { cellWidth: tableWidth * 0.4 },
+        1: { cellWidth: tableWidth * 0.3 },
+        2: { cellWidth: tableWidth * 0.3 }
+      },
+      didDrawPage: (data) => {
+        finalY = data.cursor.y;
+      }
+    });
+
+    // Team Compliance Tables
+    doc.setFontSize(13);
+    doc.text('Team Compliance Trends', 10, finalY + 10);
+    doc.setLineWidth(0.5);
+    doc.line(10, finalY + 15, pageWidth - 10, finalY + 15);
+
+    teamTrends.forEach((team, index) => {
+      finalY = finalY + 25;
+      if (finalY >= pageHeight - 40) {
+        doc.addPage();
+        finalY = 20;
+      }
+
+      doc.text(team.team, 10, finalY);
+
+      autoTable(doc, {
+        head: [['Quarter', 'Compliance %', 'Non-Compliance %']],
+        body: team.data.map(row => [
+          row.quarter,
+          `${row.compliance}%`,
+          `${row.nonCompliance}%`
+        ]),
+        startY: finalY + 5,
+        columnStyles: {
+          0: { cellWidth: tableWidth * 0.4 },
+          1: { cellWidth: tableWidth * 0.3 },
+          2: { cellWidth: tableWidth * 0.3 }
+        },
+        didDrawPage: (data) => {
+          finalY = data.cursor.y;
+        }
+      });
+    });
+
+    doc.save(`${year}_Compliance_Trend_Report.pdf`);
+  };
+
   return (
     <Box sx={{ mt: 4 }}>
+      {/* Export Buttons */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportPDF}
+            sx={{
+              borderColor: '#E5E7EB',
+              color: '#374151',
+              '&:hover': {
+                borderColor: '#D1D5DB',
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              },
+            }}
+          >
+            Export to PDF
+          </Button>
+        </Box>
+      </Box>
+
       {/* Organization Compliance Table */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h6" gutterBottom>
           {year}, Organization Compliance
         </Typography>
         <TableContainer component={Paper} variant="outlined">
-          <Table>
+          <Table ref={orgTableRef}>
             <TableHead>
               <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableCell>Quarter</TableCell>
