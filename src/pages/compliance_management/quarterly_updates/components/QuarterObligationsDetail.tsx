@@ -313,7 +313,7 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                     )}
                 </Button>
             </Box>
-            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Active Compliance Obligations for {quarter} {year}</Typography>
+            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Obligations for {quarter} {year}</Typography>
 
             {!obligations.length ? (
                 <Typography>No active obligations found for this quarter.</Typography>

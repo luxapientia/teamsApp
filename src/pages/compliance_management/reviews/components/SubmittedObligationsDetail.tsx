@@ -295,7 +295,7 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                     Approve
                 </Button>
             </Box>
-            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Submitted Compliance Obligations for {quarter} {year}</Typography>
+            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Obligations for {quarter} {year}</Typography>
 
             {!obligations.length ? (
                 <Typography>No submitted obligations found for this quarter.</Typography>

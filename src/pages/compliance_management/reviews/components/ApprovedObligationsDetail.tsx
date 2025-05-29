@@ -90,7 +90,7 @@ const ApprovedObligationsDetail: React.FC<ApprovedObligationsDetailProps> = ({ y
             >
                 Back
             </Button>
-            <Typography variant="h6" gutterBottom>Approved Compliance Obligations for {quarter} {year}</Typography>
+            <Typography variant="h6" gutterBottom>Obligations for {quarter} {year}</Typography>
 
             {!obligations.length ? (
                 <Typography>No approved obligations found for this quarter.</Typography>
