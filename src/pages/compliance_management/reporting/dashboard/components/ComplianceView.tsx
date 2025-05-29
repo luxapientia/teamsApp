@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import ComplianceChart from '../../../../../components/ComplianceChart';
 import { Obligation } from '../../../../../types/compliance';
-
+import { useAuth } from '../../../../../contexts/AuthContext';
 interface ComplianceViewProps {
   year: string;
   quarter: string;
@@ -10,6 +10,8 @@ interface ComplianceViewProps {
 }
 
 const ComplianceView: React.FC<ComplianceViewProps> = ({ year, quarter, obligations }) => {
+  const { user } = useAuth();
+  const isComplianceSuperUser = user?.isComplianceSuperUser;
   const calculateCompliance = (filteredObligations: Obligation[]) => {
     if (!filteredObligations.length) return null;
     const compliantCount = filteredObligations.filter(o => o.complianceStatus === 'Compliant').length;
@@ -56,11 +58,11 @@ const ComplianceView: React.FC<ComplianceViewProps> = ({ year, quarter, obligati
 
   return (
     <Box sx={{ mt: 4 }}>
-      <ComplianceChart 
+      {isComplianceSuperUser && <ComplianceChart
         title={`${year}, ${quarter} Organization Compliance`}
         compliancePercentage={organizationCompliance || 0}
-      />
-      
+      />}
+
       {teamCompliance.map((team) => (
         <ComplianceChart
           key={team.teamName}

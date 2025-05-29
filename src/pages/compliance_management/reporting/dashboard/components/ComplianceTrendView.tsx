@@ -4,7 +4,7 @@ import { Obligation } from '../../../../../types/compliance';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import jsPDF from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
-
+import { useAuth } from '../../../../../contexts/AuthContext';
 interface ComplianceTrendViewProps {
   year: string;
   quarter: string;
@@ -18,6 +18,8 @@ interface ComplianceData {
 }
 
 const ComplianceTrendView: React.FC<ComplianceTrendViewProps> = ({ year, obligations }) => {
+  const { user } = useAuth();
+  const isComplianceSuperUser = user?.isComplianceSuperUser;
   const orgTableRef = useRef<any>(null);
 
   const calculateCompliance = (filteredObligations: Obligation[]) => {
@@ -171,7 +173,7 @@ const ComplianceTrendView: React.FC<ComplianceTrendViewProps> = ({ year, obligat
       </Box>
 
       {/* Organization Compliance Table */}
-      <Box sx={{ mb: 4 }}>
+      {isComplianceSuperUser && <Box sx={{ mb: 4 }}>
         <Typography variant="h6" gutterBottom>
           {year}, Organization Compliance
         </Typography>
@@ -195,7 +197,7 @@ const ComplianceTrendView: React.FC<ComplianceTrendViewProps> = ({ year, obligat
             </TableBody>
           </Table>
         </TableContainer>
-      </Box>
+      </Box>}
 
       {/* Teams Compliance Tables */}
       <Box>

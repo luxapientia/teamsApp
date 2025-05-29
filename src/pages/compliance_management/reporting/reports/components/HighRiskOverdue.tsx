@@ -33,18 +33,17 @@ const HighRiskOverdue: React.FC<HighRiskOverdueProps> = ({ year, quarter, obliga
   const handleExportPDF = () => {
     if (overdueObligations.length > 0) {
       const title = `${year}, ${quarter} High-Risk Overdue Obligations`;
-      exportPdf(PdfType.HighRiskOverdue, tableRef, title, '', '', [0.2, 0.2, 0.2, 0.2, 0.2]);
+      exportPdf(PdfType.HighRiskOverdue, tableRef, title, '', '', [0.25, 0.25, 0.25, 0.25]);
     }
   };
 
   const handleExportExcel = () => {
     if (overdueObligations.length > 0) {
-      const headers = ['Obligation', 'Area', 'Owner', 'Due Date', 'Comments'];
+      const headers = ['Obligation', 'Area', 'Owner', 'Comments'];
       const data = overdueObligations.map(obligation => [
         obligation.complianceObligation,
         obligation.complianceArea.areaName,
         obligation.owner.name,
-        obligation?.lastDueDate || 'N/A',
         obligation.update?.find(u => u.year === year && u.quarter === quarter)?.comments || ''
       ]);
       
@@ -84,7 +83,6 @@ const HighRiskOverdue: React.FC<HighRiskOverdueProps> = ({ year, quarter, obliga
               <TableCell>Obligation</TableCell>
               <TableCell>Area</TableCell>
               <TableCell>Owner</TableCell>
-              <TableCell>Due Date</TableCell>
               <TableCell>Comments</TableCell>
             </TableRow>
           </TableHead>
@@ -94,9 +92,6 @@ const HighRiskOverdue: React.FC<HighRiskOverdueProps> = ({ year, quarter, obliga
                 <TableCell>{obligation.complianceObligation}</TableCell>
                 <TableCell>{obligation.complianceArea.areaName}</TableCell>
                 <TableCell>{obligation.owner.name}</TableCell>
-                <TableCell>
-                  {obligation?.lastDueDate || 'N/A'}
-                </TableCell>
                 <TableCell>
                   {obligation.update?.find(u => u.year === year && u.quarter === quarter)?.comments || ''}
                 </TableCell>

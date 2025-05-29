@@ -6,7 +6,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { exportPdf } from '../../../../../utils/exportPdf';
 import { exportExcel } from '../../../../../utils/exportExcel';
 import { PdfType } from '../../../../../types';
-
+import { useAuth } from '../../../../../contexts/AuthContext';
 interface ComplianceSummaryProps {
   year: string;
   quarter: string;
@@ -23,6 +23,8 @@ interface SummaryRow {
 
 const ComplianceSummary: React.FC<ComplianceSummaryProps> = ({ year, quarter, obligations }) => {
   const tableRef = useRef<any>(null);
+  const { user } = useAuth();
+  const isComplianceSuperUser = user?.isComplianceSuperUser;
 
   const calculateSummary = (): SummaryRow[] => {
     // Group obligations by area
@@ -76,19 +78,18 @@ const ComplianceSummary: React.FC<ComplianceSummaryProps> = ({ year, quarter, ob
 
   const handleExportPDF = () => {
     if (summaryData.length > 0) {
-      const title = `${year}, ${quarter} Organization Compliance Summary`;
-      exportPdf(PdfType.ComplianceSummary, tableRef, title, '', '', [0.2, 0.2, 0.2, 0.2, 0.2]);
+      const title = `${year}, ${quarter} ${isComplianceSuperUser ? 'Organization' : 'Team'} Compliance Summary`;
+      exportPdf(PdfType.ComplianceSummary, tableRef, title, '', '', [0.25, 0.25, 0.25, 0.25]);
     }
   };
 
   const handleExportExcel = () => {
     if (summaryData.length > 0) {
-      const headers = ['Compliance Area', 'Total Obligations', 'Compliant', 'Overdue', 'Compliance Rate'];
+      const headers = ['Compliance Area', 'Total Obligations', 'Compliant', 'Compliance Rate'];
       const data = summaryData.map(row => [
         row.area,
         row.totalObligations,
         row.compliant,
-        row.overdue,
         `${row.complianceRate}%`
       ]);
       
@@ -100,7 +101,7 @@ const ComplianceSummary: React.FC<ComplianceSummaryProps> = ({ year, quarter, ob
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">
-          {year}, {quarter} Organization Compliance
+          {year}, {quarter} {isComplianceSuperUser ? 'Organization' : 'Team'} Compliance
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <ExportButton
@@ -128,7 +129,6 @@ const ComplianceSummary: React.FC<ComplianceSummaryProps> = ({ year, quarter, ob
               <TableCell>Compliance Area</TableCell>
               <TableCell align="right">Total Obligations</TableCell>
               <TableCell align="right">Compliant</TableCell>
-              <TableCell align="right">Overdue</TableCell>
               <TableCell align="right">Compliance Rate</TableCell>
             </TableRow>
           </TableHead>
@@ -144,7 +144,6 @@ const ComplianceSummary: React.FC<ComplianceSummaryProps> = ({ year, quarter, ob
                 <TableCell>{row.area}</TableCell>
                 <TableCell align="right">{row.totalObligations}</TableCell>
                 <TableCell align="right">{row.compliant}</TableCell>
-                <TableCell align="right">{row.overdue}</TableCell>
                 <TableCell align="right">{row.complianceRate}%</TableCell>
               </TableRow>
             ))}
