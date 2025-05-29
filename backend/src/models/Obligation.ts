@@ -15,7 +15,7 @@ export interface ObligationDocument extends Document {
   riskLevel: string;
   status: string;
   tenantId: string;
-  complianceStatus?: 'Completed' | 'Not Completed';
+  complianceStatus?: 'Compliant' | 'Not Compliant';
   update?: {
     year: string;
     quarter: string;
@@ -67,8 +67,8 @@ const obligationSchema = new Schema<ObligationDocument>({
   complianceStatus: {
     type: String,
     required: false,
-    enum: ['Completed', 'Not Completed'],
-    default: 'Not Completed'
+    enum: ['Compliant', 'Not Compliant'],
+    default: 'Not Compliant'
   },
   update: [
     {

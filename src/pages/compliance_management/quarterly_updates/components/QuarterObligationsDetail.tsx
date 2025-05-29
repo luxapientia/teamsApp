@@ -342,18 +342,15 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                         <TableBody>
                             {obligations.map(obligation => {
                                 // Find the update entry for the current quarter
-                                 const quarterUpdate = obligation.update?.find(u => u.year === year.toString() && u.quarter === quarter);
+                                const quarterUpdate = obligation.update?.find(u => u.year === year.toString() && u.quarter === quarter);
 
                                 // Checkbox appears if an update exists for the current quarter with comments or attachments AND complianceStatus is set
                                 const hasCommentsOrAttachmentsForQuarter = quarterUpdate && ((quarterUpdate.comments && quarterUpdate.comments.length > 0) || (quarterUpdate.attachments && quarterUpdate.attachments.length > 0));
                                 const canSelect = hasCommentsOrAttachmentsForQuarter && obligation.complianceStatus !== undefined;
 
-                                 // Determine if comments/attachments icon should be shown (based on *any* update entry)
-                                const hasAnyCommentsOrAttachments = obligation.update?.some(u => (u.comments && u.comments.length > 0) || (u.attachments && u.attachments.length > 0));
-
                                 return (
                                     <TableRow key={obligation._id} hover>
-                                         <TableCell padding="checkbox">
+                                        <TableCell padding="checkbox">
                                             {canSelect && (
                                                 <Checkbox
                                                     checked={selectedObligations.includes(obligation._id)}
@@ -371,8 +368,8 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                                                         width: 10,
                                                         height: 10,
                                                         borderRadius: '50%',
-                                                        backgroundColor: riskColors[obligation.riskLevel] || 'gray', // Default to gray if risk level is not mapped
-                                                        mr: 1, // Margin right for spacing
+                                                        backgroundColor: riskColors[obligation.riskLevel] || 'gray',
+                                                        mr: 1,
                                                     }}
                                                 />
                                                 {obligation.riskLevel}
@@ -382,12 +379,12 @@ const QuarterObligationsDetail: React.FC<QuarterObligationsDetailProps> = ({ yea
                                             {obligation.complianceStatus || 'N/A'}
                                         </TableCell>
                                         <TableCell align='center'>
-                                             {hasAnyCommentsOrAttachments ? (
+                                            {hasCommentsOrAttachmentsForQuarter ? (
                                                 <IconButton size="small" onClick={() => handleViewCommentsAttachments(obligation)}>
-                                                     <ArticleIcon fontSize="small" />
+                                                    <ArticleIcon fontSize="small" />
                                                 </IconButton>
                                             ) : (
-                                                '-' // Show a dash if no comments/attachments
+                                                '-'
                                             )}
                                         </TableCell>
                                         <TableCell align='center'>
