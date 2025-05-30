@@ -63,7 +63,7 @@ const OrganizationalDevelopmentTeam: React.FC = () => {
       await fetchMembers();
       
       // Update auth context if current user was added
-      if (user && userIds.includes(user.MicrosoftId)) {
+      if (user && userIds.includes(user.id)) {
         setUser({ ...user, isDevMember: true });
       }
       
@@ -80,7 +80,7 @@ const OrganizationalDevelopmentTeam: React.FC = () => {
       await fetchMembers();
       
       // Update auth context if current user was removed
-      if (user && memberId === user.MicrosoftId) {
+      if (user && memberId === user.id) {
         setUser({ ...user, isDevMember: false });
       }
     } catch (error) {

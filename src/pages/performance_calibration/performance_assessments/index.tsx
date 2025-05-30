@@ -1,11 +1,13 @@
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { RootState } from '../../../store';
 import { AnnualTarget, QuarterType } from '../../../types/annualCorporateScorecard';
-import { Box, Button, InputLabel, MenuItem, Select, styled, FormControl, CircularProgress } from '@mui/material';
+import { Box, Button, InputLabel, MenuItem, Select, styled, FormControl, CircularProgress, SelectChangeEvent } from '@mui/material';
 import React, { useState } from 'react';
 import AssessmentsTable from './assessments_table';
 import { api } from '../../../services/api';
 import PersonalQuarterlyTarget from './PersonalQuarterlyTarget';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { useAuth } from '../../../contexts/AuthContext';
 const StyledFormControl = styled(FormControl)({
     backgroundColor: '#fff',
     borderRadius: '8px',
@@ -45,7 +47,7 @@ const PerformanceAssessments: React.FC = () => {
     const [assessments, setAssessments] = useState<AssessmentRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [viewingUser, setViewingUser] = useState<AssessmentRow | null>(null);
-
+    const { user } = useAuth();
     const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
     const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
         state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
@@ -88,6 +90,19 @@ const PerformanceAssessments: React.FC = () => {
         handleView();
     };
 
+    const handleQuarterChange = (event: SelectChangeEvent) => {
+        setSelectedQuarter(event.target.value as QuarterType);
+        setShowTable(false);
+        setViewingUser(null);
+    }
+
+    const handleScorecardChange = (event: SelectChangeEvent) => {
+        setSelectedAnnualTargetId(event.target.value as string);
+        setShowTable(false);
+        setViewingUser(null);
+    };
+
+
     return (
         <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
             <Box sx={{
@@ -101,7 +116,7 @@ const PerformanceAssessments: React.FC = () => {
                     <Select
                         value={selectedAnnualTargetId}
                         label="Annual Corporate Scorecard"
-                        onChange={(e) => setSelectedAnnualTargetId(e.target.value as string)}
+                        onChange={handleScorecardChange}
                     >
                         {annualTargets.map((target) => (
                             <MenuItem key={target._id} value={target._id}>
@@ -116,21 +131,23 @@ const PerformanceAssessments: React.FC = () => {
                     <Select
                         value={selectedQuarter}
                         label="Quarter"
-                        onChange={(e) => setSelectedQuarter(e.target.value as QuarterType)}
+                        onChange={handleQuarterChange}
                     >
-                        {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-                            quarter.editable && (
-                                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                                    {quarter.quarter}
-                                </MenuItem>
-                            )
+                        {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                            quarter.editable
+                        )).map((quarter) => (
+                            quarter.quarter
+                        )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+                            <MenuItem key={quarter.key} value={quarter.key}>
+                                {quarter.alias}
+                            </MenuItem>
                         ))}
                     </Select>
                 </StyledFormControl>
 
                 <ViewButton
                     variant="contained"
-                    disabled={!selectedAnnualTargetId}
+                    disabled={!selectedAnnualTargetId || !selectedQuarter}
                     onClick={handleView}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                 >
@@ -152,7 +169,13 @@ const PerformanceAssessments: React.FC = () => {
                 annualTarget={selectedAnnualTarget}
                 quarter={selectedQuarter as QuarterType}
                 userId={viewingUser.userId}
+                userName={viewingUser.fullName}
                 onBack={handleBack}
+                isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                    quarter.editable
+                )).map((quarter) => (
+                    quarter.quarter
+                )), user?.isTeamOwner || user?.role === 'SuperUser')}
               />
             )}
         </Box>

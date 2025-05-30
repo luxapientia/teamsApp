@@ -31,6 +31,7 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { exportPdf } from '../../../utils/exportPdf';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
 import { api } from '../../../services/api';
+import { enableTwoQuarterMode } from '../../../utils/quarterMode';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -52,7 +53,7 @@ const TeamPerformances: React.FC = () => {
   const [showTable, setShowTable] = useState(false);
 
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
-  const teamPerformances = useAppSelector((state: RootState) => state.personalPerformance.teamPerformances);
+  const teamPerformancesByTarget = useAppSelector((state: RootState) => state.personalPerformance.teamPerformancesByTarget);
   const feedbackTemplates = useAppSelector((state: RootState) => state.feedback.feedbacks);
   const tableRef = useRef();
   const { user } = useAuth();
@@ -63,7 +64,7 @@ const TeamPerformances: React.FC = () => {
   }, [dispatch]);
 
   const checkFeedbackModule = async () => {
-    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    const isModuleEnabled = await api.get('/module/Feedback/is-enabled');
     if (isModuleEnabled.data.data.isEnabled) {
       setEnableFeedback(true);
     }
@@ -74,9 +75,9 @@ const TeamPerformances: React.FC = () => {
     setShowTable(false);
   };
 
-  const handleView = () => {
+  const handleView = async () => {
     if (selectedAnnualTargetId) {
-      dispatch(fetchTeamPerformances(selectedAnnualTargetId));
+      await dispatch(fetchTeamPerformances(selectedAnnualTargetId));
       setShowTable(true);
     }
   };
@@ -160,7 +161,7 @@ const TeamPerformances: React.FC = () => {
   };
 
   const handleExportPDF = async () => {
-    if (teamPerformances.length > 0) {
+    if (teamPerformancesByTarget[selectedAnnualTargetId].length > 0) {
       const title = `${user.organizationName} Overall Performances - ${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name}`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.1, 0.1, 0.05, 0.15, 0.15, 0.15, 0.15, 0.15]);
     }
@@ -216,24 +217,36 @@ const TeamPerformances: React.FC = () => {
                 <StyledHeaderCell>Full Name</StyledHeaderCell>
                 <StyledHeaderCell>Job Title</StyledHeaderCell>
                 <StyledHeaderCell>Team</StyledHeaderCell>
-                <StyledHeaderCell>Q1 Overall Performance Score</StyledHeaderCell>
-                <StyledHeaderCell>Q2 Overall Performance Score</StyledHeaderCell>
-                <StyledHeaderCell>Q3 Overall Performance Score</StyledHeaderCell>
-                <StyledHeaderCell>Q4 Overall Performance Score</StyledHeaderCell>
+                {
+                  enableTwoQuarterMode(annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.filter(qt => qt.editable).map((quarter, index) => (
+                    quarter.quarter
+                  )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+                    <StyledHeaderCell key={quarter.key}>{quarter.alias} Overall Performance Score</StyledHeaderCell>
+                  ))
+                  }
                 <StyledHeaderCell>Overall Annual Performance Score</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {teamPerformances.map((performance: TeamPerformance, index: number) => {
-                const quarterScores = performance.quarterlyTargets.map(quarter => {
-                  if (annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable) {
-                    return enableFeedback ? calculateFinalScore(quarter.quarter, calculateQuarterScore(quarter.objectives), performance) : calculateQuarterScore(quarter.objectives)
+              {teamPerformancesByTarget[selectedAnnualTargetId].map((performance: TeamPerformance, index: number) => {
+                const quarterScores = performance.quarterlyTargets
+                .filter(quarter => !(user?.isTeamOwner || user?.role === 'SuperUser')?annualTargets.find(target => target._id === selectedAnnualTargetId)?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable:quarter)
+                .map(quarter => {
+                  const isFeedbackEnabled = feedbackTemplates
+                  .find(template => template._id === (quarter.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId) && template.status === 'Active')
+                  ?.enableFeedback
+                    .find(ef => ef.quarter === quarter.quarter && ef.enable)?.enable;
+                  if (enableFeedback) {
+                    return isFeedbackEnabled
+                      ? calculateFinalScore(quarter.quarter, calculateQuarterScore(quarter.objectives), performance)
+                      : calculateQuarterScore(quarter.objectives)
+                  } else {
+                    return calculateQuarterScore(quarter.objectives)
                   }
-                  return null
                 });
 
                 const validScores = quarterScores.filter(score => score) as number[];
-                const annualScore = validScores.length > 0
+                const annualScore = validScores.length === quarterScores.length
                   ? Math.round(validScores.reduce((a, b) => a + b, 0) / validScores.length)
                   : null;
 
@@ -243,13 +256,13 @@ const TeamPerformances: React.FC = () => {
                     <StyledTableCell>{performance.jobTitle}</StyledTableCell>
                     <StyledTableCell>{performance.team}</StyledTableCell>
                     {quarterScores.map((score, idx) => {
-                      const ratingScale = getRatingScaleInfo(Number(score), annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
+                      const ratingScale = getRatingScaleInfo(Math.round(Number(score)), annualTargets.find(target => target._id === selectedAnnualTargetId) as AnnualTarget);
                       return (
                         <StyledTableCell key={idx}
                           data-color={ratingScale?.color || '#DC2626'}
                         >
                           <Typography sx={{ color: ratingScale?.color }}>
-                            {ratingScale ? `${score} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` : 'N/A'}
+                            {ratingScale ? `${Math.round(Number(score))} ${ratingScale.name} (${ratingScale.min}-${ratingScale.max})` : 'N/A'}
                           </Typography>
                         </StyledTableCell>
                       )

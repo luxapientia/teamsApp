@@ -81,7 +81,7 @@ export interface PersonalQuarterlyTarget {
 export interface PersonalPerformanceDocument extends Document {
   _id: string;
   teamId: string;
-  userId: string;
+  userId: string | { _id: string; MicrosoftId: string };
   tenantId: string;
   annualTargetId: string;
   quarterlyTargets: PersonalQuarterlyTarget[];
@@ -302,7 +302,23 @@ const personalPerformanceSchema = new Schema<PersonalPerformanceDocument>({
           _id: false,
           name: String,
           url: String
-        }]
+        }],
+        agreementComment: {
+          type: String,
+          default: ''
+        },
+        previousAgreementComment: {
+          type: String,
+          default: ''
+        },
+        assessmentComment: {
+          type: String,
+          default: ''
+        },
+        previousAssessmentComment: {
+          type: String,
+          default: ''
+        }
       }]
     }]
   }]

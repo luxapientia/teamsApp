@@ -42,6 +42,7 @@ import { updatePersonalPerformance } from '../../../store/slices/personalPerform
 import { api } from '../../../services/api';
 import { useAuth } from '../../../contexts/AuthContext';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
+import CommentModal from '../../../components/CommentModal';
 
 import { ExportButton } from '../../../components/Buttons';
 
@@ -49,10 +50,15 @@ import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { exportPdf } from '../../../utils/exportPdf';
 import { Toast } from '../../../components/Toast';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { fetchNotifications } from '../../../store/slices/notificationSlice';
+
+
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
+  isEnabledTwoQuarterMode: boolean;
   onBack?: () => void;
   personalPerformance?: PersonalPerformance | null;
 }
@@ -60,6 +66,7 @@ interface PersonalQuarterlyTargetProps {
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
+  isEnabledTwoQuarterMode,
   onBack,
   personalPerformance = null,
 }) => {
@@ -79,6 +86,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [status, setStatus] = useState<AgreementStatus | null>(null);
   const tableRef = useRef();
   const { user } = useAuth();
+  const notifications = useAppSelector((state: RootState) => state.notification.notifications);
+
 
   // Add state for the dialog
   const [sourceScorecardId, setSourceScorecardId] = useState('');
@@ -86,21 +95,32 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [selectedComment, setSelectedComment] = useState('');
 
   useEffect(() => {
     fetchCompanyUsers();
   }, []);
 
   useEffect(() => {
+    dispatch(fetchNotifications());
+  }, [dispatch]);
+
+  useEffect(() => {
     if (personalPerformance) {
       setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
-      setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
+      const supervisorId = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '';
+      if (companyUsers.some(user => user.id === supervisorId)) {
+        setSelectedSupervisor(supervisorId);
+      } else {
+        setSelectedSupervisor('');
+      }
       setIsSubmitted(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Submitted);
       setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus === AgreementStatus.Approved);
       setIsAgreementReviewed(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementReviewStatus === AgreementReviewStatus.Reviewed);
       setStatus(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.agreementStatus);
     }
-  }, [personalPerformance]);
+  }, [personalPerformance, companyUsers, quarter]);
 
   const fetchCompanyUsers = async () => {
     try {
@@ -232,32 +252,43 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          agreementStatus: AgreementStatus.Submitted,
-          agreementStatusUpdatedAt: new Date(),
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight(personalQuarterlyObjectives) <= 100) {
-        return {
-          ...target,
-          agreementStatus: AgreementStatus.Draft,
-          agreementStatusUpdatedAt: new Date(),
-          isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      return target;
-    });
-
     try {
+      const agreementNotification = notifications.find((n: any) => 
+        n.type === 'resolve_agreement' && 
+        n.annualTargetId === personalPerformance?.annualTargetId &&
+        n.quarter === quarter
+      );
+
+      if (agreementNotification) {
+        // Mark notification as read
+        await api.post(`/notifications/read/${agreementNotification._id}`);
+      }
+
+      const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+        if (target.quarter === quarter) {
+          return {
+            ...target,
+            agreementStatus: AgreementStatus.Submitted,
+            agreementStatusUpdatedAt: new Date(),
+            supervisorId: selectedSupervisor,
+            objectives: personalQuarterlyObjectives
+          }
+        }
+
+        if (quarter === 'Q1' && target.isEditable === false && calculateTotalWeight(personalQuarterlyObjectives) <= 100) {
+          return {
+            ...target,
+            agreementStatus: AgreementStatus.Draft,
+            agreementStatusUpdatedAt: new Date(),
+            isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
+            supervisorId: selectedSupervisor,
+            objectives: personalQuarterlyObjectives
+          }
+        }
+
+        return target;
+      });
+
       await dispatch(updatePersonalPerformance({
         _id: personalPerformance?._id || '',
         teamId: personalPerformance?.teamId || '',
@@ -265,19 +296,27 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         quarterlyTargets: newPersonalQuarterlyTargets || []
       }));
 
-      await api.post('/notifications/agreement/submit', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter,
-        personalPerformanceId: personalPerformance?._id || ''
-      });
+      try {
+        await api.post('/notifications/agreement/submit', {
+          recipientId: selectedSupervisor,
+          annualTargetId: personalPerformance?.annualTargetId || '',
+          quarter: quarter,
+          personalPerformanceId: personalPerformance?._id || ''
+        });
+        setToast({
+          message: 'Performance agreement submitted successfully',
+          type: 'success'
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        setToast({
+          message: 'Performance agreement submitted successfully, but email notification failed',
+          type: 'success'
+        });
+      }
 
       setIsSubmitted(true);
       setStatus(AgreementStatus.Submitted);
-      setToast({
-        message: 'Performance agreement submitted successfully',
-        type: 'success'
-      });
     } catch (error) {
       console.error('Error submitting quarterly target:', error);
       setToast({
@@ -290,6 +329,14 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   }
 
   const handleRecall = async () => {
+    if (hasAnyAgreementComment()) {
+      setToast({
+        message: 'You cannot recall as Supervisor is busy reviewing your agreement or assessment.',
+        type: 'error'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
       if (target.quarter === quarter) {
@@ -312,20 +359,28 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         quarterlyTargets: newPersonalQuarterlyTargets || []
       }));
 
-      await api.post('/notifications/agreement/recall', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter,
-        personalPerformanceId: personalPerformance?._id || ''
-      });
+      try {
+        await api.post('/notifications/agreement/recall', {
+          recipientId: selectedSupervisor,
+          annualTargetId: personalPerformance?.annualTargetId || '',
+          quarter: quarter,
+          personalPerformanceId: personalPerformance?._id || ''
+        });
+        setToast({
+          message: 'Performance agreement recalled successfully',
+          type: 'success'
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        setToast({
+          message: 'Performance agreement recalled successfully, but email notification failed',
+          type: 'success'
+        });
+      }
 
       setIsSubmitted(false);
       const currentTarget = newPersonalQuarterlyTargets?.find(target => target.quarter === quarter);
       setStatus(currentTarget?.isAgreementCommitteeSendBack ? AgreementStatus.CommitteeSendBack : AgreementStatus.Draft);
-      setToast({
-        message: 'Performance agreement recalled successfully',
-        type: 'success'
-      });
     } catch (error) {
       console.error('Error recalling quarterly target:', error);
       setToast({
@@ -397,7 +452,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const handleExportPDF = async () => {
-    const title = `${user.name} Performance Agreement - ${annualTarget?.name} ${quarter}`;
+    const title = `${user.displayName} Performance Agreement - ${annualTarget?.name} ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`;
     if (personalQuarterlyObjectives.length > 0) {
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.15, 0.15, 0.2, 0.1, 0.2, 0.1, 0.1]);
     }
@@ -429,6 +484,19 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   };
 
   const canAddFromExisting = quarter === 'Q1' && personalQuarterlyObjectives.length === 0;
+
+  const hasAnyAgreementComment = () => {
+    return personalQuarterlyObjectives.some(objective =>
+      objective.KPIs.some(kpi => {
+        return kpi.agreementComment !== undefined && kpi.agreementComment.trim() !== '';
+      })
+    );
+  };
+
+  const showCommentModal = (initiative: PersonalQuarterlyTargetObjective, kpiIndex: number) => {
+    setSelectedComment(initiative.KPIs[kpiIndex].previousAgreementComment || '');
+    setCommentModalOpen(true);
+  };
 
   return (
     <Box>
@@ -470,7 +538,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
       <Typography variant="h6">
-        {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
+        {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
       </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl
@@ -489,38 +557,47 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             },
           }}
         >
-          <Autocomplete
-            value={companyUsers.find(user => user.id === selectedSupervisor) || null}
-            onChange={(event, newValue) => {
-              if (newValue) {
-                const event = { target: { value: newValue.id } } as SelectChangeEvent;
-                handleSupervisorChange(event);
-              }
-            }}
-            disabled={!canEdit()}
-            options={companyUsers}
-            getOptionLabel={(option) => option.name || ''}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Select Supervisor"
-                size="small"
-              />
-            )}
-            renderOption={(props, option) => (
-              <MenuItem {...props} value={option.id}>
-                {option.name}
-              </MenuItem>
-            )}
-            disableClearable
-            sx={{
-              '& .MuiAutocomplete-inputRoot': {
-                '& .MuiAutocomplete-input': {
-                  cursor: !canEdit() ? 'not-allowed' : 'text',
+          {companyUsers.length > 0 ? (
+            <Autocomplete
+              value={companyUsers.find(user => user.id === selectedSupervisor) || null}
+              onChange={(event, newValue) => {
+                if (newValue) {
+                  const event = { target: { value: newValue.id } } as SelectChangeEvent;
+                  handleSupervisorChange(event);
+                }
+              }}
+              disabled={!canEdit()}
+              options={companyUsers}
+              getOptionLabel={(option) => option.name || ''}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Select Supervisor"
+                  size="small"
+                />
+              )}
+              renderOption={(props, option) => (
+                <MenuItem {...props} value={option.id}>
+                  {option.name}
+                </MenuItem>
+              )}
+              disableClearable
+              sx={{
+                '& .MuiAutocomplete-inputRoot': {
+                  '& .MuiAutocomplete-input': {
+                    cursor: !canEdit() ? 'not-allowed' : 'text',
+                  },
                 },
-              },
-            }}
-          />
+              }}
+            />
+          ) : (
+            <TextField
+              value=""
+              placeholder="No supervisors available"
+              size="small"
+              disabled
+            />
+          )}
         </FormControl>
       </Box>
 
@@ -571,7 +648,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignSelf: 'center'
               }}
             />
-          )}  
+          )}
           {isApproved ? (
             <Chip
               label="Approved"
@@ -620,7 +697,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                   }
                 }}
                 onClick={() => isSubmitted ? handleRecall() : handleSubmit()}
-                disabled={isSubmitting || (isSubmitted ? false : !canSubmit())}
+                disabled={isSubmitting || (!isSubmitted && !canSubmit())}
               >
                 {isSubmitting ? 'Processing...' : (isSubmitted ? 'Recall' : 'Submit')}
               </Button>
@@ -688,6 +765,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Rating Scale</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Comments</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Actions</StyledHeaderCell>
               </TableRow>
             </TableHead>
@@ -784,6 +862,21 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                               >
                                 <DescriptionIcon />
                               </IconButton>
+                            </StyledTableCell>
+                            <StyledTableCell align="center" className='noprint'>
+                              {kpi.previousAgreementComment &&
+                                <IconButton
+                                  size="small"
+                                  onClick={() => showCommentModal(initiative, kpiIndex)}
+                                  sx={{
+                                    color: '#DC2626',
+                                    '&:hover': {
+                                      backgroundColor: '#FEF2F2',
+                                    },
+                                  }}
+                                >
+                                  <DescriptionIcon />
+                                </IconButton>}
                             </StyledTableCell>
                             {kpiIndex === 0 && (
                               <StyledTableCell align="center" rowSpan={initiative.KPIs.length} className='noprint'>
@@ -948,6 +1041,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onClose={() => setViewSendBackModalOpen(false)}
         emailSubject={`${annualTarget.name}, Performance Agreement ${quarter}(PM Committee Review)`}
         emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.agreementCommitteeSendBackMessage || 'No message available'}
+      />
+
+      <CommentModal
+        open={commentModalOpen}
+        onClose={() => setCommentModalOpen(false)}
+        comment={selectedComment}
       />
     </Box >
   );

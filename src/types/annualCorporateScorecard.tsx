@@ -102,6 +102,7 @@ export interface QuarterlyTarget {
     editable: boolean;
     isDevelopmentPlanEnabled?: boolean;
     objectives: QuarterlyTargetObjective[];
+    selectedFeedbackId?: string;
 }
 
 export interface QuarterlyTargetObjective {
@@ -123,4 +124,8 @@ export interface QuarterlyTargetKPI {
         name: string;
         url: string;
     }[];
+    agreementComment?: string;
+    previousAgreementComment?: string;
+    assessmentComment?: string;
+    previousAssessmentComment?: string;
 }

@@ -28,6 +28,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 import { exportPdf } from '../../../utils/exportPdf';
+import { enableTwoQuarterMode } from '../../../utils/quarterMode';
 
 
 const StyledFormControl = styled(FormControl)({
@@ -127,7 +128,7 @@ const OrganizationPerformances: React.FC = () => {
 
     annualTarget.content.quarterlyTarget.quarterlyTargets.forEach(quarter => {
       const quarterScore = calculateQuarterScore(quarter.objectives);
-      if (quarterScore && quarter.editable) {
+      if (quarterScore && (user?.isTeamOwner || user?.role === 'SuperUser')?quarter.editable:true) {
         totalWeightedScore += quarterScore;
         totalQuarters++;
       }
@@ -147,7 +148,7 @@ const OrganizationPerformances: React.FC = () => {
 
   const handleExportPDF = async () => {
     if (selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.length > 0) {
-      const title = `${user.organizationName} ${selectedAnnualTarget?.name} Performances`;
+      const title = `${user.organizationName ? user.organizationName : ''} ${selectedAnnualTarget?.name} Performances`;
       exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.2, 0.2, 0.2, 0.2, 0.2]);
     }
   }
@@ -229,9 +230,11 @@ const OrganizationPerformances: React.FC = () => {
               <Table size="small" stickyHeader ref={tableRef}>
                 <TableHead>
                   <TableRow>
-                    {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-                      <StyledHeaderCell key={quarter.quarter} align="center">
-                        {quarter.quarter} Overall Performance Score
+                    {enableTwoQuarterMode(selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map((quarter) => (
+                      quarter.quarter
+                    )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+                      <StyledHeaderCell key={quarter.key} align="center">
+                        {quarter.alias} Overall Performance Score
                       </StyledHeaderCell>
                     ))}
                     <StyledHeaderCell align="center">
@@ -241,7 +244,9 @@ const OrganizationPerformances: React.FC = () => {
                 </TableHead>
                 <TableBody>
                   <TableRow>
-                    {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.map((quarter) => {
+                    {selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                      !(user?.isTeamOwner || user?.role === 'SuperUser')?quarter.editable:quarter
+                    )).map((quarter) => {
                       const score = calculateQuarterScore(quarter.objectives);
                       const ratingScale = getRatingScaleInfo(score, selectedAnnualTarget);
 
@@ -274,6 +279,7 @@ const OrganizationPerformances: React.FC = () => {
                             color: overallRatingScale?.color || '#DC2626',
                             fontWeight: 500
                           }}
+                          data-color={overallRatingScale?.color || '#DC2626'}
                         >
                           {overallScore && overallRatingScale ? (
                             `${overallScore} ${overallRatingScale.name} (${overallRatingScale.min}-${overallRatingScale.max})`

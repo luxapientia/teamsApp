@@ -1,34 +1,22 @@
-import React, { useEffect } from 'react';
-import { Box } from '@mui/material';
+import React from 'react';
 import { PageProps } from '../../types';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import PerformanceAssessment from './my_assessment';
-import TeamPerformance from './team_performance';
 import MyPerformances from './my_overall_performance';
+import TeamPerformance from './team_performance';
 import ManagePerformanceAssessment from './manage_performance_assessment';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { fetchAnnualTargets } from '../../store/slices/scorecardSlice';
-const MyPerformanceAssessment: React.FC<PageProps> = ({ title, icon, tabs, selectedTab }) => {
-  const dispatch = useAppDispatch();
 
-  useEffect(() => {
-    dispatch(fetchAnnualTargets());
-  }, [dispatch]);
-
+const MyPerformanceAssessment: React.FC<PageProps> = ({ title, icon, tabs }) => {
   return (
-    <Box>
-      {selectedTab === 'My Assessments' && (
-        <PerformanceAssessment />
-      )}
-      {selectedTab === 'My Performances' && (
-        <MyPerformances />
-      )}
-      {selectedTab === 'Team Performances' && (
-        <TeamPerformance />
-      )}
-      {selectedTab === 'Manage Performance Assessment' && (
-        <ManagePerformanceAssessment />
-      )}
-    </Box>
+    <div className="space-y-6">
+      <Routes>
+        <Route path="/*" element={<Navigate to="my-assessments" replace />} />
+        <Route path="my-assessments" element={<PerformanceAssessment />} />
+        <Route path="my-performances" element={<MyPerformances />} />
+        <Route path="team-performances" element={<TeamPerformance />} />
+        <Route path="manage-performance-assessment" element={<ManagePerformanceAssessment />} />
+      </Routes>
+    </div>
   );
 };
 

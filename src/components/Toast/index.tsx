@@ -59,11 +59,11 @@ const useStyles = makeStyles({
     },
   },
   '@keyframes slideIn': {
-    from: {
+    '&from': {
       transform: 'translateX(100%)',
       opacity: 0,
     },
-    to: {
+    '&to': {
       transform: 'translateX(0)',
       opacity: 1,
     },

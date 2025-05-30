@@ -5,6 +5,7 @@ import * as dotenv from 'dotenv';
 import { UserProfile } from '../types';
 import { roleService } from './roleService';
 import { dUser, UserRole } from '../types/user';
+import { tokenPayload } from '../types';
 
 dotenv.config();
 
@@ -15,7 +16,7 @@ export class AuthService {
       client_id: config.azure.clientId!,
       response_type: 'code',
       redirect_uri: config.azure.redirectUri,
-      scope: 'openid profile email User.Read Organization.Read.All',
+      scope: 'openid profile email User.Read Organization.Read.All Mail.Send Mail.Read Mail.ReadBasic Mail.ReadWrite',
       response_mode: 'query',
       prompt: 'consent',
       ...(state && { state })
@@ -80,7 +81,12 @@ export class AuthService {
         role: UserRole.USER,
         status: 'active',
         tenantId: tenantId,
-        organizationName: userData.companyName || ''
+        organizationName: userData.companyName || '',
+        isDevMember: false,
+        isPerformanceCalibrationMember: false,
+        isTeamOwner: false,
+        isComplianceSuperUser: false,
+        isComplianceChampion: false
       };
 
       if (userProfile) {
@@ -90,8 +96,8 @@ export class AuthService {
         if (!user) {
           await roleService.createUser(
             userProfile.id,
-            userProfile.email,
             userProfile.displayName,
+            userProfile.email,
             role || UserRole.USER,
             userProfile.tenantId,
             undefined,
@@ -119,7 +125,8 @@ export class AuthService {
       }
 
       // Create token using database user data
-      const tokenUserProfile: UserProfile = {
+      const UserProfile: UserProfile = {
+        _id: dbUser._id,
         id: dbUser.MicrosoftId,
         email: dbUser.email,
         displayName: dbUser.name,
@@ -128,15 +135,19 @@ export class AuthService {
         organization: '',
         role: dbUser.role,
         status: 'active',
-        tenantId: dbUser.tenantId,
+        tenantId: dbUser.tenantId || '',
         organizationName: '',
-        isDevMember: dbUser.isDevMember,
-        isPerformanceCalibrationMember: dbUser.isPerformanceCalibrationMember
+        isDevMember: !!dbUser.isDevMember,
+        isPerformanceCalibrationMember: !!dbUser.isPerformanceCalibrationMember,
+        isTeamOwner: await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId),
+        teamId: dbUser?.teamId?.toString(),
+        isComplianceSuperUser: !!dbUser.isComplianceSuperUser,
+        isComplianceChampion: !!dbUser.isComplianceChampion
       };
 
-      const token = await this.createAppToken(tokenUserProfile);
+      const token = await this.createAppToken({id: dbUser.MicrosoftId, email: dbUser.email, name: dbUser.name});
 
-      return { token, user: tokenUserProfile };
+      return { token, user: UserProfile };
     } catch (error: any) {
       console.error('Authentication error details:', {
         message: error.message,
@@ -151,7 +162,7 @@ export class AuthService {
   async verifyToken(token: string): Promise<Promise<dUser | null> | null> {
     try {
       // Verify the JWT token using the secret
-      const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
+      const decoded = jwt.verify(token, config.jwtSecret) as tokenPayload;
       
       // Ensure the token has the necessary fields
       if (!decoded.id || !decoded.email) {
@@ -173,8 +184,36 @@ export class AuthService {
 
   async getProfile(token: string): Promise<UserProfile> {
     try {
-      const decoded = jwt.verify(token, config.jwtSecret) as UserProfile;
-      return decoded;
+      const decoded = jwt.verify(token, config.jwtSecret) as tokenPayload;
+      
+      // Get the user from database to ensure we have the latest data
+      const dbUser = await roleService.getUser(decoded.id);
+      if (!dbUser) {
+        throw new Error('User not found in database');
+      }
+
+      // Create a complete user profile with all necessary fields
+      const userProfile: UserProfile = {
+        _id: dbUser._id?.toString() || '',
+        id: dbUser.MicrosoftId,
+        email: dbUser.email,
+        displayName: dbUser.name,
+        jobTitle: dbUser.jobTitle || '',
+        department: '',
+        organization: '',
+        role: dbUser.role,
+        status: 'active',
+        tenantId: dbUser.tenantId || '',
+        organizationName: '',
+        isDevMember: !!dbUser.isDevMember,
+        isPerformanceCalibrationMember: !!dbUser.isPerformanceCalibrationMember,
+        isTeamOwner: await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId),
+        teamId: dbUser?.teamId?.toString(),
+        isComplianceSuperUser: !!dbUser.isComplianceSuperUser,
+        isComplianceChampion: !!dbUser.isComplianceChampion
+      };
+
+      return userProfile;
     } catch (error) {
       console.error('Profile error:', error);
       throw new Error('Invalid token');
@@ -267,7 +306,12 @@ export class AuthService {
           role: UserRole.USER,
           status: 'active',
           tenantId: tenantId, // Use the tenant ID from the Teams token
-          organizationName: userData.companyName || ''
+          organizationName: userData.companyName || '',
+          isDevMember: false,
+          isPerformanceCalibrationMember: false,
+          isTeamOwner: false,
+          isComplianceSuperUser: false,
+          isComplianceChampion: false
         };
 
         if (!userProfile.id || !userProfile.email) {
@@ -281,7 +325,7 @@ export class AuthService {
         userProfile.role = role || UserRole.USER;
         
         if (!user) {
-          await roleService.createUser(
+          const newUser = await roleService.createUser(
             userProfile.id,
             userProfile.email,
             userProfile.displayName,
@@ -290,6 +334,7 @@ export class AuthService {
             undefined,
             userProfile.jobTitle
           );
+          userProfile._id = newUser._id;
         } else {
           await roleService.updateUser(
             userProfile.id,
@@ -302,7 +347,21 @@ export class AuthService {
               jobTitle: userProfile.jobTitle
             }
           );
+          userProfile._id = user._id;
         }
+
+        // Get the latest user data to ensure we have all fields
+        const dbUser = await roleService.getUser(userProfile.id);
+        if (!dbUser) {
+          throw new Error('Failed to retrieve updated user data');
+        }
+
+        // Update the user profile with complete data
+        userProfile._id = dbUser._id;
+        userProfile.isDevMember = !!dbUser.isDevMember;
+        userProfile.isPerformanceCalibrationMember = !!dbUser.isPerformanceCalibrationMember;
+        userProfile.isTeamOwner = await roleService.isTeamOwner(dbUser.teamId?.toString() || '', dbUser.MicrosoftId);
+        userProfile.teamId = dbUser.teamId?.toString();
 
         console.log('Created user profile:', userProfile);
         return userProfile;
@@ -337,25 +396,11 @@ export class AuthService {
     }
   }
 
-  async createAppToken(userProfile: UserProfile): Promise<string> {
-    if (!userProfile.id || !userProfile.email) {
+  async createAppToken(tokenPayload: tokenPayload): Promise<string> {
+    if (!tokenPayload.id || !tokenPayload.email) {
       throw new Error('Invalid user profile: missing required fields');
     }
 
-    const tokenPayload = {
-      id: userProfile.id,
-      email: userProfile.email,
-      displayName: userProfile.displayName || '',
-      jobTitle: userProfile.jobTitle || '',
-      department: userProfile.department || '',
-      organization: userProfile.organization || '',
-      role: userProfile.role || UserRole.USER,
-      status: userProfile.status || 'active',
-      tenantId: userProfile.tenantId,
-      organizationName: userProfile.organizationName || ''
-    };
-
-    
     return jwt.sign(
       tokenPayload,
       process.env.JWT_SECRET || 'your-secret-key',

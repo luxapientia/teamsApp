@@ -7,7 +7,7 @@ export const StyledTabs = styled(Tabs)({
         display: 'none',
     },
     '& .MuiTabs-flexContainer': {
-        justifyContent: 'flex-end',
+        justifyContent: 'flex-start',
         gap: '8px',
     },
 });

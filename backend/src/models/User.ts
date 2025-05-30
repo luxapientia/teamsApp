@@ -43,6 +43,14 @@ const userSchema = new mongoose.Schema<dUser>({
   isPerformanceCalibrationMember: {
     type: Boolean,
     default: false
+  },
+  isComplianceSuperUser: {
+    type: Boolean,
+    default: false
+  },
+  isComplianceChampion: {
+    type: Boolean,
+    default: false
   }
 });
 

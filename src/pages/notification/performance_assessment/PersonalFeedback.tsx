@@ -45,16 +45,21 @@ import { ViewButton, StyledTableCell, StyledHeaderCell } from '../../../componen
 import { api } from '../../../services/api';
 import { updatePersonalPerformance } from '../../../store/slices/personalPerformanceSlice';
 import { useToast } from '../../../contexts/ToastContext';
+import { createSelector } from '@reduxjs/toolkit';
 
-interface Props {
-    quarter: QuarterType;
-    annualTargetId: string;
-    personalPerformance: PersonalPerformance;
-    overallScore: {
-        score: number;
-        name: string;
-    };
-}
+// Memoized selector for feedbacks
+const selectFeedbacks = createSelector(
+    [
+        (state: RootState) => state.feedback.feedbacks,
+        (_state: RootState, annualTargetId: string) => annualTargetId,
+        (_state: RootState, _annualTargetId: string, quarter: QuarterType) => quarter
+    ],
+    (feedbacks, annualTargetId, quarter) => 
+        feedbacks.filter(f =>
+            f.annualTargetId === annualTargetId &&
+            f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+        )
+);
 
 type ProviderType = 'Internal' | 'External';
 
@@ -71,6 +76,16 @@ interface AddProviderForm {
     name: string;
     email?: string;
     category: FeedbackProvider['category'];
+}
+
+interface Props {
+    quarter: QuarterType;
+    annualTargetId: string;
+    personalPerformance: PersonalPerformance;
+    overallScore: {
+        score: number;
+        name: string;
+    };
 }
 
 const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPerformance, overallScore }) => {
@@ -103,12 +118,8 @@ const PersonalFeedback: React.FC<Props> = ({ quarter, annualTargetId, personalPe
     const [emailError, setEmailError] = useState<string>('');
     const [snackbarOpen, setSnackbarOpen] = useState(false);
 
-    const feedbacks = useAppSelector((state: RootState) =>
-        state.feedback.feedbacks.filter(f =>
-            f.annualTargetId === annualTargetId &&
-            f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
-        )
-    );
+    // Use memoized selector
+    const feedbacks = useAppSelector(state => selectFeedbacks(state, annualTargetId, quarter));
 
     useEffect(() => {
         const fetchOrganizationMembers = async () => {

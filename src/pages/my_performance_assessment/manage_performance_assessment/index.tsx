@@ -33,6 +33,9 @@ import { PersonalPerformance, PersonalQuarterlyTarget } from '../../../types';
 import { api } from '../../../services/api';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import SearchIcon from '@mui/icons-material/Search';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { useAuth } from '../../../contexts/AuthContext';
+
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -66,6 +69,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, name: string, team: string, position: string }[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const { user } = useAuth();
   const teams = useAppSelector((state: RootState) =>
     state.teams.teams
   );
@@ -159,19 +163,21 @@ const PersonalPerformanceAgreement: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
-                </MenuItem>
-              )
+            {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+              <MenuItem key={quarter.key} value={quarter.key}>
+                {quarter.alias}
+              </MenuItem>
             ))}
           </Select>
         </StyledFormControl>
 
         <ViewButton
           variant="contained"
-          disabled={!selectedAnnualTargetId}
+          disabled={!selectedAnnualTargetId || !selectedQuarter}
           onClick={handleView}
         >
           View
@@ -248,6 +254,12 @@ const PersonalPerformanceAgreement: React.FC = () => {
             setShowQuarterlyTargets(true);
           }}
           userId={selectedUserId}
+          userName={filteredUsers.find(user => user.id === selectedUserId)?.name || ''}
+          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
+            .filter((quarter) => quarter.editable)
+            .map((quarter) => quarter.quarter),
+            user?.isTeamOwner || user?.role === 'SuperUser'
+          )}
         />
       )}
     </Box>

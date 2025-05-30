@@ -49,6 +49,11 @@ import { Course } from '../../../types/course';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import PersonalFeedback from './PersonalFeedback';
 import { Toast } from '../../../components/Toast';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { createSelector } from '@reduxjs/toolkit';
+import CommentModal from '../../../components/CommentModal';
+import { fetchNotifications } from '../../../store/slices/notificationSlice';
+
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -61,9 +66,24 @@ const AccessButton = styled(Button)({
   },
 });
 
+// Memoized selector for feedbacks
+const selectFeedbacks = createSelector(
+  [
+    (state: RootState) => state.feedback.feedbacks,
+    (_state: RootState, annualTargetId: string | undefined) => annualTargetId,
+    (_state: RootState, _annualTargetId: string | undefined, quarter: QuarterType) => quarter
+  ],
+  (feedbacks, annualTargetId, quarter) =>
+    feedbacks.filter(f =>
+      f.annualTargetId === annualTargetId &&
+      f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+    )
+);
+
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
+  isEnabledTwoQuarterMode: boolean;
   onBack?: () => void;
   personalPerformance?: PersonalPerformance | null;
 }
@@ -71,6 +91,7 @@ interface PersonalQuarterlyTargetProps {
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
+  isEnabledTwoQuarterMode,
   onBack,
   personalPerformance = null,
 }) => {
@@ -94,13 +115,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [selectedComment, setSelectedComment] = useState('');
+  const notifications = useAppSelector((state: RootState) => state.notification.notifications);
 
-  const feedbacks = useAppSelector((state: RootState) =>
-    state.feedback.feedbacks.filter(f =>
-      f.annualTargetId === personalPerformance?.annualTargetId &&
-      f.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
-    )
-  );
+
+  // Use memoized selector
+  const feedbacks = useAppSelector(state => selectFeedbacks(state, personalPerformance?.annualTargetId, quarter));
 
   const annualQuarterlyTarget = annualTarget?.content.quarterlyTarget.quarterlyTargets.find(
     target => target.quarter === quarter
@@ -111,6 +132,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     fetchCompanyUsers();
     checkFeedbackModule();
     dispatch(fetchFeedback());
+    dispatch(fetchNotifications());
   }, []);
 
   useEffect(() => {
@@ -124,7 +146,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   }, [personalPerformance]);
 
   const checkFeedbackModule = async () => {
-    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    const isModuleEnabled = await api.get('/module/Feedback/is-enabled');
     if (isModuleEnabled.data.data.isEnabled) {
       setEnableFeedback(true);
     }
@@ -216,32 +238,43 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
-      if (target.quarter === quarter) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Submitted,
-          assessmentStatusUpdatedAt: new Date(),
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      if (quarter === 'Q1' && target.isEditable === false) {
-        return {
-          ...target,
-          assessmentStatus: AssessmentStatus.Draft,
-          assessmentStatusUpdatedAt: new Date(),
-          isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
-          supervisorId: selectedSupervisor,
-          objectives: personalQuarterlyObjectives
-        }
-      }
-
-      return target;
-    });
-
     try {
+      const assessmentNotification = notifications.find((n: any) =>
+        n.type === 'resolve_assessment' &&
+        n.annualTargetId === personalPerformance?.annualTargetId &&
+        n.quarter === quarter
+      );
+
+      if (assessmentNotification) {
+        // Mark notification as read
+        await api.post(`/notifications/read/${assessmentNotification._id}`);
+      }
+
+      const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
+        if (target.quarter === quarter) {
+          return {
+            ...target,
+            assessmentStatus: AssessmentStatus.Submitted,
+            assessmentStatusUpdatedAt: new Date(),
+            supervisorId: selectedSupervisor,
+            objectives: personalQuarterlyObjectives
+          }
+        }
+
+        if (quarter === 'Q1' && target.isEditable === false) {
+          return {
+            ...target,
+            assessmentStatus: AssessmentStatus.Draft,
+            assessmentStatusUpdatedAt: new Date(),
+            isEditable: calculateTotalWeight(personalQuarterlyObjectives) === 100 ? true : false,
+            supervisorId: selectedSupervisor,
+            objectives: personalQuarterlyObjectives
+          }
+        }
+
+        return target;
+      });
+
       await dispatch(updatePersonalPerformance({
         _id: personalPerformance?._id || '',
         teamId: personalPerformance?.teamId || '',
@@ -249,19 +282,27 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         quarterlyTargets: newPersonalQuarterlyTargets || []
       }));
 
-      await api.post('/notifications/assessment/submit', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter,
-        personalPerformanceId: personalPerformance?._id || ''
-      });
+      try {
+        await api.post('/notifications/assessment/submit', {
+          recipientId: selectedSupervisor,
+          annualTargetId: personalPerformance?.annualTargetId || '',
+          quarter: quarter,
+          personalPerformanceId: personalPerformance?._id || ''
+        });
+        setToast({
+          message: 'Performance assessment submitted successfully',
+          type: 'success'
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        setToast({
+          message: 'Performance assessment submitted successfully, but email notification failed',
+          type: 'success'
+        });
+      }
 
       setIsSubmitted(true);
       setStatus(AssessmentStatus.Submitted);
-      setToast({
-        message: 'Performance assessment submitted successfully',
-        type: 'success'
-      });
     } catch (error) {
       console.error('Error submitting quarterly target:', error);
       setToast({
@@ -273,7 +314,22 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   }
 
+  const hasAnyAssessmentComment = () => {
+    return personalQuarterlyObjectives.some(objective =>
+      objective.KPIs.some(kpi => {
+        return kpi.assessmentComment !== undefined && kpi.assessmentComment.trim() !== '';
+      })
+    );
+  };
+
   const handleRecall = async () => {
+    if (hasAnyAssessmentComment()) {
+      setToast({
+        message: 'You cannot recall as Supervisor is busy reviewing your assessment.',
+        type: 'error'
+      });
+      return;
+    }
     setIsSubmitting(true);
     const newPersonalQuarterlyTargets = personalPerformance?.quarterlyTargets.map((target: PersonalQuarterlyTarget) => {
       if (target.quarter === quarter) {
@@ -296,12 +352,24 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         quarterlyTargets: newPersonalQuarterlyTargets || []
       }));
 
-      await api.post('/notifications/assessment/recall', {
-        recipientId: selectedSupervisor,
-        annualTargetId: personalPerformance?.annualTargetId || '',
-        quarter: quarter,
-        personalPerformanceId: personalPerformance?._id || ''
-      });
+      try {
+        await api.post('/notifications/assessment/recall', {
+          recipientId: selectedSupervisor,
+          annualTargetId: personalPerformance?.annualTargetId || '',
+          quarter: quarter,
+          personalPerformanceId: personalPerformance?._id || ''
+        });
+        setToast({
+          message: 'Performance assessment recalled successfully',
+          type: 'success'
+        });
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        setToast({
+          message: 'Performance assessment recalled successfully, but email notification failed',
+          type: 'success'
+        });
+      }
 
       setIsSubmitted(false);
       const currentTarget = newPersonalQuarterlyTargets?.find(target => target.quarter === quarter);
@@ -354,13 +422,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
     return isWithinPeriod() &&
       quarterlyTarget?.isEditable !== false &&
-      !isSubmitted && !isApproved && quarterlyTarget?.agreementStatus === 'Approved';
+      !isSubmitted && !isApproved;
   };
 
   // Add validation function for submit button
   const canSubmit = () => {
-    const quarterlyTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
-    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && quarterlyTarget?.agreementStatus === 'Approved' && areAllKPIsEvaluated();
+    return selectedSupervisor !== '' && calculateTotalWeight(personalQuarterlyObjectives) === 100 && !isApproved && areAllKPIsEvaluated();
   };
 
   const handleSave = async (newKPI: QuarterlyTargetKPI) => {
@@ -418,9 +485,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (personalQuarterlyObjectives.length > 0) {
       const score = calculateOverallScore(personalQuarterlyObjectives);
       const ratingScore = getRatingScoreInfo(score);
-      const title = `${user.name} Performance Assessment - ${annualTarget?.name} ${quarter}`;
-      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
-        { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
+      if (ratingScore) {
+        const title = `${user.displayName ? user.displayName : ''} Performance Assessment - ${annualTarget?.name} ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`;
+        exportPdf(PdfType.PerformanceEvaluation, tableRef, title, `Total Weight: ${calculateTotalWeight(personalQuarterlyObjectives)}`, '', [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
+          { score: `${score} ${ratingScore.name} (${ratingScore.min}-${ratingScore.max})`, color: ratingScore.color });
+      } else {
+        setToast({
+          message: 'No Assessment evaluation found',
+          type: 'error'
+        });
+      }
     }
   }
 
@@ -510,6 +584,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       annualTargetId: personalPerformance?.annualTargetId || '',
     }));
   };
+
+  const showCommentModal = (initiative: PersonalQuarterlyTargetObjective, kpiIndex: number) => {
+    setSelectedComment(initiative.KPIs[kpiIndex].previousAssessmentComment || '');
+    setCommentModalOpen(true);
+  };
+
   return (
     <Box>
       {toast && (
@@ -550,7 +630,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Button>
       </Box>
       <Typography variant="h6">
-        {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
+        {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
       </Typography>
       <Box sx={{ mb: 3 }}>
         <FormControl
@@ -742,6 +822,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                 <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Evidence</StyledHeaderCell>
+                <StyledHeaderCell align="center" className='noprint'>Comments</StyledHeaderCell>
                 <StyledHeaderCell align="center" className='noprint'>Evaluate</StyledHeaderCell>
               </TableRow>
             </TableHead>
@@ -849,6 +930,21 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                   <DescriptionIcon />
                                 </IconButton>
                               )}
+                            </StyledTableCell>
+                            <StyledTableCell align="center" className='noprint'>
+                              {kpi.previousAssessmentComment &&
+                                <IconButton
+                                  size="small"
+                                  onClick={() => showCommentModal(initiative, kpiIndex)}
+                                  sx={{
+                                    color: '#DC2626',
+                                    '&:hover': {
+                                      backgroundColor: '#FEF2F2',
+                                    },
+                                  }}
+                                >
+                                  <DescriptionIcon />
+                                </IconButton>}
                             </StyledTableCell>
                             <StyledTableCell align="center" className='noprint'>
                               {canEdit() ? (
@@ -1067,6 +1163,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onClose={() => setViewSendBackModalOpen(false)}
         emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
         emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentCommitteeSendBackMessage || 'No message available'}
+      />
+
+      <CommentModal
+        open={commentModalOpen}
+        onClose={() => setCommentModalOpen(false)}
+        comment={selectedComment}
       />
     </Box >
   );

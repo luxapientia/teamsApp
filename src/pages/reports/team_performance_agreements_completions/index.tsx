@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   FormControl,
@@ -24,6 +24,14 @@ import { fetchTeamPerformances } from '../../../store/slices/personalPerformance
 import { TeamPerformance } from '../../../types';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
 import { api } from '../../../services/api';
+import { exportPdf } from '../../../utils/exportPdf';
+import { PdfType } from '../../../types';
+import { ExportButton } from '../../../components/Buttons';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { useAuth } from '../../../contexts/AuthContext';
+
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
   borderRadius: '8px',
@@ -48,7 +56,8 @@ const TeamPerformances: React.FC = () => {
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
   const [teamPerformances, setTeamPerformances] = useState([]);
-
+  const tableRef = useRef();
+  const { user } = useAuth();
   useEffect(() => {
     dispatch(fetchAnnualTargets());
   }, [dispatch]);
@@ -84,6 +93,13 @@ const TeamPerformances: React.FC = () => {
     }
   };
 
+  const handleExportPDF = async () => {
+    if (teamPerformances.length > 0) {
+      const title = `${annualTargets.find(target => target._id === selectedAnnualTargetId)?.name} ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser') ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Agreements Completions`;
+      exportPdf(PdfType.PerformanceEvaluation, tableRef, title, '', '', [0.15, 0.25, 0.25, 0.1, 0.25]);
+    }
+  }
+
   return (
     <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
@@ -109,20 +125,19 @@ const TeamPerformances: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
+            { selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser')
+              .map((quarter) => (
+                <MenuItem key={quarter.key} value={quarter.key}>
+                  {quarter.alias}
                 </MenuItem>
-              )
-            ))}
+              ))}
           </Select>
         </StyledFormControl>
 
         <Button
           variant="contained"
           onClick={handleView}
-          disabled={!selectedAnnualTargetId}
+          disabled={!selectedAnnualTargetId || !selectedQuarter}
           sx={{
             backgroundColor: '#0078D4',
             '&:hover': { backgroundColor: '#106EBE' },
@@ -133,8 +148,17 @@ const TeamPerformances: React.FC = () => {
       </Box>
 
       {showTable && (
-        <Paper sx={{ boxShadow: 'none', border: '1px solid #E5E7EB' }}>
-          <Table>
+        <Paper sx={{ boxShadow: 'none', border: '1px solid #E5E7EB', overflowX: 'auto' }}>
+          <ExportButton
+            className="pdf"
+            startIcon={<FileDownloadIcon />}
+            onClick={handleExportPDF}
+            size="small"
+            sx={{ margin: 2 }}
+          >
+            Export to PDF
+          </ExportButton>
+          <Table ref={tableRef}>
             <TableHead>
               <TableRow>
                 <StyledHeaderCell>Full Name</StyledHeaderCell>

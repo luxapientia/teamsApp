@@ -4,16 +4,17 @@ import { AuthenticatedRequest } from '../middleware/auth';
 import Module, { ModuleDocument } from '../models/Module';
 const router = express.Router();
 
-// Get all companies
-router.get('/feedback-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+// Get all companies for a module
+router.get('/:moduleName/companies', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        let modules = await Module.findOne({ moduleName: 'Feedback' }) as ModuleDocument;
-        if (!modules) {
-            modules = new Module({ moduleName: 'Feedback', companies: [] });
-            await modules.save();
+        const { moduleName } = req.params;
+        let module = await Module.findOne({ moduleName }) as ModuleDocument;
+        if (!module) {
+            module = new Module({ moduleName, companies: [] });
+            await module.save();
         }
         return res.json({
-            data: modules?.companies,
+            data: module.companies,
             status: 200,
             message: 'Modules retrieved successfully'
         });
@@ -26,35 +27,40 @@ router.get('/feedback-companies', authenticateToken, async (_req: AuthenticatedR
     }
 });
 
-router.post('/update-feedback-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+// Update companies for a module
+router.post('/:moduleName/companies', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const feedbackCompanies = _req.body.feedbackCompanies;
-        const module = await Module.findOne({ moduleName: 'Feedback' }) as ModuleDocument;
+        const { moduleName } = req.params;
+        const { companies } = req.body;
+        console.log(moduleName, 'moduleName');
+        console.log(companies, 'companies');
+        const module = await Module.findOne({ moduleName }) as ModuleDocument;
         if (!module) {
             return res.status(404).json({
                 status: 404,
                 message: 'Module not found'
             });
         }
-        module.companies = feedbackCompanies;
+        module.companies = companies;
         await module.save();
         return res.json({
             status: 200,
-            message: 'Company added to module successfully'
+            message: 'Companies updated for module successfully'
         });
     } catch (error) {
         return res.status(500).json({
             status: 500,
-            message: 'Failed to add company to module'
+            message: 'Failed to update companies for module'
         });
     }
 });
 
-//check if module is enabled for company
-router.get('/is-feedback-module-enabled', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+// Check if module is enabled for company
+router.get('/:moduleName/is-enabled', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const tenantId = _req.user?.tenantId;
-        const module = await Module.findOne({ moduleName: 'Feedback' }).populate('companies') as ModuleDocument;
+        const { moduleName } = req.params;
+        const tenantId = req.user?.tenantId;
+        const module = await Module.findOne({ moduleName }).populate('companies') as ModuleDocument;
         if (!module) {
             return res.status(404).json({
                 status: 404,
@@ -75,72 +81,20 @@ router.get('/is-feedback-module-enabled', authenticateToken, async (_req: Authen
     }
 });
 
-router.get('/pm-calibration-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
+// Get all modules (not just companies)
+router.get('/', async (_req, res) => {
     try {
-        let modules = await Module.findOne({ moduleName: 'Performance Calibration' }) as ModuleDocument;
-        if (!modules) {
-            modules = new Module({ moduleName: 'Performance Calibration', companies: [] });
-            await modules.save();
-        }
+        const modules = await Module.find({ enabled: true }, { _id: 0, description: 1 });
         return res.json({
-            data: modules?.companies,
             status: 200,
+            data: modules,
             message: 'Modules retrieved successfully'
         });
     } catch (error) {
         return res.status(500).json({
+            status: 500,
             data: [],
-            status: 500,
             message: 'Failed to fetch modules'
-        });
-    }
-});
-
-router.post('/update-pm-calibration-companies', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
-    try {
-        const pmCommitteeCompanies = _req.body.pmCommitteeCompanies;
-        const module = await Module.findOne({ moduleName: 'Performance Calibration' }) as ModuleDocument;
-        if (!module) {
-            return res.status(404).json({
-                status: 404,
-                message: 'Module not found'
-            });
-        }
-        module.companies = pmCommitteeCompanies;
-        await module.save();
-        return res.json({
-            status: 200,
-            message: 'Company added to module successfully'
-        });
-    } catch (error) {
-        return res.status(500).json({
-            status: 500,
-            message: 'Failed to add company to module'
-        });
-    }
-});
-
-//check if module is enabled for company
-router.get('/is-pm-calibration-module-enabled', authenticateToken, async (_req: AuthenticatedRequest, res: Response) => {
-    try {
-        const tenantId = _req.user?.tenantId;
-        const module = await Module.findOne({ moduleName: 'Performance Calibration' }).populate('companies') as ModuleDocument;
-        if (!module) {
-            return res.status(404).json({
-                status: 404,
-                message: 'Module not found'
-            });
-        }
-        const isEnabled = module.companies.some((company: any) => company.tenantId === tenantId);
-        return res.json({
-            status: 200,
-            message: 'Module enabled for company',
-            isEnabled
-        });
-    } catch (error) {
-        return res.status(500).json({
-            status: 500,
-            message: 'Failed to check if module is enabled for company'
         });
     }
 });

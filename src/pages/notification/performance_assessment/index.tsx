@@ -19,6 +19,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
+import EditIcon from '@mui/icons-material/Edit';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective, QuarterlyTargetKPI } from '@/types';
 import { Notification } from '@/types';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
@@ -37,6 +38,9 @@ import PersonalFeedback from './PersonalFeedback';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import { Toast } from '../../../components/Toast';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { createSelector } from '@reduxjs/toolkit';
+import EditCommentModal from '../../../components/EditCommentModal';
 
 const AccessButton = styled(Button)({
   backgroundColor: '#0078D4',
@@ -49,9 +53,24 @@ const AccessButton = styled(Button)({
   },
 });
 
+// Memoized selector for feedbacks
+const selectFeedbacks = createSelector(
+  [
+    (state: RootState) => state.feedback.feedbacks,
+    (_state: RootState, annualTargetId: string | undefined) => annualTargetId,
+    (_state: RootState, _annualTargetId: string | undefined, quarter: QuarterType) => quarter
+  ],
+  (feedbacks, annualTargetId, quarter) =>
+    feedbacks.filter(feedback =>
+      feedback.annualTargetId === annualTargetId &&
+      feedback.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
+    )
+);
+
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
+  isEnabledTwoQuarterMode: boolean;
   onBack?: () => void;
   notification?: Notification | null;
 }
@@ -59,6 +78,7 @@ interface PersonalQuarterlyTargetProps {
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
+  isEnabledTwoQuarterMode,
   onBack,
   notification = null,
 }) => {
@@ -77,15 +97,17 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [isSendingBack, setIsSendingBack] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [kpiId, setKpiId] = useState(-1);
+  const [selectedObjective, setSelectedObjective] = useState('');
+  const [selectedInitiative, setSelectedInitiative] = useState('');
+  const [currentComment, setCurrentComment] = useState('');
+  const [previousComment, setPreviousComment] = useState('');
 
   const { showToast } = useToast();
 
-  const feedbacks = useAppSelector((state: RootState) => 
-    state.feedback.feedbacks.filter(feedback => 
-      feedback.annualTargetId === personalPerformance?.annualTargetId && 
-      feedback.enableFeedback.some(ef => ef.quarter === quarter && ef.enable)
-    )
-  );
+  // Use memoized selector
+  const feedbacks = useAppSelector(state => selectFeedbacks(state, personalPerformance?.annualTargetId, quarter));
 
   useEffect(() => {
     fetchPersonalPerformance();
@@ -114,7 +136,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   }
 
   const checkFeedbackModule = async () => {
-    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    const isModuleEnabled = await api.get('/module/Feedback/is-enabled');
     if (isModuleEnabled.data.data.isEnabled) {
       setEnableFeedback(true);
     }
@@ -156,10 +178,32 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }, 0);
   };
 
+  // Helper to get timestamp
+  function getTimestamp() {
+    const now = new Date();
+    return `[${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}]`;
+  }
+
   const handleApprove = async () => {
     if (notification) {
       setIsApproving(true);
       try {
+        // Move assessmentComment to previousAssessmentComment for all KPIs before approving
+        const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+        if (currentTarget) {
+          const updatedObjectives = currentTarget.objectives.map(objective => ({
+            ...objective,
+            KPIs: objective.KPIs.map(kpi => ({
+              ...kpi,
+              previousAssessmentComment: kpi.assessmentComment ? `${getTimestamp()} ${kpi.assessmentComment}` : '',
+              assessmentComment: ''
+            }))
+          }));
+          await api.put(`/notifications/personal-performance/${notification._id}`, {
+            quarter,
+            objectives: updatedObjectives
+          });
+        }
         const response = await api.post(`/notifications/approve/${notification._id}`);
         if (response.status === 200) {
           dispatch(fetchNotifications());
@@ -186,21 +230,50 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       setIsSendingBack(true);
       (async () => {
         try {
-          const response = await api.post(`/notifications/send-back/${notification._id}`, {
-            emailSubject,
-            emailBody,
-            senderId: notification.sender._id
-          });
-          dispatch(fetchNotifications());
-          if (response.status === 200) {
+          // First update the assessment status and comments
+          const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+          if (currentTarget) {
+            const updatedObjectives = currentTarget.objectives.map(objective => ({
+              ...objective,
+              KPIs: objective.KPIs.map(kpi => ({
+                ...kpi,
+                previousAssessmentComment: kpi.assessmentComment ? `${getTimestamp()} ${kpi.assessmentComment}` : '',
+                assessmentComment: ''
+              }))
+            }));
+            await api.put(`/notifications/personal-performance/${notification._id}`, {
+              quarter,
+              objectives: updatedObjectives
+            });
+          }
+
+          try {
+            // Then try to send the email notification
+            const response = await api.post(`/notifications/send-back/${notification._id}`, {
+              emailSubject,
+              emailBody,
+              senderId: notification.sender._id
+            });
+
+            if (response.status === 200) {
+              dispatch(fetchNotifications());
+              setToast({
+                message: 'Performance assessment sent back successfully',
+                type: 'success'
+              });
+              onBack?.();
+            }
+          } catch (emailError) {
+            console.error('Error sending email notification:', emailError);
+            dispatch(fetchNotifications());
             setToast({
-              message: 'Performance assessment sent back successfully',
+              message: 'Performance assessment sent back successfully, but email notification failed',
               type: 'success'
             });
             onBack?.();
           }
         } catch (error) {
-          console.error('Error send back notification:', error);
+          console.error('Error updating assessment status:', error);
           setToast({
             message: 'Failed to send back performance assessment',
             type: 'error'
@@ -211,6 +284,87 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       })();
     }
   };
+
+  const editComment = (kpiIndex: number, objectiveName: string, initiativeName: string) => {
+    // Find the current comment for this KPI
+    const objective = personalQuarterlyObjectives.find(obj =>
+      obj.name === objectiveName && obj.initiativeName === initiativeName
+    );
+    const currentKpiComment = objective?.KPIs[kpiIndex]?.assessmentComment || '';
+    const previousKpiComment = objective?.KPIs[kpiIndex]?.previousAssessmentComment || '';
+
+    // Store the KPI's current comment, index, and context
+    setKpiId(kpiIndex);
+    setSelectedObjective(objectiveName);
+    setSelectedInitiative(initiativeName);
+    setCurrentComment(currentKpiComment);
+    setPreviousComment(previousKpiComment);
+    setCommentModalOpen(true);
+  }
+
+  const handleSaveComment = async (comment: string, kpiId: number) => {
+    try {
+      // Find the current quarterly target
+      const currentTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
+      if (!currentTarget) return;
+
+      // Find and update only the specific objective and initiative
+      const updatedObjectives = currentTarget.objectives.map(objective => {
+        if (objective.name === selectedObjective && objective.initiativeName === selectedInitiative) {
+          return {
+            ...objective,
+            KPIs: objective.KPIs.map((kpi, index) => {
+              if (index === kpiId) {
+                return {
+                  ...kpi,
+                  assessmentComment: comment
+                };
+              } else {
+                return { ...kpi }
+              }
+            })
+          };
+        }
+        return objective;
+      });
+
+      // Update the personal performance with the new comment
+      const response = await api.put(`/notifications/personal-performance/${notification?._id}`, {
+        quarter,
+        objectives: updatedObjectives
+      });
+
+      if (response.status === 200) {
+        setToast({
+          message: 'Performance assessment comment updated successfully',
+          type: 'success'
+        });
+        // Refresh the personal performance data
+        await fetchPersonalPerformance();
+      }
+    } catch (error) {
+      console.error('Error updating personal performance comment:', error);
+      setToast({
+        message: 'Failed to update performance assessment comment',
+        type: 'error'
+      });
+    } finally {
+      setCommentModalOpen(false);
+      setSelectedObjective('');
+      setSelectedInitiative('');
+      setCurrentComment('');
+    }
+  }
+
+  const hasAnyKpiComment = () => {
+    return personalQuarterlyObjectives.some(objective =>
+      objective.KPIs.some(kpi => {
+        return kpi.assessmentComment !== undefined && kpi.assessmentComment.trim() !== '';
+      })
+    );
+  };
+
+  const assessmentStatus = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus;
 
   return (
     <Box>
@@ -228,7 +382,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${user?.displayName} ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${quarter}`}
+          {`${annualTarget.name}, ${notification?.sender.fullName} ${notification?.type === 'agreement' ? 'Agreement' : 'Assessment'} ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
         </Typography>
 
         <Button
@@ -297,7 +451,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
               }
             }}
             onClick={() => setSendBackModalOpen(true)}
-            disabled={isApproving || isSendingBack}
+            disabled={isApproving || isSendingBack || !hasAnyKpiComment()}
           >
             {isSendingBack ? 'Processing...' : 'Send Back'}
           </Button>
@@ -350,6 +504,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                 <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                 <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
+                <StyledHeaderCell align="center">Comment</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -454,6 +609,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 </IconButton>
                               )}
                             </StyledTableCell>
+                            <StyledTableCell align="center">
+                              <IconButton
+                                size="small"
+                                onClick={() => editComment(kpiIndex, objectiveGroup.name, initiative.initiativeName)}
+                                sx={{ color: '#6B7280' }}
+                              >
+                                <EditIcon />
+                              </IconButton>
+                            </StyledTableCell>
                           </TableRow>
                         );
 
@@ -530,65 +694,65 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       )}
 
       {/* Personal Development Courses Block */}
-      {!personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.isPersonalDevelopmentNotApplicable && 
-       personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.length > 0 && (
-        <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
-          <Box sx={{ mt: 4, mb: 2 }}>
-            <Typography variant="h6">
-              Personal Development Courses
-            </Typography>
-          </Box>
+      {!personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.isPersonalDevelopmentNotApplicable &&
+        personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.length > 0 && (
+          <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
+            <Box sx={{ mt: 4, mb: 2 }}>
+              <Typography variant="h6">
+                Personal Development Courses
+              </Typography>
+            </Box>
 
-          <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB', mb: 3 }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <StyledHeaderCell>Course Name</StyledHeaderCell>
-                    <StyledHeaderCell>Description</StyledHeaderCell>
-                    <StyledHeaderCell align="center">Status</StyledHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.map((course, index) => (
-                    <TableRow key={course._id}>
-                      <StyledTableCell>
-                        {typeof course === 'string' ? (
-                          <Skeleton variant="text" width={200} />
-                        ) : (
-                          course.name
-                        )}
-                      </StyledTableCell>
-                      <StyledTableCell>
-                        {typeof course === 'string' ? (
-                          <Skeleton variant="text" width={300} />
-                        ) : (
-                          course.description
-                        )}
-                      </StyledTableCell>
-                      <StyledTableCell align="center">
-                        {typeof course === 'string' ? (
-                          <Skeleton variant="text" width={100} />
-                        ) : (
-                          <Chip
-                            label={course.status}
-                            size="small"
-                            sx={{
-                              backgroundColor: course.status === 'active' ? '#D1FAE5' : '#FEE2E2',
-                              color: course.status === 'active' ? '#059669' : '#DC2626',
-                              fontWeight: 500
-                            }}
-                          />
-                        )}
-                      </StyledTableCell>
+            <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB', mb: 3 }}>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <StyledHeaderCell>Course Name</StyledHeaderCell>
+                      <StyledHeaderCell>Description</StyledHeaderCell>
+                      <StyledHeaderCell align="center">Status</StyledHeaderCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-        </Box>
-      )}
+                  </TableHead>
+                  <TableBody>
+                    {personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.map((course, index) => (
+                      <TableRow key={course._id}>
+                        <StyledTableCell>
+                          {typeof course === 'string' ? (
+                            <Skeleton variant="text" width={200} />
+                          ) : (
+                            course.name
+                          )}
+                        </StyledTableCell>
+                        <StyledTableCell>
+                          {typeof course === 'string' ? (
+                            <Skeleton variant="text" width={300} />
+                          ) : (
+                            course.description
+                          )}
+                        </StyledTableCell>
+                        <StyledTableCell align="center">
+                          {typeof course === 'string' ? (
+                            <Skeleton variant="text" width={100} />
+                          ) : (
+                            <Chip
+                              label={course.status}
+                              size="small"
+                              sx={{
+                                backgroundColor: course.status === 'active' ? '#D1FAE5' : '#FEE2E2',
+                                color: course.status === 'active' ? '#059669' : '#DC2626',
+                                fontWeight: 500
+                              }}
+                            />
+                          )}
+                        </StyledTableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          </Box>
+        )}
 
       {evidenceModalData && (
         <EvidenceModal
@@ -612,6 +776,21 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onClose={() => setViewSendBackModalOpen(false)}
         emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
         emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentCommitteeSendBackMessage || 'No message available'}
+      />
+
+      <EditCommentModal
+        open={commentModalOpen}
+        onClose={() => {
+          setCommentModalOpen(false);
+          setSelectedObjective('');
+          setSelectedInitiative('');
+          setCurrentComment('');
+          setPreviousComment('');
+        }}
+        onSave={handleSaveComment}
+        kpiId={kpiId}
+        initialComment={currentComment}
+        previousComment={previousComment}
       />
     </Box >
   );

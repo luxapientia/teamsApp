@@ -56,30 +56,29 @@ interface ModuleRow {
 const Modules: React.FC = () => {
   const [tabValue, setTabValue] = useState(3); // Modules tab selected by default
   const [searchQuery, setSearchQuery] = useState('');
-  const [modules, setModules] = useState<ModuleRow[]>([
-    {
-      id: '1',
-      name: 'Employees 360 Degree Feedback',
-      isExpanded: false,
-      companies: [],
-    },
-
-    {
-      id: '2',
-      name: 'Performance Calibration',
-      isExpanded: false,
-      companies: [],
-    },
-
-  ]);
+  const [modules, setModules] = useState<ModuleRow[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [feedbackCompanyIds, setFeedbackCompanyIds] = useState<string[]>([]);
   const [pmCommitteeCompanyIds, setPmCommitteeCompanyIds] = useState<string[]>([]);
+  const [complianceCompanyIds, setComplianceCompanyIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchCompanies();
     fetchFeedbackCompanies();
     fetchPmCommitteeCompanies();
+    fetchComplianceCompanies();
+    const fetchModules = async () => {
+      const response = await api.get('/module');
+      setModules(
+        response.data.data.map((mod: any, index: number) => ({
+          id: (index + 1).toString(),
+          name: mod.description,
+          isExpanded: false,
+          companies: [],
+        }))
+      );
+    };
+    fetchModules();
   }, []);
 
   const fetchCompanies = async () => {
@@ -93,7 +92,7 @@ const Modules: React.FC = () => {
 
   const fetchFeedbackCompanies = async () => {
     try {
-      const response = await api.get('/module/feedback-companies');
+      const response = await api.get('/module/Feedback/companies');
       if (response.status === 200) {
         setFeedbackCompanyIds(response.data.data);
       }
@@ -104,12 +103,23 @@ const Modules: React.FC = () => {
 
   const fetchPmCommitteeCompanies = async () => {
     try {
-      const response = await api.get('/module/pm-calibration-companies');
+      const response = await api.get('/module/PerformanceCalibration/companies');
       if (response.status === 200) {
         setPmCommitteeCompanyIds(response.data.data);
       }
     } catch (error) {
       console.error('Error fetching Performance Calibration companies:', error);
+    }
+  };
+
+  const fetchComplianceCompanies = async () => {
+    try {
+      const response = await api.get('/module/Compliance/companies');
+      if (response.status === 200) {
+        setComplianceCompanyIds(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching Compliance companies:', error);
     }
   };
 
@@ -126,7 +136,8 @@ const Modules: React.FC = () => {
       const isChecked = feedbackCompanyIds.some(fc => fc === companyId);
       const newFeedbackCompanyIds = isChecked ? feedbackCompanyIds.filter(fc => fc !== companyId) : [...feedbackCompanyIds, companyId];
       try {
-        const response = await api.post('/module/update-feedback-companies', { feedbackCompanies: newFeedbackCompanyIds });
+        console.log(newFeedbackCompanyIds, 'newFeedbackCompanyIds');
+        const response = await api.post(`/module/Feedback/companies`, { companies: newFeedbackCompanyIds });
         if (response.status === 200) {
           setFeedbackCompanyIds(newFeedbackCompanyIds);
         }
@@ -137,12 +148,23 @@ const Modules: React.FC = () => {
       const isChecked = pmCommitteeCompanyIds.some(fc => fc === companyId);
       const newPmCommitteeCompanyIds = isChecked ? pmCommitteeCompanyIds.filter(fc => fc !== companyId) : [...pmCommitteeCompanyIds, companyId];
       try {
-        const response = await api.post('/module/update-pm-calibration-companies', { pmCommitteeCompanies: newPmCommitteeCompanyIds });
+        const response = await api.post(`/module/PerformanceCalibration/companies`, { companies: newPmCommitteeCompanyIds });
         if (response.status === 200) {
           setPmCommitteeCompanyIds(newPmCommitteeCompanyIds);
         }
       } catch (error) {
         console.error('Error updating Performance Calibration companies:', error);
+      }
+    } else if (moduleId === '3') {
+      const isChecked = complianceCompanyIds.some(fc => fc === companyId);
+      const newComplianceCompanyIds = isChecked ? complianceCompanyIds.filter(fc => fc !== companyId) : [...complianceCompanyIds, companyId];
+      try {
+        const response = await api.post(`/module/Compliance/companies`, { companies: newComplianceCompanyIds });
+        if (response.status === 200) {
+          setComplianceCompanyIds(newComplianceCompanyIds);
+        }
+      } catch (error) {
+        console.error('Error updating Compliance companies:', error);
       }
     }
   };
@@ -154,6 +176,9 @@ const Modules: React.FC = () => {
       }
       case '2': {
         return pmCommitteeCompanyIds.some(pc => pc === companyId)
+      }
+      case '3': {
+        return complianceCompanyIds.some(cc => cc === companyId)
       }
     }
   }

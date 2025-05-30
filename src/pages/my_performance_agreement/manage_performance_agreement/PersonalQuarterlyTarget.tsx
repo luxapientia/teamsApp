@@ -14,6 +14,10 @@ import {
     MenuItem,
     IconButton,
     Chip,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import { useToast } from '../../../contexts/ToastContext';
@@ -23,23 +27,28 @@ import { PersonalQuarterlyTargetObjective, PersonalPerformance, PersonalQuarterl
 import RatingScalesModal from '../../../components/RatingScalesModal';
 import { api } from '../../../services/api';
 import SendBackModal from '../../../components/Modal/SendBackModal';
-import { useAuth } from '../../../contexts/AuthContext';
 import { Toast } from '../../../components/Toast';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import CommentModal from '../../../components/CommentModal';
+
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
     quarter: QuarterType;
+    isEnabledTwoQuarterMode: boolean;
     onBack?: () => void;
     userId: string;
+    userName: string;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
     annualTarget,
     quarter,
+    isEnabledTwoQuarterMode,
     onBack,
     userId,
+    userName
 }) => {
-    const { user } = useAuth();
     const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
     const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
     const [personalPerformance, setPersonalPerformance] = React.useState<PersonalPerformance | null>(null);
@@ -51,6 +60,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const [sendBackModalOpen, setSendBackModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [warningModalOpen, setWarningModalOpen] = useState(false);
+    const [commentModalOpen, setCommentModalOpen] = useState(false);
+    const [selectedComment, setSelectedComment] = useState('');
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -114,32 +126,46 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
 
     const canSendBack = () => {
-        return personalPerformance && (personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Draft);
+        return personalPerformance && (personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus !== AssessmentStatus.Submitted && personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus !== AssessmentStatus.Approved);
     }
 
     const handleSendBack = (emailSubject: string, emailBody: string) => {
         if (personalPerformance) {
+            const quarterlyTarget = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter);
+
             setIsSubmitting(true);
             (async () => {
                 try {
-                    const response = await api.post(`/personal-performance/send-back`, {
-                        emailSubject,
-                        emailBody,
-                        supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
-                        userId: personalPerformance.userId,
-                        manageType: 'Agreement',
-                        performanceId: personalPerformance._id,
-                        quarter: quarter
-                    });
-                    if (response.status === 200) {
+
+                    try {
+                        // Then try to send the email notification
+                        const response = await api.post(`/personal-performance/send-back`, {
+                            emailSubject,
+                            emailBody,
+                            supervisorId: quarterlyTarget?.supervisorId,
+                            userId: personalPerformance.userId,
+                            manageType: 'Agreement',
+                            performanceId: personalPerformance._id,
+                            quarter: quarter
+                        });
+
+                        if (response.status === 200) {
+                            setToast({
+                                message: 'Performance agreement sent back successfully',
+                                type: 'success'
+                            });
+                            onBack?.();
+                        }
+                    } catch (emailError) {
+                        console.error('Error sending email notification:', emailError);
                         setToast({
-                            message: 'Performance agreement sent back successfully',
+                            message: 'Performance agreement sent back successfully, but email notification failed',
                             type: 'success'
                         });
                         onBack?.();
                     }
                 } catch (error) {
-                    console.error('Error send back notification:', error);
+                    console.error('Error updating agreement status:', error);
                     setToast({
                         message: 'Failed to send back performance agreement',
                         type: 'error'
@@ -149,6 +175,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 }
             })();
         }
+    };
+
+    const showCommentModal = (initiative: PersonalQuarterlyTargetObjective, kpiIndex: number) => {
+        setSelectedComment(initiative.KPIs[kpiIndex].previousAssessmentComment || '');
+        setCommentModalOpen(true);
     };
 
     return (
@@ -167,7 +198,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignItems: 'center'
             }}>
                 <Typography variant="h6">
-                    {`${annualTarget.name}, ${user?.displayName} Performance Agreement ${quarter}`}
+                    {`${annualTarget.name}, ${userName} Performance Agreement ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
                 </Typography>
             </Box>
 
@@ -219,7 +250,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     Back
                 </Button>
             </Box>
-            {canSendBack() && (
+            {
                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         {
@@ -258,7 +289,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                     color: '#9CA3AF'
                                 }
                             }}
-                            onClick={() => setSendBackModalOpen(true)}
+                            onClick={() => {
+                                if (canSendBack()) {
+                                    setSendBackModalOpen(true);
+                                } else {
+                                    setWarningModalOpen(true);
+                                }
+                            }}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? 'Processing...' : 'Send Back'}
@@ -266,7 +303,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
 
                     </Box>
                 </Box>
-            )}
+            }
 
             {/* Add total weight display */}
             <Box
@@ -315,6 +352,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 <StyledHeaderCell align="center">Baseline</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
+                                <StyledHeaderCell align="center">Comments</StyledHeaderCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -414,6 +452,21 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                                                 <DescriptionIcon />
                                                             </IconButton>
                                                         </StyledTableCell>
+                                                        <StyledTableCell align="center">
+                                                            {kpi.previousAgreementComment &&
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => showCommentModal(initiative, kpiIndex)}
+                                                                    sx={{
+                                                                        color: '#DC2626',
+                                                                        '&:hover': {
+                                                                            backgroundColor: '#FEF2F2',
+                                                                        },
+                                                                    }}
+                                                                >
+                                                                    <DescriptionIcon />
+                                                                </IconButton>}
+                                                        </StyledTableCell>
                                                     </TableRow>
                                                 );
 
@@ -449,6 +502,65 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     ratingScales={selectedRatingScales}
                 />
             )}
+
+            <Dialog
+                open={warningModalOpen}
+                onClose={() => setWarningModalOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: '12px',
+                        boxShadow: '0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }}
+            >
+                <DialogTitle sx={{
+                    backgroundColor: '#FEF3C7',
+                    color: '#92400E',
+                    borderBottom: '1px solid #F59E0B',
+                    fontWeight: 600,
+                    fontSize: '1.1rem'
+                }}>
+                    Warning
+                </DialogTitle>
+                <DialogContent sx={{
+                    mt: 2,
+                    '& .MuiTypography-root': {
+                        color: '#4B5563',
+                        fontSize: '0.95rem',
+                        lineHeight: 1.6
+                    }
+                }}>
+                    <Typography>
+                        You cannot send back while the performance assessment has been approved. If you still want to send back, please go and send back the performance assessment first.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{
+                    p: 2,
+                    borderTop: '1px solid #E5E7EB'
+                }}>
+                    <Button
+                        onClick={() => setWarningModalOpen(false)}
+                        variant="contained"
+                        sx={{
+                            backgroundColor: '#F59E0B',
+                            color: 'white',
+                            '&:hover': {
+                                backgroundColor: '#D97706'
+                            }
+                        }}
+                    >
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <CommentModal
+                open={commentModalOpen}
+                onClose={() => setCommentModalOpen(false)}
+                comment={selectedComment}
+            />
         </Box >
     );
 };

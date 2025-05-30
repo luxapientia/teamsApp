@@ -7,79 +7,45 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Typography
+  Typography,
 } from '@mui/material';
-import { TeamPerformance, AnnualTarget } from '../../../types';
+import { AnnualTarget } from '../../../types/annualCorporateScorecard';
 
 interface PerformanceTableProps {
-  teamPerformances: TeamPerformance[];
-  selectedQuarter: string;
-  viewMode: string;
-  userOwnedTeam?: string | null;
-  selectedAnnualTarget?: AnnualTarget;
+  tableData: {
+    [key: number]: {
+      count: number;
+      percentage: number;
+    }
+  };
+  selectedAnnualTarget: AnnualTarget;
 }
 
-const calculateAggregatePerformance = (performances: TeamPerformance[], quarter: string) => {
-  const ratingCounts = new Map<number, number>();
-
-  performances.forEach(performance => {
-    const quarterlyTarget = performance.quarterlyTargets.find(qt => qt.quarter === quarter);
-    if (quarterlyTarget) {
-      quarterlyTarget.objectives.forEach(objective => {
-        objective.KPIs.forEach(kpi => {
-          if (kpi.ratingScore) {
-            ratingCounts.set(kpi.ratingScore, (ratingCounts.get(kpi.ratingScore) || 0) + 1);
-          }
-        });
-      });
-    }
-  });
-
-  return ratingCounts;
-};
-
-export const PerformanceTable: React.FC<PerformanceTableProps> = ({
-  teamPerformances,
-  selectedQuarter,
-  viewMode,
-  userOwnedTeam,
-  selectedAnnualTarget
-}) => {
-  const filteredPerformances = viewMode === 'team'
-    ? teamPerformances.filter(p => p.team === userOwnedTeam)
-    : teamPerformances;
-
-  if (!selectedQuarter || !selectedAnnualTarget) {
-    return null;
-  }
-
-  const aggregateRatingCounts = calculateAggregatePerformance(filteredPerformances, selectedQuarter);
-  const totalRatings = Array.from(aggregateRatingCounts.values()).reduce((sum, count) => sum + count, 0);
-
+const PerformanceTable: React.FC<PerformanceTableProps> = ({ tableData, selectedAnnualTarget }) => {
   return (
-    <TableContainer component={Paper}>
+    <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #E5E7EB' }}>
       <Table>
         <TableHead>
           <TableRow>
+            <TableCell>Rating Score</TableCell>
             <TableCell>Rating Scale</TableCell>
-            <TableCell>Count</TableCell>
-            <TableCell>Percentage</TableCell>
+            <TableCell align='center'>No. of Employees</TableCell>
+            <TableCell align='center'>Percentage</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {selectedAnnualTarget.content.ratingScales.map(scale => {
-            const count = aggregateRatingCounts.get(scale.score) || 0;
-            const percentage = totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0;
-
+            const data = tableData[scale.score] || { count: 0, percentage: 0 };
             return (
               <TableRow key={scale.score}>
+                <TableCell>{scale.score}</TableCell>
                 <TableCell>
                   <Typography sx={{ color: scale.color, fontWeight: 500 }}>
                     {scale.name} ({scale.min}-{scale.max})
                   </Typography>
                 </TableCell>
-                <TableCell>{count}</TableCell>
-                <TableCell>{percentage}%</TableCell>
+                <TableCell align="center">{data.count}</TableCell>
+                <TableCell align="center">{data.percentage}%</TableCell>
               </TableRow>
             );
           })}
@@ -87,4 +53,6 @@ export const PerformanceTable: React.FC<PerformanceTableProps> = ({
       </Table>
     </TableContainer>
   );
-}; 
+};
+
+export default PerformanceTable; 

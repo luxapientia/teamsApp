@@ -8,6 +8,9 @@ import User from '../models/User';
 import AnnualTarget from '../models/AnnualTarget';
 import { ApiError } from '../utils/apiError';
 import { graphService } from '../services/graphService';
+import Notification from '../models/Notification';
+import { socketService } from '../server';
+import { SocketEvent } from '../types/socket';
 
 const router = express.Router();
 
@@ -41,7 +44,7 @@ const upload = multer({ storage });
 
 router.get('/company-users', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const companyUsers = await User.find({ tenantId: req.user?.tenantId, _id: { $ne: req.user?._id } }).populate('teamId') as any[];
+    const companyUsers = await User.find({ tenantId: req.user?.tenantId, MicrosoftId: { $ne: req.user?.id } }).populate('teamId') as any[];
     return res.json(companyUsers.map((user: any) => ({ id: user._id, name: user.name, team: user.teamId?.name, position: user?.jobTitle })));
   } catch (error) {
     console.error('Company users error:', error);
@@ -106,7 +109,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
   try {
     const { emailSubject, emailBody, supervisorId, userId, manageType, performanceId, quarter } = req.body;
 
-    const personalPerformance = await PersonalPerformance.findOne({ _id: performanceId });
+    const personalPerformance = await PersonalPerformance.findOne({ _id: performanceId }).populate('userId');
     if (personalPerformance) {
       const quarterlyTargets = personalPerformance.quarterlyTargets;
       const newQuarterlyTargets = quarterlyTargets.map((quarterlyTarget: any) => {
@@ -158,7 +161,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
       // Use the current user's ID (req.user.MicrosoftId) to send the email
       await graphService.sendMail(
         req.user?.tenantId || '',
-        req.user?.MicrosoftId || '',
+        req.user?.id || '',
         supervisorEmail,
         emailSubject,
         emailContent
@@ -167,7 +170,7 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
       // Use the current user's ID (req.user.MicrosoftId) to send the email
       await graphService.sendMail(
         req.user?.tenantId || '',
-        req.user?.MicrosoftId || '',
+        req.user?.id || '',
         userEmail,
         emailSubject,
         emailContent
@@ -176,12 +179,44 @@ router.post('/send-back', authenticateToken, async (req: AuthenticatedRequest, r
       // Use the current user's ID (req.user.MicrosoftId) to send the email
       await graphService.sendMail(
         req.user?.tenantId || '',
-        req.user?.MicrosoftId || '',
+        req.user?.id || '',
         req.user?.email || '',
         emailSubject,
         emailContent
       );
     }
+
+    const user = await User.findOne({ MicrosoftId: req.user?.id });
+    const existingNotification = await Notification.findOne({
+      senderId: user?._id,
+      recipientId: typeof personalPerformance?.userId === 'object' ? personalPerformance.userId._id : personalPerformance?.userId,
+      annualTargetId: personalPerformance?.annualTargetId,
+      quarter: quarter,
+      type: manageType === 'Agreement' ? "resolve_agreement" : "resolve_assessment",
+      personalPerformanceId: performanceId
+    });
+
+    if (existingNotification) {
+      await Notification.updateOne(
+        { _id: existingNotification._id },
+        { $set: { isRead: false } }
+      );
+    } else {
+      await Notification.create({
+        type: manageType === 'Agreement' ? "resolve_agreement" : "resolve_assessment",
+        senderId: user?._id,
+        recipientId: typeof personalPerformance?.userId === 'object' ? personalPerformance.userId._id : personalPerformance?.userId,
+        annualTargetId: personalPerformance?.annualTargetId,
+        quarter: quarter,
+        isRead: false,
+        personalPerformanceId: performanceId
+      });
+    }
+    socketService.emitToUser(
+      typeof personalPerformance?.userId === 'object' ? personalPerformance.userId.MicrosoftId : personalPerformance?.userId as string,
+      SocketEvent.NOTIFICATION,
+      {}
+    );
 
     return res.status(200).json({ message: 'email sent back successfully' });
   } catch (error) {
@@ -211,7 +246,7 @@ router.get('/personal-performances', authenticateToken, async (req: Authenticate
     const annualTargetId = req.query.annualTargetId as string;
 
     // Get the user from the database to ensure we have the correct _id
-    const dbUser = await User.findOne({ MicrosoftId: req.user?.MicrosoftId });
+    const dbUser = await User.findOne({ MicrosoftId: req.user?.id });
     if (!dbUser) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -283,12 +318,31 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
       teamId: p.teamId
     })));
 
-    const isTeamOwner = true;
-
+    const user = await User.findOne({ MicrosoftId: req.user?.id }).populate({
+      path: 'teamId',
+      select: 'owner name'
+    });
+    const isTeamOwner = user?.teamId && typeof user.teamId === 'object' && 'owner' in user.teamId && user.teamId.owner === user?.MicrosoftId;
     const teamPerformances = allPersonalPerformances
       .filter(performance => performance.userId && (
-        performance.quarterlyTargets[0].supervisorId === req.user?._id || isTeamOwner
+        performance.quarterlyTargets[0].supervisorId === user?._id || isTeamOwner
       ))
+      .map(performance => {
+        return {
+          ...performance._doc,
+          fullName: performance.userId.name,
+          jobTitle: performance.userId.jobTitle,
+          email: performance.userId.email,
+          microsoftId: performance.userId.MicrosoftId,
+          team: performance.teamId?.name,
+          quarterlyTargets: performance.quarterlyTargets.map((target: any) => ({
+            ...target._doc,
+            personalDevelopment: target.personalDevelopment || []
+          })),
+          isTeamOwner: performance.userId.MicrosoftId == performance.teamId?.owner
+        }
+      });
+    const orgPerformances = allPersonalPerformances
       .map(performance => {
         return {
           ...performance._doc,
@@ -311,7 +365,10 @@ router.get('/team-performances', authenticateToken, async (req: AuthenticatedReq
       microsoftId: p.microsoftId
     })));
 
-    return res.json(teamPerformances);
+    const isSuperUser = req.user?.role === 'SuperUser';
+    const isAppOwner = req.user?.email === process.env.APP_OWNER_EMAIL;
+    
+    return res.json(isSuperUser || isAppOwner ? orgPerformances : teamPerformances);
   } catch (error) {
     console.error('Team performances error:', error);
     return res.status(500).json({ error: 'Failed to get team performances' });
@@ -447,6 +504,30 @@ router.post('/copy-initiatives', authenticateToken, async (req: AuthenticatedReq
       return res.status(error.statusCode).json({ error: error.message });
     }
     return res.status(500).json({ error: 'Failed to copy initiatives' });
+  }
+});
+
+router.get('/objective-initiatives', authenticateToken, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { annualTargetId, quarter, objectiveName } = req.query;
+    const tenantId = req.user?.tenantId;
+    if (!annualTargetId || !quarter || !objectiveName) {
+      return res.status(400).json({ error: 'Missing required query parameters' });
+    }
+    // Find all personal performances for the annual target
+    const personalPerformances = await PersonalPerformance.find({ annualTargetId, tenantId });
+
+    const result = personalPerformances.flatMap(perf => {
+      // Find the quarterly target for the given quarter
+      const qt = perf.quarterlyTargets.find(qt => qt.quarter === quarter);
+      if (!qt) return [];
+      // Filter objectives by objectiveName
+      return qt.objectives.filter(obj => obj.name === objectiveName);
+    });
+    return res.json(result);
+  } catch (error) {
+    console.error('Error fetching objective initiatives:', error);
+    return res.status(500).json({ error: 'Failed to fetch objective initiatives' });
   }
 });
 

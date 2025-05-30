@@ -7,17 +7,27 @@ import { api } from '../../../services/api';
 import { fetchAnnualTargets, updateQuarterlyTarget } from '../../../store/slices/scorecardSlice';
 import { StyledTableCell, StyledHeaderCell } from '../../../components/StyledTableComponents';
 import { AnnualTarget } from '../../../types'
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { useAuth } from '../../../contexts/AuthContext';
+
 
 const EnableEmployeesDevelopment: React.FC = () => {
   const dispatch = useAppDispatch();
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
   const [quarterlyTargets, setQuarterlyTargets] = useState<any[]>([]);
+  const [isEnabledTwoQuarter, setIsEnabledTwoQuarter] = useState(false);
   const [showTable, setShowTable] = useState(false);
-
+  const { user } = useAuth();
   const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
+  useEffect(() => {
+    if (selectedAnnualTarget) {
+      setIsEnabledTwoQuarter(isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser'));
+    }
+  }, [selectedAnnualTarget]);
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
@@ -119,9 +129,9 @@ const EnableEmployeesDevelopment: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {quarterlyTargets.map((quarterlyTarget, index) => (
+              {quarterlyTargets.filter(quarterlyTarget => !(user?.isTeamOwner || user?.role === 'SuperUser')?quarterlyTarget.editable:quarterlyTarget).map((quarterlyTarget, index) => (
                 <TableRow key={index}>
-                  <StyledTableCell>{quarterlyTarget.quarter}</StyledTableCell>
+                  <StyledTableCell>{isEnabledTwoQuarter ? QUARTER_ALIAS[quarterlyTarget.quarter as keyof typeof QUARTER_ALIAS] : quarterlyTarget.quarter}</StyledTableCell>
                   <StyledTableCell>
                     {quarterlyTarget.isDevelopmentPlanEnabled ? 'Yes' : 'No'}
                   </StyledTableCell>

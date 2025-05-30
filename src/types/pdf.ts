@@ -6,5 +6,9 @@ export enum PdfType {
     MyPerformanceAgreements = 'My Performance Agreements',
     MyPerformanceAssessments = 'My Performance Assessments',
     TeamPerformances = 'Team Performances',
-    Reports = 'Reports'
+    Reports = 'Reports',
+    ComplianceSummary = 'ComplianceSummary',
+    HighRiskOverdue = 'HighRiskOverdue',
+    ComplianceDetails = 'ComplianceDetails',
+    ComplianceTrend = 'ComplianceTrend'
 }

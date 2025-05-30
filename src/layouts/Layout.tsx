@@ -3,41 +3,59 @@ import { Box, useTheme, useMediaQuery } from '@mui/material';
 import Sidebar from './Sidebar';
 import Content from './Content';
 import { PageProps } from '../types';
+import { useLocation } from 'react-router-dom';
 
 interface LayoutProps {
-  children: React.ReactNode;
-  selectedTabChanger: (tab: string) => void;
-}
-
-interface PageElement extends ReactElement {
-  props: {
-    title: string;
-    icon?: React.ReactNode;
-    tabs: string[];
-    selectedTab?: string;
-  };
+  // selectedTabChanger: (tab: string) => void;
+  pages: PageProps[];
 }
 
 const Layout: React.FC<LayoutProps> = (props) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
-  const [activePageTitle, setActivePageTitle] = useState('');
+  const [activePageTitle, setActivePageTitle] = useState('Dashboard');
+  const location = useLocation();
+  const [selectedTabItem, setSelectedTabItem] = useState('Dashboard');
 
-  const pages = React.Children.toArray(props.children) as PageElement[];
+  useEffect(() => {
+    setSelectedTabItem(location.pathname.split('/')[2]);
+  }, [location]);
+  
+
+  // const pages = React.Children.toArray(props.children) as PageElement[];
+  const pages = props.pages as PageProps[];
   const pagePropsList: PageProps[] = pages.map((page) => ({
-    title: page.props.title,
-    icon: page.props.icon || null,
-    tabs: page.props.tabs,
-    selectedTab: page.props.selectedTab || page.props.tabs[0] || ''
+    title: page.title,
+    icon: page.icon || null,
+    tabs: page.tabs,
+    path: page.path,
+    show: page.show,
+    element: page.element
   }));
 
   useEffect(() => {
-    if (pagePropsList.length > 0 && pagePropsList[0].tabs.length > 0) {
-      props.selectedTabChanger(pagePropsList[0].tabs[0]);
+    // Example: /employee-dev-plan/training-and-courses-management
+    const segments = location.pathname.split('/').filter(Boolean);
+
+    // Find the matching page
+    const activePage = pagePropsList.find(page =>
+      segments.length > 0 && page.path.replace('/*', '').split('/').filter(Boolean)[0] === segments[0]
+    );
+
+    setActivePageTitle(activePage ? activePage.title : '');
+
+    // Find the matching tab (if any)
+    if (activePage && segments.length > 1) {
+      const tabSegment = segments[1];
+      const activeTab = activePage.tabs.find(tab =>
+        tab.toLowerCase().replace(/\s+/g, '-') === tabSegment
+      );
+      setSelectedTabItem(activeTab || '');
+    } else {
+      setSelectedTabItem('');
     }
-    setActivePageTitle(pagePropsList[0]?.title || '');
-  }, []);
+  }, [location.pathname, pagePropsList]);
 
   // Handle sidebar state on screen resize
   useEffect(() => {
@@ -46,14 +64,14 @@ const Layout: React.FC<LayoutProps> = (props) => {
 
   const handlePageChange = (title: string) => {
     setActivePageTitle(title);
-    const clickedPage = pagePropsList.find(page => page.title === title);
-    if (clickedPage && clickedPage.tabs.length > 0) {
-      props.selectedTabChanger(clickedPage.tabs[0]);
-    }
   };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleTabChange = (tab: string) => {
+    setSelectedTabItem(tab);
   };
 
   const renderContent = () => {
@@ -70,7 +88,7 @@ const Layout: React.FC<LayoutProps> = (props) => {
       );
     }
 
-    const activePage = pages.find((page) => page.props.title === activePageTitle);
+    const activePage = pagePropsList.find((page) => page.title === activePageTitle);
     if (!activePage) {
       return (
         <Box sx={{ 
@@ -86,14 +104,12 @@ const Layout: React.FC<LayoutProps> = (props) => {
 
     return (
       <Content
-        title={activePage.props.title}
-        tabs={activePage.props.tabs}
-        icon={activePage.props.icon}
-        onTabChange={props.selectedTabChanger}
-        selectedTab={activePage.props.selectedTab || activePage.props.tabs[0] || ''}
-      >
-        {activePage}
-      </Content>
+        title={activePage.title}
+        tabs={activePage.tabs}
+        icon={activePage.icon}
+        selectedTab={selectedTabItem}
+        onTabChange={handleTabChange}
+      />
     );
   };
 

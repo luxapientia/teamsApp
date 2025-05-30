@@ -30,6 +30,10 @@ import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTab
 import { PersonalPerformance } from '../../../types';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import { format } from 'date-fns';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { createSelector } from '@reduxjs/toolkit';
+import { useAuth } from '../../../contexts/AuthContext';
+
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -54,6 +58,16 @@ const ViewButton = styled(Button)({
   },
 });
 
+// Memoized selector for selectedAnnualTarget
+export const selectAnnualTargetById = createSelector(
+  [
+    (state: RootState) => state.scorecard.annualTargets,
+    (_: RootState, selectedAnnualTargetId: string) => selectedAnnualTargetId
+  ],
+  (annualTargets, selectedAnnualTargetId) =>
+    annualTargets.find(target => target._id === selectedAnnualTargetId)
+);
+
 const PersonalPerformanceAgreement: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedAnnualTargetId, setSelectedAnnualTargetId] = useState('');
@@ -61,6 +75,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('');
   const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
+  const { user } = useAuth();
   const teams = useAppSelector((state: RootState) =>
     state.teams.teams
   );
@@ -73,9 +88,7 @@ const PersonalPerformanceAgreement: React.FC = () => {
     state.personalPerformance.personalPerformances
   );
 
-  const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
-    state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
-  );
+  const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector(state => selectAnnualTargetById(state, selectedAnnualTargetId));
 
   useEffect(() => {
     dispatch(fetchAnnualTargets());
@@ -85,11 +98,13 @@ const PersonalPerformanceAgreement: React.FC = () => {
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
     setShowQuarterlyTargets(false);
+    setShowPersonalQuarterlyTarget(false);
   };
 
   const handleQuarterChange = (event: SelectChangeEvent) => {
     setSelectedQuarter(event.target.value);
     setShowQuarterlyTargets(false);
+    setShowPersonalQuarterlyTarget(false);
   };
 
   const handleView = () => {
@@ -130,12 +145,14 @@ const PersonalPerformanceAgreement: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
-                </MenuItem>
-              )
+            {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+              <MenuItem key={quarter.key} value={quarter.key}>
+                {quarter.alias}
+              </MenuItem>
             ))}
           </Select>
         </StyledFormControl>
@@ -202,6 +219,11 @@ const PersonalPerformanceAgreement: React.FC = () => {
         <PersonalQuarterlyTargetContent
           annualTarget={selectedAnnualTarget}
           quarter={selectedQuarter as QuarterType}
+          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+            quarter.editable
+          )).map((quarter) => (
+            quarter.quarter
+          )), user?.isTeamOwner || user?.role === 'SuperUser')}
           onBack={() => {
             setShowPersonalQuarterlyTarget(false);
             setShowQuarterlyTargets(true);

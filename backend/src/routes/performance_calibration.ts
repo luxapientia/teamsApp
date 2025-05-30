@@ -5,6 +5,9 @@ import { ApiError } from '../utils/apiError';
 import PersonalPerformance, { AgreementStatus, AssessmentStatus } from '../models/PersonalPerformance';
 import { AgreementReviewStatus, AssessmentReviewStatus } from '../models/PersonalPerformance';
 import { graphService } from '../services/graphService';
+import Notification from '../models/Notification';
+import { socketService } from '../server';
+import { SocketEvent } from '../types/socket';
 const router = express.Router();
 
 router.get('/get-all-members/:tenantId', authenticateToken, async (req, res, next) => {
@@ -81,7 +84,7 @@ router.post('/pm-committee-action-agreement', authenticateToken, async (req: Aut
             throw new ApiError('Performance ID, quarter, and action are required', 400);
         }
         const tenantId = req.user?.tenantId;
-        const fromUserId = req.user?.MicrosoftId;
+        const fromUserId = req.user?.id;
         const toUser = await User.findOne({ _id: userId });
 
         let newStatus;
@@ -94,7 +97,7 @@ router.post('/pm-committee-action-agreement', authenticateToken, async (req: Aut
                 Thank you,<br><br>
                 PM Committee.
             `;
-            if (!tenantId || !fromUserId || !toUser?.MicrosoftId) {
+            if (!tenantId || !fromUserId || !toUser?.id) {
                 throw new ApiError('Missing required email information', 400);
             }
             await PersonalPerformance.updateOne(
@@ -118,6 +121,38 @@ router.post('/pm-committee-action-agreement', authenticateToken, async (req: Aut
                 { $set: { "quarterlyTargets.$.agreementReviewStatus": newStatus, "quarterlyTargets.$.agreementStatus": AgreementStatus.CommitteeSendBack, "quarterlyTargets.$.isAgreementCommitteeSendBack": true, "quarterlyTargets.$.agreementCommitteeSendBackMessage": emailBody } }
             );
             await graphService.sendMail(tenantId, fromUserId, toUser.email, emailSubject, emailBody);
+
+            const user = await User.findOne({ MicrosoftId: req.user?.id });
+            const existingNotification = await Notification.findOne({
+                senderId: user?._id,
+                recipientId: userId,
+                annualTargetId: performanceId,
+                quarter: quarter,
+                type: "resolve_agreement",
+                personalPerformanceId: performanceId
+            });
+
+            if (existingNotification) {
+                await Notification.updateOne(
+                    { _id: existingNotification._id },
+                    { $set: { isRead: false } }
+                );
+            } else {
+                await Notification.create({
+                    type: "resolve_agreement",
+                    senderId: user?._id,
+                    recipientId: userId,
+                    annualTargetId: performanceId,
+                    quarter: quarter,
+                    isRead: false,
+                    personalPerformanceId: performanceId
+                });
+            }
+            socketService.emitToUser(
+                userId,
+                SocketEvent.NOTIFICATION,
+                {}
+            );
         } else {
             throw new ApiError('Invalid action', 400);
         }
@@ -139,7 +174,7 @@ router.post('/pm-committee-action-assessment', authenticateToken, async (req: Au
             throw new ApiError('Performance ID, quarter, and action are required', 400);
         }
         const tenantId = req.user?.tenantId;
-        const fromUserId = req.user?.MicrosoftId;
+        const fromUserId = req.user?.id;
         const toUser = await User.findOne({ _id: userId });
 
         let newStatus;
@@ -176,6 +211,39 @@ router.post('/pm-committee-action-assessment', authenticateToken, async (req: Au
                 { $set: { "quarterlyTargets.$.assessmentReviewStatus": newStatus, "quarterlyTargets.$.assessmentStatus": AssessmentStatus.CommitteeSendBack, "quarterlyTargets.$.isAssessmentCommitteeSendBack": true, "quarterlyTargets.$.assessmentCommitteeSendBackMessage": emailBody } }
             );
             await graphService.sendMail(tenantId, fromUserId, toUser.email, emailSubject, emailBody);
+
+            const user = await User.findOne({ MicrosoftId: req.user?.id });
+            const existingNotification = await Notification.findOne({
+                senderId: user?._id,
+                recipientId: userId,
+                annualTargetId: performanceId,
+                quarter: quarter,
+                type: "resolve_assessment",
+                personalPerformanceId: performanceId
+            });
+
+            if (existingNotification) {
+                await Notification.updateOne(
+                    { _id: existingNotification._id },
+                    { $set: { isRead: false } }
+                );
+            } else {
+                await Notification.create({
+                    type: "resolve_assessment",
+                    senderId: user?._id,
+                    recipientId: userId,
+                    annualTargetId: performanceId,
+                    quarter: quarter,
+                    isRead: false,
+                    personalPerformanceId: performanceId
+                });
+            }
+            socketService.emitToUser(
+                userId,
+                SocketEvent.NOTIFICATION,
+                {}
+            );
+
         } else {
             throw new ApiError('Invalid action', 400);
         }

@@ -30,6 +30,10 @@ import { StyledHeaderCell, StyledTableCell, StyledMenuItem, StyledListItemIcon }
 import { PersonalPerformance, PersonalQuarterlyTarget } from '../../../types';
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import { format } from 'date-fns';
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { useAuth } from '../../../contexts/AuthContext';
+
+
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
   borderRadius: '8px',
@@ -61,6 +65,7 @@ const PerformanceAssessment: React.FC = () => {
   const [selectedPersonalPerformance, setSelectedPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   const annualTargets = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets
@@ -93,12 +98,14 @@ const PerformanceAssessment: React.FC = () => {
     setSelectedAnnualTargetId(event.target.value);
     setShowQuarterlyTargets(false);
     setSelectedPersonalPerformance(null);
+    setShowPersonalQuarterlyTarget(false);
   };
 
   const handleQuarterChange = (event: SelectChangeEvent) => {
     setSelectedQuarter(event.target.value);
     setShowQuarterlyTargets(false);
     setSelectedPersonalPerformance(null);
+    setShowPersonalQuarterlyTarget(false);
   };
 
   const handleView = async () => {
@@ -139,12 +146,14 @@ const PerformanceAssessment: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
-                </MenuItem>
-              )
+            {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+              <MenuItem key={quarter.key} value={quarter.key}>
+                {quarter.alias}
+              </MenuItem>
             ))}
           </Select>
         </StyledFormControl>
@@ -210,6 +219,11 @@ const PerformanceAssessment: React.FC = () => {
         <PersonalQuarterlyTargetContent
           annualTarget={selectedAnnualTarget}
           quarter={selectedQuarter as QuarterType}
+          isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+            quarter.editable
+          )).map((quarter) => (
+            quarter.quarter
+          )), user?.isTeamOwner || user?.role === 'SuperUser')}
           onBack={() => {
             setShowPersonalQuarterlyTarget(false);
             setShowQuarterlyTargets(true);

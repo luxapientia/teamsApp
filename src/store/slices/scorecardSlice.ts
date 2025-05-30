@@ -147,6 +147,7 @@ export const updateAnnualTarget = createAsyncThunk(
             quarterlyTargets: target?.content.quarterlyTarget.editable ? (target?.content.quarterlyTarget.quarterlyTargets) :
               ['Q1', 'Q2', 'Q3', 'Q4'].map((quarter) => ({
                 quarter: quarter as QuarterType,
+                editable: target?.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter)?.editable ?? false,
                 objectives: [...target.content.objectives]
               }))
           }

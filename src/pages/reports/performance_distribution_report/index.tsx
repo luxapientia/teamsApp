@@ -22,6 +22,11 @@ import { api } from '../../../services/api';
 import { PersonalPerformance, PersonalQuarterlyTargetObjective } from '../../../types';
 import jsPDF from 'jspdf';
 import { autoTable, Styles } from 'jspdf-autotable'
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { fetchFeedback } from '../../../store/slices/feedbackSlice';
+import { Feedback as FeedbackType } from '../../../types/feedback';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const StyledFormControl = styled(FormControl)({
   backgroundColor: '#fff',
@@ -54,14 +59,18 @@ const PerformanceDistributionReport: React.FC = () => {
   const [showReport, setShowReport] = useState(false);
   const [personalPerformances, setPersonalPerformances] = useState<PersonalPerformance[]>([]);
   const teams = useAppSelector((state: RootState) => state.teams.teams);
-
+  const { user } = useAuth();
   const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
   const selectedAnnualTarget = useAppSelector((state: RootState) =>
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
 
+  const feedbackTemplates = useAppSelector((state: RootState) => state.feedback.feedbacks as FeedbackType[]);
+  const enableFeedback = true; // Placeholder, set dynamically if needed
+
   useEffect(() => {
     dispatch(fetchAnnualTargets());
+    dispatch(fetchFeedback());
   }, [dispatch]);
 
   const fetchPersonalPerformances = async () => {
@@ -74,7 +83,7 @@ const PerformanceDistributionReport: React.FC = () => {
       if (response.status === 200) {
         const newPersonalPerformances = [];
         response.data.data.forEach((item: any) => {
-          if(item.quarterlyTargets.find((quarter: any) => quarter.quarter === selectedQuarter).assessmentStatus === 'Approved') {
+          if (item.quarterlyTargets.find((quarter: any) => quarter.quarter === selectedQuarter).assessmentStatus === 'Approved') {
             newPersonalPerformances.push(item);
           }
         });
@@ -121,11 +130,68 @@ const PerformanceDistributionReport: React.FC = () => {
     return Math.round(totalWeightedScore / totalWeight);
   };
 
-  const getChartData = (data: PersonalPerformance[]) => {
-    const scores = data.map(item => calculateOverallScore(item.quarterlyTargets.find(target => target.quarter === selectedQuarter)?.objectives));
+  const calculateFeedbackOverallScore = (quarter: string, performance: PersonalPerformance) => {
+    const target = performance.quarterlyTargets.find(t => t.quarter === quarter);
+    const selectedFeedbackId = target?.selectedFeedbackId;
+    const feedbackResponses = target?.feedbacks?.filter(f => f.feedbackId === selectedFeedbackId) || [];
+    const feedbackTemplate = feedbackTemplates.find(f => f._id === selectedFeedbackId);
+    if (!feedbackTemplate || feedbackResponses.length === 0) return '-';
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+    feedbackTemplate.dimensions.forEach(dimension => {
+      let totalDimensionScore = 0;
+      let totalDimensionResponses = 0;
+      const dimensionQuestions = feedbackTemplate.dimensions.find(d => d.name === dimension.name)?.questions || [];
+      dimensionQuestions.forEach(question => {
+        feedbackResponses.forEach(feedback => {
+          const response = feedback.feedbacks.find(f => f.dimension === dimension.name && f.question === question);
+          if (response?.response.score) {
+            totalDimensionScore += response.response.score;
+            totalDimensionResponses++;
+          }
+        });
+      });
+      if (totalDimensionResponses > 0) {
+        const dimensionScore = totalDimensionScore / totalDimensionResponses;
+        totalWeightedScore += dimensionScore * (dimension.weight / 100);
+        totalWeight += dimension.weight / 100;
+      }
+    });
+    if (totalWeight === 0) return '-';
+    return totalWeightedScore.toFixed(2);
+  };
+
+  const calculateFinalScore = (quarter: string, overallScore: number | null, performance: PersonalPerformance) => {
+    if (overallScore === null) return null;
+    const target = performance.quarterlyTargets.find(t => t.quarter === quarter);
+    const selectedFeedbackId = target?.selectedFeedbackId;
+    const feedbackOverallScore = calculateFeedbackOverallScore(quarter, performance);
+    const selectedFeedback = feedbackTemplates?.find((f: FeedbackType) => f._id === selectedFeedbackId);
+    const contributionScorePercentage = selectedFeedback?.contributionScorePercentage || 0;
+    if(selectedFeedback?.status === 'Active' && selectedFeedback?.enableFeedback?.some(ef => ef.quarter === quarter && ef.enable)){
+      if (feedbackOverallScore === '-') return overallScore;
+      const finalScore = (Number(feedbackOverallScore) * (contributionScorePercentage / 100)) + (Number(overallScore) * (1 - contributionScorePercentage / 100));
+      return finalScore;
+    }
+    return overallScore;
+  };
+
+  const getChartData = (data: PersonalPerformance[], selectedQuarter: string) => {
+    const scores = data.map(item => {
+      const quarterObj = item.quarterlyTargets.find(target => target.quarter === selectedQuarter);
+      const qScore = calculateOverallScore(quarterObj?.objectives);
+      const isFeedbackEnabled = feedbackTemplates
+        ?.find((template: FeedbackType) => template._id === (quarterObj?.selectedFeedbackId ?? quarterObj?.feedbacks?.[0]?.feedbackId) && template.status === 'Active')
+        ?.enableFeedback?.find(ef => ef.quarter === selectedQuarter && ef.enable)?.enable;
+      if (enableFeedback) {
+        return isFeedbackEnabled ? calculateFinalScore(selectedQuarter, qScore, item) : qScore;
+      } else {
+        return qScore;
+      }
+    });
     const chartData = selectedAnnualTarget?.content.ratingScales.map(scale => ({
       rating: scale.score,
-      count: scores.filter(score => score === scale.score).length,
+      count: scores.filter(score => Math.round(Number(score)) === scale.score).length,
     }));
     return chartData;
   }
@@ -144,7 +210,7 @@ const PerformanceDistributionReport: React.FC = () => {
       return yPosition;
     };
 
-    doc.text(`${selectedAnnualTarget?.name} - ${selectedQuarter} Performance Distribution`, pageWidth / 2, 20, { align: 'center' });
+    doc.text(`${selectedAnnualTarget?.name} - ${isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter(quarter => quarter.editable).map(quarter => quarter.quarter), user?.isTeamOwner || user?.role === 'SuperUser') ? QUARTER_ALIAS[selectedQuarter as keyof typeof QUARTER_ALIAS] : selectedQuarter} Performance Distribution`, pageWidth / 2, 20, { align: 'center' });
 
     let finalY = 35;
 
@@ -159,7 +225,7 @@ const PerformanceDistributionReport: React.FC = () => {
     finalY += 5;
 
     // Add Organization Performance Distribution table
-    const organizationChartData = getChartData(personalPerformances);
+    const organizationChartData = getChartData(personalPerformances, selectedQuarter);
 
 
     const tableWidth = pageWidth - 30; // Adjust margins
@@ -184,12 +250,12 @@ const PerformanceDistributionReport: React.FC = () => {
 
     doc.setLineWidth(0.5);
     doc.line(10, finalY + 15, pageWidth - 10, finalY + 15);
-    
+
     teams.map((team, index) => {
       const teamName = team.name;
 
       const teamChartData = getChartData(personalPerformances.filter((personalPerformance) =>
-        personalPerformance.teamId === team._id))
+        personalPerformance.teamId === team._id), selectedQuarter)
 
       finalY = addNewPageIfNeeded(finalY + 25, 30);
 
@@ -219,9 +285,6 @@ const PerformanceDistributionReport: React.FC = () => {
             displayEmpty
             sx={{ backgroundColor: '#fff' }}
           >
-            <MenuItem value="" disabled>
-              Annual Corporate Scorecard
-            </MenuItem>
             {annualTargets.map((target) => (
               <MenuItem key={target._id} value={target._id}>
                 {target.name}
@@ -237,12 +300,14 @@ const PerformanceDistributionReport: React.FC = () => {
             label="Quarter"
             onChange={handleQuarterChange}
           >
-            {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-              quarter.editable && (
-                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                  {quarter.quarter}
-                </MenuItem>
-              )
+            {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+              quarter.editable
+            )).map((quarter) => (
+              quarter.quarter
+            )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+              <MenuItem key={quarter.key} value={quarter.key}>
+                {quarter.alias}
+              </MenuItem>
             ))}
           </Select>
         </StyledFormControl>
@@ -287,7 +352,7 @@ const PerformanceDistributionReport: React.FC = () => {
             <PerformanceDistributionChart
               title="Organization Performance Distribution"
               annualTarget={selectedAnnualTarget}
-              chartData={getChartData(personalPerformances)}
+              chartData={getChartData(personalPerformances, selectedQuarter)}
             />
           </Box>
           <Box sx={{ mb: 4 }}>
@@ -304,7 +369,7 @@ const PerformanceDistributionReport: React.FC = () => {
                       title={teamName}
                       annualTarget={selectedAnnualTarget}
                       chartData={getChartData(personalPerformances.filter((personalPerformance) =>
-                        personalPerformance.teamId === team._id))}
+                        personalPerformance.teamId === team._id), selectedQuarter)}
                     />
                   );
                 })

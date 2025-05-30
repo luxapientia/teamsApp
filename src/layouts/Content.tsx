@@ -9,14 +9,15 @@ import {
   styled,
 } from '@mui/material';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 
 interface ContentProps {
   title: string;
   tabs: string[];
   icon: React.ReactNode;
-  children: React.ReactNode;
   selectedTab: string;
   onTabChange: (tab: string) => void;
+  children?: React.ReactNode;
 }
 
 const TabContainer = styled(Box)({
@@ -27,18 +28,54 @@ const TabContainer = styled(Box)({
   overflowX: 'hidden',
 });
 
-const TabButton = styled('button')<{ selected?: boolean }>(({ selected }) => ({
+const StyledNavLink = styled(NavLink)(({ theme }) => ({
   padding: '8px 20px',
   whiteSpace: 'nowrap',
-  backgroundColor: selected ? '#0078D4' : 'transparent',
-  color: selected ? '#fff' : '#374151',
-  border: selected ? 'none' : '1px solid #E5E7EB',
+  backgroundColor: 'transparent',
+  color: '#374151',
+  border: '1px solid #E5E7EB',
   borderRadius: '20px',
   margin: '0 4px',
   cursor: 'pointer',
   transition: 'all 0.2s',
+  textDecoration: 'none',
   '&:hover': {
-    backgroundColor: selected ? '#0078D4' : '#F9FAFB',
+    backgroundColor: '#F9FAFB',
+  },
+  '&.active': {
+    backgroundColor: '#0078D4',
+    color: '#fff',
+    border: 'none',
+    '&:hover': {
+      backgroundColor: '#0078D4',
+    },
+  },
+}));
+
+const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
+  '&.active-menu-item': {
+    backgroundColor: '#0078D4 !important',
+    color: '#fff !important',
+    '& .nav-link': {
+      color: '#fff !important',
+    },
+    '&:hover': {
+      backgroundColor: '#0078D4 !important',
+    },
+  },
+}));
+
+const StyledNavMenuItem = styled(NavLink)(({ theme }) => ({
+  textDecoration: 'none',
+  color: 'inherit',
+  display: 'block',
+  width: '100%',
+  '&.active': {
+    backgroundColor: '#0078D4',
+    color: '#fff',
+    '&:hover': {
+      backgroundColor: '#0078D4',
+    },
   },
 }));
 
@@ -46,7 +83,6 @@ const Content: React.FC<ContentProps> = ({
   title,
   tabs,
   icon,
-  children,
   selectedTab,
   onTabChange,
 }) => {
@@ -54,6 +90,7 @@ const Content: React.FC<ContentProps> = ({
   const [overflowTabs, setOverflowTabs] = useState<string[]>([]);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
 
   useEffect(() => {
     const calculateVisibleTabs = () => {
@@ -99,6 +136,14 @@ const Content: React.FC<ContentProps> = ({
     handleMenuClose();
   };
 
+  const getTabPath = (tab: string) => {
+    // Get the base path from the current location
+    const basePath = location.pathname.split('/').slice(0, -1).join('/');
+    // Convert tab name to URL-friendly format and append to base path
+    const tabPath = tab.toLowerCase().replace(/\s+/g, '-');
+    return `${basePath}/${tabPath}`;
+  };
+
   return (
     <Box component="main" sx={{ flexGrow: 1, height: '100vh', overflow: 'auto', bgcolor: '#f5f5f5', p: 3 }}>
       <Container maxWidth="xl">
@@ -107,17 +152,17 @@ const Content: React.FC<ContentProps> = ({
           <Typography variant="h5">{title}</Typography>
         </Box>
 
-        <TabContainer ref={containerRef} sx={{bgcolor: '#f5f5f5'}}>
+        <TabContainer ref={containerRef} sx={{ bgcolor: '#f5f5f5' }}>
           {visibleTabs.map((tab) => (
-            <TabButton
+            <StyledNavLink
               key={tab}
-              selected={selectedTab === tab}
-              onClick={() => onTabChange(tab)}
+              to={getTabPath(tab)}
+              className={({ isActive }) => isActive ? 'active' : ''}
             >
               {tab}
-            </TabButton>
+            </StyledNavLink>
           ))}
-          
+
           {overflowTabs.length > 0 && (
             <>
               <IconButton onClick={handleMenuClick} size="small">
@@ -128,21 +173,32 @@ const Content: React.FC<ContentProps> = ({
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
               >
-                {overflowTabs.map((tab) => (
-                  <MenuItem
-                    key={tab}
-                    onClick={() => handleTabSelect(tab)}
-                    selected={selectedTab === tab}
-                  >
-                    {tab}
-                  </MenuItem>
-                ))}
+                {overflowTabs.map((tab) => {
+                  const tabPath = getTabPath(tab);
+                  const lastSegment = location.pathname.split('/').filter(Boolean).pop();
+                  const tabSegment = tabPath.split('/').filter(Boolean).pop();
+                  const isActive = lastSegment === tabSegment;
+                  return (
+                    <NavLink
+                      key={tab}
+                      to={tabPath}
+                      style={{ textDecoration: 'none' }}
+                      onClick={() => handleTabSelect(tab)}
+                    >
+                      <StyledMenuItem className={isActive ? 'active-menu-item' : ''}>
+                        {tab}
+                      </StyledMenuItem>
+                    </NavLink>
+                  );
+                })}
               </Menu>
             </>
           )}
         </TabContainer>
 
-        <Box sx={{ mt: 3 }}>{children}</Box>
+        <Box sx={{ mt: 3 }}>
+          <Outlet />
+        </Box>
       </Container>
     </Box>
   );

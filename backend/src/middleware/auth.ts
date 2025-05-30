@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from '../services/authService';
-import { dUser } from '../types/user';
+import { UserProfile } from '../types/index';
+import { roleService } from '../services/roleService';
 export interface AuthenticatedRequest extends Request {
-  user?: dUser;
+  user?: UserProfile;
 }
 
 export const authenticateToken = async (
@@ -28,16 +29,20 @@ export const authenticateToken = async (
   }
   const duser = {
     _id: user._id,
-    MicrosoftId: user.MicrosoftId, // Microsoft ID
-    name: user.name,
+    id: user.MicrosoftId,
     email: user.email,
+    displayName: user.name,
     role: user.role,
     tenantId: user.tenantId,
     jobTitle: user.jobTitle,
     teamId: user.teamId,
     isDevMember: user.isDevMember,
-    isPerformanceCalibrationMember: user.isPerformanceCalibrationMember
+    isPerformanceCalibrationMember: user.isPerformanceCalibrationMember,
+    isTeamOwner: await roleService.isTeamOwner(user?.teamId?.toString() || null, user.MicrosoftId),
+    isComplianceSuperUser: user.isComplianceSuperUser,
+    isComplianceChampion: user.isComplianceChampion,
+    status: user.status || 'inactive'
   }
-  req.user = duser;
+  req.user = duser as UserProfile;
   next();
 }; 

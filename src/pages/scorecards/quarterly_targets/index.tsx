@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   FormControl,
@@ -88,7 +88,9 @@ const QuarterlyTargetTable: React.FC = () => {
     state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
   );
 
+
   const dispatch = useAppDispatch();
+
 
   const handleScorecardChange = (event: SelectChangeEvent) => {
     setSelectedAnnualTargetId(event.target.value);
@@ -172,7 +174,7 @@ const QuarterlyTargetTable: React.FC = () => {
   const handleExportPDF = () => {
     if (getQuarterlyObjectives().length > 0) {
       const title = `${user.organizationName} ${selectedAnnualTarget?.name} ${selectedQuarter}`;
-      exportPdf(PdfType.AnnualTargets, tableRef, title, `Total Weight: ${calculateTotalWeight(getQuarterlyObjectives())}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
+      exportPdf(PdfType.AnnualTargets, tableRef, title.trim(), `Total Weight: ${calculateTotalWeight(getQuarterlyObjectives())}%`, '', [0.2, 0.2, 0.1, 0.2, 0.1, 0.2]);
     }
   }
 
@@ -218,10 +220,6 @@ const QuarterlyTargetTable: React.FC = () => {
             onChange={handleQuarterChange}
           >
             {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets
-              .filter(quarter => {
-                const isSetAssessmentPeriod = selectedAnnualTarget.content.quarterlyTarget.quarterlyTargets.find(qt => qt.quarter === quarter.quarter)?.editable;
-                return isSetAssessmentPeriod;
-              })
               .map((quarter) => (
                 <MenuItem key={quarter.quarter} value={quarter.quarter}>
                   {quarter.quarter}

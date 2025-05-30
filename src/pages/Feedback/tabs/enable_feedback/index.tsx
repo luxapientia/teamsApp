@@ -24,6 +24,8 @@ import { useAppSelector } from '../../../../hooks/useAppSelector';
 import { RootState } from '../../../../store';
 import { updateFeedback } from '../../../../store/slices/feedbackSlice';
 import { EnableFeedback } from '../../../../types/feedback';
+import { AnnualTarget } from '../../../../types/annualCorporateScorecard';
+import { useAuth } from '../../../../contexts/AuthContext';
 
 interface EnableFeedbackTabProps {
     feedbackId: string;
@@ -38,6 +40,10 @@ const EnableFeedbackTab: React.FC<EnableFeedbackTabProps> = ({ feedbackId }) => 
         state.feedback.feedbacks.find((feedback) => feedback._id === feedbackId)
     );
 
+    const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
+        state.scorecard.annualTargets.find(target => target._id === feedback?.annualTargetId)
+    );
+    const { user } = useAuth();
     const handleEdit = (quarter: EnableFeedback) => {
         setEditingQuarter(quarter);
         setOpen(true);

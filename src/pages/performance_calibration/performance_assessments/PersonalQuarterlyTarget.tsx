@@ -26,12 +26,17 @@ import SendBackModal from '../../../components/Modal/SendBackModal';
 import ViewSendBackMessageModal from '../../../components/Modal/ViewSendBackMessageModal';
 import { useAuth } from '../../../contexts/AuthContext';
 import { AgreementReviewStatus } from '../../../types/personalPerformance';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import CommentModal from '../../../components/CommentModal';
+
 
 interface PersonalQuarterlyTargetProps {
   annualTarget: AnnualTarget;
   quarter: QuarterType;
+  isEnabledTwoQuarterMode: boolean;
   onBack?: () => void;
   userId: string;
+  userName: string;
 }
 
 type Action = 'accept' | 'sendBack' | 'unaccept';
@@ -39,8 +44,10 @@ type Action = 'accept' | 'sendBack' | 'unaccept';
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
   annualTarget,
   quarter,
+  isEnabledTwoQuarterMode,
   onBack,
   userId,
+  userName
 }) => {
   const { user } = useAuth();
   const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
@@ -57,6 +64,8 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   const [acceptLoading, setAcceptLoading] = useState(false);
   const [sendBackLoading, setSendBackLoading] = useState(false);
   const [viewSendBackModalOpen, setViewSendBackModalOpen] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [selectedComment, setSelectedComment] = useState('');
 
   const currentQuarterTarget = personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter);
 
@@ -69,11 +78,16 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     if (personalPerformance) {
       const currentTarget = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter);
       setPersonalQuarterlyObjectives(currentTarget?.objectives || []);
-      setSelectedSupervisor(currentTarget?.supervisorId || '');
+      const supervisorId = currentTarget?.supervisorId || '';
+      if (companyUsers.some(user => user.id === supervisorId)) {
+        setSelectedSupervisor(supervisorId);
+      } else {
+        setSelectedSupervisor('');
+      }
       setIsAssessmentCommitteeSendBack(currentTarget?.isAssessmentCommitteeSendBack || false);
       setPmCommitteeStatus(currentTarget?.assessmentReviewStatus || 'Not Reviewed');
     }
-  }, [personalPerformance, quarter]);
+  }, [personalPerformance, companyUsers, quarter]);
 
   const fetchCompanyUsers = async () => {
     try {
@@ -156,6 +170,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     }
   };
 
+  const showCommentModal = (initiative: PersonalQuarterlyTargetObjective, kpiIndex: number) => {
+    setSelectedComment(initiative.KPIs[kpiIndex].previousAgreementComment || '');
+    setCommentModalOpen(true);
+  };
+
   return (
     <Box>
       <Box sx={{
@@ -165,7 +184,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
+          {`${annualTarget.name}, ${userName} Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter] : quarter}`}
         </Typography>
       </Box>
 
@@ -191,17 +210,23 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             },
           }}
         >
-          <Select
-            value={selectedSupervisor}
-            displayEmpty
-            disabled={true}
-          >
-            {companyUsers.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.fullName}
-              </MenuItem>
-            ))}
-          </Select>
+          {companyUsers.length > 0 ? (
+            <Select
+              value={selectedSupervisor}
+              displayEmpty
+              disabled={true}
+            >
+              {companyUsers.map((user) => (
+                <MenuItem key={user.id} value={user.id}>
+                  {user.fullName}
+                </MenuItem>
+              ))}
+            </Select>
+          ) : (
+            <Select value="" displayEmpty disabled>
+              <MenuItem value="">No supervisors available</MenuItem>
+            </Select>
+          )}
         </FormControl>
         <Button
           onClick={onBack}
@@ -351,6 +376,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 <StyledHeaderCell align="center">Target</StyledHeaderCell>
                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                 <StyledHeaderCell align="center">Rating Scale</StyledHeaderCell>
+                <StyledHeaderCell align="center">Comments</StyledHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -448,6 +474,21 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 <DescriptionIcon />
                               </IconButton>
                             </StyledTableCell>
+                            <StyledTableCell align="center">
+                              {kpi.previousAssessmentComment &&
+                                <IconButton
+                                  size="small"
+                                  onClick={() => showCommentModal(initiative, kpiIndex)}
+                                  sx={{
+                                    color: '#DC2626',
+                                    '&:hover': {
+                                      backgroundColor: '#FEF2F2',
+                                    },
+                                  }}
+                                >
+                                  <DescriptionIcon />
+                                </IconButton>}
+                            </StyledTableCell>
                           </TableRow>
                         );
 
@@ -473,13 +514,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         onClose={() => setSendBackModalOpen(false)}
         onSendBack={handleSendBack}
         title="PM Committee Send Back Email"
-        emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
+        emailSubject={`${annualTarget.name}, Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter] : quarter}(PM Committee Review)`}
       />
 
       <ViewSendBackMessageModal
         open={viewSendBackModalOpen}
         onClose={() => setViewSendBackModalOpen(false)}
-        emailSubject={`${annualTarget.name}, Performance Assessment ${quarter}(PM Committee Review)`}
+        emailSubject={`${annualTarget.name}, Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter] : quarter}(PM Committee Review)`}
         emailBody={personalPerformance?.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentCommitteeSendBackMessage || 'No message available'}
       />
 
@@ -490,6 +531,12 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
           ratingScales={selectedRatingScales}
         />
       )}
+
+      <CommentModal
+        open={commentModalOpen}
+        onClose={() => setCommentModalOpen(false)}
+        comment={selectedComment}
+      />
     </Box>
   );
 };

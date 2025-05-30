@@ -25,19 +25,26 @@ import EvidenceModal from './EvidenceModal';
 import SendBackModal from '../../../components/Modal/SendBackModal';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Toast } from '../../../components/Toast';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import CommentModal from '../../../components/CommentModal';
+
 
 interface PersonalQuarterlyTargetProps {
     annualTarget: AnnualTarget;
     quarter: QuarterType;
+    isEnabledTwoQuarterMode: boolean;
     onBack?: () => void;
     userId: string;
+    userName: string;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
     annualTarget,
     quarter,
+    isEnabledTwoQuarterMode,
     onBack,
     userId,
+    userName
 }) => {
     const { user } = useAuth();
     const [selectedSupervisor, setSelectedSupervisor] = React.useState('');
@@ -54,6 +61,9 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     const { showToast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+    const [commentModalOpen, setCommentModalOpen] = useState(false);
+    const [selectedComment, setSelectedComment] = useState('');
+
 
     useEffect(() => {
         fetchPersonalPerformance();
@@ -63,10 +73,15 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     useEffect(() => {
         if (personalPerformance) {
             setPersonalQuarterlyObjectives(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.objectives || []);
-            setSelectedSupervisor(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '');
+            const supervisorId = personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId || '';
+            if (companyUsers.some(user => user.id === supervisorId)) {
+                setSelectedSupervisor(supervisorId);
+            } else {
+                setSelectedSupervisor('');
+            }
             setIsApproved(personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.assessmentStatus === AssessmentStatus.Approved);
         }
-    }, [personalPerformance]);
+    }, [personalPerformance, companyUsers]);
 
     const fetchCompanyUsers = async () => {
         try {
@@ -136,24 +151,35 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             setIsSubmitting(true);
             (async () => {
                 try {
-                    const response = await api.post(`/personal-performance/send-back`, {
-                        emailSubject,
-                        emailBody,
-                        supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
-                        userId: personalPerformance.userId,
-                        manageType: 'Assessment',
-                        performanceId: personalPerformance._id,
-                        quarter: quarter
-                    });
-                    if (response.status === 200) {
+                    try {
+                        // Then try to send the email notification
+                        const response = await api.post(`/personal-performance/send-back`, {
+                            emailSubject,
+                            emailBody,
+                            supervisorId: personalPerformance.quarterlyTargets.find(target => target.quarter === quarter)?.supervisorId,
+                            userId: personalPerformance.userId,
+                            manageType: 'Assessment',
+                            performanceId: personalPerformance._id,
+                            quarter: quarter
+                        });
+
+                        if (response.status === 200) {
+                            setToast({
+                                message: 'Performance assessment sent back successfully',
+                                type: 'success'
+                            });
+                            onBack?.();
+                        }
+                    } catch (emailError) {
+                        console.error('Error sending email notification:', emailError);
                         setToast({
-                            message: 'Performance assessment sent back successfully',
+                            message: 'Performance assessment sent back successfully, but email notification failed',
                             type: 'success'
                         });
                         onBack?.();
                     }
                 } catch (error) {
-                    console.error('Error send back notification:', error);
+                    console.error('Error updating assessment status:', error);
                     setToast({
                         message: 'Failed to send back performance assessment',
                         type: 'error'
@@ -163,6 +189,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 }
             })();
         }
+    };
+
+    const showCommentModal = (initiative: PersonalQuarterlyTargetObjective, kpiIndex: number) => {
+        setSelectedComment(initiative.KPIs[kpiIndex].previousAssessmentComment || '');
+        setCommentModalOpen(true);
     };
 
     return (
@@ -181,7 +212,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                 alignItems: 'center'
             }}>
                 <Typography variant="h6">
-                    {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
+                    {`${annualTarget.name}, ${userName} Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
                 </Typography>
             </Box>
 
@@ -327,6 +358,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                 <StyledHeaderCell align="center">Actual Achieved</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Performance Rating Score</StyledHeaderCell>
                                 <StyledHeaderCell align="center">Evidence</StyledHeaderCell>
+                                <StyledHeaderCell align="center">Comments</StyledHeaderCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -426,6 +458,21 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                                                                 </IconButton>
                                                             )}
                                                         </StyledTableCell>
+                                                        <StyledTableCell align="center">
+                                                            {kpi.previousAssessmentComment &&
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => showCommentModal(initiative, kpiIndex)}
+                                                                    sx={{
+                                                                        color: '#DC2626',
+                                                                        '&:hover': {
+                                                                            backgroundColor: '#FEF2F2',
+                                                                        },
+                                                                    }}
+                                                                >
+                                                                    <DescriptionIcon />
+                                                                </IconButton>}
+                                                        </StyledTableCell>
                                                     </TableRow>
                                                 );
 
@@ -497,6 +544,11 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
                     attachments={evidenceModalData.attachments}
                 />
             )}
+            <CommentModal
+                open={commentModalOpen}
+                onClose={() => setCommentModalOpen(false)}
+                comment={selectedComment}
+            />
         </Box>
     );
 };

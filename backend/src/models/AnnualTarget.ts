@@ -88,6 +88,7 @@ type QuarterType = 'Q1' | 'Q2' | 'Q3' | 'Q4';
 export interface QuarterlyTarget {
   quarter: QuarterType;
   isDevelopmentPlanEnabled?: boolean;
+  editable?: boolean;
   objectives: QuarterlyTargetObjective[];
 }
 
@@ -109,7 +110,9 @@ export interface QuarterlyTargetKPI {
   attachments: {
     name: string;
     url: string;
-  }[];  
+  }[];
+  agreementComment?: string;
+  previousAgreementComment?: string;
 }
 
 export interface AnnualTargetDocument extends Document {

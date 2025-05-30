@@ -12,7 +12,6 @@ const LogoutPage: React.FC = () => {
         setUser(null);
         
         // Clear any stored tokens or session data
-        localStorage.removeItem('token');
         sessionStorage.clear();
         
         // Redirect to Microsoft login page

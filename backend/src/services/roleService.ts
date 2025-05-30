@@ -175,10 +175,14 @@ export class RoleService {
   }
   
   // Check if a user is the owner of a team
-  async isTeamOwner(teamId: string, userId: string): Promise<boolean> {
+  async isTeamOwner(teamId: string | null, userId: string): Promise<boolean> {
     const Team = mongoose.model('Team');
-    const team = await Team.findById(teamId);
-    return team?.owner === userId;
+    if(teamId) {
+      const team = await Team.findById(teamId);
+      return team?.owner === userId;
+    } else {
+      return false;
+    } 
   }
 }
 

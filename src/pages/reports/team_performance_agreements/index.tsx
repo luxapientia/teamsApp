@@ -29,7 +29,8 @@ import { PDFDownloadLink, Document, Page, View, Text, StyleSheet, pdf } from '@r
 import PersonalQuarterlyTargetContent from './PersonalQuarterlyTarget';
 import { api } from '../../../services/api';
 import { fetchTeamPerformances } from '../../../store/slices/personalPerformanceSlice';
-
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { useAuth } from '../../../contexts/AuthContext';
 const StyledFormControl = styled(FormControl)({
     backgroundColor: '#fff',
     borderRadius: '8px',
@@ -140,7 +141,7 @@ const TeamPerformanceAgreements: React.FC = () => {
     const [selectedTeamId, setSelectedTeamId] = useState('');
     const [showPersonalQuarterlyTarget, setShowPersonalQuarterlyTarget] = useState(false);
     const [teamPerformances, setTeamPerformances] = useState([]);
-
+    const { user } = useAuth();
     const annualTargets = useAppSelector((state: RootState) =>
         state.scorecard.annualTargets
     );
@@ -166,11 +167,13 @@ const TeamPerformanceAgreements: React.FC = () => {
     const handleScorecardChange = (event: SelectChangeEvent) => {
         setSelectedAnnualTargetId(event.target.value);
         setShowTable(false);
+        setShowPersonalQuarterlyTarget(false);
     };
 
     const handleQuarterChange = (event: SelectChangeEvent) => {
         setSelectedQuarter(event.target.value);
         setShowTable(false);
+        setShowPersonalQuarterlyTarget(false);
     };
 
     const handleView = () => {
@@ -208,12 +211,14 @@ const TeamPerformanceAgreements: React.FC = () => {
                         label="Quarter"
                         onChange={handleQuarterChange}
                     >
-                        {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-                            quarter.editable && (
-                                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                                    {quarter.quarter}
-                                </MenuItem>
-                            )
+                        {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                            quarter.editable
+                        )).map((quarter) => (
+                            quarter.quarter
+                        )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+                            <MenuItem key={quarter.key} value={quarter.key}>
+                                {quarter.alias}
+                            </MenuItem>
                         ))}
                     </Select>
                 </StyledFormControl>
@@ -228,7 +233,7 @@ const TeamPerformanceAgreements: React.FC = () => {
             </Box>
 
             {showTable && (
-                <Paper sx={{ mt: 3, boxShadow: 'none', border: '1px solid #E5E7EB' }}>
+                <Paper sx={{ mt: 3, boxShadow: 'none', border: '1px solid #E5E7EB', overflowX: 'auto' }}>
                     <Table>
                         <TableHead>
                             <TableRow>
@@ -269,12 +274,18 @@ const TeamPerformanceAgreements: React.FC = () => {
                 <PersonalQuarterlyTargetContent
                     annualTarget={selectedAnnualTarget as AnnualTarget}
                     quarter={selectedQuarter as QuarterType}
+                    isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                        quarter.editable
+                    )).map((quarter) => (
+                        quarter.quarter
+                    )), user?.isTeamOwner || user?.role === 'SuperUser')}
                     onBack={() => {
                         setShowPersonalQuarterlyTarget(false);
                         setShowTable(true);
                     }}
                     userId={selectedUserId}
                     teamId={selectedTeamId}
+                    userName={teamPerformances.find(performance => performance.userId._id === selectedUserId)?.fullName}
                 />
             )}
         </Box>

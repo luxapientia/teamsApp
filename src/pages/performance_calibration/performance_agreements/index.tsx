@@ -1,12 +1,13 @@
 import { useAppSelector } from '../../../hooks/useAppSelector';
 import { RootState } from '../../../store';
 import { AnnualTarget, QuarterType } from '../../../types/annualCorporateScorecard';
-import { Box, Button, InputLabel, MenuItem, Select, styled, FormControl } from '@mui/material';
+import { Box, Button, InputLabel, MenuItem, Select, styled, FormControl, SelectChangeEvent } from '@mui/material';
 import React, { useState } from 'react';
 import AgreementsTable from './agreements_table';
 import { api } from '../../../services/api';
 import PersonalQuarterlyTarget from './PersonalQuarterlyTarget';
-
+import { enableTwoQuarterMode, isEnabledTwoQuarterMode } from '../../../utils/quarterMode';
+import { useAuth } from '../../../contexts/AuthContext';
 const StyledFormControl = styled(FormControl)({
     backgroundColor: '#fff',
     borderRadius: '8px',
@@ -31,12 +32,12 @@ const ViewButton = styled(Button)({
 });
 
 export interface AgreementRow {
-  userId: string;
-  fullName: string;
-  jobTitle: string;
-  team: string;
-  status: string;
-  pmCommitteeStatus: string;
+    userId: string;
+    fullName: string;
+    jobTitle: string;
+    team: string;
+    status: string;
+    pmCommitteeStatus: string;
 }
 
 const PerformanceAgreements: React.FC = () => {
@@ -46,7 +47,7 @@ const PerformanceAgreements: React.FC = () => {
     const [agreements, setAgreements] = useState<AgreementRow[]>([]);
     const [loading, setLoading] = useState(false);
     const [viewingUser, setViewingUser] = useState<AgreementRow | null>(null);
-
+    const { user } = useAuth();
     const annualTargets = useAppSelector((state: RootState) => state.scorecard.annualTargets);
     const selectedAnnualTarget: AnnualTarget | undefined = useAppSelector((state: RootState) =>
         state.scorecard.annualTargets.find(target => target._id === selectedAnnualTargetId)
@@ -61,7 +62,7 @@ const PerformanceAgreements: React.FC = () => {
                     quarter: selectedQuarter,
                 },
             });
-            
+
             if (!response.data?.data || response.data.data.length === 0) {
                 setAgreements([]);
                 setShowTable(true);
@@ -96,6 +97,18 @@ const PerformanceAgreements: React.FC = () => {
         handleView();
     };
 
+    const handleQuarterChange = (event: SelectChangeEvent) => {
+        setSelectedQuarter(event.target.value as QuarterType);
+        setShowTable(false);
+        setViewingUser(null);
+    }
+
+    const handleScorecardChange = (event: SelectChangeEvent) => {
+        setSelectedAnnualTargetId(event.target.value as string);
+        setShowTable(false);
+        setViewingUser(null);
+      };
+
     return (
         <Box sx={{ p: 2, backgroundColor: '#F9FAFB', borderRadius: '8px' }}>
             <Box sx={{
@@ -109,7 +122,7 @@ const PerformanceAgreements: React.FC = () => {
                     <Select
                         value={selectedAnnualTargetId}
                         label="Annual Corporate Scorecard"
-                        onChange={(e) => setSelectedAnnualTargetId(e.target.value as string)}
+                        onChange={handleScorecardChange}
                     >
                         {annualTargets.map((target) => (
                             <MenuItem key={target._id} value={target._id}>
@@ -124,21 +137,23 @@ const PerformanceAgreements: React.FC = () => {
                     <Select
                         value={selectedQuarter}
                         label="Quarter"
-                        onChange={(e) => setSelectedQuarter(e.target.value as QuarterType)}
+                        onChange={handleQuarterChange}
                     >
-                        {selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.map((quarter) => (
-                            quarter.editable && (
-                                <MenuItem key={quarter.quarter} value={quarter.quarter}>
-                                    {quarter.quarter}
-                                </MenuItem>
-                            )
+                        {selectedAnnualTarget && enableTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                            quarter.editable
+                        )).map((quarter) => (
+                            quarter.quarter
+                        )), user?.isTeamOwner || user?.role === 'SuperUser').map((quarter) => (
+                            <MenuItem key={quarter.key} value={quarter.key}>
+                                {quarter.alias}
+                            </MenuItem>
                         ))}
                     </Select>
                 </StyledFormControl>
 
                 <ViewButton
                     variant="contained"
-                    disabled={!selectedAnnualTargetId}
+                    disabled={!selectedAnnualTargetId || !selectedQuarter}
                     onClick={handleView}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                 >
@@ -146,22 +161,28 @@ const PerformanceAgreements: React.FC = () => {
                 </ViewButton>
             </Box>
             {showTable && !viewingUser && (
-              agreements.length > 0 ? (
-                <AgreementsTable data={agreements} onView={handleTableView} />
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                  No approved agreements found for the selected criteria.
-                </Box>
-              )
+                agreements.length > 0 ? (
+                    <AgreementsTable data={agreements} onView={handleTableView} />
+                ) : (
+                    <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                        No approved agreements found for the selected criteria.
+                    </Box>
+                )
             )}
             {viewingUser && (
-              <PersonalQuarterlyTarget
-                annualTarget={selectedAnnualTarget!}
-                quarter={selectedQuarter as QuarterType}
-                userId={viewingUser.userId}
-                onBack={handleBack}
-                initialPmCommitteeStatus={viewingUser.pmCommitteeStatus as 'Not Reviewed' | 'Reviewed' | 'Send Back'}
-              />
+                <PersonalQuarterlyTarget
+                    annualTarget={selectedAnnualTarget!}
+                    quarter={selectedQuarter as QuarterType}
+                    userId={viewingUser.userId}
+                    userName={viewingUser.fullName}
+                    onBack={handleBack}
+                    initialPmCommitteeStatus={viewingUser.pmCommitteeStatus as 'Not Reviewed' | 'Reviewed' | 'Send Back'}
+                    isEnabledTwoQuarterMode={isEnabledTwoQuarterMode(selectedAnnualTarget?.content.quarterlyTarget.quarterlyTargets.filter((quarter) => (
+                        quarter.editable
+                    )).map((quarter) => (
+                        quarter.quarter
+                    )), user?.isTeamOwner || user?.role === 'SuperUser')}
+                />
             )}
         </Box>
     );

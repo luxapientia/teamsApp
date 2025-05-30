@@ -20,6 +20,8 @@ import {
   Skeleton,
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
+import { useAppSelector } from '../../../hooks/useAppSelector';
+import { RootState } from '../../../store';
 import { AnnualTarget, QuarterType, QuarterlyTargetObjective } from '@/types/annualCorporateScorecard';
 import { StyledHeaderCell, StyledTableCell } from '../../../components/StyledTableComponents';
 import { PersonalQuarterlyTargetObjective, PersonalPerformance } from '@/types/personalPerformance';
@@ -29,6 +31,8 @@ import EvidenceModal from './EvidenceModal';
 import { useAppDispatch } from '../../../hooks/useAppDispatch';
 import { fetchFeedback } from '../../../store/slices/feedbackSlice';
 import PersonalFeedback from './PersonalFeedback';
+import { QUARTER_ALIAS } from '../../../constants/quarterAlias';
+import { Feedback as FeedbackType } from '../../../types/feedback';
 
 interface Supervisor {
   id: string;
@@ -43,6 +47,8 @@ interface PersonalQuarterlyTargetProps {
   onBack?: () => void;
   userId: string;
   teamId: string;
+  userName: string;
+  isEnabledTwoQuarterMode: boolean;
 }
 
 const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = ({
@@ -50,16 +56,18 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   quarter,
   onBack,
   userId = '',
-  teamId = ''
+  teamId = '',
+  userName,
+  isEnabledTwoQuarterMode
 }) => {
-  const { user } = useAuth();
   const dispatch = useAppDispatch();
-  
+
   const [selectedSupervisor, setSelectedSupervisor] = useState('');
   const [personalQuarterlyObjectives, setPersonalQuarterlyObjectives] = React.useState<PersonalQuarterlyTargetObjective[]>([]);
   const [personalPerformance, setPersonalPerformance] = useState<PersonalPerformance | null>(null);
   const [companyUsers, setCompanyUsers] = useState<{ id: string, fullName: string, jobTitle: string, team: string, teamId: string }[]>([]);
   const [enableFeedback, setEnableFeedback] = useState(false);
+  const feedbackTemplates = useAppSelector((state: RootState) => state.feedback.feedbacks as FeedbackType[]);
 
 
   const [evidenceModalData, setEvidenceModalData] = useState<{
@@ -82,7 +90,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
   }, [personalPerformance]);
 
   const checkFeedbackModule = async () => {
-    const isModuleEnabled = await api.get('/module/is-feedback-module-enabled');
+    const isModuleEnabled = await api.get('/module/Feedback/is-enabled');
     if (isModuleEnabled.data.data.isEnabled) {
       setEnableFeedback(true);
     }
@@ -147,6 +155,13 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
     );
   };
 
+  const isFeedbackEnabled = feedbackTemplates
+    ?.find((template: FeedbackType) => template._id === personalPerformance?.quarterlyTargets.find(quarter => quarter?.selectedFeedbackId ?? quarter.feedbacks[0]?.feedbackId)?.toString() && template.status === 'Active')
+    ?.enableFeedback
+    .find(ef => ef.quarter === quarter && ef.enable)?.enable;
+
+  const isPersonalDevelopmentPlanEnabled = !personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.isPersonalDevelopmentNotApplicable && personalPerformance?.quarterlyTargets?.find(qt => qt.quarter === quarter)?.personalDevelopment?.length > 0;
+
   return (
     <Box>
       <Box sx={{
@@ -156,7 +171,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         alignItems: 'center'
       }}>
         <Typography variant="h6">
-          {`${annualTarget.name}, ${user?.displayName} Performance Assessment ${quarter}`}
+          {`${annualTarget.name}, ${userName} Performance Assessment ${isEnabledTwoQuarterMode ? QUARTER_ALIAS[quarter as keyof typeof QUARTER_ALIAS] : quarter}`}
         </Typography>
       </Box>
 
@@ -391,7 +406,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
       </Box>
 
       {/* Feedback Block */}
-      {enableFeedback && (
+      {enableFeedback && isFeedbackEnabled && (
         <Paper sx={{ width: '100%', boxShadow: 'none', border: '1px solid #E5E7EB' }}>
           <Typography variant="h6" sx={{ p: 3, borderBottom: '1px solid #E5E7EB' }}>
             Feedback
@@ -410,7 +425,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
         </Paper>
       )}
 
-      <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
+      {isPersonalDevelopmentPlanEnabled && <Box sx={{ mt: 4, mb: 2, backgroundColor: '#F3F4F6', padding: 2, borderRadius: 2 }}>
         <Box sx={{ mt: 4, mb: 2 }}>
           <Typography variant="h6">
             Personal Development Courses
@@ -474,9 +489,7 @@ const PersonalQuarterlyTargetContent: React.FC<PersonalQuarterlyTargetProps> = (
             </Table>
           </TableContainer>
         </Paper>
-      </Box>
-
-
+      </Box>}
 
 
       {evidenceModalData && (
